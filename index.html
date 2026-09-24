@@ -3534,11 +3534,6 @@ top: 8%;
       <span id="voiceStatusText">말씀하세요...</span>
     </div>
 
-    <!-- 💬 텍스트 질문 전환 보조 버튼 -->
-    <button type="button" id="voiceTextChatBtn" class="voice-text-btn" title="텍스트로 질문하기" onclick="openVoiceTextInputModal(event)">
-      <iconify-icon icon="solar:chat-line-bold"></iconify-icon>
-    </button>
-
     <div class="voice-wave-ring"></div>
     <div class="voice-wave-ring"></div>
     <div class="voice-wave-ring"></div>
@@ -3549,90 +3544,6 @@ top: 8%;
 
   <!-- 🌈 화면 테두리 Siri 스타일 네온 오라 (대화 준비/듣는 중일 때만 표시) -->
   <div id="voiceAuraOverlay" class="voice-aura-overlay"></div>
-
-  <!-- 💬 [영종운수 스마트 AI 비서 (1터치 즉시 답변 & 스피커 안내)] -->
-  <div id="voiceTextInputModal" class="voice-text-modal" style="display: none;">
-    <div class="voice-modal-backdrop" onclick="closeVoiceTextInputModal()"></div>
-    <div class="voice-modal-card">
-      <div class="voice-modal-header">
-        <div class="voice-modal-icon-wrap" style="color: #38bdf8; background: rgba(56, 189, 248, 0.15);">
-          <iconify-icon icon="solar:chat-round-dots-bold-duotone"></iconify-icon>
-        </div>
-        <div class="voice-modal-titles">
-          <h3>영종운수 스마트 AI 비서</h3>
-          <p>원터치로 질문하면 스피커 음성으로 즉시 답변합니다</p>
-        </div>
-        <button type="button" class="voice-modal-close" onclick="closeVoiceTextInputModal()">&times;</button>
-      </div>
-
-      <div class="voice-modal-body">
-        <!-- 💡 기사님 자주 묻는 질문 1터치 퀵 버튼 그리드 -->
-        <div class="voice-quick-grid">
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('오늘 내 근무 일정 알려줘')">
-            <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>내 오늘 근무</strong>
-              <span>노선·순번·차량번호</span>
-            </div>
-          </button>
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('오늘 202번 첫차 시간 언제야?')">
-            <iconify-icon icon="solar:alarm-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>202 첫차시간</strong>
-              <span>기점 첫차 출발시간</span>
-            </div>
-          </button>
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('오늘 202번 막차 시간 언제야?')">
-            <iconify-icon icon="solar:moon-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>202 막차시간</strong>
-              <span>기점 막차 출발시간</span>
-            </div>
-          </button>
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('오늘 전체 기사님들 배차 현황 요약해줘')">
-            <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>전체 배차현황</strong>
-              <span>동료 기사 근무 요약</span>
-            </div>
-          </button>
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('내일 내 근무 일정 알려줘')">
-            <iconify-icon icon="solar:calendar-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>내일 내 근무</strong>
-              <span>내일 배차 일정</span>
-            </div>
-          </button>
-          <button type="button" class="quick-grid-btn" onclick="applyQuickVoiceQuestion('202번 버스 현재 운행 간격과 배차는 어때?')">
-            <iconify-icon icon="solar:bus-bold-duotone"></iconify-icon>
-            <div class="grid-btn-text">
-              <strong>배차 간격 문의</strong>
-              <span>운행 상태 질의</span>
-            </div>
-          </button>
-        </div>
-
-        <!-- ✍️ 직접 질문 입력창 -->
-        <div class="voice-input-row">
-          <input type="text" id="voiceCustomQuestionInput" class="voice-custom-input" placeholder="궁금하신 내용을 직접 입력하세요..." onkeydown="if(event.key === 'Enter') submitVoiceTextQuery()" />
-          <button type="button" id="voiceSendBtn" class="voice-send-btn" onclick="submitVoiceTextQuery()">
-            <iconify-icon icon="solar:plain-bold"></iconify-icon>
-          </button>
-        </div>
-
-        <!-- 🔊 AI 답변 결과 카드 -->
-        <div id="voiceAnswerBox" class="voice-answer-box" style="display: none;">
-          <div class="voice-answer-header">
-            <div class="voice-answer-title">
-              <iconify-icon icon="solar:volume-loud-bold"></iconify-icon> AI 비서 안내 (음성 출력 중)
-            </div>
-            <button type="button" class="voice-tts-stop-btn" onclick="stopVoiceTTS()">음성 끄기</button>
-          </div>
-          <div id="voiceAnswerText" class="voice-answer-content">답변을 확인하고 있습니다...</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- 🔊 고품질 한국어 오디오 발화 폴백 플레이어 -->
   <audio id="voiceFallbackAudio" preload="auto" style="display: none;"></audio>
@@ -3658,15 +3569,31 @@ if (!google.script) google.script = {};
         return bridgeProxy;
       },
       askGeminiVoiceAssistant: function(query, context) {
-        const url = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent(context || "");
-        fetch(url)
+        const gasUrl = window.GAS_WEB_APP_URL;
+        fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: "ask_gemini",
+            query: query || "",
+            context: context || ""
+          })
+        })
           .then(res => res.json())
           .then(data => {
             if (successHandler) successHandler(data && data.answer ? data.answer : "답변을 확인할 수 없습니다.");
           })
-          .catch(err => {
-            console.error("GAS Gemini API Error:", err);
-            if (failureHandler) failureHandler(err);
+          .catch(postErr => {
+            const url = gasUrl + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 300));
+            fetch(url)
+              .then(res => res.json())
+              .then(data => {
+                if (successHandler) successHandler(data && data.answer ? data.answer : "답변을 확인할 수 없습니다.");
+              })
+              .catch(err => {
+                console.error("GAS Gemini API Error:", err);
+                if (failureHandler) failureHandler(err);
+              });
           });
       },
       loadFromServer: function() {
@@ -9729,8 +9656,11 @@ function createFreshRecognition() {
     rec.interimResults = false;
     rec.maxAlternatives = 1;
 
+    let hasResult = false;
+
     rec.onstart = function () {
       isVoiceListening = true;
+      hasResult = false;
       updateVoiceWidgetState('listening');
       playVoiceChime('start');
     };
@@ -9738,22 +9668,29 @@ function createFreshRecognition() {
     rec.onend = function () {
       isVoiceListening = false;
       const widget = document.getElementById('floatingVoiceWidget');
-      if (widget && !widget.classList.contains('thinking') && !widget.classList.contains('speaking')) {
+      if (widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'))) {
+        return;
+      }
+      if (!hasResult) {
         updateVoiceWidgetState('idle');
       }
     };
 
     rec.onerror = function (event) {
-      console.warn("음성 인식 오류 발생:", event.error);
+      console.warn("음성 인식 이벤트 오류:", event.error);
       isVoiceListening = false;
-      updateVoiceWidgetState('idle');
 
       if (event.error === 'not-allowed') {
-        handleVoiceNotAllowedError();
+        updateVoiceWidgetState('idle', '마이크 권한 필요');
+        speakVoiceAnswer("마이크 사용 권한을 허용해 주세요.");
       } else if (event.error === 'no-speech') {
-        // 무음으로 종료 시 조용히 대기 상태로 복귀
+        updateVoiceWidgetState('idle', '말씀을 듣지 못했습니다');
+        speakVoiceAnswer("말씀을 잘 듣지 못했어요. 마이크를 터치하고 다시 말씀해 주세요.");
       } else if (event.error === 'network') {
+        updateVoiceWidgetState('idle', '통신 상태 확인');
         speakVoiceAnswer("인터넷 연결 상태를 확인해 주세요.");
+      } else {
+        updateVoiceWidgetState('idle');
       }
     };
 
@@ -9761,6 +9698,7 @@ function createFreshRecognition() {
       if (!event.results || event.results.length === 0) return;
       const queryText = event.results[0][0].transcript.trim();
       if (!queryText) return;
+      hasResult = true;
 
       playVoiceChime('finish');
       updateVoiceWidgetState('thinking');
@@ -9793,7 +9731,7 @@ function createFreshRecognition() {
 }
 
 // 🎨 위젯 상태 시각화 갱신 함수 (preparing / listening / thinking / speaking / idle)
-function updateVoiceWidgetState(state) {
+function updateVoiceWidgetState(state, customText) {
   const widget = document.getElementById('floatingVoiceWidget');
   const icon = document.getElementById('voiceMicIcon');
   const aura = document.getElementById('voiceAuraOverlay');
@@ -9816,7 +9754,7 @@ function updateVoiceWidgetState(state) {
     widget.classList.add('thinking');
     if (icon) icon.setAttribute('icon', 'solar:atom-bold-duotone');
     if (aura) aura.classList.add('active');
-    if (statusText) statusText.textContent = "AI 확인 중...";
+    if (statusText) statusText.textContent = "AI 생각 중...";
   } else if (state === 'speaking') {
     widget.classList.add('speaking');
     if (icon) icon.setAttribute('icon', 'solar:volume-loud-bold-duotone');
@@ -9825,14 +9763,14 @@ function updateVoiceWidgetState(state) {
   } else {
     if (icon) icon.setAttribute('icon', 'solar:microphone-bold-duotone');
     if (aura) aura.classList.remove('active');
-    if (statusText) statusText.textContent = "말씀하세요...";
+    if (statusText) statusText.textContent = customText || "말씀하세요...";
   }
 }
 
-// 🛡️ 마이크 차단(not-allowed) 발생 시 친절하게 스마트 AI 비서 보드를 즉시 오픈
+// 🛡️ 마이크 차단(not-allowed) 발생 시 친절하게 음성 안내
 function handleVoiceNotAllowedError() {
-  updateVoiceWidgetState('idle');
-  openVoiceTextInputModal();
+  updateVoiceWidgetState('idle', '마이크 권한 필요');
+  speakVoiceAnswer("마이크 사용 권한을 허용해 주세요.");
 }
 
 // 🎙️ 마이크 클릭/터치 실행 핸들러 (단일 진입점)
@@ -10180,73 +10118,6 @@ function stopVoiceTTS() {
   }
 }
 
-// 💬 [텍스트 질문 모달 제어]
-function openVoiceTextInputModal(e) {
-  if (e && e.stopPropagation) e.stopPropagation();
-  unlockAudioAndTTS();
-  const modal = document.getElementById('voiceTextInputModal');
-  if (modal) {
-    modal.style.display = 'flex';
-    const input = document.getElementById('voiceCustomQuestionInput');
-    if (input) {
-      setTimeout(() => input.focus(), 200);
-    }
-  }
-}
-
-function closeVoiceTextInputModal() {
-  stopVoiceTTS();
-  const modal = document.getElementById('voiceTextInputModal');
-  if (modal) modal.style.display = 'none';
-}
-
-function applyQuickVoiceQuestion(questionText) {
-  unlockAudioAndTTS();
-  const input = document.getElementById('voiceCustomQuestionInput');
-  if (input) {
-    input.value = questionText;
-    submitVoiceTextQuery();
-  }
-}
-
-function submitVoiceTextQuery() {
-  unlockAudioAndTTS();
-  const input = document.getElementById('voiceCustomQuestionInput');
-  const answerBox = document.getElementById('voiceAnswerBox');
-  const answerText = document.getElementById('voiceAnswerText');
-  const sendBtn = document.getElementById('voiceSendBtn');
-  if (!input) return;
-
-  const query = input.value.trim();
-  if (!query) return;
-
-  if (answerBox) answerBox.style.display = 'block';
-  if (answerText) answerText.textContent = "AI 비서가 실시간 정보를 확인 중입니다...";
-  if (sendBtn) sendBtn.disabled = true;
-
-  updateVoiceWidgetState('thinking');
-  const contextText = buildVoiceAssistantContext();
-
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(function (response) {
-        if (sendBtn) sendBtn.disabled = false;
-        const finalAns = response || "답변을 확인하지 못했습니다.";
-        if (answerText) answerText.textContent = finalAns;
-        speakVoiceAnswer(finalAns);
-      })
-      .withFailureHandler(function (err) {
-        if (sendBtn) sendBtn.disabled = false;
-        if (answerText) answerText.textContent = "잠시 연결에 문제가 생겼습니다. 다시 시도해 주세요.";
-        updateVoiceWidgetState('idle');
-      })
-      .askGeminiVoiceAssistant(query, contextText);
-  } else {
-    if (sendBtn) sendBtn.disabled = false;
-    if (answerText) answerText.textContent = "서버에 연결할 수 없습니다.";
-    updateVoiceWidgetState('idle');
-  }
-}
 
 
 // DOM 준비 시 드래그 초기화
