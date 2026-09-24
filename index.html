@@ -68,11 +68,14 @@
         min-height: 100dvh;
         margin: 0 auto;
         background: var(--container-bg);
-        padding: 8px 8px 75px 8px;
+        /* 📱 라이브모달(상단 8dvh 여백)과 동일한 높이로 상단 여백 설정 (홈화면 바로가기 상단 기본 정보 겹침 해결) */
+        padding-top: max(env(safe-area-inset-top, 0px) + 12px, 8dvh, 58px);
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
         border-radius: 0;
         box-shadow: none;
         transition: background-color 0.3s;
-        padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
         display: flex;
         flex-direction: column;
     }
@@ -9613,6 +9616,7 @@ function escapeHtmlText(str) {
 // - 상시 플로팅 마이크 위젯 제어, 경쾌한 대답 신호음, Web Speech STT, 100% 여성 TTS 음성 발화
 // ================================================================
 let voiceRecognition = null;
+let isVoiceActive = false;
 let isVoiceListening = false;
 let isVoiceSpeaking = false;
 let wasVoiceWidgetDragged = false;
@@ -9682,70 +9686,61 @@ function createFreshRecognition() {
     rec.interimResults = false;
     rec.maxAlternatives = 1;
 
-    let hasResult = false;
-    let silenceTimer = null;
-
     rec.onstart = function () {
       isVoiceListening = true;
-      hasResult = false;
       updateVoiceWidgetState('listening');
       playVoiceChime('start');
-
-      // ⏱️ [무음 자동 종료] 마이크 켜진 후 6.5초간 말씀이 없으면 자동 종료
-      clearTimeout(silenceTimer);
-      silenceTimer = setTimeout(() => {
-        if (isVoiceListening && !hasResult) {
-          try { rec.stop(); } catch (e) {}
-          finishVoiceConversation();
-        }
-      }, 6500);
     };
 
     rec.onend = function () {
-      clearTimeout(silenceTimer);
       isVoiceListening = false;
       const widget = document.getElementById('floatingVoiceWidget');
-      if (widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'))) {
-        return;
-      }
-      if (!hasResult) {
-        finishVoiceConversation();
+      const isBusy = widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'));
+
+      // 🌟 [대화 지속 유지] 대화 모드가 켜져 있고 AI가 답변 중이 아니라면 끊김 없이 계속 듣기 유지!
+      if (isVoiceActive && !isBusy) {
+        clearTimeout(window._voiceLoopTimer);
+        window._voiceLoopTimer = setTimeout(() => {
+          if (isVoiceActive) startVoiceListeningLoop();
+        }, 250);
+      } else if (!isVoiceActive) {
+        updateVoiceWidgetState('idle');
       }
     };
 
     rec.onerror = function (event) {
-      console.warn("음성 인식 이벤트 오류:", event.error);
-      clearTimeout(silenceTimer);
+      console.warn("음성 인식 이벤트:", event.error);
       isVoiceListening = false;
 
       if (event.error === 'not-allowed') {
+        stopVoiceAssistant();
         updateVoiceWidgetState('idle', '마이크 권한 필요');
         speakVoiceAnswer("마이크 사용 권한을 허용해 주세요.");
-      } else if (event.error === 'no-speech') {
-        finishVoiceConversation();
-      } else if (event.error === 'network') {
-        updateVoiceWidgetState('idle', '통신 상태 확인');
-        speakVoiceAnswer("인터넷 연결 상태를 확인해 주세요.");
+        return;
+      }
+
+      // no-speech 등 브라우저 일시 중단 시에도 대화 모드 중이면 자동 재청취 지속!
+      if (isVoiceActive) {
+        const widget = document.getElementById('floatingVoiceWidget');
+        const isBusy = widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'));
+        if (!isBusy) {
+          clearTimeout(window._voiceLoopTimer);
+          window._voiceLoopTimer = setTimeout(() => {
+            if (isVoiceActive) startVoiceListeningLoop();
+          }, 350);
+        }
       } else {
-        finishVoiceConversation();
+        updateVoiceWidgetState('idle');
       }
     };
 
     rec.onresult = function (event) {
-      clearTimeout(silenceTimer);
       isVoiceListening = false;
       try { rec.stop(); } catch (e) {}
 
-      if (!event.results || event.results.length === 0) {
-        finishVoiceConversation();
-        return;
-      }
+      if (!event.results || event.results.length === 0) return;
       const queryText = event.results[0][0].transcript.trim();
-      if (!queryText) {
-        finishVoiceConversation();
-        return;
-      }
-      hasResult = true;
+      if (!queryText) return;
 
       playVoiceChime('finish');
       updateVoiceWidgetState('thinking');
@@ -9755,17 +9750,14 @@ function createFreshRecognition() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function (responseAnswer) {
-            updateVoiceWidgetState('speaking');
-            speakVoiceAnswer(responseAnswer || "말씀하신 내용을 확인하지 못했어요. 안전운행 하세요!");
+            speakVoiceAnswer(responseAnswer || "말씀하신 내용을 확인하지 못했어요. 다음 질문이 있으신가요?");
           })
           .withFailureHandler(function (err) {
             console.error("Gemini 호출 실패:", err);
-            finishVoiceConversation();
-            speakVoiceAnswer("잠시 통신에 문제가 생겼어요. 안전 운전하세요!");
+            speakVoiceAnswer("잠시 통신에 문제가 생겼어요. 다시 말씀해 주세요.");
           })
           .askGeminiVoiceAssistant(queryText, contextText);
       } else {
-        finishVoiceConversation();
         speakVoiceAnswer("서버에 연결할 수 없습니다.");
       }
     };
@@ -9820,9 +9812,10 @@ function handleVoiceNotAllowedError() {
   speakVoiceAnswer("마이크 사용 권한을 허용해 주세요.");
 }
 
-// 🎙️ 마이크 클릭/터치 실행 핸들러 (단일 진입점)
-async function toggleVoiceAssistant(e) {
+// 🎙️ [마이크 버튼 터치 토글 이벤트 핸들러]
+function toggleVoiceAssistant(e) {
   if (e) {
+    if (e.preventDefault) e.preventDefault();
     if (e.stopPropagation) e.stopPropagation();
   }
 
@@ -9832,10 +9825,9 @@ async function toggleVoiceAssistant(e) {
     return;
   }
 
-  // TTS 음성 재생 중이면 즉시 중지
-  if (window.speechSynthesis && window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    updateVoiceWidgetState('idle');
+  // 🌟 [핵심] 사용자가 마이크를 다시 누르면 -> 대화 모드 및 녹음 완전 종료!
+  if (isVoiceActive) {
+    stopVoiceAssistant();
     return;
   }
 
@@ -9846,27 +9838,32 @@ async function toggleVoiceAssistant(e) {
     return;
   }
 
-  // 🌟 [핵심] 사용자가 마이크를 터치한 바로 이 순간에 오디오와 TTS를 즉시 사전 언락!
+  // 오디오 및 TTS 사전 언락
   unlockAudioAndTTS();
 
-  if (isVoiceListening) {
-    if (voiceRecognition) {
-      try { voiceRecognition.stop(); } catch (err) {}
-    }
-    isVoiceListening = false;
-    updateVoiceWidgetState('idle');
+  // 🚀 대화 모드 시작!
+  isVoiceActive = true;
+  startVoiceListeningLoop();
+}
+
+// 🎧 [음성 인식 반복 청취 루프 시작]
+function startVoiceListeningLoop() {
+  if (!isVoiceActive) return;
+
+  const widget = document.getElementById('floatingVoiceWidget');
+  if (widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'))) {
     return;
   }
 
-  // 1️⃣ 터치 즉시 시각 피드백: '준비/연결 중' 상태로 즉각 전환 (오렌지 -> 전자기 블루/시안)
   updateVoiceWidgetState('preparing');
 
-  // 2️⃣ 신선한 SpeechRecognition 인스턴스로 음성 인식 시작 (GitHub Pages 네이티브)
   if (voiceRecognition) {
     try { voiceRecognition.abort(); } catch (err) {}
   }
+
   voiceRecognition = createFreshRecognition();
   if (!voiceRecognition) {
+    isVoiceActive = false;
     updateVoiceWidgetState('idle');
     handleVoiceNotAllowedError();
     return;
@@ -9879,12 +9876,39 @@ async function toggleVoiceAssistant(e) {
     try {
       voiceRecognition.abort();
       setTimeout(() => {
-        voiceRecognition = createFreshRecognition();
-        if (voiceRecognition) voiceRecognition.start();
-      }, 120);
+        if (isVoiceActive) {
+          voiceRecognition = createFreshRecognition();
+          if (voiceRecognition) voiceRecognition.start();
+        }
+      }, 150);
     } catch (e2) {
-      updateVoiceWidgetState('idle');
+      if (!isVoiceActive) updateVoiceWidgetState('idle');
     }
+  }
+}
+
+// 🛑 [마이크 재터치 시 대화 및 녹음 완전 종료]
+function stopVoiceAssistant() {
+  isVoiceActive = false;
+  isVoiceListening = false;
+  isVoiceSpeaking = false;
+  clearTimeout(window._voiceLoopTimer);
+
+  if (voiceRecognition) {
+    try { voiceRecognition.abort(); } catch (e) {}
+  }
+  if (window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+  }
+  const fallbackPlayer = document.getElementById('voiceFallbackAudio');
+  if (fallbackPlayer) {
+    try { fallbackPlayer.pause(); fallbackPlayer.currentTime = 0; } catch (e) {}
+  }
+
+  updateVoiceWidgetState('idle');
+  const ansTitle = document.querySelector('.voice-answer-title');
+  if (ansTitle) {
+    ansTitle.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> AI 비서 (대화 종료)';
   }
 }
 
@@ -9918,45 +9942,36 @@ function unlockAudioAndTTS() {
   }
 }
 
-// 🛑 [음성 세션 안전 종료] 마이크 녹음 및 위젯 상태를 안전하게 대기(idle) 모드로 복귀
-function finishVoiceConversation() {
-  if (typeof window !== 'undefined') {
-    clearTimeout(window._voiceAutoStopTimer);
-  }
-  updateVoiceWidgetState('idle');
-  isVoiceListening = false;
-  if (voiceRecognition) {
-    try { voiceRecognition.abort(); } catch (e) {}
-  }
-  const ansTitle = document.querySelector('.voice-answer-title');
-  if (ansTitle) {
-    ansTitle.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> AI 비서 안내 (답변 완료)';
+// 🔄 [음성 발화 완료 후 처리] 대화 모드가 켜져 있으면 자동으로 다음 질문을 계속 듣습니다.
+function handleVoiceSpeechComplete() {
+  isVoiceSpeaking = false;
+  if (isVoiceActive) {
+    updateVoiceWidgetState('listening');
+    clearTimeout(window._voiceLoopTimer);
+    window._voiceLoopTimer = setTimeout(() => {
+      if (isVoiceActive) startVoiceListeningLoop();
+    }, 350);
+  } else {
+    updateVoiceWidgetState('idle');
   }
 }
 
 // 🔊 [100% 음성 안내] 친절하고 또렷한 한국어 음성(TTS + 오디오 폴백) 발화
 function speakVoiceAnswer(text) {
   if (!text) {
-    finishVoiceConversation();
+    handleVoiceSpeechComplete();
     return;
   }
   text = String(text).replace(/[\*\_#`~\[\]\(\)\{\}<>]/g, "").replace(/\s+/g, " ").trim();
   if (!text) {
-    finishVoiceConversation();
+    handleVoiceSpeechComplete();
     return;
   }
 
   // 1️⃣ 즉시 완료 신호음(딩동) 재생
   playVoiceChime('finish');
   updateVoiceWidgetState('speaking');
-
-  // ⏱️ [대화 종료 후 자동 꺼짐 안전장치]
-  // 텍스트 길이에 따라 최대 12초 후 수동 조작 없이도 무조건 마이크와 위젯을 자동으로 끕니다.
-  clearTimeout(window._voiceAutoStopTimer);
-  const autoOffDuration = Math.min(Math.max((text.length * 150), 3000), 12000);
-  window._voiceAutoStopTimer = setTimeout(() => {
-    finishVoiceConversation();
-  }, autoOffDuration);
+  isVoiceSpeaking = true;
 
   let hasSpoken = false;
 
@@ -9999,12 +10014,13 @@ function speakVoiceAnswer(text) {
           };
 
           utterance.onend = function () {
-            setTimeout(finishVoiceConversation, 500);
+            handleVoiceSpeechComplete();
           };
 
           utterance.onerror = function (err) {
             console.warn("SpeechSynthesis 실패, 오디오 스트림 폴백 시도:", err);
             if (!hasSpoken) playTtsAudioFallback(text);
+            else handleVoiceSpeechComplete();
           };
 
           window.speechSynthesis.speak(utterance);
@@ -10035,7 +10051,7 @@ function speakVoiceAnswer(text) {
 function playTtsAudioFallback(text) {
   const fallbackPlayer = document.getElementById('voiceFallbackAudio');
   if (!fallbackPlayer || !text) {
-    finishVoiceConversation();
+    handleVoiceSpeechComplete();
     return;
   }
 
@@ -10054,16 +10070,16 @@ function playTtsAudioFallback(text) {
     };
 
     fallbackPlayer.onended = function () {
-      setTimeout(finishVoiceConversation, 500);
+      handleVoiceSpeechComplete();
     };
 
     fallbackPlayer.play().catch(e => {
       console.warn("폴백 오디오 재생 오류:", e);
-      finishVoiceConversation();
+      handleVoiceSpeechComplete();
     });
   } catch (err) {
     console.error("playTtsAudioFallback failed:", err);
-    finishVoiceConversation();
+    handleVoiceSpeechComplete();
   }
 }
 
