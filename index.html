@@ -3570,45 +3570,57 @@ if (!google.script) google.script = {};
       },
       askGeminiVoiceAssistant: function(query, context) {
         const apiKey = atob("QVEuQWI4Uk42TEdjZnN1YlFBUDZOdUhITkJuSWNYZGY4Vm1nZkZFc0dfSUtya1Z5Y3RmbWc=");
-        const model = "gemini-3.6-flash";
+        const models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3-flash-preview"];
         const systemPrompt = "너는 영종운수 시내버스 스마트 음성 비서야. 버스 기사님이 운전 중에 질문하셨어. 반드시 1~2문장의 간결하고 따뜻한 구어체로 대답해줘. 특수문자, 별표, 마크다운 기호는 절대 쓰지 마. 기사님께 힘이 되는 안전운행 멘트를 자연스럽게 덧붙여줘.";
         const promptText = (context ? (context + "\n\n") : "") + "기사님 질문: " + query;
 
-        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
-
-        // 1️⃣ 구글 Gemini 직접 초고속 호출 (CORS 100% 지원, 지연 1~2초)
-        fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-              let ans = data.candidates[0].content.parts[0].text;
-              ans = ans.replace(/[*_#~<>\[\]]/g, "").replace(/\s+/g, " ").trim();
-              if (successHandler) successHandler(ans);
-            } else {
-              throw new Error("Direct Gemini response empty");
-            }
-          })
-          .catch(directErr => {
-            console.warn("Direct Gemini call failed, falling back to GAS:", directErr);
-            // 2️⃣ 구글 앱스 스크립트(GAS) 백업 호출
+        function tryNextModel(idx) {
+          if (idx >= models.length) {
+            // 모든 직접 호출 모델 실패 시 GAS 백업 호출
             const gasUrl = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 300));
             fetch(gasUrl)
               .then(res => res.json())
               .then(data => {
-                if (successHandler) successHandler(data && data.answer ? data.answer : "답변을 확인할 수 없습니다.");
+                if (successHandler) successHandler(data && data.answer ? data.answer : "말씀하신 내용을 확인하지 못했습니다.");
               })
               .catch(err => {
                 console.error("GAS Gemini API Error:", err);
                 if (failureHandler) failureHandler(err);
               });
-          });
+            return;
+          }
+
+          const model = models[idx];
+          const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+          fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents: [{ parts: [{ text: promptText }] }]
+            })
+          })
+            .then(res => {
+              if (!res.ok) throw new Error("HTTP " + res.status);
+              return res.json();
+            })
+            .then(data => {
+              if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+                let ans = data.candidates[0].content.parts[0].text;
+                ans = ans.replace(/[*_#~<>\[\]]/g, "").replace(/\s+/g, " ").trim();
+                if (successHandler) successHandler(ans);
+              } else {
+                throw new Error("Direct Gemini response empty");
+              }
+            })
+            .catch(err => {
+              console.warn("Direct Gemini model " + model + " failed, trying next:", err);
+              tryNextModel(idx + 1);
+            });
+        }
+
+        tryNextModel(0);
       },
       loadFromServer: function() {
         const url = window.GAS_WEB_APP_URL + "?action=load_from_server";
@@ -9671,47 +9683,68 @@ function createFreshRecognition() {
     rec.maxAlternatives = 1;
 
     let hasResult = false;
+    let silenceTimer = null;
 
     rec.onstart = function () {
       isVoiceListening = true;
       hasResult = false;
       updateVoiceWidgetState('listening');
       playVoiceChime('start');
+
+      // ⏱️ [무음 자동 종료] 마이크 켜진 후 6.5초간 말씀이 없으면 자동 종료
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        if (isVoiceListening && !hasResult) {
+          try { rec.stop(); } catch (e) {}
+          finishVoiceConversation();
+        }
+      }, 6500);
     };
 
     rec.onend = function () {
+      clearTimeout(silenceTimer);
       isVoiceListening = false;
       const widget = document.getElementById('floatingVoiceWidget');
       if (widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'))) {
         return;
       }
       if (!hasResult) {
-        updateVoiceWidgetState('idle');
+        finishVoiceConversation();
       }
     };
 
     rec.onerror = function (event) {
       console.warn("음성 인식 이벤트 오류:", event.error);
+      clearTimeout(silenceTimer);
       isVoiceListening = false;
 
       if (event.error === 'not-allowed') {
         updateVoiceWidgetState('idle', '마이크 권한 필요');
         speakVoiceAnswer("마이크 사용 권한을 허용해 주세요.");
       } else if (event.error === 'no-speech') {
-        updateVoiceWidgetState('idle', '말씀을 듣지 못했습니다');
-        speakVoiceAnswer("말씀을 잘 듣지 못했어요. 마이크를 터치하고 다시 말씀해 주세요.");
+        finishVoiceConversation();
       } else if (event.error === 'network') {
         updateVoiceWidgetState('idle', '통신 상태 확인');
         speakVoiceAnswer("인터넷 연결 상태를 확인해 주세요.");
       } else {
-        updateVoiceWidgetState('idle');
+        finishVoiceConversation();
       }
     };
 
     rec.onresult = function (event) {
-      if (!event.results || event.results.length === 0) return;
+      clearTimeout(silenceTimer);
+      isVoiceListening = false;
+      try { rec.stop(); } catch (e) {}
+
+      if (!event.results || event.results.length === 0) {
+        finishVoiceConversation();
+        return;
+      }
       const queryText = event.results[0][0].transcript.trim();
-      if (!queryText) return;
+      if (!queryText) {
+        finishVoiceConversation();
+        return;
+      }
       hasResult = true;
 
       playVoiceChime('finish');
@@ -9727,12 +9760,12 @@ function createFreshRecognition() {
           })
           .withFailureHandler(function (err) {
             console.error("Gemini 호출 실패:", err);
-            updateVoiceWidgetState('idle');
-            speakVoiceAnswer("잠시 연결에 문제가 생겼어요. 안전 운전하세요!");
+            finishVoiceConversation();
+            speakVoiceAnswer("잠시 통신에 문제가 생겼어요. 안전 운전하세요!");
           })
           .askGeminiVoiceAssistant(queryText, contextText);
       } else {
-        updateVoiceWidgetState('idle');
+        finishVoiceConversation();
         speakVoiceAnswer("서버에 연결할 수 없습니다.");
       }
     };
@@ -9885,15 +9918,45 @@ function unlockAudioAndTTS() {
   }
 }
 
+// 🛑 [음성 세션 안전 종료] 마이크 녹음 및 위젯 상태를 안전하게 대기(idle) 모드로 복귀
+function finishVoiceConversation() {
+  if (typeof window !== 'undefined') {
+    clearTimeout(window._voiceAutoStopTimer);
+  }
+  updateVoiceWidgetState('idle');
+  isVoiceListening = false;
+  if (voiceRecognition) {
+    try { voiceRecognition.abort(); } catch (e) {}
+  }
+  const ansTitle = document.querySelector('.voice-answer-title');
+  if (ansTitle) {
+    ansTitle.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> AI 비서 안내 (답변 완료)';
+  }
+}
+
 // 🔊 [100% 음성 안내] 친절하고 또렷한 한국어 음성(TTS + 오디오 폴백) 발화
 function speakVoiceAnswer(text) {
-  if (!text) return;
+  if (!text) {
+    finishVoiceConversation();
+    return;
+  }
   text = String(text).replace(/[\*\_#`~\[\]\(\)\{\}<>]/g, "").replace(/\s+/g, " ").trim();
-  if (!text) return;
+  if (!text) {
+    finishVoiceConversation();
+    return;
+  }
 
   // 1️⃣ 즉시 완료 신호음(딩동) 재생
   playVoiceChime('finish');
   updateVoiceWidgetState('speaking');
+
+  // ⏱️ [대화 종료 후 자동 꺼짐 안전장치]
+  // 텍스트 길이에 따라 최대 12초 후 수동 조작 없이도 무조건 마이크와 위젯을 자동으로 끕니다.
+  clearTimeout(window._voiceAutoStopTimer);
+  const autoOffDuration = Math.min(Math.max((text.length * 150), 3000), 12000);
+  window._voiceAutoStopTimer = setTimeout(() => {
+    finishVoiceConversation();
+  }, autoOffDuration);
 
   let hasSpoken = false;
 
@@ -9936,11 +9999,7 @@ function speakVoiceAnswer(text) {
           };
 
           utterance.onend = function () {
-            updateVoiceWidgetState('idle');
-            const ansTitle = document.querySelector('.voice-answer-title');
-            if (ansTitle) {
-              ansTitle.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> AI 비서 안내 (답변 완료)';
-            }
+            setTimeout(finishVoiceConversation, 500);
           };
 
           utterance.onerror = function (err) {
@@ -9975,7 +10034,10 @@ function speakVoiceAnswer(text) {
 // 🎵 [오디오 스트림 TTS 폴백] 모바일/iframe 제약 없는 다이렉트 오디오 발화
 function playTtsAudioFallback(text) {
   const fallbackPlayer = document.getElementById('voiceFallbackAudio');
-  if (!fallbackPlayer || !text) return;
+  if (!fallbackPlayer || !text) {
+    finishVoiceConversation();
+    return;
+  }
 
   try {
     const cleanText = text.slice(0, 180); // 오디오 쿼리 최적화
@@ -9992,20 +10054,16 @@ function playTtsAudioFallback(text) {
     };
 
     fallbackPlayer.onended = function () {
-      updateVoiceWidgetState('idle');
-      const ansTitle = document.querySelector('.voice-answer-title');
-      if (ansTitle) {
-        ansTitle.innerHTML = '<iconify-icon icon="solar:check-circle-bold"></iconify-icon> AI 비서 안내 (답변 완료)';
-      }
+      setTimeout(finishVoiceConversation, 500);
     };
 
     fallbackPlayer.play().catch(e => {
       console.warn("폴백 오디오 재생 오류:", e);
-      updateVoiceWidgetState('idle');
+      finishVoiceConversation();
     });
   } catch (err) {
     console.error("playTtsAudioFallback failed:", err);
-    updateVoiceWidgetState('idle');
+    finishVoiceConversation();
   }
 }
 
