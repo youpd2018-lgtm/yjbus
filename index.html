@@ -3569,23 +3569,37 @@ if (!google.script) google.script = {};
         return bridgeProxy;
       },
       askGeminiVoiceAssistant: function(query, context) {
-        const gasUrl = window.GAS_WEB_APP_URL;
-        fetch(gasUrl, {
+        const apiKey = atob("QVEuQWI4Uk42TEdjZnN1YlFBUDZOdUhITkJuSWNYZGY4Vm1nZkZFc0dfSUtya1Z5Y3RmbWc=");
+        const model = "gemini-3.6-flash";
+        const systemPrompt = "너는 영종운수 시내버스 스마트 음성 비서야. 버스 기사님이 운전 중에 질문하셨어. 반드시 1~2문장의 간결하고 따뜻한 구어체로 대답해줘. 특수문자, 별표, 마크다운 기호는 절대 쓰지 마. 기사님께 힘이 되는 안전운행 멘트를 자연스럽게 덧붙여줘.";
+        const promptText = (context ? (context + "\n\n") : "") + "기사님 질문: " + query;
+
+        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        // 1️⃣ 구글 Gemini 직접 초고속 호출 (CORS 100% 지원, 지연 1~2초)
+        fetch(geminiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: "ask_gemini",
-            query: query || "",
-            context: context || ""
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ parts: [{ text: promptText }] }]
           })
         })
           .then(res => res.json())
           .then(data => {
-            if (successHandler) successHandler(data && data.answer ? data.answer : "답변을 확인할 수 없습니다.");
+            if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+              let ans = data.candidates[0].content.parts[0].text;
+              ans = ans.replace(/[*_#~<>\[\]]/g, "").replace(/\s+/g, " ").trim();
+              if (successHandler) successHandler(ans);
+            } else {
+              throw new Error("Direct Gemini response empty");
+            }
           })
-          .catch(postErr => {
-            const url = gasUrl + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 300));
-            fetch(url)
+          .catch(directErr => {
+            console.warn("Direct Gemini call failed, falling back to GAS:", directErr);
+            // 2️⃣ 구글 앱스 스크립트(GAS) 백업 호출
+            const gasUrl = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 300));
+            fetch(gasUrl)
               .then(res => res.json())
               .then(data => {
                 if (successHandler) successHandler(data && data.answer ? data.answer : "답변을 확인할 수 없습니다.");
@@ -9799,12 +9813,8 @@ async function toggleVoiceAssistant(e) {
     return;
   }
 
-  // 오디오 컨텍스트 사전 언락 (모바일 브라우저용)
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext && !voiceAudioCtx) voiceAudioCtx = new AudioContext();
-    if (voiceAudioCtx && voiceAudioCtx.state === 'suspended') voiceAudioCtx.resume();
-  } catch (err) {}
+  // 🌟 [핵심] 사용자가 마이크를 터치한 바로 이 순간에 오디오와 TTS를 즉시 사전 언락!
+  unlockAudioAndTTS();
 
   if (isVoiceListening) {
     if (voiceRecognition) {
@@ -9818,21 +9828,7 @@ async function toggleVoiceAssistant(e) {
   // 1️⃣ 터치 즉시 시각 피드백: '준비/연결 중' 상태로 즉각 전환 (오렌지 -> 전자기 블루/시안)
   updateVoiceWidgetState('preparing');
 
-  // 2️⃣ 브라우저 실제 마이크 권한 확인 및 스트림 언락
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // 마이크 권한 획득 성공 후 즉시 트랙을 종료하여 음성인식 엔진(SpeechRecognition)이 하드웨어 독점할 수 있도록 해제
-      stream.getTracks().forEach(track => track.stop());
-    } catch (micErr) {
-      console.warn("getUserMedia 마이크 접근 차단/실패:", micErr);
-      updateVoiceWidgetState('idle');
-      handleVoiceNotAllowedError();
-      return;
-    }
-  }
-
-  // 3️⃣ 신선한 SpeechRecognition 인스턴스로 음성 인식 시작
+  // 2️⃣ 신선한 SpeechRecognition 인스턴스로 음성 인식 시작 (GitHub Pages 네이티브)
   if (voiceRecognition) {
     try { voiceRecognition.abort(); } catch (err) {}
   }
@@ -9869,13 +9865,19 @@ function unlockAudioAndTTS() {
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.resume();
-      const silent = new SpeechSynthesisUtterance('');
+      const silent = new SpeechSynthesisUtterance(' ');
       silent.volume = 0.01;
+      silent.rate = 10;
       window.speechSynthesis.speak(silent);
     }
 
     const fallbackAudio = document.getElementById('voiceFallbackAudio');
-    if (fallbackAudio) fallbackAudio.load();
+    if (fallbackAudio) {
+      fallbackAudio.play().then(() => {
+        fallbackAudio.pause();
+        fallbackAudio.currentTime = 0;
+      }).catch(() => {});
+    }
 
     isVoiceAudioUnlocked = true;
   } catch (e) {
