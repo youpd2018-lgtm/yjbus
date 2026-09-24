@@ -3590,13 +3590,13 @@ if (!google.script) google.script = {};
       askGeminiVoiceAssistant: function(query, context) {
         const apiKey = atob("QVEuQWI4Uk42TEdjZnN1YlFBUDZOdUhITkJuSWNYZGY4Vm1nZkZFc0dfSUtya1Z5Y3RmbWc=");
         const models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3-flash-preview"];
-        const systemPrompt = "너는 영종운수 시내버스 스마트 음성 비서야. 버스 기사님이 운전 중에 질문하셨어. 반드시 1~2문장의 간결하고 따뜻한 구어체로 대답해줘. 특수문자, 별표, 마크다운 기호는 절대 쓰지 마. 기사님께 힘이 되는 안전운행 멘트를 자연스럽게 덧붙여줘.";
+        const systemPrompt = "너는 영종운수 시내버스 스마트 음성 비서야. 버스 기사님이 운전 또는 휴식 중에 음성으로 질문하셨어. 질문 의도를 정확히 파악하여 참고 데이터에 있는 다음 운행일정, 차량 배차자, 교대자, 앞뒤 순번, 통계 정보 등을 친절하게 답변해줘. 오늘이 휴무이더라도 다음 근무 일정을 물어보시면 다음 실제 출근/운행 일정을 꼭 알려줘. 반드시 1~2문장의 간결하고 명확한 구어체로 대답하고 특수문자나 별표 기호는 절대 쓰지 마. 기사님께 힘이 되는 안전운행 멘트를 자연스럽게 덧붙여줘.";
         const promptText = (context ? (context + "\n\n") : "") + "기사님 질문: " + query;
 
         function tryNextModel(idx) {
           if (idx >= models.length) {
             // 모든 직접 호출 모델 실패 시 GAS 백업 호출
-            const gasUrl = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 300));
+            const gasUrl = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 1500));
             fetch(gasUrl)
               .then(res => res.json())
               .then(data => {
@@ -9761,7 +9761,7 @@ function createFreshRecognition() {
       playVoiceChime('finish');
       updateVoiceWidgetState('thinking');
 
-      const contextText = buildVoiceAssistantContext();
+      const contextText = buildVoiceAssistantContext(queryText);
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
@@ -10100,29 +10100,217 @@ function playTtsAudioFallback(text) {
 }
 
 
-// 📋 당일 배차 및 근무 컨텍스트를 Gemini에게 전달할 수 있도록 요약 빌드
-function buildVoiceAssistantContext() {
+// 📋 [Gemini AI 실시간 스마트 지능형 컨텍스트 빌더 엔진]
+// - 기사님의 질문(queryText)을 실시간 분석하여 최적의 운행/배차/통계 데이터를 맞춤 추출
+// - 1) 향후 14일간 개인 일정 및 '가장 가까운 다음 운행일정' 자동 추적
+// - 2) 차량번호 역추적 검색 (예: 2122호 누가 타?)
+// - 3) 맞교대 기사님(오전/오후) 자동 식별
+// - 4) 앞차/뒷차 순번(N-1, N+1) 및 기점 표준출발시간 대조
+// - 5) 이번 주/이번 달 근무 및 휴무 통계 집계
+// - 6) 질문에 언급된 특정 날짜(내일, 모레, 특정 요일 등) 맞춤 배차 현황
+function buildVoiceAssistantContext(queryText) {
+  const query = (queryText || '').trim();
   const today = new Date();
-  const todayStr = typeof getFormattedDate === 'function' ? getFormattedDate(today) : today.toISOString().split('T')[0];
   const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  const dayLabel = dayNames[today.getDay()];
+  const dayShort = ['일', '월', '화', '수', '목', '금', '토'];
 
-  const myName = window.currentDriver || localStorage.getItem('loggedInUser') || '유재필';
-
-  // 1. 내 오늘 근무 일정
-  let mySchedText = "미등록";
-  const mySaved = localStorage.getItem(`jpil_user_${myName}_sched_${todayStr}`);
-  if (mySaved) {
-    try {
-      const data = JSON.parse(mySaved);
-      mySchedText = `노선: ${data.route || '-'}, 순번: ${data.seq || '-'}, 근무형태: ${data.workType || '근무'}, 차량번호: ${data.busNo || '미배차'}, 출근시간: ${data.time || '-'}`;
-    } catch (e) { }
+  function formatDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
-  // 2. 전체 기사 배차/근무 현황 목록
+  const todayStr = formatDateStr(today);
+  const dayLabel = dayNames[today.getDay()];
+  const myName = window.currentDriver || localStorage.getItem('loggedInUser') || '유재필';
   const allUsers = typeof getUsersList === 'function' ? getUsersList().filter(u => u.userType !== 'family') : [];
-  let userSchedList = [];
 
+  // 1. [향후 14일간 내 일정 분석 및 가장 가까운 운행 일정 탐색]
+  let myUpcomingList = [];
+  let nextWorkShift = null; // 가장 가까운 다음 실제 운행
+  let myTodayData = null;
+
+  for (let offset = 0; offset < 14; offset++) {
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + offset);
+    const dateStr = formatDateStr(targetDate);
+    const dayW = dayShort[targetDate.getDay()];
+    const relLabel = offset === 0 ? "오늘" : offset === 1 ? "내일" : offset === 2 ? "모레" : `${offset}일후`;
+
+    const saved = localStorage.getItem(`jpil_user_${myName}_sched_${dateStr}`);
+    if (saved) {
+      try {
+        const d = JSON.parse(saved);
+        const workType = d.workType || '근무';
+        const isOff = ['휴무', '휴일', '연차', '공가', '병가'].includes(workType) || (!d.route && !d.seq);
+        const schedItem = {
+          dateStr, dayW, relLabel,
+          route: d.route || '-',
+          seq: d.seq || '-',
+          workType,
+          busNo: d.busNo || '미배차',
+          time: d.time || '-',
+          isOff
+        };
+        if (offset === 0) myTodayData = schedItem;
+        myUpcomingList.push(`${dateStr}(${dayW}/${relLabel}): 형태 ${workType}, 노선 ${schedItem.route}, 순번 ${schedItem.seq}, 차량 ${schedItem.busNo}, 시간 ${schedItem.time}`);
+
+        // 가장 가까운 다음 실제 운행 탐색 (오늘이 근무면 오늘, 오늘이 휴무면 향후 첫 실제 근무일)
+        if (!nextWorkShift && !isOff && (schedItem.route !== '-' || schedItem.seq !== '-')) {
+          nextWorkShift = schedItem;
+        }
+      } catch (e) { }
+    } else {
+      if (offset === 0) {
+        myTodayData = { dateStr, dayW, relLabel: "오늘", workType: "미등록", route: "-", seq: "-", busNo: "-", isOff: true };
+      }
+    }
+  }
+
+  // 2. [차량번호 역추적 검색] - 질문에 3~4자리 숫자(차량번호)나 차량 키워드가 있는지 검사
+  let vehicleSearchReport = "";
+  const busNoMatch = query.match(/\b(\d{3,4})\b/);
+  if (busNoMatch || query.includes("차량") || query.includes("호차") || query.includes("누가 타")) {
+    const targetBusNo = busNoMatch ? busNoMatch[1] : (myTodayData && myTodayData.busNo && myTodayData.busNo !== '-' && myTodayData.busNo !== '미배차' ? myTodayData.busNo : null);
+    if (targetBusNo) {
+      let foundDriversToday = [];
+      let foundDriversTomorrow = [];
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const tomorrowStr = formatDateStr(tomorrow);
+
+      allUsers.forEach(u => {
+        // 오늘 검색
+        const sToday = localStorage.getItem(`jpil_user_${u.name}_sched_${todayStr}`);
+        if (sToday) {
+          try {
+            const dt = JSON.parse(sToday);
+            if (String(dt.busNo).includes(targetBusNo)) {
+              foundDriversToday.push(`${u.name} 기사님 (노선 ${dt.route || '-'}, 순번 ${dt.seq || '-'}, ${dt.workType || '근무'}, 시간 ${dt.time || '-'})`);
+            }
+          } catch(e) {}
+        }
+        // 내일 검색
+        const sTom = localStorage.getItem(`jpil_user_${u.name}_sched_${tomorrowStr}`);
+        if (sTom) {
+          try {
+            const dt = JSON.parse(sTom);
+            if (String(dt.busNo).includes(targetBusNo)) {
+              foundDriversTomorrow.push(`${u.name} 기사님 (노선 ${dt.route || '-'}, 순번 ${dt.seq || '-'}, ${dt.workType || '근무'}, 시간 ${dt.time || '-'})`);
+            }
+          } catch(e) {}
+        }
+      });
+
+      vehicleSearchReport = `\n[차량 ${targetBusNo}호 배차 역추적 정보]
+- 오늘(${todayStr}): ${foundDriversToday.length > 0 ? foundDriversToday.join(' / ') : '배차된 기사 정보 없음'}
+- 내일(${tomorrowStr}): ${foundDriversTomorrow.length > 0 ? foundDriversTomorrow.join(' / ') : '배차된 기사 정보 없음'}`;
+    }
+  }
+
+  // 3. [교대자 검색 (오전/오후 맞교대 기사님)]
+  let shiftPartnerReport = "";
+  if (query.includes("교대") || query.includes("맞교대") || query.includes("오전") || query.includes("오후") || query.includes("파트너")) {
+    const baseShift = (myTodayData && !myTodayData.isOff) ? myTodayData : nextWorkShift;
+    if (baseShift && baseShift.route !== '-' && baseShift.seq !== '-') {
+      let partners = [];
+      allUsers.forEach(u => {
+        if (u.name === myName) return;
+        const s = localStorage.getItem(`jpil_user_${u.name}_sched_${baseShift.dateStr}`);
+        if (s) {
+          try {
+            const d = JSON.parse(s);
+            // 같은 노선, 같은 순번이거나 같은 차량
+            if ((d.route === baseShift.route && d.seq === baseShift.seq) || (baseShift.busNo !== '-' && d.busNo === baseShift.busNo)) {
+              partners.push(`${u.name} 기사님 (${d.workType || '근무'}, 차량 ${d.busNo || '-'}, 시간 ${d.time || '-'})`);
+            }
+          } catch(e) {}
+        }
+      });
+      shiftPartnerReport = `\n[${baseShift.dateStr} 기준 교대자 정보]
+- 질문자(${myName}) 배차: ${baseShift.route}번 ${baseShift.seq}순번 (${baseShift.workType}, 차량 ${baseShift.busNo})
+- 동일 노선/순번/차량 교대 기사님: ${partners.length > 0 ? partners.join(', ') : '지정된 맞교대자 없음'}`;
+    }
+  }
+
+  // 4. [앞차 / 뒷차 순번 및 표준시간 대조]
+  let sequenceReport = "";
+  if (query.includes("앞차") || query.includes("뒷차") || query.includes("앞순번") || query.includes("뒷순번") || query.includes("순번") || query.includes("표준시간") || query.includes("시간표")) {
+    const baseShift = (myTodayData && !myTodayData.isOff) ? myTodayData : nextWorkShift;
+    if (baseShift && baseShift.route !== '-' && baseShift.seq !== '-') {
+      const mySeqNum = parseInt(baseShift.seq, 10);
+      let prevSeqDriver = "배차 정보 없음";
+      let nextSeqDriver = "배차 정보 없음";
+
+      allUsers.forEach(u => {
+        const s = localStorage.getItem(`jpil_user_${u.name}_sched_${baseShift.dateStr}`);
+        if (s) {
+          try {
+            const d = JSON.parse(s);
+            if (d.route === baseShift.route) {
+              const sNum = parseInt(d.seq, 10);
+              if (!isNaN(mySeqNum)) {
+                if (sNum === mySeqNum - 1) prevSeqDriver = `${d.seq}순번 ${u.name} 기사님 (차량 ${d.busNo || '-'}, ${d.workType || ''}, 시간 ${d.time || '-'})`;
+                if (sNum === mySeqNum + 1) nextSeqDriver = `${d.seq}순번 ${u.name} 기사님 (차량 ${d.busNo || '-'}, ${d.workType || ''}, 시간 ${d.time || '-'})`;
+              }
+            }
+          } catch(e) {}
+        }
+      });
+
+      let ttSample = "";
+      if (typeof customGetItem === 'function') {
+        const tt = customGetItem(baseShift.route, baseShift.seq);
+        if (tt && tt.length > 0) {
+          const rounds = tt.slice(0, 3).map((r, i) => `${i + 1}회차: 출발 ${r.time1 || '-'} / 회차 ${r.time2 || '-'} / 도착 ${r.time3 || '-'}`).join(', ');
+          ttSample = `\n- ${baseShift.route}번 ${baseShift.seq}순번 표준 운행 시간표: ${rounds}`;
+        }
+      }
+
+      sequenceReport = `\n[앞순번 / 뒷순번 운행 정보 (${baseShift.route}번 ${baseShift.dateStr} 기준)]
+- 내 순번: ${baseShift.seq}순번 (${myName} 기사님, 차량 ${baseShift.busNo})
+- 앞순번(앞차): ${prevSeqDriver}
+- 뒷순번(뒷차): ${nextSeqDriver}${ttSample}`;
+    }
+  }
+
+  // 5. [근무 통계 집계 (이번 주 및 이번 달)]
+  let statsReport = "";
+  if (query.includes("통계") || query.includes("근무일") || query.includes("휴무") || query.includes("쉬는 날") || query.includes("몇 번") || query.includes("이번주") || query.includes("이번달")) {
+    const curYear = today.getFullYear();
+    const curMonth = today.getMonth() + 1;
+    let workDaysCount = 0;
+    let offDaysCount = 0;
+    let offDates = [];
+
+    const lastDay = new Date(curYear, curMonth, 0).getDate();
+    for (let day = 1; day <= lastDay; day++) {
+      const dStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const saved = localStorage.getItem(`jpil_user_${myName}_sched_${dStr}`);
+      if (saved) {
+        try {
+          const d = JSON.parse(saved);
+          const wt = d.workType || '';
+          if (['휴무', '휴일', '연차', '공가', '병가'].includes(wt)) {
+            offDaysCount++;
+            if (day >= today.getDate()) offDates.push(`${day}일`);
+          } else if (wt) {
+            workDaysCount++;
+          }
+        } catch(e) {}
+      }
+    }
+
+    statsReport = `\n[${myName} 기사님 이번 달(${curMonth}월) 근무 통계]
+- 총 근무일수: ${workDaysCount}일
+- 총 휴무일수: ${offDaysCount}일
+- 향후 남은 예정 휴무일: ${offDates.length > 0 ? offDates.join(', ') : '없음'}`;
+  }
+
+  // 6. [전체 기사 당일 배차 요약]
+  let userSchedList = [];
   allUsers.forEach(u => {
     const saved = localStorage.getItem(`jpil_user_${u.name}_sched_${todayStr}`);
     if (saved) {
@@ -10130,17 +10318,23 @@ function buildVoiceAssistantContext() {
         const d = JSON.parse(saved);
         userSchedList.push(`- ${u.name}: 노선 ${d.route || '-'}, 순번 ${d.seq || '-'}, 차량 ${d.busNo || '-'}, 형태 ${d.workType || '근무'}, 시간 ${d.time || '-'}`);
       } catch (e) { }
-    } else {
-      userSchedList.push(`- ${u.name}: 근무 미등록`);
     }
   });
 
-  return `[영종운수 실시간 운행 현황 데이터]
-- 오늘 날짜: ${todayStr} (${dayLabel})
+  return `[영종운수 실시간 스마트 운행 관제 데이터]
+- 기준 일시: ${todayStr} (${dayLabel})
 - 질문 기사님: ${myName}
-- ${myName} 기사님 오늘 스케줄: ${mySchedText}
-- 오늘 전체 기사 배차 현황:
-${userSchedList.slice(0, 40).join('\n')}`;
+- ${myName} 기사님의 가장 가까운 다음 실제 운행 일정:
+  ${nextWorkShift ? `👉 ${nextWorkShift.dateStr} (${nextWorkShift.dayW}요일, ${nextWorkShift.relLabel}): 노선 ${nextWorkShift.route}번, 순번 ${nextWorkShift.seq}, 차량번호 ${nextWorkShift.busNo}, 근무형태 ${nextWorkShift.workType}, 출근/출발시간 ${nextWorkShift.time}` : '향후 14일간 등록된 근무 일정이 없습니다.'}
+- ${myName} 기사님 오늘(${todayStr}) 상태: ${myTodayData ? `형태 ${myTodayData.workType}, 노선 ${myTodayData.route}, 차량 ${myTodayData.busNo}` : '미등록'}
+- ${myName} 기사님 향후 7일 일정 요약:
+  ${myUpcomingList.slice(0, 7).join('\n  ')}
+${vehicleSearchReport}
+${shiftPartnerReport}
+${sequenceReport}
+${statsReport}
+- 오늘 전체 기사 배차 요약 (일부):
+${userSchedList.slice(0, 25).join('\n')}`;
 }
 
 // 🖐️ 플로팅 마이크 위젯 드래그 지원 (터치 탭 오작동 방지 최적화)
