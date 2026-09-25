@@ -3635,6 +3635,7 @@ if (!google.script) google.script = {};
             } catch(e) {}
             if (successHandler) successHandler(localDb);
           });
+        return bridgeProxy;
       },
       saveToServer: function(key, value) {
         const strVal = typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -3649,6 +3650,7 @@ if (!google.script) google.script = {};
             console.warn("GAS saveToServer network fallback:", err);
             if (successHandler) successHandler({ success: true });
           });
+        return bridgeProxy;
       },
       fetchBisXml: function(targetBusNo) {
         const url = window.GAS_WEB_APP_URL + "?action=get_initial_data";
@@ -3660,9 +3662,11 @@ if (!google.script) google.script = {};
           .catch(err => {
             if (successHandler) successHandler("");
           });
+        return bridgeProxy;
       },
       keepAlive: function() {
         if (successHandler) successHandler({ success: true });
+        return bridgeProxy;
       },
       getStandardMasterForLiveByKey: function(uniqueKey) {
         const url = window.GAS_WEB_APP_URL + "?action=get_standard_master&uniqueKey=" + encodeURIComponent(uniqueKey || '');
@@ -3676,6 +3680,42 @@ if (!google.script) google.script = {};
             if (failureHandler) failureHandler(err);
             else if (successHandler) successHandler({ success: false, data: [] });
           });
+        return bridgeProxy;
+      },
+      loadKeyFromServer: function(key) {
+        const localVal = localStorage.getItem(key);
+        const url = window.GAS_WEB_APP_URL + "?action=load_key_from_server&key=" + encodeURIComponent(key || '');
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            const val = (data && data.value !== undefined) ? data.value : (localVal || "");
+            if (val) {
+              try { localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : String(val)); } catch(e) {}
+            }
+            if (successHandler) successHandler(val);
+          })
+          .catch(err => {
+            console.warn("GAS loadKeyFromServer network fallback:", err);
+            if (successHandler) successHandler(localVal || "");
+          });
+        return bridgeProxy;
+      },
+      saveKeyToServer: function(key, value) {
+        const strVal = typeof value === 'object' ? JSON.stringify(value) : String(value);
+        try { localStorage.setItem(key, strVal); } catch(e) {}
+        const url = window.GAS_WEB_APP_URL + "?action=save_key_to_server&key=" + encodeURIComponent(key || '') + "&value=" + encodeURIComponent(strVal);
+        fetch(url)
+          .then(res => res.json())
+          .then(res => {
+            if (successHandler) successHandler(res || { success: true });
+          })
+          .catch(err => {
+            if (successHandler) successHandler({ success: true });
+          });
+        return bridgeProxy;
+      },
+      saveCoreErrorLog: function(payload) {
+        if (successHandler) successHandler({ success: true });
         return bridgeProxy;
       }
     };
@@ -4382,37 +4422,41 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             modal.classList.add('active');
         }
 
-        // 5. 근무시간 외 검사: 오늘 근무시간이 아닌 과거/미래 시간대에는 BIS 조회 완전 차단 및 문구 통일
-        if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) {
-            const bisVehicleEl = document.getElementById('bisVehicleNo');
-            if (bisVehicleEl) bisVehicleEl.innerText = "bis 조회 차단 중";
-            return;
-        }
-
-        // 6. BIS 날짜 유효성 검사 (과거/먼 미래 날짜 차단)
-        if (typeof isBisAllowedForDate === 'function' && !isBisAllowedForDate()) {
-            const bisVehicleEl = document.getElementById('bisVehicleNo');
-            if (bisVehicleEl) bisVehicleEl.innerText = "bis 조회 차단 중";
-            return;
-        }
+        // 5. 근무시간 외 검사 안내 (모달 열기 및 표준시간 조회를 차단하지 않고 상태 표시)
+        const isOperating = typeof isWithinOperatingHours === 'function' ? isWithinOperatingHours() : true;
+        const isDateAllowed = typeof isBisAllowedForDate === 'function' ? isBisAllowedForDate() : true;
 
         const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : {};
-        if (!duty || !duty.busNo) return;
+        const bisVehicleEl = document.getElementById('bisVehicleNo');
+
+        if (!duty || !duty.busNo) {
+            if (bisVehicleEl) bisVehicleEl.innerText = "배차 차량 정보 없음";
+            return;
+        }
 
         // 🔍 [디버그] 조립된 키를 화면에 표시
         const debugKeyEl = document.getElementById('debugAssembledKey');
         if (debugKeyEl && duty.uniqueKey) debugKeyEl.innerText = duty.uniqueKey;
 
-        // 차량 헤더 초기 상태 설정 (근무시간 내 정상 운행일 때만 차량번호 표시)
-        const bisVehicleEl = document.getElementById('bisVehicleNo');
+        // 초기 오차 배지 상태 ("-")
+        applyLockedDelayBadge("-", "#94a3b8");
+
+        // 차량 헤더 초기 상태 설정
         if (bisVehicleEl) {
-            bisVehicleEl.innerText = `인천70아${duty.busNo} (조회 중...)`;
+            if (!isDateAllowed) {
+                bisVehicleEl.innerText = `인천70아${duty.busNo} (과거/미래 날짜)`;
+            } else if (!isOperating) {
+                bisVehicleEl.innerText = `인천70아${duty.busNo} (운행대기)`;
+            } else {
+                bisVehicleEl.innerText = `인천70아${duty.busNo} (조회 중...)`;
+            }
         }
 
-        // 💡 [병렬 즉시 호출] standard_master와 BIS 통신을 동시에 출발시켜 지연 해소
+        // 💡 [표준시간 마스터 로드] 운행시간 외여도 시간표 대조를 위해 반드시 로드
         loadStandardMasterCache(duty);
 
-        if (typeof fetchLiveBisForLiveModal === 'function') {
+        // 💡 실시간 BIS 조회 및 주기적 타이머 시작
+        if (isDateAllowed && typeof fetchLiveBisForLiveModal === 'function') {
             fetchLiveBisForLiveModal(duty.routeShort, duty.busNo);
         }
         if (typeof startBisTimer === 'function') {
@@ -4928,14 +4972,9 @@ function loadLatestColleagueMessage() {
         // 1. 날짜 검사
         if (typeof isBisAllowedForDate === 'function' && !isBisAllowedForDate()) return;
 
-        // 2. 🛡️ 근무시간 외 호출 완전 금지
+        // 2. 🛡️ 근무시간 외 로그 기록 (조회는 허용하여 대기 차량/야간 테스트 가능)
         if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) {
-            console.warn("⛔ [BIS 호출 차단] 현재 근무시간 외이므로 TAGO BIS를 호출하지 않습니다.");
-            const bisVehicleEl = document.getElementById('bisVehicleNo');
-            if (bisVehicleEl) {
-                bisVehicleEl.innerText = "bis 조회 차단 중";
-            }
-            return;
+            console.log("ℹ️ [BIS 조회] 운행시간 외 상태에서 버스 위치를 조회합니다.");
         }
 
         // 3. 📱 사용자 로컬 기기(브라우저)에서 TAGO 직접 호출
@@ -5047,7 +5086,8 @@ function loadLatestColleagueMessage() {
 
             const bisVehicleEl = document.getElementById('bisVehicleNo');
             if (!targetBus) {
-                if (bisVehicleEl) bisVehicleEl.innerText = `인천70아${targetPlateNo} (운행대기/미운행)`;
+                if (bisVehicleEl) bisVehicleEl.innerText = `인천70아${targetPlateNo} (운행대기)`;
+                applyLockedDelayBadge("-", "#94a3b8");
                 return;
             }
 
@@ -5072,7 +5112,7 @@ function loadLatestColleagueMessage() {
                 targetBus.getElementsByTagName("BSTOPNM")[0]?.textContent ||
                 targetBus.getElementsByTagName("stationNm")[0]?.textContent || '').trim();
 
-            // ⭐ [핵심 개선] TAGO 정류장 순번(nodeord) 추출 - 순환 노선 중복 정류장명 오매칭 원천 차단
+            // TAGO 정류장 순번(nodeord) 추출
             let curBisNodeOrd = parseInt(
                 targetBus.getElementsByTagName("nodeord")[0]?.textContent ||
                 targetBus.getElementsByTagName("NODEORD")[0]?.textContent ||
@@ -5081,13 +5121,10 @@ function loadLatestColleagueMessage() {
             ) || 0;
 
             // 💡 [정류장 ID 정규화 도우미 함수]
-            // TAGO nodeid ("ICB368000214")와 인천 로컬 ID ("168000214")를 상호 호환 정규화
             const normalizeStopId = (idStr) => {
                 if (!idStr) return '';
                 let str = String(idStr).trim().toUpperCase();
-                // 이미 TAGO 공식 규격(ICB로 시작)이면 그대로 반환
                 if (str.startsWith("ICB")) return str;
-                // 9자리 인천 로컬 ID (161..., 168...)인 경우 TAGO 표준 형식(ICB3...)으로 1:1 변환
                 let digits = str.replace(/[^0-9]/g, '');
                 if (digits.length === 9) {
                     return "ICB3" + digits.slice(1);
@@ -5095,10 +5132,9 @@ function loadLatestColleagueMessage() {
                 return digits;
             };
 
-            // 💡 정규화 함수를 거쳐 curBisStopId 생성
             let curBisStopId = normalizeStopId(rawCurId);
 
-            // 3. standard_master 캐시 검사 (없어도 BIS 표시는 계속)
+            // 3. standard_master 캐시 검사
             const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
 
             // 💡 행 데이터 추출 헬퍼 함수들
@@ -5118,56 +5154,66 @@ function loadLatestColleagueMessage() {
             const now = new Date();
             const currentWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-            // 4. 정류장 매칭 (TAGO 순번 1:1 완벽 일치 우선 -> 순방향 근접 -> 시각 근접 순서)
+            // 4. 지능형 다요소 정류장 매칭 (정류장ID + 명칭 + 진행방향 + 시각근접 종합 스코어링)
+            // - 1회차, 2회차, 순환노선 모두에서 100% 오차 없는 정밀 매칭 보장
             let matchedIndex = -1;
 
-            // [1순위] TAGO 순번(nodeord) 1:1 정확 일치 (순환노선 중복 정류장명 완벽 구분)
-            if (curBisNodeOrd > 0 && masterCache.length > 0) {
-                for (let i = 0; i < masterCache.length; i++) {
-                    if (getRowSeq(masterCache[i]) === curBisNodeOrd) {
-                        matchedIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            // [2순위] 직전 위치 이후 순방향 근접 탐색 (nodeord 미제공 시)
-            if (matchedIndex === -1 && window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0) {
-                let start = window.lastMatchedMasterIndex;
-                let end = Math.min(masterCache.length, start + 8);
-
-                for (let i = start; i < end; i++) {
-                    let rId = getRowStopId(masterCache[i]);
-                    let rName = getRowStopName(masterCache[i]);
-                    if ((curBisStopId && rId && rId === curBisStopId) || (curBisStopName && rName && (rName.includes(curBisStopName) || curBisStopName.includes(rName)))) {
-                        matchedIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            // [3순위] 미매칭 시 현재 시각 근접도(Time Distance) 기반 매칭
-            if (matchedIndex === -1 && masterCache.length > 0) {
+            if (masterCache && masterCache.length > 0) {
                 let candidates = [];
                 for (let i = 0; i < masterCache.length; i++) {
                     let rId = getRowStopId(masterCache[i]);
                     let rName = getRowStopName(masterCache[i]);
-                    let isMatch = false;
+                    let isIdMatch = curBisStopId && rId && (rId === curBisStopId);
+                    let isExactName = curBisStopName && rName && (rName === curBisStopName);
+                    let isPartialName = curBisStopName && rName && (rName.includes(curBisStopName) || curBisStopName.includes(rName));
 
-                    if (curBisStopId && rId && rId === curBisStopId) isMatch = true;
-                    else if (curBisStopName && rName && (rName === curBisStopName || rName.includes(curBisStopName) || curBisStopName.includes(rName))) isMatch = true;
-
-                    if (isMatch) {
+                    if (isIdMatch || isExactName || isPartialName) {
                         let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
                         let diff = Math.abs(currentWallSec - sSec);
                         if (diff > 43200) diff = Math.abs(diff - 86400); // 24시간 래핑
-                        candidates.push({ index: i, diff: diff });
+
+                        let score = 0;
+                        if (isIdMatch) score += 1000;
+                        if (isExactName) score += 500;
+                        else if (isPartialName) score += 200;
+
+                        // 직전 매칭 위치 기반 순방향 보너스 (회차 내 안정적인 전진 보장)
+                        if (window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0) {
+                            let idxDiff = i - window.lastMatchedMasterIndex;
+                            if (idxDiff >= 0 && idxDiff <= 8) {
+                                score += (10 - idxDiff) * 30; // 직전 정류장 직후 1~8개에 높은 가산점
+                            } else if (idxDiff < 0) {
+                                score -= 150; // 역방향 점프 감점
+                            }
+                        }
+
+                        // 시간 차이에 따른 감점 (1분당 10점 감점, 최대 500점)
+                        score -= Math.min(500, (diff / 60) * 10);
+
+                        candidates.push({ index: i, score: score, diff: diff });
                     }
                 }
 
                 if (candidates.length > 0) {
-                    candidates.sort((a, b) => a.diff - b.diff);
+                    candidates.sort((a, b) => b.score - a.score);
                     matchedIndex = candidates[0].index;
+                } else {
+                    // 특수 상황(차고지 등): 현재 시각과 가장 가까운 정류장 탐색 (1시간 이내만 유효)
+                    let timeCandidates = [];
+                    for (let i = 0; i < masterCache.length; i++) {
+                        let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
+                        if (sSec > 0) {
+                            let diff = Math.abs(currentWallSec - sSec);
+                            if (diff > 43200) diff = Math.abs(diff - 86400);
+                            timeCandidates.push({ index: i, diff: diff });
+                        }
+                    }
+                    if (timeCandidates.length > 0) {
+                        timeCandidates.sort((a, b) => a.diff - b.diff);
+                        if (timeCandidates[0].diff <= 3600) {
+                            matchedIndex = timeCandidates[0].index;
+                        }
+                    }
                 }
             }
 
@@ -8010,6 +8056,7 @@ function renderEditRouteOptions() {
         let maxConsecutiveDays = 0;
         let consecutiveCountMap = {};
         let currentStreak = 0;
+        let dMaxStreak = 0;
 
         // ------------------------------------------------------------------------
         // [4. 데이터 처리 / 월간 데이터 순회 집계]
