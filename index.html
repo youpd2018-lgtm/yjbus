@@ -2438,6 +2438,139 @@ top: 8%;
         line-height: 1.6;
         color: #f8fafc;
         word-break: keep-all;
+    /* ============================================================== */
+    /* 🍌 [나노바나나 에디션] 4-헤더 HUD 스마트 메시지 & 시간표 박스  */
+    /* ============================================================== */
+    .hud-folder-card {
+        margin-top: 16px;
+        margin-bottom: 18px;
+        position: relative;
+    }
+
+    /* 캡슐형 세그먼트 헤더 바 */
+    .hud-tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        width: 100%;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-radius: 14px;
+        padding: 4px;
+        margin-bottom: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        box-sizing: border-box;
+    }
+
+    /* 개별 탭 버튼 */
+    .hud-tab-btn {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: 1.5px solid transparent;
+        border-radius: 10px;
+        padding: 9px 3px 8px 3px;
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hud-tab-btn:hover {
+        color: #cbd5e1;
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* 탭별 네온 활성화 테마 */
+    .hud-tab-btn.active[data-tab="timetable"] {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border-color: #38bdf8;
+        color: #38bdf8;
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+    }
+
+    .hud-tab-btn.active[data-tab="route"] {
+        background: linear-gradient(135deg, rgba(14, 116, 144, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border-color: #0ea5e9;
+        color: #38bdf8;
+        box-shadow: 0 0 14px rgba(14, 165, 233, 0.45);
+    }
+
+    .hud-tab-btn.active[data-tab="shift"] {
+        background: linear-gradient(135deg, rgba(180, 83, 9, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border-color: #f59e0b;
+        color: #fbbf24;
+        box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
+    }
+
+    .hud-tab-btn.active[data-tab="memo"] {
+        background: linear-gradient(135deg, rgba(109, 40, 217, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+        border-color: #a855f7;
+        color: #c084fc;
+        box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+    }
+
+    /* 본문 글래스모피즘 HUD 컨테이너 */
+    .hud-tab-body {
+        background: linear-gradient(165deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1.5px solid rgba(56, 189, 248, 0.45);
+        border-radius: 16px;
+        padding: 14px 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 16px rgba(56, 189, 248, 0.15);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 메뉴 전환 시 미려한 페이드 & 슬라이드인 애니메이션 */
+    .hud-panel-content {
+        animation: hudPanelEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes hudPanelEnter {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.995);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* HUD 전용 네온 텍스트에어리어 */
+    .hud-memo-textarea {
+        width: 100%;
+        min-height: 140px;
+        border: 1.5px solid rgba(71, 85, 105, 0.8);
+        border-radius: 12px;
+        padding: 14px;
+        box-sizing: border-box;
+        background: rgba(11, 19, 38, 0.9);
+        color: #f8fafc;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.6;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.25s, box-shadow 0.25s;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud-memo-textarea:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.25), inset 0 2px 6px rgba(0, 0, 0, 0.4);
     }
 
 </style>
@@ -2688,7 +2821,7 @@ top: 8%;
     <div class="bli-top-area">
       <!-- 202 번호 + 우측 6순번 -->
       <div class="bli-main-route-row">
-        <span id="bliRouteNum" class="bli-route-num">202</span>
+        <span id="bliRouteNum" class="bli-route-num">-</span>
         <div class="bli-seq-group">
           <span id="bliSeqNum" class="bli-seq-num">6</span>
           <span id="bliSeqLabel" class="bli-seq-label">순번</span>
@@ -2782,49 +2915,37 @@ top: 8%;
 </div>
 
 
-      <!-- [3번 카드] 오늘의 시간표 & 통합 메모 파일첩 (시간표 / 노선정보 / 교대정보 / 오늘의메모 탭 공간 공유) -->
-      <div class="today-timetable-folder" id="unifiedScheduleFolder" style="margin-top: 18px; margin-bottom: 18px;">
+      <!-- [3번 카드] 🍌 [나노바나나 HUD 에디션] 오늘의 시간표 & 통합 메모 HUD (시간표 / 노선정보 / 교대정보 / 오늘의메모) -->
+      <div class="today-timetable-folder hud-folder-card" id="unifiedScheduleFolder">
 
-        <!-- 상단 탭 헤더 바: [오늘의 시간표] + 우측 나란히 작은 탭 [노선정보] [교대정보] [오늘의메모] -->
-        <div style="display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; padding: 0 4px; margin-bottom: -1.5px; position: relative; z-index: 20; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
-          
+        <!-- 나노바나나 세그먼트 캡슐 헤더 바 -->
+        <div class="hud-tab-bar" id="hudTabBar">
           <!-- 탭 1: 오늘의 시간표 (메인 탭) -->
-          <button type="button" id="todayTimetableTabBtn" onclick="switchScheduleTab('timetable')"
-            style="background: #1e293b; border: 1.5px solid #60a5fa; border-bottom: none; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 8px 14px 7px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #60a5fa; font-size: 14px; font-weight: 900; letter-spacing: -0.2px; flex-shrink: 0; box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.2); transition: all 0.2s;">
-            <iconify-icon icon="solar:folder-with-files-bold-duotone" style="font-size: 17px;"></iconify-icon>
+          <button type="button" class="hud-tab-btn active" id="todayTimetableTabBtn" data-tab="timetable" onclick="switchScheduleTab('timetable')">
             <span>오늘의 시간표</span>
-            <iconify-icon id="todayTimetableArrow" icon="solar:alt-arrow-down-bold"
-              style="color: #94a3b8; font-size: 12px; margin-left: 2px; transition: transform 0.25s ease;"></iconify-icon>
           </button>
 
           <!-- 탭 2: 노선정보 -->
-          <button type="button" id="tabBtnRoute" onclick="switchScheduleTab('route')"
-            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
-            <iconify-icon icon="mdi:bus-clock" style="font-size: 15px;"></iconify-icon>
+          <button type="button" class="hud-tab-btn" id="tabBtnRoute" data-tab="route" onclick="switchScheduleTab('route')">
             <span id="tabRouteLabel">노선정보</span>
           </button>
 
           <!-- 탭 3: 교대정보 -->
-          <button type="button" id="tabBtnShift" onclick="switchScheduleTab('shift')"
-            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
-            <iconify-icon icon="mdi:account-switch-outline" style="font-size: 15px;"></iconify-icon>
+          <button type="button" class="hud-tab-btn" id="tabBtnShift" data-tab="shift" onclick="switchScheduleTab('shift')">
             <span id="tabShiftLabel">교대정보</span>
           </button>
 
           <!-- 탭 4: 오늘의메모 -->
-          <button type="button" id="tabBtnMemo" onclick="switchScheduleTab('memo')"
-            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
-            <iconify-icon icon="mdi:notebook-edit-outline" style="font-size: 15px;"></iconify-icon>
+          <button type="button" class="hud-tab-btn" id="tabBtnMemo" data-tab="memo" onclick="switchScheduleTab('memo')">
             <span>오늘의메모</span>
           </button>
         </div>
 
-        <!-- 공유 본문 영역 (시간표 및 각 메모가 동일한 공간에서 화면 전환) -->
-        <div id="todayTimetableBody"
-          style="background: #1e293b; border: 1.5px solid #60a5fa; border-radius: 0 14px 14px 14px; padding: 12px 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: border-color 0.25s ease;">
+        <!-- 글래스모피즘 HUD 본문 카드 (동일 공간 화면 전환) -->
+        <div id="todayTimetableBody" class="hud-tab-body">
           
           <!-- [패널 0] 오늘의 시간표 -->
-          <div id="panelTimetable" style="display: block;">
+          <div id="panelTimetable" class="hud-panel-content" style="display: block;">
             <div id="resTimetable" class="today-timetable-scope"
               style="font-size: 13px; overflow-x: auto; color: #cbd5e1; -webkit-overflow-scrolling: touch;">
               날짜를 선택하면 시간표가 나타납니다.
@@ -2832,7 +2953,7 @@ top: 8%;
           </div>
 
           <!-- [패널 1] 노선정보 -->
-          <div id="panelRoute" style="display: none;">
+          <div id="panelRoute" class="hud-panel-content" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
                 <iconify-icon icon="mdi:bus-clock" style="font-size: 18px;"></iconify-icon> 
@@ -2843,13 +2964,12 @@ top: 8%;
                 <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
               </span>
             </div>
-            <textarea id="routeMemo" rows="5"
-              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+            <textarea id="routeMemo" class="hud-memo-textarea" rows="5"
               placeholder="해당 노선 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)"></textarea>
           </div>
 
           <!-- [패널 2] 교대정보 -->
-          <div id="panelShift" style="display: none;">
+          <div id="panelShift" class="hud-panel-content" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-size: 14px; font-weight: 800; color: #fde047; display: flex; align-items: center; gap: 6px;">
                 <iconify-icon icon="mdi:account-switch-outline" style="font-size: 18px;"></iconify-icon> 
@@ -2860,13 +2980,12 @@ top: 8%;
                 <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
               </span>
             </div>
-            <textarea id="shiftMemo" rows="5"
-              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+            <textarea id="shiftMemo" class="hud-memo-textarea" rows="5"
               placeholder="다음 교대자에게 인계할 차량/운행 특이사항을 입력하세요. (자동 저장)"></textarea>
           </div>
 
           <!-- [패널 3] 오늘의메모 -->
-          <div id="panelMemo" style="display: none;">
+          <div id="panelMemo" class="hud-panel-content" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-size: 14px; font-weight: 800; color: #a78bfa; display: flex; align-items: center; gap: 6px;">
                 <iconify-icon icon="mdi:notebook-edit-outline" style="font-size: 18px;"></iconify-icon> 
@@ -2877,8 +2996,7 @@ top: 8%;
                 <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
               </span>
             </div>
-            <textarea id="todayMemo" rows="5"
-              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+            <textarea id="todayMemo" class="hud-memo-textarea" rows="5"
               placeholder="오늘 근무에 대한 나만의 메모를 남겨보세요. (자동 저장)"></textarea>
           </div>
 
@@ -7360,6 +7478,15 @@ function renderEditRouteOptions() {
         if (typeof loadTodayMemo === 'function') loadTodayMemo();
         if (typeof updateLiveStatusAndHighlight === 'function') updateLiveStatusAndHighlight();
         if (typeof calculateStats === 'function') calculateStats();
+
+        // 💡 [BOARD_DB 메모 동기화] 당일 노선 번호(예: 281번)에 맞추어 노선정보 및 교대정보 즉시 갱신
+        if (typeof loadFolderMemoTab === 'function') {
+            try {
+                loadFolderMemoTab('route');
+                loadFolderMemoTab('shift');
+                loadFolderMemoTab('memo');
+            } catch(e) {}
+        }
     }
 
 
@@ -9517,21 +9644,54 @@ function getLoggedInDriverName() {
   return "유재필";
 }
 
-// 2. 키값 추출 헬퍼 (노선번호 숫자만 / 차량번호 4자리 / 날짜기사키)
+// 2. 키값 추출 헬퍼 (노선번호 숫자만 / 날짜기사키)
+function getCurrentActiveRouteNumber() {
+  // 1) 현재 선택된 날짜의 개인 스케줄 데이터 확인 (최우선 정확도)
+  try {
+    const dateInput = document.getElementById('searchDate');
+    const dateStr = dateInput ? dateInput.value : '';
+    if (dateStr) {
+      const driverKey = typeof getDriverKey === 'function' ? getDriverKey(`sched_${dateStr}`) : `sched_${dateStr}`;
+      const saved = localStorage.getItem(driverKey);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data && data.route && data.route !== '-' && data.route !== '휴무') {
+          const m = String(data.route).match(/\d+/);
+          if (m) return m[0];
+        }
+      }
+    }
+  } catch(e) {}
+
+  // 2) 메인 화면에 렌더링된 resRoute
+  const resRouteEl = document.getElementById('resRoute');
+  if (resRouteEl && resRouteEl.innerText && resRouteEl.innerText !== '-' && resRouteEl.innerText !== '휴무') {
+    const m = resRouteEl.innerText.match(/\d+/);
+    if (m) return m[0];
+  }
+
+  // 3) 메인 화면 bliRouteNum (단, '-' 아닌 경우)
+  const bliRouteEl = document.getElementById('bliRouteNum');
+  if (bliRouteEl && bliRouteEl.innerText && bliRouteEl.innerText !== '-' && bliRouteEl.innerText !== '휴무') {
+    const m = bliRouteEl.innerText.match(/\d+/);
+    if (m) return m[0];
+  }
+
+  // 4) 등록 모달 regRoute
+  const regRouteEl = document.getElementById('regRoute');
+  if (regRouteEl && regRouteEl.value && regRouteEl.value !== '-' && regRouteEl.value !== '휴무') {
+    const m = regRouteEl.value.match(/\d+/);
+    if (m) return m[0];
+  }
+
+  // 5) 기본값
+  return '281';
+}
+
 function getBoardTargetKey(category) {
-  if (category === 'ROUTE') {
-    const rawRoute = document.getElementById('schedRouteSelectedText')?.innerText || 
-                     document.getElementById('resRoute')?.innerText ||
-                     document.getElementById('bliRouteNum')?.innerText || 
-                     document.getElementById('regRoute')?.value || '';
-    const match = rawRoute.match(/\d+/);
-    return match ? match[0] : '202';
-  } else if (category === 'SHIFT') {
-    const rawBus = document.getElementById('resBusNo')?.innerText || 
-                   document.getElementById('bliBusNo')?.innerText || 
-                   document.getElementById('regBusNo')?.value || '';
-    const digits = rawBus.replace(/[^0-9]/g, '');
-    return digits ? digits.slice(-4) : '공용차량';
+  if (category === 'ROUTE' || category === 'SHIFT') {
+    // 노선정보와 교대정보 모두 노선 번호(281 등)로 매칭
+    return getCurrentActiveRouteNumber();
   } else if (category === 'MEMO') {
     return typeof getMemoKey === 'function' ? getMemoKey() : 'today_memo';
   }
@@ -9612,7 +9772,7 @@ function switchScheduleTab(tabName) {
   body.style.display = 'block';
   if (arrow) arrow.style.transform = 'rotate(0deg)';
 
-  // 1) 패널 전환 (시간표 / 노선정보 / 교대정보 / 오늘의메모)
+  // 1) 패널 전환 (시간표 / 노선정보 / 교대정보 / 오늘의메모) + 애니메이션 재실행
   const panels = {
     timetable: document.getElementById('panelTimetable'),
     route: document.getElementById('panelRoute'),
@@ -9621,12 +9781,21 @@ function switchScheduleTab(tabName) {
   };
 
   Object.keys(panels).forEach(key => {
-    if (panels[key]) {
-      panels[key].style.display = (key === tabName) ? 'block' : 'none';
+    const p = panels[key];
+    if (p) {
+      if (key === tabName) {
+        p.style.display = 'block';
+        // 애니메이션 부드러운 재실행
+        p.classList.remove('hud-panel-content');
+        void p.offsetWidth;
+        p.classList.add('hud-panel-content');
+      } else {
+        p.style.display = 'none';
+      }
     }
   });
 
-  // 2) 탭 버튼 스타일 및 테두리 색상 갱신
+  // 2) 탭 버튼 스타일 및 테두리 색상/네온 글로우 갱신
   updateScheduleTabStyles(tabName, true);
 
   // 3) 메모 탭인 경우 데이터 로드 및 높이 조절
@@ -9640,6 +9809,7 @@ function switchScheduleTab(tabName) {
 }
 
 function updateScheduleTabStyles(activeTab, isOpen) {
+  const tabs = ['timetable', 'route', 'shift', 'memo'];
   const btnMap = {
     timetable: document.getElementById('todayTimetableTabBtn'),
     route: document.getElementById('tabBtnRoute'),
@@ -9648,45 +9818,35 @@ function updateScheduleTabStyles(activeTab, isOpen) {
   };
 
   const activeColors = {
-    timetable: '#60a5fa',
-    route: '#38bdf8',
-    shift: '#fde047',
-    memo: '#a78bfa'
+    timetable: '#38bdf8',
+    route: '#0ea5e9',
+    shift: '#f59e0b',
+    memo: '#a855f7'
+  };
+
+  const activeGlows = {
+    timetable: '0 0 16px rgba(56, 189, 248, 0.35)',
+    route: '0 0 16px rgba(14, 165, 233, 0.35)',
+    shift: '0 0 16px rgba(245, 158, 11, 0.35)',
+    memo: '0 0 16px rgba(168, 85, 247, 0.35)'
   };
 
   const bodyEl = document.getElementById('todayTimetableBody');
   if (bodyEl) {
-    bodyEl.style.borderColor = activeColors[activeTab] || '#60a5fa';
+    const col = activeColors[activeTab] || '#38bdf8';
+    const glow = activeGlows[activeTab] || '0 0 16px rgba(56, 189, 248, 0.25)';
+    bodyEl.style.borderColor = col;
+    bodyEl.style.boxShadow = `0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), ${glow}`;
   }
 
-  ['timetable', 'route', 'shift', 'memo'].forEach(k => {
+  tabs.forEach(k => {
     const btn = btnMap[k];
     if (!btn) return;
     const isThisActive = (k === activeTab);
-    const color = activeColors[k];
-
-    if (isThisActive) {
-      btn.style.background = '#1e293b';
-      btn.style.borderColor = color;
-      btn.style.color = color;
-      btn.style.fontWeight = '900';
-      if (!isOpen) {
-        btn.style.borderBottom = `1.5px solid ${color}`;
-        btn.style.borderBottomLeftRadius = '10px';
-        btn.style.borderBottomRightRadius = '10px';
-      } else {
-        btn.style.borderBottom = 'none';
-        btn.style.borderBottomLeftRadius = '0px';
-        btn.style.borderBottomRightRadius = '0px';
-      }
+    if (isThisActive && isOpen) {
+      btn.classList.add('active');
     } else {
-      btn.style.background = '#0b1326';
-      btn.style.borderColor = '#334155';
-      btn.style.color = '#94a3b8';
-      btn.style.fontWeight = '700';
-      btn.style.borderBottom = 'none';
-      btn.style.borderBottomLeftRadius = '0px';
-      btn.style.borderBottomRightRadius = '0px';
+      btn.classList.remove('active');
     }
   });
 }
@@ -9705,17 +9865,13 @@ function loadFolderMemoTab(tabName) {
   const statusText = document.getElementById(statusId);
   if (!textarea) return;
 
-  // 탭 헤더 라벨에 노선번호/차량번호 동적 표기
+  // 서브 라벨에만 노선번호 동적 표기 (상단 제목탭은 '노선정보', '교대정보' 깔끔하게 유지)
   if (tabName === 'route') {
     const lbl = document.getElementById('routeMemoHeaderLabel');
-    const tabLbl = document.getElementById('tabRouteLabel');
     if (lbl) lbl.innerText = `노선 주의사항 (${targetKey}번 전체 공유)`;
-    if (tabLbl) tabLbl.innerText = `노선정보 (${targetKey}번)`;
   } else if (tabName === 'shift') {
     const lbl = document.getElementById('shiftMemoHeaderLabel');
-    const tabLbl = document.getElementById('tabShiftLabel');
-    if (lbl) lbl.innerText = `교대 특이사항 (${targetKey}호 인계)`;
-    if (tabLbl) tabLbl.innerText = `교대정보 (${targetKey}호)`;
+    if (lbl) lbl.innerText = `교대 특이사항 (${targetKey}번 인계)`;
   }
 
   // 1) 로컬 스토리지 캐시 우선 표시 (0ms 즉시 노출)
