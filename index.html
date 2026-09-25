@@ -1074,15 +1074,20 @@
     #resTimetable table,
     #resTimetable .schedule-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
         margin-top: 4px;
         table-layout: fixed;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        border: 1.5px solid rgba(56, 189, 248, 0.25) !important;
     }
 
     #resTimetable th,
     #resTimetable td {
-        border: 1px solid #334155 !important;
-        padding: 7px 2px !important;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
+        border-right: 1px solid rgba(51, 65, 85, 0.6) !important;
+        padding: 8px 3px !important;
         text-align: center;
         color: #f8fafc;
         white-space: nowrap;
@@ -2438,99 +2443,109 @@ top: 8%;
         line-height: 1.6;
         color: #f8fafc;
         word-break: keep-all;
+    }
+
     /* ============================================================== */
-    /* 🍌 [나노바나나 에디션] 4-헤더 HUD 스마트 메시지 & 시간표 박스  */
+    /* 🍌 [나노바나나 에디션] 제목헤더 박스와 내용박스 분리 둥근 HUD 디자인 */
     /* ============================================================== */
     .hud-folder-card {
         margin-top: 16px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
         position: relative;
     }
 
-    /* 캡슐형 세그먼트 헤더 바 */
+    /* 1. 상단 제목헤더 박스 (완전히 독립된 둥근 캡슐 바) */
     .hud-tab-bar {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        width: 100%;
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        border-radius: 14px;
-        padding: 4px;
-        margin-bottom: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        box-sizing: border-box;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+        background: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1.6px solid rgba(56, 189, 248, 0.35) !important;
+        border-radius: 16px !important;
+        padding: 6px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12) !important;
+        box-sizing: border-box !important;
     }
 
-    /* 개별 탭 버튼 */
+    /* 개별 탭 버튼 (끝이 둥글게 처리된 사각형) */
     .hud-tab-btn {
-        flex: 1;
-        min-width: 0;
-        background: transparent;
-        border: 1.5px solid transparent;
-        border-radius: 10px;
-        padding: 9px 3px 8px 3px;
-        color: #94a3b8;
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: -0.3px;
-        white-space: nowrap;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        flex: 1 !important;
+        min-width: 0 !important;
+        background: rgba(30, 41, 59, 0.5) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 9px 2px 8px 2px !important;
+        color: #94a3b8 !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.3px !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        outline: none !important;
+        box-sizing: border-box !important;
     }
 
     .hud-tab-btn:hover {
-        color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.04);
+        color: #e2e8f0 !important;
+        background: rgba(51, 65, 85, 0.6) !important;
     }
 
-    /* 탭별 네온 활성화 테마 */
+    /* 탭별 네온 활성화 테마 (나노바나나 목업 100% 일치: 둥근 사각 테두리 + 글로우 + 텍스트 발광) */
     .hud-tab-btn.active[data-tab="timetable"] {
-        background: linear-gradient(135deg, rgba(30, 58, 138, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border-color: #38bdf8;
-        color: #38bdf8;
-        box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+        background: linear-gradient(135deg, rgba(14, 116, 144, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+        border: 1.8px solid #38bdf8 !important;
+        color: #38bdf8 !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
+        text-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
     }
 
     .hud-tab-btn.active[data-tab="route"] {
-        background: linear-gradient(135deg, rgba(14, 116, 144, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border-color: #0ea5e9;
-        color: #38bdf8;
-        box-shadow: 0 0 14px rgba(14, 165, 233, 0.45);
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+        border: 1.8px solid #0ea5e9 !important;
+        color: #38bdf8 !important;
+        box-shadow: 0 0 16px rgba(14, 165, 233, 0.5), inset 0 0 10px rgba(14, 165, 233, 0.2) !important;
+        text-shadow: 0 0 8px rgba(14, 165, 233, 0.6) !important;
     }
 
     .hud-tab-btn.active[data-tab="shift"] {
-        background: linear-gradient(135deg, rgba(180, 83, 9, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border-color: #f59e0b;
-        color: #fbbf24;
-        box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
+        background: linear-gradient(135deg, rgba(217, 119, 6, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+        border: 1.8px solid #f59e0b !important;
+        color: #fbbf24 !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(245, 158, 11, 0.2) !important;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
     }
 
     .hud-tab-btn.active[data-tab="memo"] {
-        background: linear-gradient(135deg, rgba(109, 40, 217, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
-        border-color: #a855f7;
-        color: #c084fc;
-        box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+        border: 1.8px solid #a855f7 !important;
+        color: #c084fc !important;
+        box-shadow: 0 0 16px rgba(168, 85, 247, 0.5), inset 0 0 10px rgba(168, 85, 247, 0.2) !important;
+        text-shadow: 0 0 8px rgba(168, 85, 247, 0.6) !important;
     }
 
-    /* 본문 글래스모피즘 HUD 컨테이너 */
+    /* 2. 하단 내용 박스 (헤더와 완전히 분리된 끝이 둥글게 처리된 사각형 카드) */
     .hud-tab-body {
-        background: linear-gradient(165deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1.5px solid rgba(56, 189, 248, 0.45);
-        border-radius: 16px;
-        padding: 14px 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 16px rgba(56, 189, 248, 0.15);
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        position: relative;
-        overflow: hidden;
+        margin-top: 10px !important;
+        background: linear-gradient(165deg, rgba(22, 33, 56, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1.8px solid rgba(56, 189, 248, 0.45) !important;
+        border-radius: 20px !important;
+        padding: 16px 14px !important;
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 20px rgba(56, 189, 248, 0.16) !important;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+        position: relative !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
     }
 
     /* 메뉴 전환 시 미려한 페이드 & 슬라이드인 애니메이션 */
@@ -2554,7 +2569,7 @@ top: 8%;
         width: 100%;
         min-height: 140px;
         border: 1.5px solid rgba(71, 85, 105, 0.8);
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 14px;
         box-sizing: border-box;
         background: rgba(11, 19, 38, 0.9);
@@ -2570,7 +2585,7 @@ top: 8%;
 
     .hud-memo-textarea:focus {
         border-color: #38bdf8;
-        box-shadow: 0 0 12px rgba(56, 189, 248, 0.25), inset 0 2px 6px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.3), inset 0 2px 6px rgba(0, 0, 0, 0.4);
     }
 
 </style>
@@ -2915,34 +2930,41 @@ top: 8%;
 </div>
 
 
-      <!-- [3번 카드] 🍌 [나노바나나 HUD 에디션] 오늘의 시간표 & 통합 메모 HUD (시간표 / 노선정보 / 교대정보 / 오늘의메모) -->
-      <div class="today-timetable-folder hud-folder-card" id="unifiedScheduleFolder">
+      <!-- [3번 카드] 🍌 [나노바나나 HUD 에디션] 제목헤더 박스와 내용박스 분리 둥근 사각 디자인 -->
+      <div class="today-timetable-folder hud-folder-card" id="unifiedScheduleFolder" style="margin-top: 16px; margin-bottom: 20px;">
 
-        <!-- 나노바나나 세그먼트 캡슐 헤더 바 -->
-        <div class="hud-tab-bar" id="hudTabBar">
-          <!-- 탭 1: 오늘의 시간표 (메인 탭) -->
-          <button type="button" class="hud-tab-btn active" id="todayTimetableTabBtn" data-tab="timetable" onclick="switchScheduleTab('timetable')">
+        <!-- 1. 독립된 상단 제목헤더 캡슐 박스 -->
+        <div class="hud-tab-bar" id="hudTabBar"
+          style="display: flex; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 6px; margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12);">
+          
+          <!-- 탭 1: 오늘의 시간표 (메인 탭, 끝이 둥글게 처리된 사각형) -->
+          <button type="button" class="hud-tab-btn active" id="todayTimetableTabBtn" data-tab="timetable" onclick="switchScheduleTab('timetable')"
+            style="flex: 1; min-width: 0; background: linear-gradient(135deg, rgba(14, 116, 144, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.8px solid #38bdf8; border-radius: 12px; padding: 9px 2px 8px 2px; color: #38bdf8; font-size: 13px; font-weight: 900; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.2); text-shadow: 0 0 8px rgba(56, 189, 248, 0.6); outline: none;">
             <span>오늘의 시간표</span>
           </button>
 
           <!-- 탭 2: 노선정보 -->
-          <button type="button" class="hud-tab-btn" id="tabBtnRoute" data-tab="route" onclick="switchScheduleTab('route')">
+          <button type="button" class="hud-tab-btn" id="tabBtnRoute" data-tab="route" onclick="switchScheduleTab('route')"
+            style="flex: 1; min-width: 0; background: rgba(30, 41, 59, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 9px 2px 8px 2px; color: #94a3b8; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;">
             <span id="tabRouteLabel">노선정보</span>
           </button>
 
           <!-- 탭 3: 교대정보 -->
-          <button type="button" class="hud-tab-btn" id="tabBtnShift" data-tab="shift" onclick="switchScheduleTab('shift')">
+          <button type="button" class="hud-tab-btn" id="tabBtnShift" data-tab="shift" onclick="switchScheduleTab('shift')"
+            style="flex: 1; min-width: 0; background: rgba(30, 41, 59, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 9px 2px 8px 2px; color: #94a3b8; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;">
             <span id="tabShiftLabel">교대정보</span>
           </button>
 
           <!-- 탭 4: 오늘의메모 -->
-          <button type="button" class="hud-tab-btn" id="tabBtnMemo" data-tab="memo" onclick="switchScheduleTab('memo')">
+          <button type="button" class="hud-tab-btn" id="tabBtnMemo" data-tab="memo" onclick="switchScheduleTab('memo')"
+            style="flex: 1; min-width: 0; background: rgba(30, 41, 59, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 9px 2px 8px 2px; color: #94a3b8; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;">
             <span>오늘의메모</span>
           </button>
         </div>
 
-        <!-- 글래스모피즘 HUD 본문 카드 (동일 공간 화면 전환) -->
-        <div id="todayTimetableBody" class="hud-tab-body">
+        <!-- 2. 분리된 하단 내용 박스 (끝이 둥글게 처리된 사각형 카드) -->
+        <div id="todayTimetableBody" class="hud-tab-body"
+          style="margin-top: 10px; background: linear-gradient(165deg, rgba(22, 33, 56, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); backdrop-filter: blur(16px); border: 1.8px solid rgba(56, 189, 248, 0.45); border-radius: 20px; padding: 16px 14px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 20px rgba(56, 189, 248, 0.16); transition: border-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden; box-sizing: border-box;">
           
           <!-- [패널 0] 오늘의 시간표 -->
           <div id="panelTimetable" class="hud-panel-content" style="display: block;">
@@ -9817,26 +9839,42 @@ function updateScheduleTabStyles(activeTab, isOpen) {
     memo: document.getElementById('tabBtnMemo')
   };
 
-  const activeColors = {
-    timetable: '#38bdf8',
-    route: '#0ea5e9',
-    shift: '#f59e0b',
-    memo: '#a855f7'
-  };
-
-  const activeGlows = {
-    timetable: '0 0 16px rgba(56, 189, 248, 0.35)',
-    route: '0 0 16px rgba(14, 165, 233, 0.35)',
-    shift: '0 0 16px rgba(245, 158, 11, 0.35)',
-    memo: '0 0 16px rgba(168, 85, 247, 0.35)'
+  const activeThemes = {
+    timetable: {
+      color: '#38bdf8',
+      bg: 'linear-gradient(135deg, rgba(14, 116, 144, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%)',
+      border: '1.8px solid #38bdf8',
+      shadow: '0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.2)',
+      textShadow: '0 0 8px rgba(56, 189, 248, 0.6)'
+    },
+    route: {
+      color: '#38bdf8',
+      bg: 'linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%)',
+      border: '1.8px solid #0ea5e9',
+      shadow: '0 0 16px rgba(14, 165, 233, 0.5), inset 0 0 10px rgba(14, 165, 233, 0.2)',
+      textShadow: '0 0 8px rgba(14, 165, 233, 0.6)'
+    },
+    shift: {
+      color: '#fbbf24',
+      bg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%)',
+      border: '1.8px solid #f59e0b',
+      shadow: '0 0 16px rgba(245, 158, 11, 0.5), inset 0 0 10px rgba(245, 158, 11, 0.2)',
+      textShadow: '0 0 8px rgba(245, 158, 11, 0.6)'
+    },
+    memo: {
+      color: '#c084fc',
+      bg: 'linear-gradient(135deg, rgba(147, 51, 234, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%)',
+      border: '1.8px solid #a855f7',
+      shadow: '0 0 16px rgba(168, 85, 247, 0.5), inset 0 0 10px rgba(168, 85, 247, 0.2)',
+      textShadow: '0 0 8px rgba(168, 85, 247, 0.6)'
+    }
   };
 
   const bodyEl = document.getElementById('todayTimetableBody');
   if (bodyEl) {
-    const col = activeColors[activeTab] || '#38bdf8';
-    const glow = activeGlows[activeTab] || '0 0 16px rgba(56, 189, 248, 0.25)';
-    bodyEl.style.borderColor = col;
-    bodyEl.style.boxShadow = `0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), ${glow}`;
+    const theme = activeThemes[activeTab] || activeThemes.timetable;
+    bodyEl.style.borderColor = theme.color;
+    bodyEl.style.boxShadow = `0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 20px ${theme.color}33`;
   }
 
   tabs.forEach(k => {
@@ -9845,8 +9883,21 @@ function updateScheduleTabStyles(activeTab, isOpen) {
     const isThisActive = (k === activeTab);
     if (isThisActive && isOpen) {
       btn.classList.add('active');
+      const t = activeThemes[k];
+      btn.style.background = t.bg;
+      btn.style.border = t.border;
+      btn.style.color = t.color;
+      btn.style.boxShadow = t.shadow;
+      btn.style.textShadow = t.textShadow;
+      btn.style.fontWeight = '900';
     } else {
       btn.classList.remove('active');
+      btn.style.background = 'rgba(30, 41, 59, 0.5)';
+      btn.style.border = '1.5px solid rgba(255, 255, 255, 0.08)';
+      btn.style.color = '#94a3b8';
+      btn.style.boxShadow = 'none';
+      btn.style.textShadow = 'none';
+      btn.style.fontWeight = '800';
     }
   });
 }
