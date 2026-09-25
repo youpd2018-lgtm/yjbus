@@ -3587,11 +3587,12 @@ if (!google.script) google.script = {};
         failureHandler = fn;
         return bridgeProxy;
       },
-      askGeminiVoiceAssistant: function(query, context) {
+      askGeminiVoiceAssistant: function(query, context, history) {
         const payload = {
           action: 'ask_gemini',
           query: query || "",
-          context: (context || "").slice(0, 1500)
+          context: (context || "").slice(0, 1500),
+          history: history || []
         };
         fetch(window.GAS_WEB_APP_URL, {
           method: 'POST',
@@ -3896,10 +3897,28 @@ if (!google.script) google.script = {};
                 return false;
             }
 
-            // 당일 전체 운행의 첫 시작 시간(P1)과 마지막 종료 시간(P3) 도출
-            const firstTripTimeStr = list[0]?.time1;
-            const lastTrip = list[list.length - 1];
-            const lastTripTimeStr = lastTrip ? lastTrip[`time${colCount}`] : null;
+            // 당일 전체 운행의 첫 시작 시간(P1)과 마지막 종료 시간 도출
+            let firstTripTimeStr = null;
+            for (let i = 0; i < list.length; i++) {
+                if (list[i] && list[i].time1 && list[i].time1.trim() !== '') {
+                    firstTripTimeStr = list[i].time1;
+                    break;
+                }
+            }
+            
+            let lastTripTimeStr = null;
+            
+            // list를 뒤에서부터 탐색하여 유효한 마지막 도착 시간을 찾음
+            for (let i = list.length - 1; i >= 0; i--) {
+                const trip = list[i];
+                for (let c = colCount; c >= 1; c--) {
+                    if (trip[`time${c}`] && trip[`time${c}`].trim() !== '') {
+                        lastTripTimeStr = trip[`time${c}`];
+                        break;
+                    }
+                }
+                if (lastTripTimeStr) break;
+            }
 
             if (!firstTripTimeStr || !lastTripTimeStr) {
                 console.warn("🔍 [시간 판정] 첫 회차 시작 시간 또는 마지막 회차 종료 시간을 찾을 수 없습니다.");
@@ -9731,15 +9750,22 @@ function createFreshRecognition() {
       const contextText = buildVoiceAssistantContext(queryText);
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
+        window.geminiChatHistory = window.geminiChatHistory || [];
+        
         google.script.run
           .withSuccessHandler(function (responseAnswer) {
+            window.geminiChatHistory.push({ role: 'user', text: queryText });
+            window.geminiChatHistory.push({ role: 'model', text: responseAnswer || "말씀하신 내용을 확인하지 못했어요." });
+            if (window.geminiChatHistory.length > 6) {
+               window.geminiChatHistory = window.geminiChatHistory.slice(window.geminiChatHistory.length - 6);
+            }
             speakVoiceAnswer(responseAnswer || "말씀하신 내용을 확인하지 못했어요. 다음 질문이 있으신가요?");
           })
           .withFailureHandler(function (err) {
             console.error("Gemini 호출 실패:", err);
             speakVoiceAnswer("잠시 통신에 문제가 생겼어요. 다시 말씀해 주세요.");
           })
-          .askGeminiVoiceAssistant(queryText, contextText);
+          .askGeminiVoiceAssistant(queryText, contextText, window.geminiChatHistory);
       } else {
         speakVoiceAnswer("서버에 연결할 수 없습니다.");
       }
