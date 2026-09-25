@@ -3588,58 +3588,25 @@ if (!google.script) google.script = {};
         return bridgeProxy;
       },
       askGeminiVoiceAssistant: function(query, context) {
-        const apiKey = atob("QVEuQWI4Uk42TEdjZnN1YlFBUDZOdUhITkJuSWNYZGY4Vm1nZkZFc0dfSUtya1Z5Y3RmbWc=");
-        const models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3-flash-preview"];
-        const systemPrompt = "너는 영종운수 시내버스 스마트 음성 비서야. 버스 기사님이 운전 또는 휴식 중에 음성으로 질문하셨어. 질문 의도를 정확히 파악하여 참고 데이터에 있는 다음 운행일정, 차량 배차자, 교대자, 앞뒤 순번, 통계 정보 등을 친절하게 답변해줘. 오늘이 휴무이더라도 다음 근무 일정을 물어보시면 다음 실제 출근/운행 일정을 꼭 알려줘. 반드시 1~2문장의 간결하고 명확한 구어체로 대답하고 특수문자나 별표 기호는 절대 쓰지 마. 기사님께 힘이 되는 안전운행 멘트를 자연스럽게 덧붙여줘.";
-        const promptText = (context ? (context + "\n\n") : "") + "기사님 질문: " + query;
-
-        function tryNextModel(idx) {
-          if (idx >= models.length) {
-            // 모든 직접 호출 모델 실패 시 GAS 백업 호출
-            const gasUrl = window.GAS_WEB_APP_URL + "?action=ask_gemini&query=" + encodeURIComponent(query || "") + "&context=" + encodeURIComponent((context || "").slice(0, 1500));
-            fetch(gasUrl)
-              .then(res => res.json())
-              .then(data => {
-                if (successHandler) successHandler(data && data.answer ? data.answer : "말씀하신 내용을 확인하지 못했습니다.");
-              })
-              .catch(err => {
-                console.error("GAS Gemini API Error:", err);
-                if (failureHandler) failureHandler(err);
-              });
-            return;
-          }
-
-          const model = models[idx];
-          const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
-
-          fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: systemPrompt }] },
-              contents: [{ parts: [{ text: promptText }] }]
-            })
-          })
-            .then(res => {
-              if (!res.ok) throw new Error("HTTP " + res.status);
-              return res.json();
-            })
-            .then(data => {
-              if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-                let ans = data.candidates[0].content.parts[0].text;
-                ans = ans.replace(/[*_#~<>\[\]]/g, "").replace(/\s+/g, " ").trim();
-                if (successHandler) successHandler(ans);
-              } else {
-                throw new Error("Direct Gemini response empty");
-              }
-            })
-            .catch(err => {
-              console.warn("Direct Gemini model " + model + " failed, trying next:", err);
-              tryNextModel(idx + 1);
-            });
-        }
-
-        tryNextModel(0);
+        const payload = {
+          action: 'ask_gemini',
+          query: query || "",
+          context: (context || "").slice(0, 1500)
+        };
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (successHandler) successHandler(data && data.answer ? data.answer : "말씀하신 내용을 확인하지 못했습니다.");
+        })
+        .catch(err => {
+          console.error("GAS Gemini API Error:", err);
+          if (failureHandler) failureHandler(err);
+        });
+        return bridgeProxy;
       },
       loadFromServer: function() {
         const url = window.GAS_WEB_APP_URL + "?action=load_from_server";
