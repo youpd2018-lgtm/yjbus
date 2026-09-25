@@ -2782,159 +2782,108 @@ top: 8%;
 </div>
 
 
-      <!-- [3번 카드] 오늘의 시간표 (파일첩 탭 디자인 & 접이식 슬라이드 토글) -->
-      <!-- 🌟 [수정 코드] 위쪽 여백(margin-top) 16px 추가 -->
-<div class="today-timetable-folder" style="margin-top: 18px; margin-bottom: 18px;">
+      <!-- [3번 카드] 오늘의 시간표 & 통합 메모 파일첩 (시간표 / 노선정보 / 교대정보 / 오늘의메모 탭 공간 공유) -->
+      <div class="today-timetable-folder" id="unifiedScheduleFolder" style="margin-top: 18px; margin-bottom: 18px;">
 
-
-        <!-- 파일첩 탭 상단 바 (좌측 곡선 탭 + 우측 LIVE 버튼) -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; position: relative;">
-          <!-- 파일첩 탭 버튼 -->
-          <div id="todayTimetableTabBtn" onclick="toggleTodayTimetable()"
-            style="background: #1e293b; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 14px; border-top-right-radius: 22px; padding: 9px 18px 8px 14px; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; position: relative; z-index: 2; margin-bottom: -1.5px; box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.2);">
-            <iconify-icon icon="solar:folder-with-files-bold-duotone"
-              style="color: #60a5fa; font-size: 19px;"></iconify-icon>
-            <span style="font-size: 15px; font-weight: 900; color: #60a5fa; letter-spacing: -0.2px;">오늘의 시간표</span>
+        <!-- 상단 탭 헤더 바: [오늘의 시간표] + 우측 나란히 작은 탭 [노선정보] [교대정보] [오늘의메모] -->
+        <div style="display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; padding: 0 4px; margin-bottom: -1.5px; position: relative; z-index: 20; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+          
+          <!-- 탭 1: 오늘의 시간표 (메인 탭) -->
+          <button type="button" id="todayTimetableTabBtn" onclick="switchScheduleTab('timetable')"
+            style="background: #1e293b; border: 1.5px solid #60a5fa; border-bottom: none; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 8px 14px 7px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #60a5fa; font-size: 14px; font-weight: 900; letter-spacing: -0.2px; flex-shrink: 0; box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.2); transition: all 0.2s;">
+            <iconify-icon icon="solar:folder-with-files-bold-duotone" style="font-size: 17px;"></iconify-icon>
+            <span>오늘의 시간표</span>
             <iconify-icon id="todayTimetableArrow" icon="solar:alt-arrow-down-bold"
-              style="color: #94a3b8; font-size: 13px; margin-left: 2px; transition: transform 0.25s ease;"></iconify-icon>
-          </div>
+              style="color: #94a3b8; font-size: 12px; margin-left: 2px; transition: transform 0.25s ease;"></iconify-icon>
+          </button>
 
+          <!-- 탭 2: 노선정보 -->
+          <button type="button" id="tabBtnRoute" onclick="switchScheduleTab('route')"
+            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
+            <iconify-icon icon="mdi:bus-clock" style="font-size: 15px;"></iconify-icon>
+            <span id="tabRouteLabel">노선정보</span>
+          </button>
+
+          <!-- 탭 3: 교대정보 -->
+          <button type="button" id="tabBtnShift" onclick="switchScheduleTab('shift')"
+            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
+            <iconify-icon icon="mdi:account-switch-outline" style="font-size: 15px;"></iconify-icon>
+            <span id="tabShiftLabel">교대정보</span>
+          </button>
+
+          <!-- 탭 4: 오늘의메모 -->
+          <button type="button" id="tabBtnMemo" onclick="switchScheduleTab('memo')"
+            style="background: #0b1326; border: 1.5px solid #334155; border-bottom: none; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 7px 11px 6px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #94a3b8; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: all 0.2s;">
+            <iconify-icon icon="mdi:notebook-edit-outline" style="font-size: 15px;"></iconify-icon>
+            <span>오늘의메모</span>
+          </button>
         </div>
 
-        <!-- 파일첩 본문 영역 (시간표 크기 100% 유지) -->
+        <!-- 공유 본문 영역 (시간표 및 각 메모가 동일한 공간에서 화면 전환) -->
         <div id="todayTimetableBody"
-          style="background: #1e293b; border: 1.5px solid #334155; border-radius: 0 14px 14px 14px; padding: 10px 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: all 0.25s ease;">
-          <div id="resTimetable" class="today-timetable-scope"
-            style="font-size: 13px; overflow-x: auto; color: #cbd5e1; -webkit-overflow-scrolling: touch;">
-            날짜를 선택하면 시간표가 나타납니다.
+          style="background: #1e293b; border: 1.5px solid #60a5fa; border-radius: 0 14px 14px 14px; padding: 12px 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); transition: border-color 0.25s ease;">
+          
+          <!-- [패널 0] 오늘의 시간표 -->
+          <div id="panelTimetable" style="display: block;">
+            <div id="resTimetable" class="today-timetable-scope"
+              style="font-size: 13px; overflow-x: auto; color: #cbd5e1; -webkit-overflow-scrolling: touch;">
+              날짜를 선택하면 시간표가 나타납니다.
+            </div>
           </div>
+
+          <!-- [패널 1] 노선정보 -->
+          <div id="panelRoute" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <iconify-icon icon="mdi:bus-clock" style="font-size: 18px;"></iconify-icon> 
+                <span id="routeMemoHeaderLabel">노선 주의사항 (전체 공유)</span>
+              </span>
+              <span id="routeMemoSaveStatus"
+                style="font-size: 13px; color: #22c55e; font-weight: 800; opacity: 0; transition: opacity 0.3s; display: inline-flex; align-items: center; gap: 4px;">
+                <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
+              </span>
+            </div>
+            <textarea id="routeMemo" rows="5"
+              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+              placeholder="해당 노선 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)"></textarea>
+          </div>
+
+          <!-- [패널 2] 교대정보 -->
+          <div id="panelShift" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: #fde047; display: flex; align-items: center; gap: 6px;">
+                <iconify-icon icon="mdi:account-switch-outline" style="font-size: 18px;"></iconify-icon> 
+                <span id="shiftMemoHeaderLabel">교대 특이사항 (차량 인계)</span>
+              </span>
+              <span id="shiftMemoSaveStatus"
+                style="font-size: 13px; color: #22c55e; font-weight: 800; opacity: 0; transition: opacity 0.3s; display: inline-flex; align-items: center; gap: 4px;">
+                <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
+              </span>
+            </div>
+            <textarea id="shiftMemo" rows="5"
+              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+              placeholder="다음 교대자에게 인계할 차량/운행 특이사항을 입력하세요. (자동 저장)"></textarea>
+          </div>
+
+          <!-- [패널 3] 오늘의메모 -->
+          <div id="panelMemo" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: #a78bfa; display: flex; align-items: center; gap: 6px;">
+                <iconify-icon icon="mdi:notebook-edit-outline" style="font-size: 18px;"></iconify-icon> 
+                <span id="todayMemoHeaderLabel">오늘의 메모 (나만의 기록)</span>
+              </span>
+              <span id="todayMemoSaveStatus"
+                style="font-size: 13px; color: #22c55e; font-weight: 800; opacity: 0; transition: opacity 0.3s; display: inline-flex; align-items: center; gap: 4px;">
+                <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 15px;"></iconify-icon> 구글시트 저장됨
+              </span>
+            </div>
+            <textarea id="todayMemo" rows="5"
+              style="width: 100%; min-height: 140px; border: 1.5px solid #475569; border-radius: 10px; padding: 12px 14px; box-sizing: border-box; background: #0f172a; color: #f8fafc; font-size: 16px; font-weight: 700; line-height: 1.6; font-family: inherit; transition: border-color 0.2s; outline: none;"
+              placeholder="오늘 근무에 대한 나만의 메모를 남겨보세요. (자동 저장)"></textarea>
+          </div>
+
         </div>
       </div>
-
-      <!-- ============================================================== -->
-<!-- [4번 카드] 3단 파일첩 서류철 위젯 (노선정보 / 교대정보 / 오늘의메모) -->
-<!-- ============================================================== -->
-<section class="folder-card-widget" style="margin-top: 6px; margin-bottom: 12px;">
-  <!-- 파일첩 상단 인덱스 탭 헤더 바 -->
-  <div style="display: flex; gap: 6px; padding: 0 8px; margin-bottom: -1px; position: relative; z-index: 20;">
-    <!-- 탭 1: 노선정보 (기본 활성) -->
-    <button type="button" id="tabBtnRoute" onclick="switchFolderTab('route')"
-      style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; font-size: 13px; font-weight: 700; border-top-left-radius: 10px; border-top-right-radius: 10px; border: 1.5px solid #38bdf8; border-bottom: none; background: #1e293b; color: #38bdf8; cursor: pointer; transition: all 0.2s;">
-      <iconify-icon icon="mdi:bus-clock" style="font-size: 16px;"></iconify-icon>
-      <span>노선정보</span>
-    </button>
-    <!-- 탭 2: 교대정보 -->
-    <button type="button" id="tabBtnShift" onclick="switchFolderTab('shift')"
-      style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; font-size: 13px; font-weight: 500; border-top-left-radius: 10px; border-top-right-radius: 10px; border: 1.5px solid #334155; border-bottom: none; background: #0b1326; color: #94a3b8; cursor: pointer; transition: all 0.2s;">
-      <iconify-icon icon="mdi:account-switch-outline" style="font-size: 16px;"></iconify-icon>
-      <span>교대정보</span>
-    </button>
-    <!-- 탭 3: 오늘의메모 -->
-    <button type="button" id="tabBtnMemo" onclick="switchFolderTab('memo')"
-      style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; font-size: 13px; font-weight: 500; border-top-left-radius: 10px; border-top-right-radius: 10px; border: 1.5px solid #334155; border-bottom: none; background: #0b1326; color: #94a3b8; cursor: pointer; transition: all 0.2s;">
-      <iconify-icon icon="mdi:notebook-edit-outline" style="font-size: 16px;"></iconify-icon>
-      <span>오늘의메모</span>
-    </button>
-  </div>
-
-  <!-- 파일첩 본문 컨테이너 (글래스모피즘 HUD 서류 카드) -->
-  <div id="folderCardBody"
-    style="background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(12px); border: 1.5px solid #38bdf8; border-radius: 12px; border-top-left-radius: 0; padding: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); position: relative; z-index: 10;">
-    
-    <!-- 1. 노선정보 패널 -->
-    <div id="panelRoute" style="display: block;">
-      <!-- 소제목 토글 버튼 바 -->
-      <div onclick="toggleBoardInputForm('ROUTE')" 
-        style="display: flex; justify-content: space-between; align-items: center; background: rgba(11, 19, 38, 0.95); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; user-select: none;">
-        <span style="font-size: 13px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-          <iconify-icon icon="mdi:note-edit-outline" style="font-size: 17px;"></iconify-icon> 
-          노선 주의사항 등록
-          <iconify-icon id="routeToggleIcon" icon="mdi:chevron-down" style="font-size: 18px; transition: transform 0.2s;"></iconify-icon>
-        </span>
-        <span id="routeWriterDisplay" style="font-size: 11px; font-family: monospace; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 8px; border-radius: 9999px;">
-          작성자 자동등록
-        </span>
-      </div>
-
-      <!-- 접이식 작성 폼 (기본 숨김: display: none) -->
-      <div id="routeInputFormArea" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <input type="text" id="routeNoticeTitle" placeholder="주의사항 제목 (예: 기점 화장실 비번, 안개구간 서행)"
-            style="width: 100%; background: #0b1326; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #f8fafc; box-sizing: border-box;">
-          <textarea id="routeNoticeContent" rows="2" placeholder="공유할 주의사항 상세 내용을 입력하세요..."
-            style="width: 100%; background: #0b1326; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #f8fafc; resize: vertical; box-sizing: border-box;"></textarea>
-          <div style="display: flex; justify-content: flex-end; margin-top: 2px;">
-            <button type="button" onclick="submitBoardItem('ROUTE')"
-              style="background: linear-gradient(90deg, #0284c7, #2563eb); color: #ffffff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(56,189,248,0.3);">
-              <iconify-icon icon="mdi:clipboard-check-outline" style="font-size: 15px;"></iconify-icon> 저장하기
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 등록된 노선 주의사항 목록 피드 (항상 바로 노출) -->
-      <div id="routeNoticeList" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
-        <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px 0;">노선 주의사항을 불러오는 중...</div>
-      </div>
-    </div>
-
-    <!-- 2. 교대정보 패널 -->
-    <div id="panelShift" style="display: none;">
-      <!-- 소제목 토글 버튼 바 -->
-      <div onclick="toggleBoardInputForm('SHIFT')" 
-        style="display: flex; justify-content: space-between; align-items: center; background: rgba(11, 19, 38, 0.95); border: 1.5px solid rgba(250, 204, 21, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; user-select: none;">
-        <span style="font-size: 13px; font-weight: 800; color: #fde047; display: flex; align-items: center; gap: 6px;">
-          <iconify-icon icon="mdi:account-edit-outline" style="font-size: 17px;"></iconify-icon> 
-          교대 특이사항 등록
-          <iconify-icon id="shiftToggleIcon" icon="mdi:chevron-down" style="font-size: 18px; transition: transform 0.2s;"></iconify-icon>
-        </span>
-        <span id="shiftWriterDisplay" style="font-size: 11px; font-family: monospace; color: #fde047; background: rgba(250, 204, 21, 0.12); border: 1px solid rgba(250, 204, 21, 0.3); padding: 2px 8px; border-radius: 9999px;">
-          차량/작성자 자동등록
-        </span>
-      </div>
-
-      <!-- 접이식 작성 폼 (기본 숨김: display: none) -->
-      <div id="shiftInputFormArea" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(250, 204, 21, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <input type="text" id="shiftNoticeTitle" placeholder="교대/차량 특이사항 제목 (예: 오일 미세누수, 단말기 전원)"
-            style="width: 100%; background: #0b1326; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #f8fafc; box-sizing: border-box;">
-          <textarea id="shiftNoticeContent" rows="2" placeholder="다음 교대자에게 인계할 상세 내용을 입력하세요..."
-            style="width: 100%; background: #0b1326; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #f8fafc; resize: vertical; box-sizing: border-box;"></textarea>
-          <div style="display: flex; justify-content: flex-end; margin-top: 2px;">
-            <button type="button" onclick="submitBoardItem('SHIFT')"
-              style="background: linear-gradient(90deg, #d97706, #f59e0b); color: #0f172a; border: none; border-radius: 6px; padding: 7px 16px; font-size: 12px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(251,146,60,0.3);">
-              <iconify-icon icon="mdi:clipboard-check-outline" style="font-size: 15px;"></iconify-icon> 저장하기
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 등록된 교대 특이사항 목록 피드 (항상 바로 노출) -->
-      <div id="shiftNoticeList" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
-        <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px 0;">교대 특이사항을 불러오는 중...</div>
-      </div>
-    </div>
-
-    <!-- 3. 오늘의메모 패널 (기존 ID 완벽 보존) -->
-    <div id="panelMemo" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 12px; font-weight: 800; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-          <iconify-icon icon="mdi:notebook-edit-outline" style="color: #38bdf8; font-size: 15px;"></iconify-icon> 나만의 메모
-        </span>
-        <!-- 보존 필수 ID: todayMemoSaveStatus -->
-        <span id="todayMemoSaveStatus"
-          style="font-size: 11px; color: #22c55e; font-weight: bold; opacity: 0; transition: opacity 0.3s; display: inline-flex; align-items: center; gap: 3px;">
-          <iconify-icon icon="mdi:cloud-check-outline" style="font-size: 13px;"></iconify-icon> 구글시트 저장됨
-        </span>
-      </div>
-      <!-- 보존 필수 ID: todayMemo -->
-      <textarea id="todayMemo" rows="3"
-        style="width: 100%; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; box-sizing: border-box; resize: vertical; background: #0f172a; color: #f8fafc; font-size: 13px; font-family: inherit;"
-        placeholder="오늘 근무에 대한 나만의 메모를 남겨보세요. (자동 저장)"></textarea>
-    </div>
-
-  </div>
-</section>
 
     </div> <!-- id="mainPage" 닫기 -->
 
@@ -3710,6 +3659,40 @@ if (!google.script) google.script = {};
             if (successHandler) successHandler(res || { success: true });
           })
           .catch(err => {
+            if (successHandler) successHandler({ success: true });
+          });
+        return bridgeProxy;
+      },
+      loadBoardMemo: function(category, targetKey) {
+        const localKey = 'board_memo_' + category + '_' + targetKey;
+        const localVal = localStorage.getItem(localKey);
+        const url = window.GAS_WEB_APP_URL + "?action=load_board_memo&category=" + encodeURIComponent(category || '') + "&targetKey=" + encodeURIComponent(targetKey || '');
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            const content = (data && data.content !== undefined) ? data.content : (localVal || "");
+            if (content !== undefined) {
+              try { localStorage.setItem(localKey, content); } catch(e) {}
+            }
+            if (successHandler) successHandler(data || { success: true, content: content });
+          })
+          .catch(err => {
+            console.warn("GAS loadBoardMemo network fallback to localStorage:", err);
+            if (successHandler) successHandler({ success: true, content: localVal || "" });
+          });
+        return bridgeProxy;
+      },
+      saveBoardMemo: function(category, targetKey, content, writer) {
+        const localKey = 'board_memo_' + category + '_' + targetKey;
+        try { localStorage.setItem(localKey, content); } catch(e) {}
+        const url = window.GAS_WEB_APP_URL + "?action=save_board_memo&category=" + encodeURIComponent(category || '') + "&targetKey=" + encodeURIComponent(targetKey || '') + "&content=" + encodeURIComponent(content || '') + "&writer=" + encodeURIComponent(writer || '');
+        fetch(url)
+          .then(res => res.json())
+          .then(res => {
+            if (successHandler) successHandler(res || { success: true });
+          })
+          .catch(err => {
+            console.warn("GAS saveBoardMemo network fallback:", err);
             if (successHandler) successHandler({ success: true });
           });
         return bridgeProxy;
@@ -7654,28 +7637,8 @@ function renderEditRouteOptions() {
 
     // 📁 [3번 카드] '오늘의 시간표' 파일첩 접이식 토글 함수
     function toggleTodayTimetable() {
-        const body = document.getElementById('todayTimetableBody');
-        const arrow = document.getElementById('todayTimetableArrow');
-        const tabBtn = document.getElementById('todayTimetableTabBtn');
-        if (!body) return;
-
-        const isClosed = (body.style.display === 'none');
-        if (isClosed) {
-            body.style.display = 'block';
-            if (arrow) arrow.style.transform = 'rotate(0deg)';
-            if (tabBtn) {
-                tabBtn.style.borderBottom = 'none';
-                tabBtn.style.borderBottomLeftRadius = '0px';
-                tabBtn.style.borderBottomRightRadius = '0px';
-            }
-        } else {
-            body.style.display = 'none';
-            if (arrow) arrow.style.transform = 'rotate(-90deg)';
-            if (tabBtn) {
-                tabBtn.style.borderBottom = '1.5px solid #334155';
-                tabBtn.style.borderBottomLeftRadius = '14px';
-                tabBtn.style.borderBottomRightRadius = '14px';
-            }
+        if (typeof switchScheduleTab === 'function') {
+            switchScheduleTab('timetable');
         }
     }
 
@@ -9537,261 +9500,375 @@ function renderEditRouteOptions() {
     }
 
 // ================================================================
-// 🗂️ [3단 서류철 위젯] 탭 전환 & 실시간 연동 모듈
+// 🗂️ [3단 서류철 위젯] 노선정보 / 교대정보 / 오늘의메모 통합 모듈 (BOARD_DB 시트 직결)
 // ================================================================
 
-// 🗂️ 소제목 버튼 클릭 시 입력 폼 열기/접기 토글
-function toggleBoardInputForm(category) {
-  const isRoute = (category === 'ROUTE');
-  const formEl = document.getElementById(isRoute ? 'routeInputFormArea' : 'shiftInputFormArea');
-  const iconEl = document.getElementById(isRoute ? 'routeToggleIcon' : 'shiftToggleIcon');
-  if (!formEl) return;
+// 1. 로그인 기사명 추출 헬퍼 (유재필 등)
+function getLoggedInDriverName() {
+  if (window.currentDriver && typeof window.currentDriver === 'string') return window.currentDriver.trim();
+  if (typeof currentDriver !== 'undefined' && currentDriver) return String(currentDriver).trim();
+  try {
+    const saved = localStorage.getItem('loggedInUser');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (u && u.name) return String(u.name).trim();
+    }
+  } catch(e) {}
+  return "유재필";
+}
 
-  const isHidden = (formEl.style.display === 'none' || !formEl.style.display);
-  formEl.style.display = isHidden ? 'block' : 'none';
+// 2. 키값 추출 헬퍼 (노선번호 숫자만 / 차량번호 4자리 / 날짜기사키)
+function getBoardTargetKey(category) {
+  if (category === 'ROUTE') {
+    const rawRoute = document.getElementById('schedRouteSelectedText')?.innerText || 
+                     document.getElementById('resRoute')?.innerText ||
+                     document.getElementById('bliRouteNum')?.innerText || 
+                     document.getElementById('regRoute')?.value || '';
+    const match = rawRoute.match(/\d+/);
+    return match ? match[0] : '202';
+  } else if (category === 'SHIFT') {
+    const rawBus = document.getElementById('resBusNo')?.innerText || 
+                   document.getElementById('bliBusNo')?.innerText || 
+                   document.getElementById('regBusNo')?.value || '';
+    const digits = rawBus.replace(/[^0-9]/g, '');
+    return digits ? digits.slice(-4) : '공용차량';
+  } else if (category === 'MEMO') {
+    return typeof getMemoKey === 'function' ? getMemoKey() : 'today_memo';
+  }
+  return 'ALL';
+}
+
+// 3. 문장 끝 작성자 이름 (유재필) 형태 자동 부착 헬퍼
+function applyDriverSignatureToContent(text, driverName) {
+  if (!text || !text.trim() || !driverName) return text || '';
+  const lines = text.split('\n');
+  const sig = `(${driverName})`;
+
+  // 맨 마지막 내용이 있는 줄 탐색
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (line) {
+      // 이미 (이름) 형태의 괄호로 끝나는 경우 중복 부착 방지
+      const hasSig = /\([^)]+\)$/.test(line);
+      if (!hasSig) {
+        lines[i] = lines[i] + ` ${sig}`;
+      }
+      break;
+    }
+  }
+  return lines.join('\n');
+}
+
+// 4. 화면 끝까지 칸이 커지며 넘치면 스크롤바가 생기는 반응형 높이 조절기
+function autoResizeTextarea(textareaEl) {
+  if (!textareaEl) return;
+  textareaEl.style.height = 'auto';
   
-  // 화살표 방향 회전 효과
-  if (iconEl) {
-    iconEl.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  // 브라우저 뷰포트 하단 여백을 고려한 최대 가용 높이 계산 (화면 끝까지 늘어남)
+  const rect = textareaEl.getBoundingClientRect();
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight || 800;
+  const maxAvailable = Math.max(220, windowHeight - rect.top - 60);
+
+  const scrollHeight = textareaEl.scrollHeight;
+  if (scrollHeight > maxAvailable) {
+    textareaEl.style.height = maxAvailable + 'px';
+    textareaEl.style.overflowY = 'auto';
+  } else {
+    textareaEl.style.height = Math.max(140, scrollHeight) + 'px';
+    textareaEl.style.overflowY = 'hidden';
   }
 }
 
-// 1. 탭 전환 함수
-function switchFolderTab(tabName) {
-  const tabs = ['route', 'shift', 'memo'];
-  const panelMap = {
+// 5. 통합 시간표 및 메모 탭 전환 / 접이식 토글 함수
+let currentScheduleTab = 'timetable';
+
+function switchScheduleTab(tabName) {
+  const body = document.getElementById('todayTimetableBody');
+  const arrow = document.getElementById('todayTimetableArrow');
+  if (!body) return;
+
+  const isClosed = (body.style.display === 'none');
+
+  // 같은 탭을 다시 터치한 경우: 접기/펼치기 토글
+  if (tabName === currentScheduleTab) {
+    if (isClosed) {
+      body.style.display = 'block';
+      if (arrow) arrow.style.transform = 'rotate(0deg)';
+      updateScheduleTabStyles(tabName, true);
+      if (tabName !== 'timetable') {
+        const textareaId = (tabName === 'route') ? 'routeMemo' : ((tabName === 'shift') ? 'shiftMemo' : 'todayMemo');
+        autoResizeTextarea(document.getElementById(textareaId));
+      }
+    } else {
+      body.style.display = 'none';
+      if (arrow) arrow.style.transform = 'rotate(-90deg)';
+      updateScheduleTabStyles(tabName, false);
+    }
+    return;
+  }
+
+  // 다른 탭을 터치한 경우: 무조건 펼치고 해당 화면으로 전환
+  currentScheduleTab = tabName;
+  body.style.display = 'block';
+  if (arrow) arrow.style.transform = 'rotate(0deg)';
+
+  // 1) 패널 전환 (시간표 / 노선정보 / 교대정보 / 오늘의메모)
+  const panels = {
+    timetable: document.getElementById('panelTimetable'),
     route: document.getElementById('panelRoute'),
     shift: document.getElementById('panelShift'),
     memo: document.getElementById('panelMemo')
   };
+
+  Object.keys(panels).forEach(key => {
+    if (panels[key]) {
+      panels[key].style.display = (key === tabName) ? 'block' : 'none';
+    }
+  });
+
+  // 2) 탭 버튼 스타일 및 테두리 색상 갱신
+  updateScheduleTabStyles(tabName, true);
+
+  // 3) 메모 탭인 경우 데이터 로드 및 높이 조절
+  if (tabName !== 'timetable') {
+    loadFolderMemoTab(tabName);
+    const textareaId = (tabName === 'route') ? 'routeMemo' : ((tabName === 'shift') ? 'shiftMemo' : 'todayMemo');
+    setTimeout(() => {
+      autoResizeTextarea(document.getElementById(textareaId));
+    }, 50);
+  }
+}
+
+function updateScheduleTabStyles(activeTab, isOpen) {
   const btnMap = {
+    timetable: document.getElementById('todayTimetableTabBtn'),
     route: document.getElementById('tabBtnRoute'),
     shift: document.getElementById('tabBtnShift'),
     memo: document.getElementById('tabBtnMemo')
   };
 
-  tabs.forEach(t => {
-    const isActive = (t === tabName);
-    if (panelMap[t]) {
-      panelMap[t].style.display = isActive ? 'block' : 'none';
-    }
-    if (btnMap[t]) {
-      btnMap[t].style.background = isActive ? '#1e293b' : '#0b1326';
-      btnMap[t].style.borderColor = isActive ? (t === 'shift' ? '#fde047' : '#38bdf8') : '#334155';
-      btnMap[t].style.color = isActive ? (t === 'shift' ? '#fde047' : '#38bdf8') : '#94a3b8';
-      btnMap[t].style.fontWeight = isActive ? '700' : '500';
-    }
-  });
-
-  // 탭 진입 시 데이터 자동 조회 및 작성자 라벨 갱신
-  if (tabName === 'route') {
-    updateBoardWriterLabels();
-    loadBoardItems('ROUTE');
-  } else if (tabName === 'shift') {
-    updateBoardWriterLabels();
-    loadBoardItems('SHIFT');
-  } else if (tabName === 'memo') {
-    if (typeof loadTodayMemo === 'function') loadTodayMemo();
-  }
-}
-
-// 2. 키값 추출 헬퍼 (노선번호 숫자만 / 차량번호 4자리)
-function getBoardTargetKey(category) {
-  if (category === 'ROUTE') {
-    const rawRoute = document.getElementById('bliRouteNum')?.innerText || 
-                     document.getElementById('regRoute')?.value || '';
-    const match = rawRoute.match(/\d+/);
-    return match ? match[0] : '202';
-  } else if (category === 'SHIFT') {
-    const rawBus = document.getElementById('bliBusNo')?.innerText || 
-                   document.getElementById('regBusNo')?.value || '';
-    const digits = rawBus.replace(/[^0-9]/g, '');
-    return digits ? digits.slice(-4) : '공용차량';
-  }
-  return 'ALL';
-}
-
-// 3. 작성 폼 상단 안내 뱃지 갱신
-function updateBoardWriterLabels() {
-  const driver = window.currentDriver || currentDriver || "동료기사";
-  const routeKey = getBoardTargetKey('ROUTE');
-  const busKey = getBoardTargetKey('SHIFT');
-
-  const routeLbl = document.getElementById('routeWriterDisplay');
-  if (routeLbl) routeLbl.innerText = `${driver} 기사 (${routeKey}번)`;
-
-  const shiftLbl = document.getElementById('shiftWriterDisplay');
-  if (shiftLbl) shiftLbl.innerText = `${driver} 기사 (${busKey}호)`;
-}
-
-// 4. 새 글 등록 (저장하기 버튼)
-function submitBoardItem(category) {
-  const isRoute = (category === 'ROUTE');
-  const titleEl = document.getElementById(isRoute ? 'routeNoticeTitle' : 'shiftNoticeTitle');
-  const contentEl = document.getElementById(isRoute ? 'routeNoticeContent' : 'shiftNoticeContent');
-
-  const title = titleEl ? titleEl.value.trim() : '';
-  const content = contentEl ? contentEl.value.trim() : '';
-  const targetKey = getBoardTargetKey(category);
-  const writer = window.currentDriver || currentDriver || "동료기사";
-
-  if (!title) {
-    alert("제목을 입력해 주세요.");
-    titleEl?.focus();
-    return;
-  }
-  if (!content) {
-    alert("상세 내용을 입력해 주세요.");
-    contentEl?.focus();
-    return;
-  }
-
-  const payload = {
-    category: category,
-    targetKey: targetKey,
-    writer: writer,
-    title: title,
-    content: content
+  const activeColors = {
+    timetable: '#60a5fa',
+    route: '#38bdf8',
+    shift: '#fde047',
+    memo: '#a78bfa'
   };
 
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(res => {
-        if (res && res.success) {
-          if (titleEl) titleEl.value = '';
-          if (contentEl) contentEl.value = '';
-          loadBoardItems(category);
-        } else {
-          alert("저장 실패: " + (res?.error || "오류가 발생했습니다."));
-        }
-      })
-      .withFailureHandler(err => alert("서버 통신 오류: " + err))
-      .saveBoardItem(payload);
+  const bodyEl = document.getElementById('todayTimetableBody');
+  if (bodyEl) {
+    bodyEl.style.borderColor = activeColors[activeTab] || '#60a5fa';
   }
 
-// submitBoardItem 내부 성공 처리 부분
-if (res && res.success) {
-  if (titleEl) titleEl.value = '';
-  if (contentEl) contentEl.value = '';
-  
-  // 🌟 저장 성공 후 입력 폼 자동 닫기
-  const formEl = document.getElementById(isRoute ? 'routeInputFormArea' : 'shiftInputFormArea');
-  const iconEl = document.getElementById(isRoute ? 'routeToggleIcon' : 'shiftToggleIcon');
-  if (formEl) formEl.style.display = 'none';
-  if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+  ['timetable', 'route', 'shift', 'memo'].forEach(k => {
+    const btn = btnMap[k];
+    if (!btn) return;
+    const isThisActive = (k === activeTab);
+    const color = activeColors[k];
 
-  loadBoardItems(category);
+    if (isThisActive) {
+      btn.style.background = '#1e293b';
+      btn.style.borderColor = color;
+      btn.style.color = color;
+      btn.style.fontWeight = '900';
+      if (!isOpen) {
+        btn.style.borderBottom = `1.5px solid ${color}`;
+        btn.style.borderBottomLeftRadius = '10px';
+        btn.style.borderBottomRightRadius = '10px';
+      } else {
+        btn.style.borderBottom = 'none';
+        btn.style.borderBottomLeftRadius = '0px';
+        btn.style.borderBottomRightRadius = '0px';
+      }
+    } else {
+      btn.style.background = '#0b1326';
+      btn.style.borderColor = '#334155';
+      btn.style.color = '#94a3b8';
+      btn.style.fontWeight = '700';
+      btn.style.borderBottom = 'none';
+      btn.style.borderBottomLeftRadius = '0px';
+      btn.style.borderBottomRightRadius = '0px';
+    }
+  });
 }
 
+function switchFolderTab(tabName) {
+  switchScheduleTab(tabName);
 }
 
-// 5. 게시글 목록 불러오기
-function loadBoardItems(category) {
+// 6. 단일 탭 데이터 로드 (BOARD_DB 연동)
+function loadFolderMemoTab(tabName) {
+  const category = (tabName === 'route') ? 'ROUTE' : ((tabName === 'shift') ? 'SHIFT' : 'MEMO');
+  const textareaId = (tabName === 'route') ? 'routeMemo' : ((tabName === 'shift') ? 'shiftMemo' : 'todayMemo');
+  const statusId = (tabName === 'route') ? 'routeMemoSaveStatus' : ((tabName === 'shift') ? 'shiftMemoSaveStatus' : 'todayMemoSaveStatus');
   const targetKey = getBoardTargetKey(category);
-  const containerId = (category === 'ROUTE') ? 'routeNoticeList' : 'shiftNoticeList';
-  const container = document.getElementById(containerId);
-  if (!container) return;
+  const textarea = document.getElementById(textareaId);
+  const statusText = document.getElementById(statusId);
+  if (!textarea) return;
 
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
+  // 탭 헤더 라벨에 노선번호/차량번호 동적 표기
+  if (tabName === 'route') {
+    const lbl = document.getElementById('routeMemoHeaderLabel');
+    const tabLbl = document.getElementById('tabRouteLabel');
+    if (lbl) lbl.innerText = `노선 주의사항 (${targetKey}번 전체 공유)`;
+    if (tabLbl) tabLbl.innerText = `노선정보 (${targetKey}번)`;
+  } else if (tabName === 'shift') {
+    const lbl = document.getElementById('shiftMemoHeaderLabel');
+    const tabLbl = document.getElementById('tabShiftLabel');
+    if (lbl) lbl.innerText = `교대 특이사항 (${targetKey}호 인계)`;
+    if (tabLbl) tabLbl.innerText = `교대정보 (${targetKey}호)`;
+  }
+
+  // 1) 로컬 스토리지 캐시 우선 표시 (0ms 즉시 노출)
+  const localCacheKey = `board_memo_${category}_${targetKey}`;
+  const cached = localStorage.getItem(localCacheKey);
+  if (cached !== null) {
+    textarea.value = cached;
+    autoResizeTextarea(textarea);
+  }
+
+  // 2) 구글 시트 BOARD_DB 서버 최신 데이터 비동기 로드
+  if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.loadBoardMemo === 'function') {
+    if (statusText) {
+      statusText.innerText = "☁️ 불러오는 중...";
+      statusText.style.color = "#38bdf8";
+      statusText.style.opacity = '1';
+    }
+
     google.script.run
       .withSuccessHandler(res => {
-        if (res && res.success) {
-          renderBoardCards(container, res.items || [], category);
+        if (res && res.success && res.content !== undefined) {
+          textarea.value = res.content || '';
+          localStorage.setItem(localCacheKey, res.content || '');
+          autoResizeTextarea(textarea);
+          if (statusText) {
+            statusText.innerText = "☁️ 구글시트 동기화됨";
+            statusText.style.color = "#22c55e";
+            setTimeout(() => { if (statusText) statusText.style.opacity = '0'; }, 1500);
+          }
         } else {
-          container.innerHTML = `<div style="text-align:center; color:#ef4444; font-size:12px; padding:12px;">데이터 조회 실패: ${res?.error || '알 수 없는 오류'}</div>`;
+          if (statusText) statusText.style.opacity = '0';
         }
       })
       .withFailureHandler(err => {
-        container.innerHTML = `<div style="text-align:center; color:#ef4444; font-size:12px; padding:12px;">통신 오류: ${err}</div>`;
+        console.warn(`[BOARD_DB] ${category} 로드 실패:`, err);
+        if (statusText) statusText.style.opacity = '0';
       })
-      .getBoardItems(category, targetKey);
+      .loadBoardMemo(category, targetKey);
   }
 }
 
-// 6. 카드 렌더링 및 본인 글 터치 시 수정/삭제 연결
-function renderBoardCards(container, items, category) {
-  if (!items || items.length === 0) {
-    container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:16px;">등록된 내용이 없습니다.</div>`;
-    return;
-  }
+// 7. 실시간 자동저장(Debounce 1.2초) 및 작성자(유재필) 서명 바인딩
+const folderMemoTimers = {};
 
-  const isRoute = (category === 'ROUTE');
-  const accentColor = isRoute ? '#38bdf8' : '#fde047';
-  const borderTone = isRoute ? 'rgba(56, 189, 248, 0.35)' : 'rgba(250, 204, 21, 0.35)';
+function setupFolderCardMemos() {
+  const configs = [
+    { cat: 'ROUTE', id: 'routeMemo', statusId: 'routeMemoSaveStatus', sign: true },
+    { cat: 'SHIFT', id: 'shiftMemo', statusId: 'shiftMemoSaveStatus', sign: true },
+    { cat: 'MEMO', id: 'todayMemo', statusId: 'todayMemoSaveStatus', sign: false }
+  ];
 
-  container.innerHTML = '';
-  items.forEach(item => {
-    const card = document.createElement('div');
-    card.style.cssText = `
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid ${borderTone};
-      border-radius: 8px;
-      padding: 9px 11px;
-      cursor: pointer;
-      transition: all 0.2s;
-    `;
+  configs.forEach(cfg => {
+    const textarea = document.getElementById(cfg.id);
+    const statusText = document.getElementById(cfg.statusId);
+    if (!textarea) return;
 
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 5px; margin-bottom: 5px;">
-        <span style="font-size: 12px; font-weight: 700; color: ${accentColor}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          ${escapeHtmlText(item.title)}
-        </span>
-        <span style="font-size: 11.5px; color: #94a3b8; font-family: monospace; white-space: nowrap;">
-  ${escapeHtmlText(item.writer)} ${escapeHtmlText(item.targetKey)} ${String(item.timestamp || '').slice(5)}
-</span>
-      </div>
-      <p style="font-size: 11.5px; color: #cbd5e1; margin: 0; line-height: 1.45; word-break: break-all;">
-        ${escapeHtmlText(item.content)}
-      </p>
-    `;
+    // 입력 시 높이 자동 조절 및 디바운스 자동 저장
+    textarea.oninput = function() {
+      autoResizeTextarea(textarea);
 
-    // 👆 터치 이벤트: 본인 글만 반응, 다른 기사 글은 무반응 유지
-    card.onclick = () => handleBoardCardTouch(item, category);
-    container.appendChild(card);
+      if (statusText) {
+        statusText.innerText = "⏳ 저장 중...";
+        statusText.style.color = "#f59e0b";
+        statusText.style.opacity = '1';
+      }
+
+      if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
+
+      folderMemoTimers[cfg.cat] = setTimeout(() => {
+        saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
+      }, 1200);
+    };
+
+    // 포커스 벗어날 때 즉시 저장 & 서명 확정
+    textarea.onblur = function() {
+      if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
+      saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
+    };
+  });
+
+  // 초기 로드: 오늘의 시간표를 기본 활성화로 설정하고 메모 데이터 사전 캐시
+  updateScheduleTabStyles('timetable', true);
+  try {
+    loadFolderMemoTab('route');
+    loadFolderMemoTab('shift');
+    loadFolderMemoTab('memo');
+  } catch(e) {}
+
+  // 창 크기 변경 시 높이 자동 재계산
+  window.addEventListener('resize', () => {
+    const activeTextarea = document.querySelector(`#panelRoute textarea, #panelShift textarea, #panelMemo textarea`);
+    if (activeTextarea) autoResizeTextarea(activeTextarea);
   });
 }
 
-// 7. 카드 터치 분기 처리 (본인 일치 시 수정/삭제 메뉴)
-function handleBoardCardTouch(item, category) {
-  const currentUser = window.currentDriver || currentDriver || "동료기사";
-  
-  // 작성자 이름 불일치 시 아무런 창도 띄우지 않고 조용히 리턴 (무반응 규칙)
-  if (!item.writer.includes(currentUser) && !currentUser.includes(item.writer)) {
-    return;
+// 8. 실제 구글 시트 BOARD_DB 저장 함수
+function saveFolderCardMemoNow(category, textarea, statusText, requireSignature) {
+  if (!textarea) return;
+  const targetKey = getBoardTargetKey(category);
+  const driverName = getLoggedInDriverName();
+  let rawContent = textarea.value;
+
+  // 노선정보 / 교대정보: 작성한 사람이름이 문장 끝에 (유재필) 형태로 자동 첨부
+  if (requireSignature && rawContent.trim()) {
+    const signedContent = applyDriverSignatureToContent(rawContent, driverName);
+    if (signedContent !== rawContent) {
+      textarea.value = signedContent;
+      rawContent = signedContent;
+      autoResizeTextarea(textarea);
+    }
   }
 
-  // 본인 글인 경우 수정/삭제 선택
-  const action = prompt(`[${item.title}]\n1: 내용 수정\n2: 삭제\n(취소는 창 닫기)`);
-  
-  if (action === '1') {
-    const newContent = prompt("수정할 내용을 입력하세요:", item.content);
-    if (newContent !== null && newContent.trim() !== "") {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res && res.success) loadBoardItems(category);
-          else alert("수정 실패");
-        })
-        .updateBoardItem(item.id, currentUser, item.title, newContent.trim());
-    }
-  } else if (action === '2') {
-    if (confirm("정말 이 글을 삭제하시겠습니까?")) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res && res.success) loadBoardItems(category);
-          else alert("삭제 실패");
-        })
-        .deleteBoardItem(item.id, currentUser);
+  // 1) 로컬 스토리지 즉시 캐시 (네트워크 단절 대비)
+  const localCacheKey = `board_memo_${category}_${targetKey}`;
+  localStorage.setItem(localCacheKey, rawContent);
+
+  // 오늘의메모 레거시 키 호환성 유지
+  if (category === 'MEMO') {
+    localStorage.setItem(targetKey, rawContent);
+  }
+
+  // 2) 구글 시트 BOARD_DB 서버 저장
+  if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.saveBoardMemo === 'function') {
+    google.script.run
+      .withSuccessHandler(res => {
+        if (statusText) {
+          statusText.innerText = "☁️ 구글시트 저장됨";
+          statusText.style.color = "#22c55e";
+          setTimeout(() => { if (statusText) statusText.style.opacity = '0'; }, 2000);
+        }
+      })
+      .withFailureHandler(err => {
+        console.warn(`[BOARD_DB] ${category} 저장 실패:`, err);
+        if (statusText) {
+          statusText.innerText = "⚠️ 임시저장(로컬)";
+          statusText.style.color = "#ef4444";
+        }
+      })
+      .saveBoardMemo(category, targetKey, rawContent, driverName);
+  } else {
+    if (statusText) {
+      statusText.innerText = "☁️ 저장됨(로컬)";
+      statusText.style.color = "#22c55e";
+      setTimeout(() => { if (statusText) statusText.style.opacity = '0'; }, 2000);
     }
   }
 }
 
-// 8. 텍스트 보안 이스케이프 헬퍼
-function escapeHtmlText(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-  })[m]);
-}
+// 레거시 함수 호환 래퍼
+function loadTodayMemo() { loadFolderMemoTab('memo'); }
+function setupTodayMemoAutoSave() { setupFolderCardMemos(); }
+function updateBoardWriterLabels() { /* 통일된 단일창 모듈에서 자동 처리 */ }
+function loadBoardItems(cat) { loadFolderMemoTab(cat === 'ROUTE' ? 'route' : (cat === 'SHIFT' ? 'shift' : 'memo')); }
 
 // ================================================================
 // 🎙️ [Gemini AI 실시간 핸즈프리 음성 비서]
