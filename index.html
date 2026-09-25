@@ -3663,6 +3663,20 @@ if (!google.script) google.script = {};
       },
       keepAlive: function() {
         if (successHandler) successHandler({ success: true });
+      },
+      getStandardMasterForLiveByKey: function(uniqueKey) {
+        const url = window.GAS_WEB_APP_URL + "?action=get_standard_master&uniqueKey=" + encodeURIComponent(uniqueKey || '');
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (successHandler) successHandler(data || { success: false, data: [] });
+          })
+          .catch(err => {
+            console.warn("GAS getStandardMasterForLiveByKey network error:", err);
+            if (failureHandler) failureHandler(err);
+            else if (successHandler) successHandler({ success: false, data: [] });
+          });
+        return bridgeProxy;
       }
     };
 
@@ -3725,8 +3739,35 @@ if (!google.script) google.script = {};
         } catch (e) { }
 
         if (detectedBusCount === "4") {
-            let routeMatch = routeText.match(/(\d+)\s*대/);
-            if (routeMatch) detectedBusCount = routeMatch[1];
+            const subText = document.getElementById('resRouteSub')?.innerText.trim() || '';
+            let subMatch = subText.match(/(\d+)\s*대/);
+            if (subMatch) {
+                detectedBusCount = subMatch[1];
+            } else {
+                let routeMatch = routeText.match(/(\d+)\s*대/);
+                if (routeMatch) detectedBusCount = routeMatch[1];
+            }
+        }
+
+        // 기본 노선 번호 (202, 203 등)
+        const baseRoute = routeText.split(/[^0-9]/)[0] || '202';
+        let effectiveRoute = baseRoute;
+
+        // 🛡️ 노선별 기본 인가 대수 폴백 (4대로 잘못 남아 고유키가 불일치하는 현상 원천 차단)
+        if (detectedBusCount === "4") {
+            const defaultBusCounts = {
+                "202": "16",
+                "203": "11",
+                "204": "4",
+                "205": "5",
+                "206": "6",
+                "221": "2",
+                "281": "3",
+                "282": "2"
+            };
+            if (defaultBusCounts[baseRoute]) {
+                detectedBusCount = defaultBusCounts[baseRoute];
+            }
         }
 
         let currentTripRound = 1;
@@ -3741,10 +3782,6 @@ if (!google.script) google.script = {};
         const seqInt = parseInt(seqNumText, 10) || 1;
         const countInt = parseInt(detectedBusCount, 10) || 16;
         const turnInt = parseInt(currentTripRound, 10) || 1;
-
-        // 기본 노선 번호 (202, 203 등)
-        const baseRoute = routeText.split(/[^0-9]/)[0] || '202';
-        let effectiveRoute = baseRoute;
 
         // 🌟 [202A / 203A 실전 운행 특수 로직]
         if (turnInt === 1) {
@@ -4281,6 +4318,13 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // 🚀 [Live 모달 열기] 화면 표시 및 실시간 BIS/표준시간 동시 호출
     // ================================================================
     async function openLiveModal() {
+        // 0. 모달 열릴 때 이전 매칭 상태 및 잠금 상태 초기화 (회차 간 간섭 방지)
+        window.lastMatchedMasterIndex = null;
+        window.bisStopLockState = window.bisStopLockState || {};
+        window.bisStopLockState.lockedStopKey = null;
+        window.bisStopLockState.lockedDelayText = "0";
+        window.bisStopLockState.lockedTargetColor = "#00ff66";
+
         // 1. 시퀀스 박스(P1, P2, P3) 시간 동기화 (메인 시간표 기반)
         if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
             syncSequenceBoxesFromMainSchedule();
@@ -4292,8 +4336,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         if (dateTextEl && liveDateEl) liveDateEl.innerText = dateTextEl.innerText;
 
         // 3. 날씨 정보 및 오늘의 한마디 실시간 로드
-  if (typeof fetchYeongjongWeather === 'function') fetchYeongjongWeather();
-  if (typeof loadLatestColleagueMessage === 'function') loadLatestColleagueMessage
+        if (typeof fetchYeongjongWeather === 'function') fetchYeongjongWeather();
+        if (typeof loadLatestColleagueMessage === 'function') loadLatestColleagueMessage();
 
         // 🌟 [오늘의 한마디] 오직 '오늘(당일)'인 경우에만 표시, 과거/미래 날짜에는 완전히 숨김
         const msgWidget = document.getElementById('liveMessageWidget');
@@ -4377,45 +4421,80 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     }
 
     // ================================================================
-    // 📥 [표준시간 수신] 고유키 기반 standard_master 직결 로더
+    // 📥 [표준시간 수신] 고유키 기반 standard_master 직결 로더 (GAS & GitHub Pages 완벽 대응)
     // ================================================================
     function loadStandardMasterCache(duty) {
-
         return new Promise((resolve) => {
             if (!duty) duty = {};
-            // 💡 [핵심] 202A, 203A 등 특수노선의 영문자('A')가 훼손되지 않도록 대문자 영문+숫자 정밀 보존
             const rawKey = duty.uniqueKey || duty.tripMasterId || '';
             const uniqueKey = String(rawKey).trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
 
-            if (typeof google === 'undefined' || !google.script || !google.script.run) {
+            if (!uniqueKey) {
                 resolve({ success: false });
                 return;
             }
 
-            // 💡 [핵심] 기존 함수 대신 H열 매칭 전용 백엔드 함수(getStandardMasterForLiveByKey)를 호출합니다.
-            google.script.run
-                .withSuccessHandler((res) => {
-                    if (res && res.success && res.data && res.data.length > 0) {
-                        window.standardMasterCache = res.data;
-                        window.currentTripMasterCache = res.data;
-                        console.log(`📥 [고유키 매칭 완료] 키: ${uniqueKey} (총 ${res.data.length}개 정류장 수신)`);
+            // 1. 클라이언트 메모리 캐시 확인 (0ms 즉시 응답)
+            window.masterKeyMemoryCache = window.masterKeyMemoryCache || {};
+            if (window.masterKeyMemoryCache[uniqueKey] && window.masterKeyMemoryCache[uniqueKey].length > 0) {
+                const data = window.masterKeyMemoryCache[uniqueKey];
+                window.standardMasterCache = data;
+                window.currentTripMasterCache = data;
+                console.log(`📥 [표준시간 캐시 적중] 키: ${uniqueKey} (총 ${data.length}개 정류장)`);
+                if (window.lastReceivedBisXml && duty.busNo) {
+                    parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
+                }
+                resolve({ success: true, data: data });
+                return;
+            }
 
-                        if (window.lastReceivedBisXml && duty.busNo) {
-                            parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
-                        }
-                    } else {
-                        // 데이터가 없으면 이전 캐시를 비워버려서 엉뚱한(새벽) 시간과 매칭되는 것을 차단합니다.
-                        window.standardMasterCache = [];
-                        window.currentTripMasterCache = [];
-                        console.warn(`⚠️ [standard_master] 일치하는 회차 데이터가 없습니다. (요청 키: ${uniqueKey})`);
+            const applyResult = (res) => {
+                if (res && res.success && res.data && res.data.length > 0) {
+                    window.masterKeyMemoryCache[uniqueKey] = res.data;
+                    window.standardMasterCache = res.data;
+                    window.currentTripMasterCache = res.data;
+                    console.log(`📥 [고유키 매칭 완료] 키: ${uniqueKey} (총 ${res.data.length}개 정류장 수신)`);
+
+                    if (window.lastReceivedBisXml && duty.busNo) {
+                        parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
                     }
-                    resolve(res);
-                })
-                .withFailureHandler((err) => {
-                    console.warn("⚠️ standard_master 수신 일시 지연:", err);
-                    resolve({ success: false });
-                })
-                .getStandardMasterForLiveByKey(uniqueKey); // 단 하나의 고유키만 던집니다!
+                } else {
+                    console.warn(`⚠️ [standard_master] 일치하는 회차 데이터가 없습니다. (요청 키: ${uniqueKey})`);
+                    window.standardMasterCache = [];
+                    window.currentTripMasterCache = [];
+                }
+                resolve(res || { success: false });
+            };
+
+            const fallbackFetch = () => {
+                const gasUrl = window.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec';
+                fetch(gasUrl + '?action=get_standard_master&uniqueKey=' + encodeURIComponent(uniqueKey))
+                    .then(r => r.json())
+                    .then(res => applyResult(res))
+                    .catch(err => {
+                        console.warn("⚠️ standard_master HTTP fetch 실패:", err);
+                        applyResult({ success: false });
+                    });
+            };
+
+            // GAS 네이티브 환경 우선 호출, 실패 또는 부재 시 HTTP fetch 폴백
+            if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getStandardMasterForLiveByKey === 'function') {
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        if (res && res.success && res.data && res.data.length > 0) {
+                            applyResult(res);
+                        } else {
+                            fallbackFetch();
+                        }
+                    })
+                    .withFailureHandler((err) => {
+                        console.warn("⚠️ google.script.run 실패 -> HTTP fetch 폴백:", err);
+                        fallbackFetch();
+                    })
+                    .getStandardMasterForLiveByKey(uniqueKey);
+            } else {
+                fallbackFetch();
+            }
         });
     }
 
@@ -4807,8 +4886,25 @@ function loadLatestColleagueMessage() {
                 window.liveIntervalTimer = null;
                 return;
             }
-            if (duty && duty.routeShort) {
-                fetchLiveBisForLiveModal(duty.routeShort, duty.busNo);
+
+            // ⭐ [동적 회차 변경 감지 & standard_master 자동 갱신]
+            if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
+                syncSequenceBoxesFromMainSchedule();
+            }
+            const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
+            if (curDuty && curDuty.uniqueKey) {
+                // 회차가 변경되었거나 캐시가 비어있는 경우 즉시 새 회차 표준시간 로드
+                if (duty.uniqueKey !== curDuty.uniqueKey || !window.standardMasterCache || window.standardMasterCache.length === 0) {
+                    console.log(`🔄 [회차 전환 감지] ${duty.uniqueKey} -> ${curDuty.uniqueKey} (표준시간 재로드)`);
+                    duty = curDuty;
+                    window.lastMatchedMasterIndex = null;
+                    if (window.bisStopLockState) window.bisStopLockState.lockedStopKey = null;
+                    loadStandardMasterCache(curDuty);
+                }
+            }
+
+            if (curDuty && curDuty.routeShort) {
+                fetchLiveBisForLiveModal(curDuty.routeShort, curDuty.busNo);
             }
         }, 25000);
     }
@@ -4976,6 +5072,14 @@ function loadLatestColleagueMessage() {
                 targetBus.getElementsByTagName("BSTOPNM")[0]?.textContent ||
                 targetBus.getElementsByTagName("stationNm")[0]?.textContent || '').trim();
 
+            // ⭐ [핵심 개선] TAGO 정류장 순번(nodeord) 추출 - 순환 노선 중복 정류장명 오매칭 원천 차단
+            let curBisNodeOrd = parseInt(
+                targetBus.getElementsByTagName("nodeord")[0]?.textContent ||
+                targetBus.getElementsByTagName("NODEORD")[0]?.textContent ||
+                targetBus.getElementsByTagName("bstopseq")[0]?.textContent ||
+                targetBus.getElementsByTagName("BSTOPSEQ")[0]?.textContent || '0', 10
+            ) || 0;
+
             // 💡 [정류장 ID 정규화 도우미 함수]
             // TAGO nodeid ("ICB368000214")와 인천 로컬 ID ("168000214")를 상호 호환 정규화
             const normalizeStopId = (idStr) => {
@@ -4997,7 +5101,12 @@ function loadLatestColleagueMessage() {
             // 3. standard_master 캐시 검사 (없어도 BIS 표시는 계속)
             const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
 
-            // 💡 getRowStopId에서도 normalizeStopId 호출
+            // 💡 행 데이터 추출 헬퍼 함수들
+            const getRowSeq = (row) => {
+                if (!row) return 0;
+                let val = Array.isArray(row) ? row[3] : (row.sequence !== undefined ? row.sequence : (row[3] !== undefined ? row[3] : 0));
+                return parseInt(val, 10) || 0;
+            };
             const getRowStopId = (row) => {
                 if (!row) return '';
                 const raw = Array.isArray(row) ? row[4] : (row.stopId || row.id || row[4] || '');
@@ -5009,10 +5118,21 @@ function loadLatestColleagueMessage() {
             const now = new Date();
             const currentWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-            // 4. 정류장 매칭 (직전 위치 이후 순방향 우선 탐색)
+            // 4. 정류장 매칭 (TAGO 순번 1:1 완벽 일치 우선 -> 순방향 근접 -> 시각 근접 순서)
             let matchedIndex = -1;
 
-            if (window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0) {
+            // [1순위] TAGO 순번(nodeord) 1:1 정확 일치 (순환노선 중복 정류장명 완벽 구분)
+            if (curBisNodeOrd > 0 && masterCache.length > 0) {
+                for (let i = 0; i < masterCache.length; i++) {
+                    if (getRowSeq(masterCache[i]) === curBisNodeOrd) {
+                        matchedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // [2순위] 직전 위치 이후 순방향 근접 탐색 (nodeord 미제공 시)
+            if (matchedIndex === -1 && window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0) {
                 let start = window.lastMatchedMasterIndex;
                 let end = Math.min(masterCache.length, start + 8);
 
@@ -5026,8 +5146,8 @@ function loadLatestColleagueMessage() {
                 }
             }
 
-            // 미매칭 시 현재 시각 근접도(Time Distance) 기반 매칭
-            if (matchedIndex === -1) {
+            // [3순위] 미매칭 시 현재 시각 근접도(Time Distance) 기반 매칭
+            if (matchedIndex === -1 && masterCache.length > 0) {
                 let candidates = [];
                 for (let i = 0; i < masterCache.length; i++) {
                     let rId = getRowStopId(masterCache[i]);
@@ -5040,6 +5160,7 @@ function loadLatestColleagueMessage() {
                     if (isMatch) {
                         let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
                         let diff = Math.abs(currentWallSec - sSec);
+                        if (diff > 43200) diff = Math.abs(diff - 86400); // 24시간 래핑
                         candidates.push({ index: i, diff: diff });
                     }
                 }
@@ -5049,7 +5170,6 @@ function loadLatestColleagueMessage() {
                     matchedIndex = candidates[0].index;
                 }
             }
-
 
             // 5. 화면 바인딩 데이터 확정
             let currentStopName = curBisStopName || "현재 정류장";
@@ -5090,25 +5210,37 @@ function loadLatestColleagueMessage() {
             // - 다음 정류장에 닿을 때까지는 시간이 흘러도 diff를 다시 계산하지 않습니다.
             // ==============================================================
             if (matchedIndex !== -1 && currentTimeStr !== "--:--:--" && currentTimeStr !== "-") {
-                const currentUniqueKey = String(curBisStopId || '') + "_IDX_" + String(matchedIndex);
+                const currentUniqueKey = String(curBisStopId || '') + "_ORD_" + String(curBisNodeOrd) + "_IDX_" + String(matchedIndex);
 
                 // 새로운 정류장으로 식별 키가 변경된 경우에만 1회 계산 후 영구 잠금
-                if (window.bisStopLockState.lockedStopKey !== currentUniqueKey) {
+                if (!window.bisStopLockState || window.bisStopLockState.lockedStopKey !== currentUniqueKey) {
+                    window.bisStopLockState = window.bisStopLockState || {};
                     const standardSec = parseTimeToSeconds(currentTimeStr);
 
                     if (standardSec > 0) {
-                        const diffSec = currentWallSec - standardSec;
-                        const diffMin = Math.round(diffSec / 60);
-                        const absMin = Math.abs(diffMin);
+                        let diffSec = currentWallSec - standardSec;
+                        // 24시간 자정 경계 보정 (예: 23:55 vs 00:05 등)
+                        if (diffSec > 43200) diffSec -= 86400;
+                        else if (diffSec < -43200) diffSec += 86400;
 
-                        window.bisStopLockState.lockedDelayText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
+                        let diffMin = Math.round(diffSec / 60);
 
-                        if (diffMin <= -4) {
-                            window.bisStopLockState.lockedTargetColor = "#ea4335"; // 조발 (빨강)
-                        } else if (diffMin >= 4) {
-                            window.bisStopLockState.lockedTargetColor = "#9c27b0"; // 지연 (보라)
+                        // 🛡️ [이상치 방어] 오차가 60분 초과 시 비정상 상태(미운행/대기)로 처리하여 300+분 등 오표시 차단
+                        if (Math.abs(diffMin) > 60) {
+                            console.warn(`⚠️ 비정상 오차시간(${diffMin}분) 감지 -> 운행대기/회차 미일치 처리`);
+                            window.bisStopLockState.lockedDelayText = "-";
+                            window.bisStopLockState.lockedTargetColor = "#94a3b8"; // 중립 회색
                         } else {
-                            window.bisStopLockState.lockedTargetColor = "#00ff66"; // 정시 (초록)
+                            const absMin = Math.abs(diffMin);
+                            window.bisStopLockState.lockedDelayText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
+
+                            if (diffMin <= -4) {
+                                window.bisStopLockState.lockedTargetColor = "#ea4335"; // 조발 (빨강)
+                            } else if (diffMin >= 4) {
+                                window.bisStopLockState.lockedTargetColor = "#9c27b0"; // 지연 (보라)
+                            } else {
+                                window.bisStopLockState.lockedTargetColor = "#00ff66"; // 정시 (초록)
+                            }
                         }
                     } else {
                         window.bisStopLockState.lockedDelayText = "0";
@@ -5138,11 +5270,12 @@ function loadLatestColleagueMessage() {
         const nextStopBox = document.querySelector('.current-stop-highlight-bar');
 
         if (badgeEl) {
-            badgeEl.innerText = displayText;
+            badgeEl.innerText = displayText || "0";
             badgeEl.style.display = "inline-flex";
             badgeEl.style.border = `2.5px solid ${targetColor}`;
             badgeEl.style.color = "#ffffff";
-            badgeEl.style.background = "transparent";
+            badgeEl.style.background = (targetColor === "#00ff66" || targetColor === "#34c759") ? "rgba(52, 199, 89, 0.2)" : (targetColor === "#ea4335" ? "rgba(234, 67, 53, 0.2)" : (targetColor === "#9c27b0" ? "rgba(156, 39, 176, 0.2)" : "rgba(148, 163, 184, 0.15)"));
+            badgeEl.style.boxShadow = `0 0 14px ${targetColor}55`;
         }
 
         if (nextStopBox) {
