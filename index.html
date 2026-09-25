@@ -1070,69 +1070,125 @@
         user-select: none;
     }
 
-    /* 🎨 공유 시간표 및 아코디언 스타일 (CSS 주석 문법으로 수정됨) */
+    /* 🎨 공유 시간표 스타일: 외부박스 완전 제거 & 보일듯 말듯한 은은한 회색 구분선 (고급 HUD) */
     #resTimetable table,
     #resTimetable .schedule-table {
-        width: 100%;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
-        margin-top: 4px;
-        table-layout: fixed;
-        border-radius: 14px !important;
-        overflow: hidden !important;
-        border: 1.5px solid rgba(56, 189, 248, 0.25) !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 2px !important;
+        table-layout: fixed !important;
+        border: none !important; /* 🌟 외부박스 테두리 완전 제거 */
+        background: transparent !important;
+        box-shadow: none !important;
     }
 
     #resTimetable th,
     #resTimetable td {
-        border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
-        border-right: 1px solid rgba(51, 65, 85, 0.6) !important;
-        padding: 8px 3px !important;
-        text-align: center;
+        border: none !important;
+        /* 보일듯 말듯한 고급스러운 은은한 회색 구분선 */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+        padding: 9px 3px !important;
+        text-align: center !important;
         color: #f8fafc;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        background: transparent !important;
     }
 
+    /* 맨 우측 열은 세로선 제거 */
+    #resTimetable th:last-child,
+    #resTimetable td:last-child {
+        border-right: none !important;
+    }
+
+    /* 맨 마지막 행은 하단선 제거 (외부 테두리 방지) */
+    #resTimetable tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    /* 헤더 열: 세련된 회색 톤 & 하단만 은은하게 정돈 */
     #resTimetable th {
-        background-color: #0f172a !important;
+        background: rgba(15, 23, 42, 0.3) !important;
         color: #94a3b8 !important;
-        font-weight: bold;
-        font-size: 11px !important;
+        font-weight: 800 !important;
+        font-size: 12px !important;
+        letter-spacing: 0.3px !important;
+        border-bottom: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+        padding: 8px 3px !important;
     }
 
+    /* 첫 번째 열 (회차): 차분한 보조 톤 */
     #resTimetable th:first-child,
     #resTimetable td:first-child {
-        width: 26px !important;
-        max-width: 26px !important;
-        min-width: 26px !important;
-        font-size: 10px !important;
-        background-color: #0f172a !important;
-        color: #94a3b8 !important;
+        width: 28px !important;
+        max-width: 28px !important;
+        min-width: 28px !important;
+        font-size: 11px !important;
+        color: #64748b !important;
+        font-weight: 700 !important;
+        background: transparent !important;
     }
 
     #resTimetable td:not(:first-child) {
+        font-size: 17px !important;
+        font-weight: 900 !important;
+        color: #e2e8f0;
+        letter-spacing: 0.4px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ================================================================ */
+    /* 🌟 [나노바나나 HUD 에디션] 시간표 회차 상태 스타일링 */
+    /* ================================================================ */
+    /* 1. 내가 운행할 회차 행 (은은한 투명 유리글라스 배경 효과) */
+    #resTimetable tr.my-shift-trip td {
+        background: rgba(56, 189, 248, 0.035) !important;
+        color: #f8fafc !important;
+    }
+    #resTimetable tr.my-shift-trip td:first-child {
+        border-left: 2px solid rgba(56, 189, 248, 0.35) !important;
+    }
+
+    /* 2. 현재 운행중 / 다음 출발 회차 행 (투명도를 낮춰 은은하고 고급스럽게 발광) */
+    #resTimetable tr.highlight-next-trip td {
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.09) 0%, rgba(14, 116, 144, 0.13) 100%) !important;
+        border-top: 1px solid rgba(56, 189, 248, 0.4) !important;
+        border-bottom: 1px solid rgba(56, 189, 248, 0.4) !important;
+        color: #fef08a !important;
         font-size: 18px !important;
         font-weight: 900 !important;
-        color: #38bdf8;
-        letter-spacing: 0.3px;
-    }
-
-    #resTimetable tr.past-trip {
-        opacity: 0.35 !important;
-    }
-
-    #resTimetable tr.highlight-next-trip {
-        background-color: rgba(56, 189, 248, 0.15) !important;
-        border: 2px solid #38bdf8 !important;
+        box-shadow: inset 0 0 8px rgba(56, 189, 248, 0.12) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        text-shadow: 0 0 6px rgba(254, 240, 138, 0.25);
         opacity: 1 !important;
     }
+    #resTimetable tr.highlight-next-trip td:first-child {
+        border-left: 1.5px solid rgba(56, 189, 248, 0.55) !important;
+        border-top-left-radius: 8px !important;
+        border-bottom-left-radius: 8px !important;
+    }
+    #resTimetable tr.highlight-next-trip td:last-child {
+        border-right: 1.5px solid rgba(56, 189, 248, 0.55) !important;
+        border-top-right-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
 
-    #resTimetable tr.highlight-next-trip td {
-        font-weight: 900 !important;
-        font-size: 20px !important;
-        color: #fbbf24 !important;
+    /* 3. 운행 마친 회차 행 (흐릿하게 디밍 처리하여 회차 완료를 명확히 표시) */
+    #resTimetable tr.past-trip td {
+        opacity: 0.25 !important;
+        color: #64748b !important;
+        background: transparent !important;
+        filter: grayscale(80%) blur(0.25px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+    }
+    #resTimetable tr.past-trip td * {
+        color: #64748b !important;
+        border-color: rgba(100, 116, 139, 0.25) !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
     }
 
     /* ================================================================ */
@@ -2586,6 +2642,138 @@ top: 8%;
     .hud-memo-textarea:focus {
         border-color: #38bdf8;
         box-shadow: 0 0 14px rgba(56, 189, 248, 0.3), inset 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ================================================================ */
+    /* 📋 [노선정보 / 교대정보] 메시지 리스트 & 구분선 */
+    /* ================================================================ */
+    .hud-memo-history-list {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        background: rgba(11, 19, 38, 0.7);
+        border: 1.5px solid rgba(71, 85, 105, 0.45);
+        border-radius: 14px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        max-height: 360px;
+        margin-bottom: 10px;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 개별 메시지 행: 시간표와 완전히 동일한 얇은 회색 구분선으로 예전/새 작성 구분 */
+    .hud-memo-msg-item {
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+        line-height: 1.55;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        word-break: break-word;
+        white-space: pre-wrap;
+        box-sizing: border-box;
+        transition: background-color 0.2s ease;
+    }
+
+    .hud-memo-msg-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .hud-memo-msg-text {
+        flex: 1;
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+        line-height: 1.55;
+    }
+
+    .hud-memo-del-btn {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+        outline: none;
+        transition: color 0.2s, transform 0.15s;
+    }
+
+    .hud-memo-del-btn:hover {
+        color: #ef4444;
+        transform: scale(1.15);
+    }
+
+    .hud-memo-input-row {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .hud-memo-quick-input {
+        flex: 1;
+        min-height: 48px;
+        background: rgba(11, 19, 38, 0.9);
+        border: 1.5px solid rgba(71, 85, 105, 0.8);
+        border-radius: 12px;
+        padding: 10px 14px;
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.4;
+        font-family: inherit;
+        outline: none;
+        resize: none;
+        box-sizing: border-box;
+        transition: border-color 0.25s, box-shadow 0.25s;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hud-memo-quick-input:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hud-memo-add-btn {
+        min-width: 68px;
+        padding: 0 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        outline: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hud-memo-add-btn:active {
+        transform: scale(0.96);
+    }
+
+    .hud-memo-add-route {
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.85) 0%, rgba(14, 116, 144, 0.95) 100%);
+        border: 1.5px solid #38bdf8;
+        color: #ffffff;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .hud-memo-add-shift {
+        background: linear-gradient(135deg, rgba(217, 119, 6, 0.85) 0%, rgba(180, 83, 9, 0.95) 100%);
+        border: 1.5px solid #f59e0b;
+        color: #ffffff;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
     }
 
 </style>
@@ -7456,6 +7644,13 @@ function renderEditRouteOptions() {
             safeSetText('liveCardDetail', '오늘은 편안한 휴무일입니다.');
             safeSetText('liveCardWarmMessage', '따뜻한 차 한 잔과 함께 충분한 휴식을 취해보세요! ☕');
 
+            if (typeof loadFolderMemoTab === 'function') {
+                try {
+                    loadFolderMemoTab('route');
+                    loadFolderMemoTab('shift');
+                    loadFolderMemoTab('memo');
+                } catch(e) {}
+            }
             if (typeof loadTodayMemo === 'function') loadTodayMemo();
             if (typeof calculateStats === 'function') calculateStats();
             return;
@@ -7903,7 +8098,36 @@ function renderEditRouteOptions() {
         let prevDate = null;
         let tableRows = table ? Array.from(table.querySelectorAll('tbody tr[data-time1]')) : [];
 
-        tableRows.forEach(r => r.classList.remove('past-trip', 'highlight-next-trip'));
+        // 🌟 모든 회차 상태 클래스 초기화
+        tableRows.forEach(r => r.classList.remove('past-trip', 'highlight-next-trip', 'my-shift-trip'));
+
+        // 🌟 [1. 운행 마친 회차 행 판별] -> 흐릿하게 디밍 처리하여 회차 완료를 명확히 표시
+        if (todayStr && searchDateStr < todayStr) {
+            tableRows.forEach(r => r.classList.add('past-trip'));
+        } else if (todayStr && searchDateStr === todayStr) {
+            list.forEach((tripData, tripIdx) => {
+                let tripRow = tableRows.find(r => parseInt(r.getAttribute('data-rowidx')) === tripIdx) || null;
+                if (!tripRow) return;
+                let isLast = (tripIdx === list.length - 1);
+                let endT = (typeof getValidEndTime === 'function') 
+                    ? getValidEndTime(tripData, colCount, isLast) 
+                    : tripData[`time${colCount}`];
+                if (endT) {
+                    let endD = parseTimeToDate(endT, searchDateStr);
+                    if (endD && now > endD) {
+                        tripRow.classList.add('past-trip');
+                    }
+                }
+            });
+        }
+
+        // 🌟 [2. 내가 운행할 회차행 지정] -> 투명 유리글라스 느낌의 배경 효과 부여
+        for (let i = myStartTripIdx; i <= myEndTripIdx; i++) {
+            let tripRow = tableRows.find(r => parseInt(r.getAttribute('data-rowidx')) === i) || null;
+            if (tripRow && !tripRow.classList.contains('past-trip')) {
+                tripRow.classList.add('my-shift-trip');
+            }
+        }
 
         for (let i = myStartTripIdx; i <= myEndTripIdx; i++) {
             let tripData = list[i];
@@ -7935,12 +8159,6 @@ function renderEditRouteOptions() {
 
         if (stopsSequence.length === 0) return;
 
-        stopsSequence.forEach(s => {
-            if (s.isLastStop && now > s.timeDate && s.row) {
-                s.row.classList.add('past-trip');
-            }
-        });
-
         // 현재 시각보다 미래의 가장 가까운 경유지 찾기
         let nextStop = stopsSequence.find(s => s.timeDate > now);
 
@@ -7956,8 +8174,11 @@ function renderEditRouteOptions() {
 
             setMainCardStatus(false, '', '운행종료', '#94a3b8');
         } else if (now >= firstStop.timeDate && now <= lastStop.timeDate) {
-            // ⭐ [운행중] 근무 시간 내 운행 진행 중:
-            if (nextStop.row) nextStop.row.classList.add('highlight-next-trip');
+            // ⭐ [운행중] 근무 시간 내 운행 진행 중: 현재/다음 회차에 네온 유리글라스 하이라이트 부여
+            if (nextStop.row) {
+                nextStop.row.classList.remove('my-shift-trip');
+                nextStop.row.classList.add('highlight-next-trip');
+            }
 
             let seqVal = (schedData && schedData.seq) ? schedData.seq : '1순번';
             let seqStr = seqVal.includes('순번') ? seqVal : `${seqVal}순번`;
@@ -7987,7 +8208,11 @@ function renderEditRouteOptions() {
                 setMainCardStatus(false, '', '운행중', '#22c55e');
             }
         } else {
-            // ⭐ [운행전 / 교대전] 아직 오늘 운행 시작 전:
+            // ⭐ [운행전 / 교대전] 아직 오늘 운행 시작 전: 첫 회차에 하이라이트 적용
+            if (firstStop && firstStop.row && searchDateStr === todayStr && !firstStop.row.classList.contains('past-trip')) {
+                firstStop.row.classList.remove('my-shift-trip');
+                firstStop.row.classList.add('highlight-next-trip');
+            }
             let seqVal = (schedData && schedData.seq) ? schedData.seq : '1순번';
             let seqStr = seqVal.includes('순번') ? seqVal : `${seqVal}순번`;
             window.currentTripRoundNumber = `${seqStr} ${firstStop.tripIdx}회차`;
@@ -9710,9 +9935,44 @@ function getCurrentActiveRouteNumber() {
   return '281';
 }
 
+// 2-1. 휴일/휴무일 여부 판별 헬퍼
+function isCurrentSelectedDateHoliday() {
+  try {
+    const dateInput = document.getElementById('searchDate');
+    const dateStr = dateInput ? dateInput.value : '';
+    if (dateStr) {
+      const driverKey = typeof getDriverKey === 'function' ? getDriverKey(`sched_${dateStr}`) : `sched_${dateStr}`;
+      const saved = localStorage.getItem(driverKey);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data && (data.workType === '휴무' || data.workType === '휴일' || data.workType === '연차' || data.workType === '공가' || data.workType === '병가')) {
+          return true;
+        }
+        if (data && (!data.route || data.route === '-' || data.route === '휴무' || data.route === '휴일')) {
+          return true;
+        }
+      }
+    }
+  } catch(e) {}
+
+  const resRoute = document.getElementById('resRoute');
+  if (resRoute && (resRoute.innerText === '휴무' || resRoute.innerText === '휴일')) {
+    return true;
+  }
+  const resType = document.getElementById('resType');
+  if (resType && (resType.innerText === '휴무' || resType.innerText === '휴일')) {
+    return true;
+  }
+  return false;
+}
+
 function getBoardTargetKey(category) {
   if (category === 'ROUTE' || category === 'SHIFT') {
-    // 노선정보와 교대정보 모두 노선 번호(281 등)로 매칭
+    // 💡 [핵심] 휴일인 경우 별도의 키(HOLIDAY)로 완벽히 분리 관리 (다른 노선 메시지 혼선 차단)
+    if (isCurrentSelectedDateHoliday()) {
+      return 'HOLIDAY';
+    }
+    // 평일/운행일인 경우 노선 번호(281 등)로 매칭
     return getCurrentActiveRouteNumber();
   } else if (category === 'MEMO') {
     return typeof getMemoKey === 'function' ? getMemoKey() : 'today_memo';
@@ -9730,6 +9990,8 @@ function applyDriverSignatureToContent(text, driverName) {
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i].trim();
     if (line) {
+      // 구분선인 경우 서명 부착 제외
+      if (line.includes('───') || line.includes('---')) break;
       // 이미 (이름) 형태의 괄호로 끝나는 경우 중복 부착 방지
       const hasSig = /\([^)]+\)$/.test(line);
       if (!hasSig) {
@@ -9822,6 +10084,10 @@ function switchScheduleTab(tabName) {
 
   // 3) 메모 탭인 경우 데이터 로드 및 높이 조절
   if (tabName !== 'timetable') {
+    if (typeof sessionExitFlags !== 'undefined') {
+      sessionExitFlags['ROUTE'] = true;
+      sessionExitFlags['SHIFT'] = true;
+    }
     loadFolderMemoTab(tabName);
     const textareaId = (tabName === 'route') ? 'routeMemo' : ((tabName === 'shift') ? 'shiftMemo' : 'todayMemo');
     setTimeout(() => {
@@ -9909,27 +10175,46 @@ function switchFolderTab(tabName) {
 // 6. 단일 탭 데이터 로드 (BOARD_DB 연동)
 function loadFolderMemoTab(tabName) {
   const category = (tabName === 'route') ? 'ROUTE' : ((tabName === 'shift') ? 'SHIFT' : 'MEMO');
+  const targetKey = getBoardTargetKey(category);
+  const isHoliday = (targetKey === 'HOLIDAY');
+
   const textareaId = (tabName === 'route') ? 'routeMemo' : ((tabName === 'shift') ? 'shiftMemo' : 'todayMemo');
   const statusId = (tabName === 'route') ? 'routeMemoSaveStatus' : ((tabName === 'shift') ? 'shiftMemoSaveStatus' : 'todayMemoSaveStatus');
-  const targetKey = getBoardTargetKey(category);
   const textarea = document.getElementById(textareaId);
   const statusText = document.getElementById(statusId);
   if (!textarea) return;
 
-  // 서브 라벨에만 노선번호 동적 표기 (상단 제목탭은 '노선정보', '교대정보' 깔끔하게 유지)
+  // 헤더 서브 라벨 및 플레이스홀더 동적 표기
   if (tabName === 'route') {
     const lbl = document.getElementById('routeMemoHeaderLabel');
-    if (lbl) lbl.innerText = `노선 주의사항 (${targetKey}번 전체 공유)`;
+    if (lbl) {
+      lbl.innerText = isHoliday ? '휴일 주의사항 (전체 공유)' : `노선 주의사항 (${targetKey}번 전체 공유)`;
+    }
+    textarea.placeholder = isHoliday 
+      ? '휴일에 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)'
+      : '해당 노선 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)';
   } else if (tabName === 'shift') {
     const lbl = document.getElementById('shiftMemoHeaderLabel');
-    if (lbl) lbl.innerText = `교대 특이사항 (${targetKey}번 인계)`;
+    if (lbl) {
+      lbl.innerText = isHoliday ? '휴일 특이사항 (전체 공유)' : `교대 특이사항 (${targetKey}번 인계)`;
+    }
+    textarea.placeholder = isHoliday
+      ? '휴일 특이사항을 입력하세요. (자동 저장)'
+      : '다음 교대자에게 인계할 차량/운행 특이사항을 입력하세요. (자동 저장)';
   }
 
   // 1) 로컬 스토리지 캐시 우선 표시 (0ms 즉시 노출)
   const localCacheKey = `board_memo_${category}_${targetKey}`;
   const cached = localStorage.getItem(localCacheKey);
   if (cached !== null) {
-    textarea.value = cached;
+    let cleanText = cached;
+    if (cleanText.includes('---DIVIDER---')) {
+      cleanText = cleanText.split(/\r?\n?---DIVIDER---\r?\n?/).filter(Boolean).join('\n──────────────────────────────\n');
+    }
+    textarea.value = cleanText;
+    autoResizeTextarea(textarea);
+  } else {
+    textarea.value = '';
     autoResizeTextarea(textarea);
   }
 
@@ -9944,8 +10229,12 @@ function loadFolderMemoTab(tabName) {
     google.script.run
       .withSuccessHandler(res => {
         if (res && res.success && res.content !== undefined) {
-          textarea.value = res.content || '';
-          localStorage.setItem(localCacheKey, res.content || '');
+          let serverContent = res.content || '';
+          if (serverContent.includes('---DIVIDER---')) {
+            serverContent = serverContent.split(/\r?\n?---DIVIDER---\r?\n?/).filter(Boolean).join('\n──────────────────────────────\n');
+          }
+          textarea.value = serverContent;
+          localStorage.setItem(localCacheKey, serverContent);
           autoResizeTextarea(textarea);
           if (statusText) {
             statusText.innerText = "☁️ 구글시트 동기화됨";
@@ -9964,8 +10253,9 @@ function loadFolderMemoTab(tabName) {
   }
 }
 
-// 7. 실시간 자동저장(Debounce 1.2초) 및 작성자(유재필) 서명 바인딩
+// 7. 실시간 자동저장(Debounce 1.2초) 및 세션 구분선/서명 자동 바인딩
 const folderMemoTimers = {};
+const sessionExitFlags = { ROUTE: true, SHIFT: true };
 
 function setupFolderCardMemos() {
   const configs = [
@@ -9979,9 +10269,25 @@ function setupFolderCardMemos() {
     const statusText = document.getElementById(cfg.statusId);
     if (!textarea) return;
 
+    // 💡 [핵심] 메뉴를 나간 후 들어와서 새로 작성할 때 자동으로 얇은 회색 구분선 삽입
+    textarea.onfocus = function() {
+      if (cfg.sign && sessionExitFlags[cfg.cat]) {
+        const val = textarea.value;
+        const trimmed = val.trim();
+        const divider = '──────────────────────────────';
+        if (trimmed.length > 0 && !trimmed.endsWith(divider)) {
+          textarea.value = val.trimEnd() + '\n' + divider + '\n';
+          textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+          autoResizeTextarea(textarea);
+        }
+        sessionExitFlags[cfg.cat] = false;
+      }
+    };
+
     // 입력 시 높이 자동 조절 및 디바운스 자동 저장
     textarea.oninput = function() {
       autoResizeTextarea(textarea);
+      sessionExitFlags[cfg.cat] = false;
 
       if (statusText) {
         statusText.innerText = "⏳ 저장 중...";
@@ -9990,15 +10296,15 @@ function setupFolderCardMemos() {
       }
 
       if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
-
       folderMemoTimers[cfg.cat] = setTimeout(() => {
         saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
       }, 1200);
     };
 
-    // 포커스 벗어날 때 즉시 저장 & 서명 확정
+    // 포커스 벗어날 때 (메뉴 나가기): 서명 확정 & 즉시 저장, 다음 진입 시 구분선 플래그 활성화
     textarea.onblur = function() {
       if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
+      sessionExitFlags[cfg.cat] = true;
       saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
     };
   });
@@ -10014,16 +10320,23 @@ function setupFolderCardMemos() {
   // 창 크기 변경 시 높이 자동 재계산
   window.addEventListener('resize', () => {
     const activeTextarea = document.querySelector(`#panelRoute textarea, #panelShift textarea, #panelMemo textarea`);
-    if (activeTextarea) autoResizeTextarea(activeTextarea);
+    if (activeTextarea && activeTextarea.offsetParent !== null) autoResizeTextarea(activeTextarea);
   });
 }
 
-// 8. 실제 구글 시트 BOARD_DB 저장 함수
+// 8. 실제 구글 시트 BOARD_DB 저장 함수 (바로 수정하고 자동 저장)
 function saveFolderCardMemoNow(category, textarea, statusText, requireSignature) {
   if (!textarea) return;
   const targetKey = getBoardTargetKey(category);
   const driverName = getLoggedInDriverName();
   let rawContent = textarea.value;
+
+  // 만약 내용 없이 구분선만 남겨두고 나간 경우 정리
+  const trimmed = rawContent.trimEnd();
+  if (trimmed.endsWith('──────────────────────────────')) {
+    rawContent = trimmed.slice(0, -30).trimEnd();
+    textarea.value = rawContent;
+  }
 
   // 노선정보 / 교대정보: 작성한 사람이름이 문장 끝에 (유재필) 형태로 자동 첨부
   if (requireSignature && rawContent.trim()) {
@@ -10035,11 +10348,9 @@ function saveFolderCardMemoNow(category, textarea, statusText, requireSignature)
     }
   }
 
-  // 1) 로컬 스토리지 즉시 캐시 (네트워크 단절 대비)
+  // 1) 로컬 스토리지 즉시 캐시
   const localCacheKey = `board_memo_${category}_${targetKey}`;
   localStorage.setItem(localCacheKey, rawContent);
-
-  // 오늘의메모 레거시 키 호환성 유지
   if (category === 'MEMO') {
     localStorage.setItem(targetKey, rawContent);
   }
