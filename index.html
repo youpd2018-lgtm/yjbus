@@ -2847,7 +2847,7 @@ top: 8%;
           <span id="headerTitleText">영종운수 스마트근무표</span>
         </h1>
       </div>
-      <div class="top-controls" style="display: flex; gap: 8px;">
+      <div class="top-controls" style="display: flex; gap: 20px;">
         <button type="button" class="refresh-btn" id="refreshBtn" onclick="location.reload()" title="새로고침"
           style="background: #0f172a; color: #38bdf8; border: 1.5px solid #38bdf8; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(56, 189, 248, 0.2);">
           <iconify-icon icon="mdi:refresh" style="font-size: 15px;"></iconify-icon>
@@ -3217,8 +3217,8 @@ top: 8%;
 
       <!-- 메인화면 오늘의 한마디 (새로 추가) -->
       <div id="mainTodayWordWidget" onclick="openWriteMessagePrompt()" title="터치하여 응원의 한마디 작성"
-        style="background: #1e293b; border: 1.2px solid #334155; border-radius: 12px; padding: 11px 14px; margin: 15px 0 0 0; overflow: hidden; cursor: pointer; transition: all 0.2s ease;">
-        <div class="message-ticker-wrap" style="min-height: 40px; padding: 0; display: flex; align-items: center;">
+        style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 8px 12px; margin: 15px 0 0 0; overflow: hidden; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12);">
+        <div class="message-ticker-wrap" style="min-height: auto; padding: 0; display: flex; align-items: center;">
           <div id="mainColleagueMessage" class="message-ticker-text" style="width: 100%; display: flex; align-items: center;">
             <span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
               <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
@@ -4999,12 +4999,41 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             if (bisVehicleEl) bisVehicleEl.innerText = "-";
             applyLockedDelayBadge("-", "#94a3b8");
             
-            const p1 = document.getElementById('p1_delay'); if (p1) p1.innerText = '-';
-            const p2 = document.getElementById('p2_delay'); if (p2) p2.innerText = '-';
-            const p3 = document.getElementById('p3_delay'); if (p3) p3.innerText = '-';
+            // 박스 세개 (P1, P2, P3) 딜레이, 장소, 시간 모두 '-'
+            ['1','2','3'].forEach(num => {
+                const delay = document.getElementById(`p${num}_delay`); if (delay) delay.innerText = '-';
+                const loc = document.getElementById(`seqPoint${num}Loc`); if (loc) loc.innerText = '-';
+                const time = document.getElementById(`seqPoint${num}Time`); if (time) time.innerText = '-';
+            });
+            
+            // 교통정보 (소통 원활 등) 표시란 모두 '-'
+            const nextName = document.getElementById('trafficStopNameNext'); if (nextName) nextName.innerText = '-';
+            const nextTime = document.getElementById('trafficStopTimeNext'); if (nextTime) nextTime.innerText = '-';
+            const afterName = document.getElementById('trafficStopNameAfter'); if (afterName) afterName.innerText = '-';
+            const afterTime = document.getElementById('trafficStopTimeAfter'); if (afterTime) afterTime.innerText = '-';
+            const statusText = document.getElementById('trafficFlowStatusText');
+            if (statusText) {
+                statusText.innerText = '-';
+                statusText.style.color = '#94a3b8';
+            }
+            const glowLine = document.getElementById('trafficFlowGlowLine');
+            if (glowLine) glowLine.style.background = '#475569';
+            const flowDot = document.getElementById('trafficFlowDot');
+            if (flowDot) {
+                flowDot.style.background = '#94a3b8';
+                flowDot.style.borderColor = '#475569';
+                flowDot.style.boxShadow = 'none';
+            }
             
             const liveModalRoute = document.querySelector('#liveModal .route-badge');
             if (liveModalRoute) liveModalRoute.innerText = "-";
+
+            // 교통 소통정보 티커도 "휴식" 모드
+            window.liveTrafficAlerts = ["🏖️ [운행 휴무] 오늘은 운행일이 아닙니다. 푹 쉬세요!"];
+            if (typeof renderMessages === 'function' && typeof currentMsgRotationList !== 'undefined') {
+                const baseMsgs = currentMsgRotationList; // loading 제거 완료된 리스트
+                renderMessages(baseMsgs);
+            }
 
             // GPS 및 타이머 기능 완전히 차단 (운행일만 동작하도록 보장)
             return;
@@ -5067,9 +5096,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                 if (typeof updateTrafficStopFromMaster === 'function') {
                     updateTrafficStopFromMaster(data);
                 }
-                if (window.lastReceivedBisXml && duty.busNo) {
-                    parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
-                }
                 resolve({ success: true, data: data });
                 return;
             }
@@ -5083,10 +5109,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 
                     if (typeof updateTrafficStopFromMaster === 'function') {
                         updateTrafficStopFromMaster(res.data);
-                    }
-
-                    if (window.lastReceivedBisXml && duty.busNo) {
-                        parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
                     }
                 } else {
                     console.warn(`⚠️ [standard_master] 일치하는 회차 데이터가 없습니다. (요청 키: ${uniqueKey})`);
@@ -5378,7 +5400,7 @@ function renderMessages(msgsArray) {
   }
 
   // 메인 메시지 (최대 12개)
-  currentMsgRotationList = ['__LOADING_INDICATOR__', ...validMsgs.slice(0, 12)];
+  currentMsgRotationList = [...validMsgs.slice(0, 12)];
   
   // 라이브 메시지 (국토부 API - 돌발/소통)
   let trafficMsgs = [];
@@ -5387,7 +5409,7 @@ function renderMessages(msgsArray) {
   } else {
     trafficMsgs = ["🚗 [교통 소통정보] 현재 수신된 특이사항이 없습니다."]; // 기본 소통정보 (흰색)
   }
-  currentLiveMsgRotationList = ['__LOADING_INDICATOR__', ...trafficMsgs];
+  currentLiveMsgRotationList = [...trafficMsgs];
   
   currentMsgRotationIndex = 0;
 
@@ -6725,49 +6747,13 @@ function loadLatestColleagueMessage() {
         "282": "ICB368000066"
     };
 
-    // [실시간 버스 정보 고속 수신 함수 - 빠른 폴백 & 지연 없는 수신]
+    // [실시간 버스 정보 고속 수신 함수 - 현재 GPS 단독 사용으로 완전 차단됨]
     async function fetchLiveBisForLiveModal(routeShort, targetBusNo) {
-        if (typeof isBisAllowedForDate === 'function' && !isBisAllowedForDate()) return;
-
-        const cleanRoute = String(routeShort || '').trim().toUpperCase();
-        const routeId = CLIENT_ROUTE_MAP[cleanRoute] || CLIENT_ROUTE_MAP[cleanRoute.replace(/[^0-9]/g, '')];
-
-        // 1. GAS 환경일 때 google.script.run 직접 호출
-        if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getIncheonBusLive === 'function') {
-            google.script.run
-                .withSuccessHandler(function (xmlText) {
-                    if (typeof parseAndApplyBisData === 'function' && xmlText && !xmlText.startsWith("ERROR")) {
-                        parseAndApplyBisData(xmlText, targetBusNo);
-                    } else {
-                        fallbackGasProxyBis(routeShort, targetBusNo);
-                    }
-                })
-                .withFailureHandler(function (err) {
-                    console.warn("⚠️ GAS native BIS 지연 -> 웹앱 프록시 전환:", err);
-                    fallbackGasProxyBis(routeShort, targetBusNo);
-                })
-                .getIncheonBusLive(routeShort, targetBusNo);
-            return;
-        }
-
-        // 2. 외부 환경(GitHub Pages 등)인 경우: 웹앱 프록시 호출을 메인으로 신속 실행
-        fallbackGasProxyBis(routeShort, targetBusNo);
+        return; // GPS 기능과의 충돌을 막기 위해 차단
     }
 
     function fallbackGasProxyBis(routeShort, targetBusNo) {
-        const gasUrl = window.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec';
-        fetch(gasUrl + '?action=get_incheon_bus_live&routeShort=' + encodeURIComponent(routeShort || '') + '&targetBusNo=' + encodeURIComponent(targetBusNo || ''))
-            .then(function(r) { return r.text(); })
-            .then(function(xmlText) {
-                if (typeof parseAndApplyBisData === 'function' && xmlText && (xmlText.includes('<response>') || xmlText.includes('<items>') || xmlText.includes('<header>'))) {
-                    parseAndApplyBisData(xmlText, targetBusNo);
-                } else {
-                    console.warn("⚠️ [BIS 프록시] 올바른 XML 응답이 아님:", xmlText ? xmlText.substring(0, 100) : "empty");
-                }
-            })
-            .catch(function(err) {
-                console.warn("⚠️ BIS 웹앱 프록시 fetch 수신 실패:", err);
-            });
+        return; // GPS 기능과의 충돌을 막기 위해 차단
     }
 
     // ================================================================
@@ -6782,24 +6768,11 @@ function loadLatestColleagueMessage() {
     }
 
     // ================================================================
-    // 🛰️ [실시간 BIS 파서] 정류장 ID 매칭 및 오차시간 절대 동결(Lock) 엔진
+    // 🛰️ [실시간 BIS 파서] 정류장 ID 매칭 및 오차시간 절대 동결(Lock) 엔진 (차단됨)
     // ================================================================
     function parseAndApplyBisData(xmlText, targetPlateNo) {
-        try {
-            if (!xmlText || typeof xmlText !== 'string' || xmlText.startsWith("ERROR")) return;
-            window.lastReceivedBisXml = xmlText;
+        return; // GPS 기능에 모든 권한 위임
 
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-            const items = xmlDoc.getElementsByTagName("item");
-            const targetDigits = String(targetPlateNo).replace(/[^0-9]/g, '');
-
-            // 1. 차량번호 타겟팅
-            let targetBus = null;
-            for (let i = 0; i < items.length; i++) {
-                let rawPlate = items[i].getElementsByTagName("vehicleno")[0]?.textContent ||
-                    items[i].getElementsByTagName("plateNo")[0]?.textContent ||
-                    items[i].getElementsByTagName("VEHICLENO")[0]?.textContent || '';
                 let digits = rawPlate.replace(/[^0-9]/g, '');
                 if (digits.endsWith(targetDigits) || digits.includes(targetDigits)) {
                     targetBus = items[i];
