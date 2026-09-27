@@ -2847,7 +2847,11 @@ top: 8%;
           <span id="headerTitleText">영종운수 스마트근무표</span>
         </h1>
       </div>
-      <div class="top-controls">
+      <div class="top-controls" style="display: flex; gap: 8px;">
+        <button type="button" class="refresh-btn" id="refreshBtn" onclick="location.reload()" title="새로고침"
+          style="background: #0f172a; color: #38bdf8; border: 1.5px solid #38bdf8; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(56, 189, 248, 0.2);">
+          <iconify-icon icon="mdi:refresh" style="font-size: 15px;"></iconify-icon>
+        </button>
         <button type="button" class="logout-btn" id="logoutBtn" onclick="logoutDriver()" title="로그아웃"
           style="background: #0f172a; color: #84cc16; border: 1.5px solid #84cc16; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(132, 204, 22, 0.2);">
           <iconify-icon icon="mdi:power" style="font-size: 15px;"></iconify-icon>
@@ -3124,8 +3128,8 @@ top: 8%;
           style="display: flex; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 6px; margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12);">
           
           <!-- 탭 1: 오늘의 시간표 (메인 탭, 끝이 둥글게 처리된 사각형) -->
-          <button type="button" class="hud-tab-btn active" id="todayTimetableTabBtn" data-tab="timetable" onclick="switchScheduleTab('timetable')"
-            style="flex: 1; min-width: 0; background: linear-gradient(135deg, rgba(14, 116, 144, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.8px solid #38bdf8; border-radius: 12px; padding: 9px 2px 8px 2px; color: #38bdf8; font-size: 13px; font-weight: 900; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.2); text-shadow: 0 0 8px rgba(56, 189, 248, 0.6); outline: none;">
+          <button type="button" class="hud-tab-btn" id="todayTimetableTabBtn" data-tab="timetable" onclick="switchScheduleTab('timetable')"
+            style="flex: 1; min-width: 0; background: rgba(30, 41, 59, 0.5); border: 1.5px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 9px 2px 8px 2px; color: #94a3b8; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;">
             <span>오늘의 시간표</span>
           </button>
 
@@ -3150,10 +3154,10 @@ top: 8%;
 
         <!-- 2. 분리된 하단 내용 박스 (끝이 둥글게 처리된 사각형 카드) -->
         <div id="todayTimetableBody" class="hud-tab-body"
-          style="margin-top: 10px; background: linear-gradient(165deg, rgba(22, 33, 56, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); backdrop-filter: blur(16px); border: 1.8px solid rgba(56, 189, 248, 0.45); border-radius: 20px; padding: 16px 14px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 20px rgba(56, 189, 248, 0.16); transition: border-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden; box-sizing: border-box;">
+          style="display: none; margin-top: 10px; background: linear-gradient(165deg, rgba(22, 33, 56, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); backdrop-filter: blur(16px); border: 1.8px solid rgba(56, 189, 248, 0.45); border-radius: 20px; padding: 16px 14px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 20px rgba(56, 189, 248, 0.16); transition: border-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden; box-sizing: border-box;">
           
           <!-- [패널 0] 오늘의 시간표 -->
-          <div id="panelTimetable" class="hud-panel-content" style="display: block;">
+          <div id="panelTimetable" class="hud-panel-content" style="display: none;">
             <div id="resTimetable" class="today-timetable-scope"
               style="font-size: 13px; overflow-x: auto; color: #cbd5e1; -webkit-overflow-scrolling: touch;">
               날짜를 선택하면 시간표가 나타납니다.
@@ -3208,6 +3212,19 @@ top: 8%;
               placeholder="오늘 근무에 대한 나만의 메모를 남겨보세요. (자동 저장)"></textarea>
           </div>
 
+        </div>
+      </div>
+
+      <!-- 메인화면 오늘의 한마디 (새로 추가) -->
+      <div id="mainTodayWordWidget" onclick="openWriteMessagePrompt()" title="터치하여 응원의 한마디 작성"
+        style="background: #1e293b; border: 1.2px solid #334155; border-radius: 12px; padding: 11px 14px; margin: 15px 0 0 0; overflow: hidden; cursor: pointer; transition: all 0.2s ease;">
+        <div class="message-ticker-wrap" style="min-height: 40px; padding: 0; display: flex; align-items: center;">
+          <div id="mainColleagueMessage" class="message-ticker-text" style="width: 100%; display: flex; align-items: center;">
+            <span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
+              오늘의 한마디 로딩 중...
+            </span>
+          </div>
         </div>
       </div>
 
@@ -3811,12 +3828,12 @@ top: 8%;
         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
           <div id="trafficStopNameNext"
             title="다음 정류장"
-            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
             다음 정류장
           </div>
           <span id="trafficStopTimeNext"
-            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14px; font-weight: 700; color: #38bdf8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
-            [--:--:--]
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
+            --:--:--
           </span>
         </div>
 
@@ -3833,7 +3850,7 @@ top: 8%;
           </div>
           <!-- 라인 아래 소통 상태 텍스트 (소통원활 / 서행 / 정체) -->
           <div id="trafficFlowStatusText"
-            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 12.5px; font-weight: 800; color: #22c55e; margin-top: 6px; letter-spacing: -0.3px; white-space: nowrap; transition: color 0.4s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14.5px; font-weight: 800; color: #22c55e; margin-top: 6px; letter-spacing: -0.3px; white-space: nowrap; transition: color 0.4s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">
             소통원활
           </div>
         </div>
@@ -3842,12 +3859,12 @@ top: 8%;
         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
           <div id="trafficStopNameAfter"
             title="다음다음 정류장"
-            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: right; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: right; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
             다음다음
           </div>
           <span id="trafficStopTimeAfter"
-            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
-            [--:--:--]
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
+            --:--:--
           </span>
         </div>
 
@@ -3874,7 +3891,7 @@ top: 8%;
         <div id="liveColleagueMessage" class="message-ticker-text" style="width: 100%; display: flex; align-items: center;">
           <span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
             <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
-            오늘의 한마디 로딩 중...
+            교통 정보 로딩 중...
           </span>
         </div>
       </div>
@@ -3995,6 +4012,7 @@ top: 8%;
   <audio id="voiceFallbackAudio" preload="auto" style="display: none;"></audio>
 
   
+
 <script>
 window.GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec";
 if (typeof google === 'undefined') window.google = {};
@@ -4972,6 +4990,26 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : {};
         const bisVehicleEl = document.getElementById('bisVehicleNo');
 
+        // 🚦 [운행일 여부 강력 검사] 휴일/미등록/휴무/대기 등 운행일이 아니면 기능 차단
+        const rawRoute = document.getElementById('resRoute')?.innerText.trim() || '';
+        const isNotDrivingDay = rawRoute === '-' || rawRoute.includes('휴일') || rawRoute.includes('휴무') || rawRoute.includes('미등록') || rawRoute.includes('대기') || !/\d/.test(rawRoute);
+
+        if (isNotDrivingDay) {
+            // 모든 주요 기능 표시를 "-" 로 통일
+            if (bisVehicleEl) bisVehicleEl.innerText = "-";
+            applyLockedDelayBadge("-", "#94a3b8");
+            
+            const p1 = document.getElementById('p1_delay'); if (p1) p1.innerText = '-';
+            const p2 = document.getElementById('p2_delay'); if (p2) p2.innerText = '-';
+            const p3 = document.getElementById('p3_delay'); if (p3) p3.innerText = '-';
+            
+            const liveModalRoute = document.querySelector('#liveModal .route-badge');
+            if (liveModalRoute) liveModalRoute.innerText = "-";
+
+            // GPS 및 타이머 기능 완전히 차단 (운행일만 동작하도록 보장)
+            return;
+        }
+
         if (!duty || !duty.busNo) {
             if (bisVehicleEl) bisVehicleEl.innerText = "배차 차량 정보 없음";
             return;
@@ -5295,15 +5333,19 @@ function formatMessageDisplay(rawText) {
   // 가족 여부 판별 (기사: #ffffff 흰색, 가족: #86efac 연한 녹색)
   const isFamily = sender.includes('가족') || msg.includes('가족') || text.includes('가족');
   const themeColor = isFamily ? '#86efac' : '#ffffff';
-  const iconName = isFamily ? 'solar:heart-bold' : 'solar:user-speak-rounded-bold';
+  
+  // 기사와 가족 모두 동일한 기사 이모지 사용
+  const iconName = 'solar:user-speak-rounded-bold';
 
   const iconHtml = `<iconify-icon icon="${iconName}" style="font-size: 19px; color: ${themeColor} !important; vertical-align: -3px; margin-right: 5px; flex-shrink: 0;"></iconify-icon>`;
 
   return `
-    <span style="display: inline-flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+    <span style="display: flex; align-items: flex-start; max-width: 100%;">
       ${iconHtml}
-      <span style="color: ${themeColor} !important; font-weight: 600 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${msg}</span>
-      <span style="font-size: 13.5px; color: #94a3b8 !important; margin-left: 6px; flex-shrink: 0;">[${sender}]</span>
+      <span style="display: flex; flex-wrap: wrap; align-items: baseline; word-break: keep-all; line-height: 1.4;">
+        <span style="color: ${themeColor} !important; font-weight: 600 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; white-space: normal;">${msg}</span>
+        <span style="font-size: 13.5px; color: #94a3b8 !important; margin-left: 6px; white-space: nowrap;">[${sender}]</span>
+      </span>
     </span>
   `;
 }
@@ -5312,12 +5354,13 @@ function formatMessageDisplay(rawText) {
 // 📢 [오늘의 한마디 & 돌발 속보] 5초 페이드 회전 렌더러
 // ================================================================
 let currentMsgRotationList = [];
+let currentLiveMsgRotationList = [];
 let currentMsgRotationIndex = 0;
 let msgRotationTimer = null;
 
 function renderMessages(msgsArray) {
-  const tickerEl = document.getElementById('liveColleagueMessage');
-  if (!tickerEl) return;
+  const mainTickerEl = document.getElementById('mainColleagueMessage');
+  const liveTickerEl = document.getElementById('liveColleagueMessage');
 
   if (msgRotationTimer) {
     clearInterval(msgRotationTimer);
@@ -5334,62 +5377,117 @@ function renderMessages(msgsArray) {
     validMsgs = ["안전운행 하시고 오늘도 좋은 하루 되세요! [영종운수]"];
   }
 
-  // 실시간 돌발 상황이 있으면 상단에 우선 결합
+  // 메인 메시지 (최대 12개)
+  currentMsgRotationList = ['__LOADING_INDICATOR__', ...validMsgs.slice(0, 12)];
+  
+  // 라이브 메시지 (국토부 API - 돌발/소통)
+  let trafficMsgs = [];
   if (window.liveTrafficAlerts && Array.isArray(window.liveTrafficAlerts) && window.liveTrafficAlerts.length > 0) {
-    validMsgs = [...window.liveTrafficAlerts, ...validMsgs];
+    trafficMsgs = [...window.liveTrafficAlerts];
+  } else {
+    trafficMsgs = ["🚗 [교통 소통정보] 현재 수신된 특이사항이 없습니다."]; // 기본 소통정보 (흰색)
   }
-
-  // 최대 12개로 제한
-  const slicedMsgs = validMsgs.slice(0, 12);
-
-  // 시퀀스 구성
-  currentMsgRotationList = ['__LOADING_INDICATOR__', ...slicedMsgs];
+  currentLiveMsgRotationList = ['__LOADING_INDICATOR__', ...trafficMsgs];
+  
   currentMsgRotationIndex = 0;
 
   // 첫 화면 즉시 표출
   showRotatingMessage(0);
 
   // 5초 간격 전환
-  if (currentMsgRotationList.length > 1) {
-    msgRotationTimer = setInterval(() => {
-      currentMsgRotationIndex = (currentMsgRotationIndex + 1) % currentMsgRotationList.length;
-      transitionToMessage(currentMsgRotationIndex);
-    }, 5000);
+  msgRotationTimer = setInterval(() => {
+    currentMsgRotationIndex = (currentMsgRotationIndex + 1);
+    transitionToMessage(currentMsgRotationIndex);
+  }, 5000);
+}
+
+function formatTrafficDisplay(msg) {
+  if (msg === '__LOADING_INDICATOR__') {
+    return `<span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
+              교통 정보 로딩 중...
+            </span>`;
   }
+  
+  // 돌발정보 노란색, 교통 소통정보 흰색
+  const isAlert = msg.includes('[돌발]') || msg.startsWith('🚨');
+  const themeColor = isAlert ? '#fde047' : '#ffffff';
+  const iconName = isAlert ? 'solar:danger-triangle-bold' : 'solar:info-circle-bold';
+  
+  return `
+    <span style="display: flex; align-items: flex-start; max-width: 100%;">
+      <iconify-icon icon="${iconName}" style="font-size: 19px; color: ${themeColor} !important; vertical-align: -3px; margin-right: 5px; flex-shrink: 0;"></iconify-icon>
+      <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; white-space: normal; color: ${themeColor} !important; font-weight: 600 !important; line-height: 1.4; word-break: keep-all;">${msg}</span>
+    </span>
+  `;
 }
 
 function showRotatingMessage(index) {
-  const tickerEl = document.getElementById('liveColleagueMessage');
-  if (!tickerEl || !currentMsgRotationList[index]) return;
+  const mainTickerEl = document.getElementById('mainColleagueMessage');
+  const liveTickerEl = document.getElementById('liveColleagueMessage');
+  
+  const mainIdx = index % currentMsgRotationList.length;
+  const liveIdx = index % currentLiveMsgRotationList.length;
 
-  const targetMsg = currentMsgRotationList[index] || '';
-  if ((targetMsg.startsWith('__INCIDENT__') || targetMsg.startsWith('🚨') || targetMsg.includes('[돌발]')) && targetMsg !== lastPlayedAlertText) {
-    lastPlayedAlertText = targetMsg;
-    playChimeDingDong();
+  if (mainTickerEl) {
+    const mainMsg = currentMsgRotationList[mainIdx] || '';
+    mainTickerEl.classList.remove('fade-out', 'fade-in');
+    mainTickerEl.innerHTML = mainMsg === '__LOADING_INDICATOR__' ? 
+      `<span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
+         <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
+         오늘의 한마디 로딩 중...
+       </span>` : formatMessageDisplay(mainMsg);
   }
 
-  tickerEl.classList.remove('fade-out', 'fade-in');
-  tickerEl.innerHTML = formatMessageDisplay(targetMsg);
+  if (liveTickerEl) {
+    const liveMsg = currentLiveMsgRotationList[liveIdx] || '';
+    if ((liveMsg.startsWith('🚨') || liveMsg.includes('[돌발]')) && liveMsg !== window.lastPlayedAlertText) {
+      window.lastPlayedAlertText = liveMsg;
+      if (typeof playChimeDingDong === 'function') playChimeDingDong();
+    }
+    liveTickerEl.classList.remove('fade-out', 'fade-in');
+    liveTickerEl.innerHTML = formatTrafficDisplay(liveMsg);
+  }
 }
 
 function transitionToMessage(nextIndex) {
-  const tickerEl = document.getElementById('liveColleagueMessage');
-  if (!tickerEl || !currentMsgRotationList[nextIndex]) return;
+  const mainTickerEl = document.getElementById('mainColleagueMessage');
+  const liveTickerEl = document.getElementById('liveColleagueMessage');
+  
+  const mainIdx = nextIndex % currentMsgRotationList.length;
+  const liveIdx = nextIndex % currentLiveMsgRotationList.length;
 
-  const targetMsg = currentMsgRotationList[nextIndex] || '';
-  if ((targetMsg.startsWith('__INCIDENT__') || targetMsg.startsWith('🚨') || targetMsg.includes('[돌발]')) && targetMsg !== lastPlayedAlertText) {
-    lastPlayedAlertText = targetMsg;
-    playChimeDingDong();
+  if (mainTickerEl) {
+    const mainMsg = currentMsgRotationList[mainIdx] || '';
+    mainTickerEl.classList.add('fade-out');
+    setTimeout(() => {
+      mainTickerEl.innerHTML = mainMsg === '__LOADING_INDICATOR__' ? 
+        `<span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
+           <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
+           오늘의 한마디 로딩 중...
+         </span>` : formatMessageDisplay(mainMsg);
+      mainTickerEl.classList.remove('fade-out');
+      mainTickerEl.classList.add('fade-in');
+      void mainTickerEl.offsetWidth;
+      mainTickerEl.classList.remove('fade-in');
+    }, 450);
   }
 
-  tickerEl.classList.add('fade-out');
-  setTimeout(() => {
-    tickerEl.innerHTML = formatMessageDisplay(targetMsg);
-    tickerEl.classList.remove('fade-out');
-    tickerEl.classList.add('fade-in');
-    void tickerEl.offsetWidth;
-    tickerEl.classList.remove('fade-in');
-  }, 450);
+  if (liveTickerEl) {
+    const liveMsg = currentLiveMsgRotationList[liveIdx] || '';
+    if ((liveMsg.startsWith('🚨') || liveMsg.includes('[돌발]')) && liveMsg !== window.lastPlayedAlertText) {
+      window.lastPlayedAlertText = liveMsg;
+      if (typeof playChimeDingDong === 'function') playChimeDingDong();
+    }
+    liveTickerEl.classList.add('fade-out');
+    setTimeout(() => {
+      liveTickerEl.innerHTML = formatTrafficDisplay(liveMsg);
+      liveTickerEl.classList.remove('fade-out');
+      liveTickerEl.classList.add('fade-in');
+      void liveTickerEl.offsetWidth;
+      liveTickerEl.classList.remove('fade-in');
+    }, 450);
+  }
 }
 
 // ================================================================
@@ -5514,8 +5612,7 @@ function processIncidentsList(incidents, busLat, busLon) {
 
   // 오늘의 한마디 티커 갱신
   if (typeof currentMsgRotationList !== 'undefined' && currentMsgRotationList.length > 0) {
-    // 기존 메시지들 유지하면서 돌발상황 결합
-    const baseMsgs = currentMsgRotationList.filter(m => !m.startsWith('🚨') && !m.startsWith('__INCIDENT__') && m !== '__LOADING_INDICATOR__');
+    const baseMsgs = currentMsgRotationList.filter(m => m !== '__LOADING_INDICATOR__');
     renderMessages(baseMsgs);
   }
 }
@@ -6350,13 +6447,13 @@ function loadLatestColleagueMessage() {
             if (!cleanNextName || cleanNextName === '-' || cleanNextName === 'null') cleanNextName = "다음 정류장";
             let cleanNextTime = String(nextTime || '').trim();
             if (!cleanNextTime || cleanNextTime === '-' || cleanNextTime === 'null') cleanNextTime = "--:--:--";
-            if (!cleanNextTime.startsWith('[') && cleanNextTime !== "--:--:--") cleanNextTime = `[${cleanNextTime}]`;
+            cleanNextTime = cleanNextTime.replace(/\[|\]/g, ''); // 괄호 완벽 제거
 
             let cleanAfterName = String(afterName || '').trim();
             if (!cleanAfterName || cleanAfterName === '-' || cleanAfterName === 'null') cleanAfterName = "(종점 도착)";
             let cleanAfterTime = String(afterTime || '').trim();
             if (!cleanAfterTime || cleanAfterTime === '-' || cleanAfterTime === 'null') cleanAfterTime = "-";
-            if (!cleanAfterTime.startsWith('[') && cleanAfterTime !== "-") cleanAfterTime = `[${cleanAfterTime}]`;
+            cleanAfterTime = cleanAfterTime.replace(/\[|\]/g, ''); // 괄호 완벽 제거
 
             // 🛡️ [종점 튐 방어] 갱신 시 갑자기 '(종점 도착)'이 들어오려 할 때 직전 정상 다음 정류장 보존
             if (cleanNextName === "(종점 도착)" && window.lastValidNextStop && window.lastValidNextStop.name && window.lastValidNextStop.name !== "(종점 도착)") {
