@@ -4057,6 +4057,7 @@ if (!google.script) google.script = {};
 </script>
 
 <script>
+  
     // ==========================================
     // LIVE 모달 연동 및 시퀀스 그리드 정밀 표준시간 계산 최종 수정본 (컨테이너 분리 적용)
     // ==========================================
@@ -10259,9 +10260,9 @@ const sessionExitFlags = { ROUTE: true, SHIFT: true };
 
 function setupFolderCardMemos() {
   const configs = [
-    { cat: 'ROUTE', id: 'routeMemo', statusId: 'routeMemoSaveStatus', sign: true },
-    { cat: 'SHIFT', id: 'shiftMemo', statusId: 'shiftMemoSaveStatus', sign: true },
-    { cat: 'MEMO', id: 'todayMemo', statusId: 'todayMemoSaveStatus', sign: false }
+    { cat: 'ROUTE', id: 'routeMemo', statusId: 'routeMemoSaveStatus', sign: false, divider: true },
+    { cat: 'SHIFT', id: 'shiftMemo', statusId: 'shiftMemoSaveStatus', sign: false, divider: true },
+    { cat: 'MEMO', id: 'todayMemo', statusId: 'todayMemoSaveStatus', sign: false, divider: false }
   ];
 
   configs.forEach(cfg => {
@@ -10271,7 +10272,7 @@ function setupFolderCardMemos() {
 
     // 💡 [핵심] 메뉴를 나간 후 들어와서 새로 작성할 때 자동으로 얇은 회색 구분선 삽입
     textarea.onfocus = function() {
-      if (cfg.sign && sessionExitFlags[cfg.cat]) {
+      if ((cfg.divider || cfg.sign) && sessionExitFlags[cfg.cat]) {
         const val = textarea.value;
         const trimmed = val.trim();
         const divider = '──────────────────────────────';
@@ -10338,7 +10339,7 @@ function saveFolderCardMemoNow(category, textarea, statusText, requireSignature)
     textarea.value = rawContent;
   }
 
-  // 노선정보 / 교대정보: 작성한 사람이름이 문장 끝에 (유재필) 형태로 자동 첨부
+  // 노선정보 / 교대정보: 더이상 사용자이름이 본문에 첨부되지 않음 (사용자 요청 반영)
   if (requireSignature && rawContent.trim()) {
     const signedContent = applyDriverSignatureToContent(rawContent, driverName);
     if (signedContent !== rawContent) {
@@ -10354,6 +10355,9 @@ function saveFolderCardMemoNow(category, textarea, statusText, requireSignature)
   if (category === 'MEMO') {
     localStorage.setItem(targetKey, rawContent);
   }
+
+  // 노선정보 및 교대정보 작성 시 사용자이름 제외
+  const memoWriter = (category === 'ROUTE' || category === 'SHIFT') ? '' : driverName;
 
   // 2) 구글 시트 BOARD_DB 서버 저장
   if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.saveBoardMemo === 'function') {
@@ -10372,7 +10376,7 @@ function saveFolderCardMemoNow(category, textarea, statusText, requireSignature)
           statusText.style.color = "#ef4444";
         }
       })
-      .saveBoardMemo(category, targetKey, rawContent, driverName);
+      .saveBoardMemo(category, targetKey, rawContent, memoWriter);
   } else {
     if (statusText) {
       statusText.innerText = "☁️ 저장됨(로컬)";
