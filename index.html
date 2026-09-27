@@ -4969,10 +4969,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                 if (typeof loadLatestColleagueMessage === 'function') loadLatestColleagueMessage();
             } else {
                 msgWidget.style.display = 'none';
-                if (msgRotationTimer) {
-                    clearInterval(msgRotationTimer);
-                    msgRotationTimer = null;
-                }
             }
         }
 
@@ -5169,11 +5165,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         if (window.liveIntervalTimer) {
             clearInterval(window.liveIntervalTimer);
             window.liveIntervalTimer = null;
-        }
-
-        if (msgRotationTimer) {
-            clearInterval(msgRotationTimer);
-            msgRotationTimer = null;
         }
     }
 
@@ -12247,6 +12238,25 @@ function buildVoiceAssistantContext(queryText) {
     }
   });
 
+  // 7. [실시간 GPS 및 국토교통부 교통/돌발 정보]
+  let liveGpsTrafficReport = "\n[실시간 위치 및 교통/돌발 정보]";
+  
+  const liveGpsStatus = document.getElementById('liveCardStatus')?.innerText || '';
+  const liveGpsTimeLeft = document.getElementById('liveCardTimeLeft')?.innerText || '';
+  const liveGpsTimeSub = document.getElementById('liveCardTimeSub')?.innerText || '';
+  
+  if (liveGpsStatus && liveGpsStatus !== '-') {
+    liveGpsTrafficReport += `\n- 현재 내 위치/상태: ${liveGpsStatus} (도착예정시간: ${liveGpsTimeLeft}, 다음: ${liveGpsTimeSub})`;
+  } else {
+    liveGpsTrafficReport += `\n- 현재 내 위치/상태: GPS 정보 없음 또는 운행 중 아님`;
+  }
+
+  if (window.liveTrafficAlerts && window.liveTrafficAlerts.length > 0) {
+    liveGpsTrafficReport += `\n- 주변 돌발/교통 정보: ${window.liveTrafficAlerts.join(' / ')}`;
+  } else {
+    liveGpsTrafficReport += `\n- 주변 돌발/교통 정보: 특이사항 없음`;
+  }
+
   return `[영종운수 실시간 스마트 운행 관제 데이터]
 - 기준 일시: ${todayStr} (${dayLabel})
 - 질문 기사님: ${myName}
@@ -12259,6 +12269,7 @@ ${vehicleSearchReport}
 ${shiftPartnerReport}
 ${sequenceReport}
 ${statsReport}
+${liveGpsTrafficReport}
 - 오늘 전체 기사 배차 요약 (일부):
 ${userSchedList.slice(0, 25).join('\n')}`;
 }
