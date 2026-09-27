@@ -2890,13 +2890,11 @@ top: 8%;
           <!-- 초대형 PIN 입력창 (차량번호 입력창과 동일하게 모바일 숫자패드 즉시 호출: type="tel" inputmode="numeric" pattern="[0-9]*") -->
           <input type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="gatewayPinInput"
             maxlength="4" placeholder="••••"
-            style="width: 100%; max-width: 240px; height: 54px; text-align: center; font-size: 28px; letter-spacing: 6px; font-weight: bold; border: 3px solid #60a5fa; border-radius: 12px; box-sizing: border-box; background: #0f172a; color: #ffffff; -webkit-text-security: disc;"
-            onkeypress="if(event.key === 'Enter') handleGatewayNext()">
+            style="width: 100%; max-width: 240px; height: 54px; text-align: center; font-size: 28px; letter-spacing: 6px; font-weight: bold; border: 3px solid #60a5fa; border-radius: 12px; box-sizing: border-box; background: #0f172a; color: #ffffff; -webkit-text-security: disc;">
 
-          <!-- 다음 단계 버튼 -->
           <button type="button" class="action-btn"
             style="width: 100%; max-width: 240px; height: 50px; font-size: 18px; font-weight: 900; background: #2563eb; color: #ffffff; border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"
-            onclick="handleGatewayNext()">
+            id="gatewayNextBtn">
             다음 단계 <iconify-icon icon="mdi:arrow-right-circle" style="font-size: 20px;"></iconify-icon>
           </button>
         </div>
@@ -3706,6 +3704,24 @@ top: 8%;
       <span id="liveModalDateText" style="display: none !important;"></span>
     </div>
 
+    <!-- 📍 [GPS 권한 및 위치 켜기 안내 배너] (위치 꺼짐/거부 시에만 표출) -->
+    <div id="gpsPermissionBanner" style="display: none; background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.3)); border: 1.5px solid #ef4444; border-radius: 12px; padding: 10px 12px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 13px; font-weight: 800; color: #fca5a5; display: flex; align-items: center; gap: 5px;">
+            <iconify-icon icon="solar:danger-triangle-bold" style="font-size: 16px; color: #ef4444;"></iconify-icon>
+            <span id="gpsBannerTitle">위치(GPS)를 켜주세요</span>
+          </div>
+          <div id="gpsBannerDesc" style="font-size: 11.5px; color: #fecaca; margin-top: 3px; line-height: 1.3;">
+            정류장 자동 감지와 오차시간 안내를 위해 위치 권한이 필요합니다.
+          </div>
+        </div>
+        <button type="button" onclick="requestGpsPermission()" style="height: 32px; padding: 0 10px; background: #ef4444; color: #ffffff; font-size: 12px; font-weight: 900; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+          위치 허용
+        </button>
+      </div>
+    </div>
+
     <!-- 2. 상단: 대형 타이머 & 오차 위젯 (글래스모피즘 박스 완벽 복원) -->
     <div class="ios-card ios-primary-card"
       style="margin: 0; padding: 14px 14px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(30, 64, 175, 0.18)); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1.5px solid rgba(56, 189, 248, 0.35); border-top: 1.5px solid rgba(255, 255, 255, 0.5); border-left: 1.5px solid rgba(255, 255, 255, 0.3); box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 0 24px rgba(56, 189, 248, 0.25), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -4px 12px rgba(30, 64, 175, 0.3); border-radius: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
@@ -3726,16 +3742,20 @@ top: 8%;
       </div>
     </div>
 
-    <!-- 차량정보 및 BIS 갱신시간 바 (원래 소스 그대로 유지) -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 8px; font-size: 13px; font-weight: bold; color: #94a3b8; margin: -4px 0 12px 0;">
-      <span style="display: flex; align-items: center; gap: 4px; color: #38bdf8;">
-        <iconify-icon icon="mdi:bus" style="font-size: 14px;"></iconify-icon>
-        <span id="bisVehicleNo">BIS정보 수신 안되는중</span>
+    <!-- 차량정보 바 (차량번호 및 관리자 모의주행 진입 히든 트리거) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 8px; font-size: 13.5px; font-weight: 800; color: #38bdf8; margin: -4px 0 12px 0;">
+      <span style="display: flex; align-items: center; gap: 5px; color: #38bdf8; font-family: 'GmarketSans', -apple-system, sans-serif;">
+        <iconify-icon icon="mdi:bus" style="font-size: 15px; color: #38bdf8;"></iconify-icon>
+        <span id="bisVehicleNo">인천70아1214</span>
       </span>
-      <span style="display: flex; align-items: center; gap: 4px;">
-        <iconify-icon icon="mdi:clock-check-outline" style="font-size: 13px; color: #22c55e;"></iconify-icon>
-        <span>BIS 갱신: </span>
-        <span id="bisLastUpdated" style="color: #f8fafc;">00:00:00</span>
+      <!-- GPS 상태 뱃지 (관리자가 2초간 꾹 누르면 시뮬레이터 패널 열림) -->
+      <span id="gpsAdminTrigger"
+        style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 3px 8px; border-radius: 8px; cursor: pointer; user-select: none;">
+        <iconify-icon icon="solar:satellite-bold" style="font-size: 14px; color: #38bdf8;"></iconify-icon>
+        <span id="gpsStatusText">GPS 연결됨</span>
+      </span>
+      <span id="bisLastUpdatedWrap" style="display: none; align-items: center; gap: 4px; font-size: 12px; color: #94a3b8;">
+        <span id="bisLastUpdated"></span>
       </span>
     </div>
 
@@ -3781,7 +3801,72 @@ top: 8%;
       </div>
     </div>
 
-      <!-- 4. 📢 오늘의 한마디 (초슬림 컴팩트 위젯: 제목/버튼 삭제, 터치 시 작성창 호출) -->
+    <!-- 3. [도로 소통 및 2연속 정류장 흐름 카드] (다음 정류장 ━━━━ 다음다음 정류장) -->
+    <div id="liveTrafficStopBox" class="traffic-stop-flow-card"
+      style="background: #1e293b; border: 1.2px solid #334155; border-radius: 14px; padding: 12px 14px; margin: 10px 0 0 0; box-shadow: 0 6px 18px rgba(0,0,0,0.4);">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 14px;">
+        
+        <!-- 좌측: 다음 정류장 -->
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+          <div id="trafficStopNameNext"
+            title="다음 정류장"
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+            다음 정류장
+          </div>
+          <span id="trafficStopTimeNext"
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14px; font-weight: 700; color: #38bdf8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
+            [--:--:--]
+          </span>
+        </div>
+
+        <!-- 중앙: 소통 라인 & 소통 상태 텍스트 (터치 시 최근 돌발상황 다시보기 및 음성 안내) -->
+        <div onclick="triggerTrafficIncidentTest()"
+          title="터치하여 최근 돌발상황 다시보기 및 음성 안내"
+          style="flex: 1.1; min-width: 85px; max-width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 4px; cursor: pointer; user-select: none;">
+          <!-- 멋진 네온 글로우 소통 라인 -->
+          <div style="position: relative; width: 100%; display: flex; align-items: center; justify-content: center;">
+            <div id="trafficFlowGlowLine"
+              style="width: 100%; height: 5px; border-radius: 4px; background: linear-gradient(90deg, #22c55e, #86efac 50%, #22c55e); box-shadow: 0 0 14px rgba(34, 197, 94, 0.75); transition: all 0.4s ease;"></div>
+            <div id="trafficFlowDot"
+              style="position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 8px #22c55e; border: 2px solid #22c55e; transition: all 0.4s ease;"></div>
+          </div>
+          <!-- 라인 아래 소통 상태 텍스트 (소통원활 / 서행 / 정체) -->
+          <div id="trafficFlowStatusText"
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 12.5px; font-weight: 800; color: #22c55e; margin-top: 6px; letter-spacing: -0.3px; white-space: nowrap; transition: color 0.4s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">
+            소통원활
+          </div>
+        </div>
+
+        <!-- 우측: 다음다음 정류장 -->
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+          <div id="trafficStopNameAfter"
+            title="다음다음 정류장"
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: right; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+            다음다음
+          </div>
+          <span id="trafficStopTimeAfter"
+            style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
+            [--:--:--]
+          </span>
+        </div>
+
+      </div>
+
+      <!-- 이전 버전 ID 호환용 숨김 엘리먼트 -->
+      <div style="display: none !important;">
+        <span id="trafficStopName1"></span>
+        <span id="trafficStopTime1"></span>
+        <span id="trafficStopName2"></span>
+        <span id="trafficStopTime2"></span>
+        <span id="trafficStopName3"></span>
+        <span id="trafficStopTime3"></span>
+        <div id="trafficFlowLine1"></div>
+        <div id="trafficFlowLine2"></div>
+      </div>
+    </div>
+
+    <!-- 4. 📢 오늘의 한마디 (초슬림 컴팩트 위젯: 제목/버튼 삭제, 터치 시 작성창 호출) -->
     <div id="liveMessageWidget" onclick="openWriteMessagePrompt()" title="터치하여 응원의 한마디 작성"
       style="background: #1e293b; border: 1.2px solid #334155; border-radius: 12px; padding: 11px 14px; margin: 10px 0 0 0; overflow: hidden; cursor: pointer; transition: all 0.2s ease;">
       <!-- 평소에는 순환 메시지만 깔끔하게 표출 -->
@@ -3803,8 +3888,73 @@ top: 8%;
         <span id="bisCurrentTime"></span>
       </div>
 
+      <!-- 🎮 [관리자 전용 비밀 모의주행(시뮬레이터) 패널] -->
+      <div id="adminSimPanel" style="display: none; background: rgba(15, 23, 42, 0.96); border: 1.5px solid #38bdf8; border-radius: 14px; padding: 13px; margin-top: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 6px;">
+          <span style="font-size: 13.5px; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
+            <iconify-icon icon="solar:gamepad-bold" style="font-size: 16px;"></iconify-icon>
+            <span>관리자 모의주행 시뮬레이터</span>
+          </span>
+          <button type="button" onclick="toggleAdminSimPanel(false)" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 2px 6px;">✕</button>
+        </div>
+
+        <!-- 노선 선택 & 로드 (근무표를 안 바꿔도 즉시 테스트 가능) -->
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; align-items: center;">
+          <select id="simRouteSelect" style="flex: 1; height: 34px; background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 8px; padding: 0 8px; font-size: 12.5px; font-weight: 700;">
+            <option value="206_PM_1">206번 오후 1회차</option>
+            <option value="206_AM_1">206번 오전 1회차</option>
+            <option value="202_PM_1">202번 오후 1회차</option>
+            <option value="203_PM_1">203번 오후 1회차</option>
+            <option value="204_PM_1">204번 오후 1회차</option>
+            <option value="205_PM_1">205번 오후 1회차</option>
+            <option value="598_PM_1">598번 오후 1회차</option>
+          </select>
+          <button type="button" onclick="loadSimSchedule()" style="height: 34px; padding: 0 12px; background: #0284c7; color: #fff; font-weight: 800; font-size: 12px; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+            시간표 로드
+          </button>
+        </div>
+
+        <!-- 현재 가상 정류장 위치 표시 -->
+        <div style="background: #0f172a; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="flex: 1; min-width: 0; padding-right: 8px;">
+            <div style="font-size: 11px; color: #94a3b8;">가상 통과 정류장 (<span id="simStopIndexText">0/0</span>)</div>
+            <div id="simStopNameText" style="font-size: 13.5px; font-weight: 800; color: #f8fafc; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">정류장 대기 중</div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0;">
+            <div style="font-size: 11px; color: #94a3b8;">표준시각</div>
+            <div id="simStopTimeText" style="font-size: 13px; font-weight: 800; color: #38bdf8; margin-top: 2px;">--:--:--</div>
+          </div>
+        </div>
+
+        <!-- 컨트롤 버튼 그리드 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+          <button id="simAutoPlayBtn" type="button" onclick="toggleSimAutoPlay()" style="height: 38px; background: #16a34a; color: #fff; font-weight: 900; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            5초 자동 주행
+          </button>
+          <button type="button" onclick="simStepForward()" style="height: 38px; background: #2563eb; color: #fff; font-weight: 900; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            다음 정류장 통과
+          </button>
+        </div>
+
+        <!-- 보조 조작 버튼들 (오차시간 조작 & 정류장 이동 & 시뮬레이션 종료) -->
+        <div style="display: flex; gap: 5px;">
+          <button type="button" onclick="simStepBackward()" style="flex: 1; height: 32px; background: #334155; color: #cbd5e1; font-weight: 700; font-size: 11px; border: none; border-radius: 6px; cursor: pointer;">
+            이전 정류장
+          </button>
+          <button type="button" onclick="simSetDelayOffset(0)" style="flex: 1; height: 32px; background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #22c55e; font-weight: 800; font-size: 11px; border-radius: 6px; cursor: pointer;">
+            정시(0분)
+          </button>
+          <button type="button" onclick="simSetDelayOffset(-4)" style="flex: 1; height: 32px; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; font-weight: 800; font-size: 11px; border-radius: 6px; cursor: pointer;">
+            지연(-4분)
+          </button>
+          <button type="button" onclick="stopAdminSim()" style="flex: 1; height: 32px; background: #475569; color: #f1f5f9; font-weight: 700; font-size: 11px; border: none; border-radius: 6px; cursor: pointer;">
+            시뮬 종료
+          </button>
+        </div>
+      </div>
+
       <!-- 6. 하단: 슬림 닫기 버튼 (독립적으로 분리) -->
-      <div class="ios-footer" style="margin-top: 24px; padding-top: 2px;">
+      <div class="ios-footer" style="margin-top: 14px; padding-top: 2px;">
         <button type="button" class="ios-close-btn" onclick="closeLiveModal()"
           style="width: 100%; height: 44px; font-size: 15px; font-weight: 900; border-radius: 10px; background: #334155; color: #ffffff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <iconify-icon icon="mdi:close" style="font-size: 18px;"></iconify-icon> 닫기
@@ -4028,6 +4178,41 @@ if (!google.script) google.script = {};
       saveCoreErrorLog: function(payload) {
         if (successHandler) successHandler({ success: true });
         return bridgeProxy;
+      },
+      getTrafficIncidentLive: function() {
+        const url = window.GAS_WEB_APP_URL + "?action=get_traffic_incident";
+        fetch(url)
+          .then(res => res.json())
+          .then(res => { if (successHandler) successHandler(res || { success: false, incidents: [] }); })
+          .catch(err => {
+            console.warn("GAS getTrafficIncidentLive fallback:", err);
+            if (failureHandler) failureHandler(err);
+          });
+        return bridgeProxy;
+      },
+      getTrafficFlowLive: function() {
+        const url = window.GAS_WEB_APP_URL + "?action=get_traffic_flow";
+        fetch(url)
+          .then(res => res.json())
+          .then(res => { if (successHandler) successHandler(res || { success: false, items: [] }); })
+          .catch(err => {
+            console.warn("GAS getTrafficFlowLive fallback:", err);
+            if (failureHandler) failureHandler(err);
+          });
+        return bridgeProxy;
+      },
+      getIncheonBusLive: function(routeShort, targetBusNo) {
+        const url = window.GAS_WEB_APP_URL + "?action=get_incheon_bus_live&routeShort=" + encodeURIComponent(routeShort || '') + "&targetBusNo=" + encodeURIComponent(targetBusNo || '');
+        fetch(url)
+          .then(res => res.text())
+          .then(xml => {
+            if (successHandler) successHandler(xml || "");
+          })
+          .catch(err => {
+            console.warn("GAS getIncheonBusLive network fallback:", err);
+            if (failureHandler) failureHandler(err);
+          });
+        return bridgeProxy;
       }
     };
 
@@ -4122,13 +4307,49 @@ if (!google.script) google.script = {};
             }
         }
 
+        // 🎯 [실시간 현재 운행 회차 자동 판별 엔진]
         let currentTripRound = 1;
-        let rawRound = String(window.currentTripRoundNumber || '1');
-        if (rawRound.includes('회차')) {
-            let roundMatch = rawRound.match(/(\d+)회차/);
-            if (roundMatch) currentTripRound = roundMatch[1];
-        } else {
-            currentTripRound = rawRound.replace(/[^0-9]/g, '') || 1;
+        try {
+            if (window.currentTripRoundNumber) {
+                let match = String(window.currentTripRoundNumber).match(/(\d+)\s*회차/);
+                if (match) {
+                    currentTripRound = parseInt(match[1], 10) || 1;
+                } else {
+                    currentTripRound = parseInt(String(window.currentTripRoundNumber).replace(/[^0-9]/g, ''), 10) || 1;
+                }
+            } else {
+                let driverKey = typeof getDriverKey === 'function' ? getDriverKey(`sched_${searchDateStr}`) : `sched_${searchDateStr}`;
+                let saved = localStorage.getItem(driverKey);
+                if (saved && typeof customGetItem === 'function') {
+                    let schedData = JSON.parse(saved);
+                    let list = customGetItem(schedData.route, schedData.seq);
+                    if (list && list.length > 0) {
+                        const now = new Date();
+                        let foundTrip = 1;
+                        for (let i = 0; i < list.length; i++) {
+                            let r = list[i];
+                            let startT = r.time1;
+                            let endT = r.time3 || r.time4 || r.time5 || r.time2;
+                            if (startT) {
+                                let sDate = typeof parseTimeToDate === 'function' ? parseTimeToDate(startT, searchDateStr) : null;
+                                let eDate = typeof parseTimeToDate === 'function' ? parseTimeToDate(endT, searchDateStr) : null;
+                                if (sDate && eDate) {
+                                    if (now >= new Date(sDate.getTime() - 25 * 60000) && now <= new Date(eDate.getTime() + 15 * 60000)) {
+                                        foundTrip = i + 1;
+                                        break;
+                                    } else if (now < sDate) {
+                                        foundTrip = i + 1;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        currentTripRound = foundTrip;
+                    }
+                }
+            }
+        } catch (e) {
+            currentTripRound = 1;
         }
 
         const seqInt = parseInt(seqNumText, 10) || 1;
@@ -4619,6 +4840,11 @@ if (!google.script) google.script = {};
                 endTime: validStops[validStops.length - 1]?.time
             };
 
+            // 🚦 [3번째 박스 사전 렌더링] masterCache(실제 세부 BIS 정류장명) 우선 표출
+            if (window.standardMasterCache && window.standardMasterCache.length > 0 && typeof updateTrafficStopFromMaster === 'function') {
+                updateTrafficStopFromMaster(window.standardMasterCache);
+            }
+
             console.log(`🎯 [회차 ${targetTripIdx}] 시퀀스 동기화 완료 (유효 거점: ${validStops.length}개)`);
 
         } catch (e) {
@@ -4680,6 +4906,11 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         // 1. 시퀀스 박스(P1, P2, P3) 시간 동기화 (메인 시간표 기반)
         if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
             syncSequenceBoxesFromMainSchedule();
+        }
+
+        // 1-1. 3번째 박스(다음 정류장 - 다음다음 정류장) 캐시 즉시 바인딩 (0ms 빠른 노출)
+        if (window.standardMasterCache && window.standardMasterCache.length > 0 && typeof updateTrafficStopFromMaster === 'function') {
+            updateTrafficStopFromMaster(window.standardMasterCache);
         }
 
         // 2. 모달 날짜 텍스트 세팅
@@ -4753,23 +4984,21 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         // 초기 오차 배지 상태 ("-")
         applyLockedDelayBadge("-", "#94a3b8");
 
-        // 차량 헤더 초기 상태 설정
+        // 차량 헤더 초기 상태 설정 (차량번호만 선명하게 표시)
         if (bisVehicleEl) {
-            if (!isDateAllowed) {
-                bisVehicleEl.innerText = `인천70아${duty.busNo} (과거/미래 날짜)`;
-            } else if (!isOperating) {
-                bisVehicleEl.innerText = `인천70아${duty.busNo} (운행대기)`;
-            } else {
-                bisVehicleEl.innerText = `인천70아${duty.busNo} (조회 중...)`;
-            }
+            let plateStr = duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
+            bisVehicleEl.innerText = plateStr;
         }
 
         // 💡 [표준시간 마스터 로드] 운행시간 외여도 시간표 대조를 위해 반드시 로드
         loadStandardMasterCache(duty);
 
-        // 💡 실시간 BIS 조회 및 주기적 타이머 시작
-        if (isDateAllowed && typeof fetchLiveBisForLiveModal === 'function') {
-            fetchLiveBisForLiveModal(duty.routeShort, duty.busNo);
+        // 🛰️ [신규 GPS 엔진 가동] 실시간 기사님 스마트폰 GPS 추적 및 정류장 자동 감지 시작!
+        if (typeof startLiveGpsTracking === 'function') {
+            startLiveGpsTracking(duty);
+        }
+        if (typeof initGpsAdminTrigger === 'function') {
+            initGpsAdminTrigger();
         }
         if (typeof startBisTimer === 'function') {
             startBisTimer(duty);
@@ -4797,6 +5026,9 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                 window.standardMasterCache = data;
                 window.currentTripMasterCache = data;
                 console.log(`📥 [표준시간 캐시 적중] 키: ${uniqueKey} (총 ${data.length}개 정류장)`);
+                if (typeof updateTrafficStopFromMaster === 'function') {
+                    updateTrafficStopFromMaster(data);
+                }
                 if (window.lastReceivedBisXml && duty.busNo) {
                     parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
                 }
@@ -4811,13 +5043,20 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                     window.currentTripMasterCache = res.data;
                     console.log(`📥 [고유키 매칭 완료] 키: ${uniqueKey} (총 ${res.data.length}개 정류장 수신)`);
 
+                    if (typeof updateTrafficStopFromMaster === 'function') {
+                        updateTrafficStopFromMaster(res.data);
+                    }
+
                     if (window.lastReceivedBisXml && duty.busNo) {
                         parseAndApplyBisData(window.lastReceivedBisXml, duty.busNo);
                     }
                 } else {
                     console.warn(`⚠️ [standard_master] 일치하는 회차 데이터가 없습니다. (요청 키: ${uniqueKey})`);
-                    window.standardMasterCache = [];
-                    window.currentTripMasterCache = [];
+                    // 🛡️ 기존 캐시가 이미 존재한다면 빈 배열로 날리지 않고 안전하게 유지!
+                    if (!window.standardMasterCache || window.standardMasterCache.length === 0) {
+                        window.standardMasterCache = [];
+                        window.currentTripMasterCache = [];
+                    }
                 }
                 resolve(res || { success: false });
             };
@@ -4859,6 +5098,12 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         if (modal) {
             modal.style.display = 'none';
             modal.classList.remove('active');
+        }
+
+        // 🛰️ GPS 추적 안전 중단 (배터리 보호)
+        if (window.liveGpsWatchId && navigator.geolocation) {
+            navigator.geolocation.clearWatch(window.liveGpsWatchId);
+            window.liveGpsWatchId = null;
         }
 
         if (window.liveIntervalTimer) {
@@ -4950,16 +5195,74 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 // ================================================================
 // 📢 [오늘의 한마디] 메시지 포맷터 (로딩 인디케이터 & 기사/가족 색상 분기)
 // ================================================================
+// ================================================================
+// 🔔 맑고 고급스러운 "띵-동" (E5 -> C5) 알림음 (Web Audio API, 0ms 무지연)
+// ================================================================
+let lastPlayedAlertText = "";
+function playChimeDingDong() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const now = ctx.currentTime;
+
+    // 1st Tone (E5 = 659.25Hz) - "띵"
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(659.25, now);
+    gain1.gain.setValueAtTime(0.28, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.55);
+
+    // 2nd Tone (C5 = 523.25Hz) - "동" (0.18초 뒤)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(523.25, now + 0.18);
+    gain2.gain.setValueAtTime(0.30, now + 0.18);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.18);
+    osc2.stop(now + 0.95);
+  } catch(e) {
+    console.warn("오디오 알림 재생 생략:", e);
+  }
+}
+
+// ================================================================
+// 📢 [오늘의 한마디 & 돌발 속보] 메시지 포맷터
+// - 🚨 돌발속보: 노란색 (#fde047) + 경고 아이콘
+// - 💬 기사메시지: 흰색 (#ffffff)
+// - 💖 가족메시지: 연한 녹색 (#86efac)
+// ================================================================
 function formatMessageDisplay(rawText) {
   if (!rawText) return '';
   let text = String(rawText);
 
-  // 🌟 [로딩 인디케이터] 순환 시작 및 10개 주기마다 표출
+  // 🌟 [로딩 인디케이터]
   if (text === '__LOADING_INDICATOR__' || text.includes('오늘의 한마디 로딩 중')) {
     return `
       <span style="display: inline-flex; align-items: center; gap: 6px; color: #94a3b8;">
         <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 18px; flex-shrink: 0;"></iconify-icon>
         <span style="font-size: 14.5px; font-weight: 500; color: #94a3b8;">오늘의 한마디 로딩 중...</span>
+      </span>
+    `;
+  }
+
+  // 🚨 [실시간 돌발 속보]: 노란색 굵은 글씨 + 뱃지
+  if (text.startsWith('__INCIDENT__') || text.startsWith('🚨') || text.includes('[돌발]') || text.includes('[사고]') || text.includes('[공사]') || text.includes('[통제]')) {
+    let cleanText = text.replace('__INCIDENT__', '').trim();
+    return `
+      <span style="display: inline-flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+        <iconify-icon icon="solar:danger-triangle-bold" style="font-size: 18px; color: #facc15 !important; vertical-align: -2px; margin-right: 5px; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(250,204,21,0.5));"></iconify-icon>
+        <span style="color: #facc15 !important; font-weight: 800 !important; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.2px;">${cleanText}</span>
       </span>
     `;
   }
@@ -4989,23 +5292,24 @@ function formatMessageDisplay(rawText) {
 
   if (!sender) sender = "동료기사";
 
-  // 가족 여부 판별 (기사: #ffffff, 가족: #fde047)
+  // 가족 여부 판별 (기사: #ffffff 흰색, 가족: #86efac 연한 녹색)
   const isFamily = sender.includes('가족') || msg.includes('가족') || text.includes('가족');
-  const themeColor = isFamily ? '#fde047' : '#ffffff';
+  const themeColor = isFamily ? '#86efac' : '#ffffff';
+  const iconName = isFamily ? 'solar:heart-bold' : 'solar:user-speak-rounded-bold';
 
-  const iconHtml = `<iconify-icon icon="solar:user-speak-rounded-bold" style="font-size: 19px; color: ${themeColor} !important; vertical-align: -3px; margin-right: 5px; flex-shrink: 0;"></iconify-icon>`;
+  const iconHtml = `<iconify-icon icon="${iconName}" style="font-size: 19px; color: ${themeColor} !important; vertical-align: -3px; margin-right: 5px; flex-shrink: 0;"></iconify-icon>`;
 
   return `
     <span style="display: inline-flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
       ${iconHtml}
-      <span style="color: ${themeColor} !important; font-weight: 500 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${msg}</span>
+      <span style="color: ${themeColor} !important; font-weight: 600 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${msg}</span>
       <span style="font-size: 13.5px; color: #94a3b8 !important; margin-left: 6px; flex-shrink: 0;">[${sender}]</span>
     </span>
   `;
 }
 
 // ================================================================
-// 📢 [오늘의 한마디] 5초 페이드 회전 렌더러 (최대 10개 + 로딩 인디케이터)
+// 📢 [오늘의 한마디 & 돌발 속보] 5초 페이드 회전 렌더러
 // ================================================================
 let currentMsgRotationList = [];
 let currentMsgRotationIndex = 0;
@@ -5025,19 +5329,24 @@ function renderMessages(msgsArray) {
     validMsgs = msgsArray.filter(m => m && String(m).trim().length > 0);
   }
 
-  // 🌟 저장 데이터가 없을 때 무한 로딩 방지 기본 메시지
+  // 🌟 저장 데이터가 없을 때 기본 메시지
   if (validMsgs.length === 0) {
     validMsgs = ["안전운행 하시고 오늘도 좋은 하루 되세요! [영종운수]"];
   }
 
-  // 최대 10개로 제한
-  const slicedMsgs = validMsgs.slice(0, 10);
+  // 실시간 돌발 상황이 있으면 상단에 우선 결합
+  if (window.liveTrafficAlerts && Array.isArray(window.liveTrafficAlerts) && window.liveTrafficAlerts.length > 0) {
+    validMsgs = [...window.liveTrafficAlerts, ...validMsgs];
+  }
 
-  // 시퀀스 구성: [ 로딩 중 -> 메시지 1 -> ... -> 메시지 10 ]
+  // 최대 12개로 제한
+  const slicedMsgs = validMsgs.slice(0, 12);
+
+  // 시퀀스 구성
   currentMsgRotationList = ['__LOADING_INDICATOR__', ...slicedMsgs];
   currentMsgRotationIndex = 0;
 
-  // 첫 화면(로딩 중) 즉시 표출
+  // 첫 화면 즉시 표출
   showRotatingMessage(0);
 
   // 5초 간격 전환
@@ -5052,23 +5361,183 @@ function renderMessages(msgsArray) {
 function showRotatingMessage(index) {
   const tickerEl = document.getElementById('liveColleagueMessage');
   if (!tickerEl || !currentMsgRotationList[index]) return;
+
+  const targetMsg = currentMsgRotationList[index] || '';
+  if ((targetMsg.startsWith('__INCIDENT__') || targetMsg.startsWith('🚨') || targetMsg.includes('[돌발]')) && targetMsg !== lastPlayedAlertText) {
+    lastPlayedAlertText = targetMsg;
+    playChimeDingDong();
+  }
+
   tickerEl.classList.remove('fade-out', 'fade-in');
-  tickerEl.innerHTML = formatMessageDisplay(currentMsgRotationList[index]);
+  tickerEl.innerHTML = formatMessageDisplay(targetMsg);
 }
 
 function transitionToMessage(nextIndex) {
   const tickerEl = document.getElementById('liveColleagueMessage');
   if (!tickerEl || !currentMsgRotationList[nextIndex]) return;
 
+  const targetMsg = currentMsgRotationList[nextIndex] || '';
+  if ((targetMsg.startsWith('__INCIDENT__') || targetMsg.startsWith('🚨') || targetMsg.includes('[돌발]')) && targetMsg !== lastPlayedAlertText) {
+    lastPlayedAlertText = targetMsg;
+    playChimeDingDong();
+  }
+
   tickerEl.classList.add('fade-out');
   setTimeout(() => {
-    tickerEl.innerHTML = formatMessageDisplay(currentMsgRotationList[nextIndex]);
+    tickerEl.innerHTML = formatMessageDisplay(targetMsg);
     tickerEl.classList.remove('fade-out');
     tickerEl.classList.add('fade-in');
     void tickerEl.offsetWidth;
     tickerEl.classList.remove('fade-in');
   }, 450);
 }
+
+// ================================================================
+// 🚦 [3번째 박스] 실시간 도로 소통 & 3연속 정류장 흐름 UI 제어기
+// ================================================================
+function updateTrafficStopSequence(stop1, time1, stop2, time2, stop3, time3, flow1, flow2) {
+  const name1El = document.getElementById('trafficStopName1');
+  const time1El = document.getElementById('trafficStopTime1');
+  const line1El = document.getElementById('trafficFlowLine1');
+
+  const name2El = document.getElementById('trafficStopName2');
+  const time2El = document.getElementById('trafficStopTime2');
+  const line2El = document.getElementById('trafficFlowLine2');
+
+  const name3El = document.getElementById('trafficStopName3');
+  const time3El = document.getElementById('trafficStopTime3');
+
+  if (name1El) name1El.innerText = stop1 || '현재 정류장';
+  if (time1El) time1El.innerText = (time1 && time1 !== '--:--:--' && time1 !== '-') ? `[${time1}]` : '[--:--:--]';
+
+  if (name2El) name2El.innerText = stop2 || '다음 정류장';
+  if (time2El) time2El.innerText = (time2 && time2 !== '--:--:--' && time2 !== '-') ? `[${time2}]` : '[--:--:--]';
+
+  if (name3El) name3El.innerText = stop3 || '다음다음';
+  if (time3El) time3El.innerText = (time3 && time3 !== '--:--:--' && time3 !== '-') ? `[${time3}]` : '[--:--:--]';
+
+  // 구간별 소통 라인 색상 (원활: #22c55e, 서행: #eab308, 정체: #ef4444)
+  function setLineFlowStyle(lineEl, status) {
+    if (!lineEl) return;
+    if (status === 'JAM') {
+      lineEl.style.background = '#ef4444';
+      lineEl.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.8)';
+    } else if (status === 'SLOW') {
+      lineEl.style.background = '#eab308';
+      lineEl.style.boxShadow = '0 0 8px rgba(234, 179, 8, 0.7)';
+    } else {
+      lineEl.style.background = '#22c55e';
+      lineEl.style.boxShadow = '0 0 8px rgba(34, 197, 94, 0.6)';
+    }
+  }
+
+  const status1 = flow1 || (window.currentFlowStatus && window.currentFlowStatus.seg1) || 'NORMAL';
+  const status2 = flow2 || (window.currentFlowStatus && window.currentFlowStatus.seg2) || 'NORMAL';
+
+  setLineFlowStyle(line1El, status1);
+  setLineFlowStyle(line2El, status2);
+}
+
+// ================================================================
+// 🛰️ [국토교통부 ITS] 실시간 돌발상황 및 도로소통 수신 모듈
+// ================================================================
+window.liveTrafficAlerts = [];
+window.currentFlowStatus = { seg1: 'NORMAL', seg2: 'NORMAL' };
+
+// 두 좌표 간 거리 계산 (km)
+function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c * 10) / 10;
+}
+
+// 실시간 돌발상황 및 소통 데이터 로더 (2분 주기 자동 갱신)
+function loadLiveTrafficData() {
+  const ITS_KEY = "6d86062ec0c14cee9f37825336f7608c";
+  
+  // 기준 차량 위치 (BIS 현재 정류장 위치 또는 영종 중심좌표)
+  const busLat = window.curBusGpsLat || 37.495;
+  const busLon = window.curBusGpsLon || 126.502;
+
+  // 1. GAS google.script.run 호출 우선 시도
+  if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getTrafficIncidentLive === 'function') {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success && Array.isArray(res.incidents)) {
+          processIncidentsList(res.incidents, busLat, busLon);
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.warn("GAS 돌발상황 수신 지연, 로컬 폴백 시도:", err);
+        fallbackDirectFetch(ITS_KEY, busLat, busLon);
+      })
+      .getTrafficIncidentLive();
+  } else {
+    fallbackDirectFetch(ITS_KEY, busLat, busLon);
+  }
+}
+
+function processIncidentsList(incidents, busLat, busLon) {
+  if (!Array.isArray(incidents) || incidents.length === 0) {
+    window.liveTrafficAlerts = [];
+    return;
+  }
+
+  const alertMsgs = [];
+  incidents.forEach(function(item) {
+    const cx = parseFloat(item.coordX);
+    const cy = parseFloat(item.coordY);
+    let distStr = "";
+    if (!isNaN(cx) && !isNaN(cy) && busLat && busLon) {
+      const dist = calculateDistanceKm(busLat, busLon, cy, cx);
+      if (dist !== null) {
+        distStr = ` (${dist}km 전방)`;
+      }
+    }
+
+    const road = String(item.roadName || '주요도로').trim();
+    const msg = String(item.message || item.eventDetailType || '돌발상황 발생').trim();
+    const alertText = `🚨 [돌발] ${road} ${msg}${distStr}`;
+
+    if (!alertMsgs.includes(alertText)) {
+      alertMsgs.push(alertText);
+    }
+  });
+
+  window.liveTrafficAlerts = alertMsgs.slice(0, 5);
+
+  // 오늘의 한마디 티커 갱신
+  if (typeof currentMsgRotationList !== 'undefined' && currentMsgRotationList.length > 0) {
+    // 기존 메시지들 유지하면서 돌발상황 결합
+    const baseMsgs = currentMsgRotationList.filter(m => !m.startsWith('🚨') && !m.startsWith('__INCIDENT__') && m !== '__LOADING_INDICATOR__');
+    renderMessages(baseMsgs);
+  }
+}
+
+function fallbackDirectFetch(apiKey, busLat, busLon) {
+  if (window.GAS_WEB_APP_URL) {
+    fetch(window.GAS_WEB_APP_URL + "?action=get_traffic_incident")
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.success && Array.isArray(data.incidents)) {
+          processIncidentsList(data.incidents, busLat, busLon);
+        }
+      })
+      .catch(function(err) {
+        console.warn("GAS 웹앱 프록시 돌발 조회 실패:", err);
+      });
+  }
+}
+
+// 2분마다 실시간 교통 돌발상황 자동 동기화
+setInterval(loadLiveTrafficData, 120000);
+setTimeout(loadLiveTrafficData, 1500);
 
 // ================================================================
 // 📢 [오늘의 한마디 작성 창] (작성자 입력 제거 & 단일 메시지 원터치 작성)
@@ -5214,55 +5683,935 @@ function loadLatestColleagueMessage() {
   }
 }
 
-    // ==========================================
-    // ⏱️ [실시간 버스 위치(BIS) 타이머]
-    // - 25초마다 최신 버스 위치를 갱신하며, 근무시간 외에는 호출을 차단합니다.
-    // ==========================================
+    // ================================================================
+    // 🛰️ [스마트폰 고정밀 실시간 GPS 내비게이션 & 정류장 감지 엔진]
+    // - 기사님 운전석 스마트폰 GPS를 심장으로 삼아 0초 리얼타임 감지!
+    // - 정류장 반경 진입 시 오차시간을 즉시 계산해 다음 정류장까지 완벽 동결(Lock)!
+    // ================================================================
+    window.liveGpsWatchId = null;
+    window.lastGpsPosition = null;
+    window.lastPassedStopIndex = null;
+
+    // 두 좌표 간 거리 계산 (단위: 미터, 하버사인 정밀 공식)
+    function calculateGpsDistanceMeters(lat1, lon1, lat2, lon2) {
+        if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+        const R = 6371000; // 지구 반지름 (미터)
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c);
+    }
+
+    // 스마트폰 GPS 실시간 추적 시작
+    function startLiveGpsTracking(duty) {
+        if (window.liveGpsWatchId && navigator.geolocation) {
+            navigator.geolocation.clearWatch(window.liveGpsWatchId);
+            window.liveGpsWatchId = null;
+        }
+
+        if (!navigator.geolocation) {
+            console.warn("⚠️ 이 브라우저는 GPS를 지원하지 않습니다.");
+            updateGpsVehicleHeader(duty, null, true);
+            return;
+        }
+
+        console.log("🛰️ [GPS 엔진 가동] 실시간 위성 위치 추적을 시작합니다.");
+
+        const options = {
+            enableHighAccuracy: true, // 고정밀 GPS 위성 모드
+            maximumAge: 1000,         // 1초 이내 위치
+            timeout: 10000            // 타임아웃
+        };
+
+        window.liveGpsWatchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const speedKmh = pos.coords.speed !== null && pos.coords.speed >= 0 ? Math.round(pos.coords.speed * 3.6) : null;
+                const accuracy = Math.round(pos.coords.accuracy || 0);
+
+                window.curBusGpsLat = lat;
+                window.curBusGpsLon = lon;
+                window.curBusSpeed = speedKmh;
+                window.lastGpsPosition = { lat, lon, speedKmh, accuracy, time: new Date() };
+
+                // 위치 수신 성공 시 권한 배너 즉시 숨김
+                const permBanner = document.getElementById('gpsPermissionBanner');
+                if (permBanner) permBanner.style.display = 'none';
+
+                // 1. 상단 차량번호 바에 실시간 GPS & 속도 상태 표시
+                updateGpsVehicleHeader(duty, speedKmh, false);
+
+                // 2. 정류장 자동 통과 감지 및 실시간 오차 계산 실행
+                onGpsLocationUpdate(lat, lon, speedKmh, duty);
+            },
+            (err) => {
+                console.warn("⚠️ GPS 수신 오류:", err.message, "코드:", err.code);
+                handleGpsPermissionError(err, duty);
+            },
+            options
+        );
+    }
+
+    // 📍 [위치(GPS) 권한 오류 및 상태 처리]
+    function handleGpsPermissionError(err, duty) {
+        if (window.simState && window.simState.active) return;
+        const banner = document.getElementById('gpsPermissionBanner');
+        const titleEl = document.getElementById('gpsBannerTitle');
+        const descEl = document.getElementById('gpsBannerDesc');
+        const bisVehicleEl = document.getElementById('bisVehicleNo');
+        const gpsStatusText = document.getElementById('gpsStatusText');
+        const plate = duty && duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
+
+        if (banner) banner.style.display = 'block';
+
+        if (err && err.code === 1) { // PERMISSION_DENIED (권한 거부/미허용)
+            if (titleEl) titleEl.innerText = '위치(GPS) 권한을 허용해 주세요';
+            if (descEl) descEl.innerText = '실시간 정류장 통과와 오차시간 확인을 위해 [위치 허용]을 눌러주세요.';
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · ⚠️ 위치권한 필요`;
+            if (gpsStatusText) gpsStatusText.innerText = '⚠️ 위치권한 필요';
+        } else if (err && err.code === 2) { // POSITION_UNAVAILABLE (기기 위치 꺼짐)
+            if (titleEl) titleEl.innerText = '스마트폰 [위치(GPS)]를 켜주세요';
+            if (descEl) descEl.innerText = '휴대폰 상단 알림창을 내려 [위치]를 켠 후 화면을 터치해 주세요.';
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · ⚠️ GPS 꺼짐`;
+            if (gpsStatusText) gpsStatusText.innerText = '⚠️ GPS 꺼짐';
+        } else {
+            if (titleEl) titleEl.innerText = 'GPS 위성 신호 찾는 중...';
+            if (descEl) descEl.innerText = '차량 외부나 창가 쪽에서 GPS 신호가 수신되면 자동 연결됩니다.';
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 📡 GPS 수신 대기`;
+            if (gpsStatusText) gpsStatusText.innerText = 'GPS 수신 대기';
+        }
+    }
+
+    // 📍 [사용자 직접 위치 권한 요청 트리거]
+    function requestGpsPermission() {
+        if (!navigator.geolocation) {
+            alert('이 기기/브라우저는 GPS 위치 기능을 지원하지 않습니다.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const banner = document.getElementById('gpsPermissionBanner');
+                if (banner) banner.style.display = 'none';
+                const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : { busNo: '1214' };
+                startLiveGpsTracking(duty);
+            },
+            (err) => {
+                if (err.code === 1) {
+                    alert('위치 권한이 차단되어 있습니다.\n\n[해결 방법]\n1. 브라우저 상단 주소창 왼쪽 자물쇠(🔒) 또는 설정 아이콘을 누릅니다.\n2. [사이트 설정] 또는 [위치] 항목을 찾아 "허용"으로 변경해 주세요.');
+                } else if (err.code === 2) {
+                    alert('스마트폰의 [위치(GPS)]가 꺼져 있습니다.\n\n스마트폰 화면 상단바를 아래로 내려 [위치] 아이콘을 켜주세요.');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    }
+
+    // 상단 차량번호 바 실시간 렌더링
+    function updateGpsVehicleHeader(duty, speedKmh, isWaiting) {
+        if (window.simState && window.simState.active) return; // 모의주행 중에는 실제 GPS가 헤더를 덮어쓰지 않음
+        const bisVehicleEl = document.getElementById('bisVehicleNo');
+        const gpsStatusText = document.getElementById('gpsStatusText');
+        const plate = duty && duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
+
+        if (isWaiting) {
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 📡 GPS 수신 대기`;
+            if (gpsStatusText) gpsStatusText.innerText = 'GPS 수신 대기';
+        } else if (speedKmh !== null) {
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 🛰️ GPS (${speedKmh} km/h)`;
+            if (gpsStatusText) gpsStatusText.innerText = `GPS (${speedKmh} km/h)`;
+        } else {
+            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 🛰️ GPS 연결됨`;
+            if (gpsStatusText) gpsStatusText.innerText = 'GPS 연결됨';
+        }
+    }
+
+    // 🎯 [핵심] GPS 위치 수신 시 정류장 통과 판정 및 오차시간 확정 잠금(Lock)
+    function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
+        const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
+        if (!masterCache || masterCache.length === 0) return;
+
+        const now = new Date();
+        const curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+        const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
+        const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
+
+        // 1. 기준 정류장 앵커 산출 (이전 통과 정류장 기준 또는 시각 기준)
+        let anchorIdx = 0;
+        if (window.lastPassedStopIndex !== null && window.lastPassedStopIndex >= 0) {
+            anchorIdx = window.lastPassedStopIndex;
+        } else {
+            let minDiff = Infinity;
+            for (let i = 0; i < masterCache.length; i++) {
+                let sSec = parseTimeToSeconds(getRowTime(masterCache[i]));
+                if (sSec > 0) {
+                    let d = Math.abs(curWallSec - sSec);
+                    if (d < minDiff) { minDiff = d; anchorIdx = i; }
+                }
+            }
+        }
+
+        // 2. 전방 및 주변 정류장 탐색 (앞뒤 5개 정류장 슬라이딩 윈도우)
+        let winStart = Math.max(0, anchorIdx - 1);
+        let winEnd = Math.min(masterCache.length - 1, anchorIdx + 4);
+
+        let closestIdx = -1;
+        let minDistance = Infinity;
+
+        for (let i = winStart; i <= winEnd; i++) {
+            let row = masterCache[i];
+            let stopLat = parseFloat(row.lat !== undefined ? row.lat : (Array.isArray(row) ? row[8] : null));
+            let stopLng = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : null));
+
+            if (stopLat && stopLng) {
+                let dist = calculateGpsDistanceMeters(lat, lon, stopLat, stopLng);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestIdx = i;
+                }
+            }
+        }
+
+        // 3. 정류장 통과 판정 (반경 50m 이내 진입 시)
+        if (closestIdx !== -1 && minDistance <= 55) {
+            if (window.lastPassedStopIndex !== closestIdx) {
+                window.lastPassedStopIndex = closestIdx;
+                window.lastMatchedMasterIndex = closestIdx;
+
+                let curRow = masterCache[closestIdx];
+                let stdTimeStr = getRowTime(curRow);
+                let stdSec = parseTimeToSeconds(stdTimeStr);
+
+                // ⏱️ [오차시간 계산 및 100% 자물쇠 잠금]
+                if (stdSec > 0) {
+                    let diffSec = curWallSec - stdSec;
+                    if (diffSec > 43200) diffSec -= 86400;
+                    else if (diffSec < -43200) diffSec += 86400;
+                    let diffMin = Math.round(diffSec / 60);
+
+                    if (Math.abs(diffMin) <= 60) {
+                        const absMin = Math.abs(diffMin);
+                        let badgeText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
+                        let badgeColor = "#00ff66";
+                        if (diffMin <= -3) badgeColor = "#ea4335";
+                        else if (diffMin >= 3) badgeColor = "#9c27b0";
+
+                        window.bisStopLockState = window.bisStopLockState || {};
+                        window.bisStopLockState.lockedStopKey = "GPS_STOP_" + closestIdx;
+                        window.bisStopLockState.lockedDelayText = badgeText;
+                        window.bisStopLockState.lockedTargetColor = badgeColor;
+
+                        applyLockedDelayBadge(badgeText, badgeColor);
+                        console.log(`🎯 [GPS 정류장 통과 감지] ${getRowName(curRow)} (거리: ${minDistance}m) -> 오차: ${badgeText}분 확정 동결!`);
+                    }
+                }
+            }
+        }
+
+        // 4. 3번째 카드(소통정보 카드) 다음 정류장 / 다음다음 정류장 자동 표출
+        let displayTargetIdx = (window.lastPassedStopIndex !== null) ? window.lastPassedStopIndex + 1 : anchorIdx;
+        displayTargetIdx = Math.min(masterCache.length - 1, Math.max(0, displayTargetIdx));
+
+        let nextRow = masterCache[displayTargetIdx] || masterCache[0];
+        let afterRow = masterCache[displayTargetIdx + 1] || null;
+
+        let nName = nextRow ? getRowName(nextRow) : '다음 정류장';
+        let nTime = nextRow ? getRowTime(nextRow) : '--:--:--';
+        let aName = afterRow ? getRowName(afterRow) : '(종점 도착)';
+        let aTime = afterRow ? getRowTime(afterRow) : '-';
+
+        if (typeof updateTrafficStopSequence === 'function') {
+            updateTrafficStopSequence(nName, nTime, aName, aTime);
+        }
+    }
+
+    // ================================================================
+    // 🎮 [관리자 전용 비밀 모의주행(시뮬레이터) 엔진]
+    // ================================================================
+    window.simState = {
+        active: false,
+        timer: null,
+        currentIndex: 0,
+        delayOffsetSec: 0,
+        autoPlay: false
+    };
+
+    // 관리자 트리거 초기화 (롱프레스 & 더블탭/클릭)
+    function initGpsAdminTrigger() {
+        const trigger = document.getElementById('gpsAdminTrigger');
+        const vehiclePlate = document.getElementById('bisVehicleNo');
+        if (!trigger) return;
+
+        let pressTimer = null;
+        let startX = 0, startY = 0;
+
+        const startPress = (e) => {
+            if (e.touches && e.touches[0]) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+            if (pressTimer) clearTimeout(pressTimer);
+            pressTimer = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+                toggleAdminSimPanel(true);
+            }, 1200); // 1.2초 길게 누르면 비밀 패널 오픈!
+        };
+
+        const cancelPress = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        const onTouchMove = (e) => {
+            if (e.touches && e.touches[0]) {
+                const dx = Math.abs(e.touches[0].clientX - startX);
+                const dy = Math.abs(e.touches[0].clientY - startY);
+                if (dx > 10 || dy > 10) cancelPress();
+            }
+        };
+
+        trigger.addEventListener('touchstart', startPress, { passive: true });
+        trigger.addEventListener('touchend', cancelPress, { passive: true });
+        trigger.addEventListener('touchcancel', cancelPress, { passive: true });
+        trigger.addEventListener('touchmove', onTouchMove, { passive: true });
+        trigger.addEventListener('mousedown', startPress);
+        trigger.addEventListener('mouseup', cancelPress);
+        trigger.addEventListener('mouseleave', cancelPress);
+        trigger.addEventListener('dblclick', () => toggleAdminSimPanel(true));
+
+        if (vehiclePlate) {
+            vehiclePlate.addEventListener('dblclick', () => toggleAdminSimPanel(true));
+        }
+    }
+
+    // 패널 열기/닫기
+    function toggleAdminSimPanel(show) {
+        const panel = document.getElementById('adminSimPanel');
+        if (!panel) return;
+        if (show === undefined) {
+            panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+        } else {
+            panel.style.display = show ? 'block' : 'none';
+        }
+
+        if (panel.style.display === 'block') {
+            updateSimPanelDisplay();
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    // 모의주행 시간표 로드 (근무표 수정 없이 원하는 노선 즉시 로드)
+    async function loadSimSchedule() {
+        const sel = document.getElementById('simRouteSelect');
+        const val = sel ? sel.value : '206_PM_1';
+        const parts = val.split('_');
+        const route = parts[0] || '206';
+        const shift = parts[1] || 'PM';
+        const trip = parts[2] || '1';
+
+        const uniqueKey = `${route}${shift}${trip}`;
+        const duty = {
+            routeNo: route,
+            shift: shift,
+            tripNo: trip,
+            uniqueKey: uniqueKey,
+            busNo: '1214'
+        };
+
+        const loadBtn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
+        if (loadBtn) loadBtn.innerText = '로드 중...';
+
+        await loadStandardMasterCache(duty);
+
+        if (loadBtn) loadBtn.innerText = '완료!';
+        setTimeout(() => { if (loadBtn) loadBtn.innerText = '시간표 로드'; }, 1000);
+
+        window.simState.currentIndex = 0;
+        window.simState.active = true;
+        updateSimPanelDisplay();
+
+        // 1번 정류장으로 즉시 위치 시뮬레이션
+        simStepForward(0);
+    }
+
+    // 패널 UI 갱신
+    function updateSimPanelDisplay() {
+        const master = window.standardMasterCache || [];
+        const idxText = document.getElementById('simStopIndexText');
+        const nameText = document.getElementById('simStopNameText');
+        const timeText = document.getElementById('simStopTimeText');
+        const autoBtn = document.getElementById('simAutoPlayBtn');
+
+        const curIdx = window.simState.currentIndex;
+        const total = master.length;
+
+        if (idxText) idxText.innerText = total > 0 ? `${curIdx + 1} / ${total}` : '0 / 0';
+
+        if (master.length > 0 && master[curIdx]) {
+            const row = master[curIdx];
+            const sName = Array.isArray(row) ? row[5] : (row.name || row.stopName || '');
+            const sTime = Array.isArray(row) ? row[6] : (row.stdTime || row.time || '');
+            if (nameText) nameText.innerText = sName || '정류소 미지정';
+            if (timeText) timeText.innerText = sTime || '--:--:--';
+        } else {
+            if (nameText) nameText.innerText = '시간표를 로드하세요';
+            if (timeText) timeText.innerText = '--:--:--';
+        }
+
+        if (autoBtn) {
+            if (window.simState.autoPlay) {
+                autoBtn.innerText = '⏸ 일시정지';
+                autoBtn.style.background = '#eab308';
+            } else {
+                autoBtn.innerText = '▶ 5초 자동 주행';
+                autoBtn.style.background = '#16a34a';
+            }
+        }
+    }
+
+    // 다음 정류장으로 전진 (수동 또는 자동)
+    function simStepForward(targetIndex) {
+        const master = window.standardMasterCache || [];
+        if (!master || master.length === 0) {
+            alert('먼저 [시간표 로드] 버튼을 눌러 노선 데이터를 불러와 주세요!');
+            return;
+        }
+
+        window.simState.active = true;
+
+        if (targetIndex !== undefined) {
+            window.simState.currentIndex = targetIndex;
+        } else {
+            if (window.simState.currentIndex < master.length - 1) {
+                window.simState.currentIndex++;
+            } else {
+                window.simState.currentIndex = 0; // 종점 도달 시 1번으로 순환
+            }
+        }
+
+        const idx = window.simState.currentIndex;
+        const row = master[idx];
+        const stopLat = parseFloat(row.lat !== undefined ? row.lat : (Array.isArray(row) ? row[8] : 37.4912));
+        const stopLng = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : 126.4952));
+        const stdTimeStr = Array.isArray(row) ? row[6] : (row.stdTime || row.time || '');
+
+        updateSimPanelDisplay();
+
+        // 상단 헤더를 모의주행 상태로 변경
+        const bisVehicleEl = document.getElementById('bisVehicleNo');
+        if (bisVehicleEl) bisVehicleEl.innerText = `인천70아1214 · 🎮 모의주행 (45 km/h)`;
+        const gpsStatusText = document.getElementById('gpsStatusText');
+        if (gpsStatusText) gpsStatusText.innerText = `모의주행 (${idx + 1}/${master.length})`;
+
+        // 가상 정류장 도달 이벤트 전달
+        simTriggerStopArrival(idx, stopLat, stopLng, stdTimeStr);
+    }
+
+    // 이전 정류장으로 후진
+    function simStepBackward() {
+        const master = window.standardMasterCache || [];
+        if (!master || master.length === 0) return;
+        if (window.simState.currentIndex > 0) {
+            window.simState.currentIndex--;
+            simStepForward(window.simState.currentIndex);
+        }
+    }
+
+    // 가상 정류장 도착 처리 및 오차 계산
+    function simTriggerStopArrival(idx, lat, lon, stdTimeStr) {
+        const master = window.standardMasterCache || [];
+
+        window.curBusGpsLat = lat;
+        window.curBusGpsLon = lon;
+        window.curBusSpeed = 45;
+        window.lastPassedStopIndex = idx;
+        window.lastMatchedMasterIndex = idx;
+
+        // 사용자가 설정한 offset(정시/지연/조기) 반영
+        let diffSec = window.simState.delayOffsetSec !== undefined ? window.simState.delayOffsetSec : 0;
+        let diffMin = Math.round(diffSec / 60);
+
+        const absMin = Math.abs(diffMin);
+        let badgeText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
+        let badgeColor = "#00ff66";
+        if (diffMin <= -3) badgeColor = "#ea4335";
+        else if (diffMin >= 3) badgeColor = "#9c27b0";
+
+        window.bisStopLockState = window.bisStopLockState || {};
+        window.bisStopLockState.lockedStopKey = "GPS_SIM_" + idx;
+        window.bisStopLockState.lockedDelayText = badgeText;
+        window.bisStopLockState.lockedTargetColor = badgeColor;
+
+        applyLockedDelayBadge(badgeText, badgeColor);
+
+        // 3번째 카드(소통 카드) 다음 정류장 표출
+        let displayTargetIdx = Math.min(master.length - 1, idx + 1);
+        let nextRow = master[displayTargetIdx] || master[0];
+        let afterRow = master[displayTargetIdx + 1] || null;
+
+        const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || '')).trim() : '';
+        const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || '')).trim() : '';
+
+        let nName = nextRow ? getRowName(nextRow) : '다음 정류장';
+        let nTime = nextRow ? getRowTime(nextRow) : '--:--:--';
+        let aName = afterRow ? getRowName(afterRow) : '(종점 도착)';
+        let aTime = afterRow ? getRowTime(afterRow) : '-';
+
+        if (typeof updateTrafficStopSequence === 'function') {
+            updateTrafficStopSequence(nName, nTime, aName, aTime);
+        }
+
+        console.log(`🎮 [모의주행 통과] #${idx + 1} ${getRowName(master[idx])} -> 오차: ${badgeText}분 확정 동결!`);
+    }
+
+    // 오차시간 강제 변경 테스트 (0분 정시, -4분 지연 등)
+    function simSetDelayOffset(minutes) {
+        window.simState.delayOffsetSec = minutes * 60;
+        const curIdx = window.simState.currentIndex;
+        const master = window.standardMasterCache || [];
+        if (master.length > 0) {
+            const row = master[curIdx];
+            const stdTimeStr = Array.isArray(row) ? row[6] : (row.stdTime || row.time || '');
+            simTriggerStopArrival(curIdx, 37.4912, 126.4952, stdTimeStr);
+        }
+    }
+
+    // 자동 주행 토글 (5초 간격)
+    function toggleSimAutoPlay() {
+        if (window.simState.autoPlay) {
+            window.simState.autoPlay = false;
+            if (window.simState.timer) clearInterval(window.simState.timer);
+            window.simState.timer = null;
+        } else {
+            const master = window.standardMasterCache || [];
+            if (!master || master.length === 0) {
+                alert('먼저 [시간표 로드]를 눌러주세요!');
+                return;
+            }
+            window.simState.autoPlay = true;
+            if (window.simState.timer) clearInterval(window.simState.timer);
+            window.simState.timer = setInterval(() => {
+                simStepForward();
+            }, 5000);
+        }
+        updateSimPanelDisplay();
+    }
+
+    // 모의주행 종료 및 실제 GPS 복귀
+    function stopAdminSim() {
+        if (window.simState.timer) clearInterval(window.simState.timer);
+        window.simState.timer = null;
+        window.simState.autoPlay = false;
+        window.simState.active = false;
+
+        const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : { busNo: '1214' };
+        if (typeof startLiveGpsTracking === 'function') {
+            startLiveGpsTracking(duty);
+        }
+
+        const gpsStatusText = document.getElementById('gpsStatusText');
+        if (gpsStatusText) gpsStatusText.innerText = 'GPS 연결됨';
+
+        toggleAdminSimPanel(false);
+        alert('모의주행이 종료되었습니다. 실제 스마트폰 GPS 모드로 복귀했습니다.');
+    }
+
+    // ⏱️ [보조 주기적 타이머] 회차 전환 및 시퀀스 박스 동기화 (외부 BIS 호출은 중단)
     function startBisTimer(duty) {
         if (window.liveIntervalTimer) clearInterval(window.liveIntervalTimer);
 
-        // 근무시간 외에는 주기적 타이머 실행 자체를 차단
         if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) {
-            console.log("⏸️ [BIS 타이머 차단] 현재 근무시간 외이므로 타이머를 실행하지 않습니다.");
             return;
         }
 
         window.liveIntervalTimer = setInterval(() => {
             const currentModal = document.getElementById('liveModal');
-            // 모달이 닫혀 있으면 타이머 자동 중단
             if (!currentModal || currentModal.style.display === 'none' || !currentModal.classList.contains('active')) {
                 clearInterval(window.liveIntervalTimer);
                 window.liveIntervalTimer = null;
                 return;
             }
-            // 운행 중 시간 범위 벗어나면 타이머 즉시 정지
-            if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) {
-                console.log("⏸️ [BIS 타이머 중단] 근무시간이 종료되어 타이머를 중지합니다.");
-                clearInterval(window.liveIntervalTimer);
-                window.liveIntervalTimer = null;
-                return;
-            }
 
-            // ⭐ [동적 회차 변경 감지 & standard_master 자동 갱신]
+            // 회차 시퀀스 및 회차 전환 감지
             if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
                 syncSequenceBoxesFromMainSchedule();
             }
             const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
             if (curDuty && curDuty.uniqueKey) {
-                // 회차가 변경되었거나 캐시가 비어있는 경우 즉시 새 회차 표준시간 로드
                 if (duty.uniqueKey !== curDuty.uniqueKey || !window.standardMasterCache || window.standardMasterCache.length === 0) {
-                    console.log(`🔄 [회차 전환 감지] ${duty.uniqueKey} -> ${curDuty.uniqueKey} (표준시간 재로드)`);
                     duty = curDuty;
                     window.lastMatchedMasterIndex = null;
+                    window.lastPassedStopIndex = null;
                     if (window.bisStopLockState) window.bisStopLockState.lockedStopKey = null;
                     loadStandardMasterCache(curDuty);
                 }
             }
+        }, 15000);
+    }
 
-            if (curDuty && curDuty.routeShort) {
-                fetchLiveBisForLiveModal(curDuty.routeShort, curDuty.busNo);
+    // ⏱️ [오차시간 통합 계산 & 배지 렌더러] (3번째 박스와 100% 동일한 데이터 소스 연동)
+    function syncLiveDelayBadgeWithTargetTime(targetTimeStr) {
+        try {
+            const badgeEl = document.getElementById('bisDelayBadge');
+            if (!badgeEl) return;
+
+            // 🔒 [기사님 지침 100% 준수] 현재 정류장 통과 오차가 이미 고정(Lock)되어 있다면 다음 정류장 도착 전까지 절대 재계산/덮어쓰기 금지!
+            if (window.bisStopLockState && window.bisStopLockState.lockedStopKey && window.bisStopLockState.lockedDelayText && window.bisStopLockState.lockedDelayText !== "-") {
+                applyLockedDelayBadge(window.bisStopLockState.lockedDelayText, window.bisStopLockState.lockedTargetColor);
+                return;
             }
-        }, 25000);
+
+            let cleanTime = String(targetTimeStr || '').replace(/[\[\]]/g, '').trim();
+            if (!cleanTime || cleanTime === '-' || cleanTime === '--:--:--' || cleanTime === '--:--') {
+                return;
+            }
+
+            const now = new Date();
+            const currentWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const standardSec = parseTimeToSeconds(cleanTime);
+
+            if (standardSec <= 0) return;
+
+            let diffSec = currentWallSec - standardSec;
+            // 24시간 자정 경계 보정 (예: 23:58 vs 00:02)
+            if (diffSec > 43200) diffSec -= 86400;
+            else if (diffSec < -43200) diffSec += 86400;
+
+            let diffMin = Math.round(diffSec / 60);
+
+            // 🛡️ 이상치 방어 (60분 초과)
+            if (Math.abs(diffMin) > 60) return;
+
+            let badgeText = "0";
+            let badgeColor = "#34c759"; // 정시: 에메랄드 그린
+
+            if (diffMin <= -3) {
+                // 조발 (3분 이상 빠름: 빨간색 경고)
+                badgeText = `-${Math.abs(diffMin)}`;
+                badgeColor = "#ea4335";
+            } else if (diffMin >= 3) {
+                // 지연 (3분 이상 지연: 보라색)
+                badgeText = `+${diffMin}`;
+                badgeColor = "#9c27b0";
+            } else if (diffMin === 0) {
+                badgeText = "0";
+                badgeColor = "#34c759";
+            } else if (diffMin > 0) {
+                badgeText = `+${diffMin}`;
+                badgeColor = "#34c759";
+            } else {
+                badgeText = `-${Math.abs(diffMin)}`;
+                badgeColor = "#34c759";
+            }
+
+            // 배지 UI 즉시 갱신 (GmarketSans, 고시인성 네온 색상)
+            badgeEl.innerText = badgeText;
+            badgeEl.style.display = "inline-flex";
+            badgeEl.style.alignItems = "center";
+            badgeEl.style.justifyContent = "center";
+            badgeEl.style.fontFamily = "'GmarketSans', -apple-system, sans-serif";
+            badgeEl.style.fontSize = "24px";
+            badgeEl.style.fontWeight = "900";
+            badgeEl.style.color = badgeColor;
+            badgeEl.style.border = `2.5px solid ${badgeColor}`;
+            badgeEl.style.background = (badgeColor === "#34c759" || badgeColor === "#00ff66")
+                ? "rgba(52, 199, 89, 0.18)"
+                : (badgeColor === "#ea4335" ? "rgba(234, 67, 53, 0.18)" : "rgba(156, 39, 176, 0.18)");
+            badgeEl.style.boxShadow = `0 0 14px ${badgeColor}66`;
+
+            window.bisStopLockState = window.bisStopLockState || {};
+            window.bisStopLockState.lockedDelayText = badgeText;
+            window.bisStopLockState.lockedTargetColor = badgeColor;
+        } catch (err) {
+            console.warn("⚠️ [syncLiveDelayBadgeWithTargetTime] 오류:", err);
+        }
+    }
+
+    // 🚦 [3번째 박스] 도로 소통 및 2연속 정류장 흐름(다음 정류장 ━━━━ 다음다음 정류장) 렌더러
+    function updateTrafficStopSequence(nextName, nextTime, afterName, afterTime, statusOverride) {
+        try {
+            const nextEl = document.getElementById('trafficStopNameNext');
+            const nextTimeEl = document.getElementById('trafficStopTimeNext');
+            const afterEl = document.getElementById('trafficStopNameAfter');
+            const afterTimeEl = document.getElementById('trafficStopTimeAfter');
+            const glowLine = document.getElementById('trafficFlowGlowLine');
+            const flowDot = document.getElementById('trafficFlowDot');
+            const statusText = document.getElementById('trafficFlowStatusText');
+
+            // 1. 명칭 정제 및 fallback
+            let cleanNextName = String(nextName || '').trim();
+            if (!cleanNextName || cleanNextName === '-' || cleanNextName === 'null') cleanNextName = "다음 정류장";
+            let cleanNextTime = String(nextTime || '').trim();
+            if (!cleanNextTime || cleanNextTime === '-' || cleanNextTime === 'null') cleanNextTime = "--:--:--";
+            if (!cleanNextTime.startsWith('[') && cleanNextTime !== "--:--:--") cleanNextTime = `[${cleanNextTime}]`;
+
+            let cleanAfterName = String(afterName || '').trim();
+            if (!cleanAfterName || cleanAfterName === '-' || cleanAfterName === 'null') cleanAfterName = "(종점 도착)";
+            let cleanAfterTime = String(afterTime || '').trim();
+            if (!cleanAfterTime || cleanAfterTime === '-' || cleanAfterTime === 'null') cleanAfterTime = "-";
+            if (!cleanAfterTime.startsWith('[') && cleanAfterTime !== "-") cleanAfterTime = `[${cleanAfterTime}]`;
+
+            // 🛡️ [종점 튐 방어] 갱신 시 갑자기 '(종점 도착)'이 들어오려 할 때 직전 정상 다음 정류장 보존
+            if (cleanNextName === "(종점 도착)" && window.lastValidNextStop && window.lastValidNextStop.name && window.lastValidNextStop.name !== "(종점 도착)") {
+                cleanNextName = window.lastValidNextStop.name;
+                cleanNextTime = window.lastValidNextStop.time || cleanNextTime;
+            } else if (cleanNextName && cleanNextName !== "(종점 도착)" && cleanNextName !== "다음 정류장") {
+                window.lastValidNextStop = { name: cleanNextName, time: cleanNextTime };
+            }
+
+            if (nextEl) {
+                nextEl.innerText = cleanNextName;
+                nextEl.title = cleanNextName;
+            }
+            if (nextTimeEl) nextTimeEl.innerText = cleanNextTime;
+
+            if (afterEl) {
+                afterEl.innerText = cleanAfterName;
+                afterEl.title = cleanAfterName;
+            }
+            if (afterTimeEl) afterTimeEl.innerText = cleanAfterTime;
+
+            // ⏱️ [오차시간 실시간 동기화] 3번째 박스의 다음 정류장 표준시간으로 오차 배지 즉시 계산!
+            if (cleanNextTime && cleanNextTime !== '--:--:--' && cleanNextTime !== '-') {
+                syncLiveDelayBadgeWithTargetTime(cleanNextTime);
+            }
+
+            // 2. 도로 소통 상태 판별 (원활 / 서행 / 정체)
+            let flowStatus = statusOverride;
+            if (!flowStatus) {
+                flowStatus = determineRoadTrafficStatus(cleanNextName, cleanAfterName);
+            }
+
+            // 3. 네온 글로우 라인 색상 및 소통 상태 텍스트 적용
+            let themeColor = '#22c55e'; // 소통원활 (에메랄드 그린)
+            let glowColor = 'rgba(34, 197, 94, 0.75)';
+            let statusLabel = '소통원활';
+
+            if (flowStatus === 'jam' || flowStatus === '정체') {
+                themeColor = '#ef4444'; // 정체 (네온 레드)
+                glowColor = 'rgba(239, 68, 68, 0.8)';
+                statusLabel = '정체';
+            } else if (flowStatus === 'slow' || flowStatus === '서행') {
+                themeColor = '#f59e0b'; // 서행 (네온 앰버/주황)
+                glowColor = 'rgba(245, 158, 11, 0.8)';
+                statusLabel = '서행';
+            } else {
+                themeColor = '#22c55e'; // 소통원활
+                glowColor = 'rgba(34, 197, 94, 0.75)';
+                statusLabel = '소통원활';
+            }
+
+            if (glowLine) {
+                glowLine.style.background = `linear-gradient(90deg, ${themeColor}, #ffffff 50%, ${themeColor})`;
+                glowLine.style.boxShadow = `0 0 14px ${glowColor}`;
+            }
+            if (flowDot) {
+                flowDot.style.background = '#ffffff';
+                flowDot.style.borderColor = themeColor;
+                flowDot.style.boxShadow = `0 0 10px ${themeColor}`;
+            }
+            if (statusText) {
+                statusText.innerText = statusLabel;
+                statusText.style.color = themeColor;
+            }
+
+            // 이전 호환용 ID 동기화
+            const old1 = document.getElementById('trafficStopName1');
+            if (old1) old1.innerText = cleanNextName;
+            const old2 = document.getElementById('trafficStopName2');
+            if (old2) old2.innerText = cleanAfterName;
+        } catch (e) {
+            console.warn("⚠️ [updateTrafficStopSequence] 렌더링 예외:", e);
+        }
+    }
+
+    // 🚦 [표준시간 마스터 데이터로부터 3번째 박스 즉시 렌더링 (0ms 빠른 바인딩)]
+    function updateTrafficStopFromMaster(masterList) {
+        if (!masterList || !Array.isArray(masterList) || masterList.length === 0) return;
+        try {
+            const now = new Date();
+            const curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+            const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
+            const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
+
+            // 현재 시각보다 이후에 있는 첫 정류장 탐색
+            let targetIdx = -1;
+            for (let i = 0; i < masterList.length; i++) {
+                let sSec = parseTimeToSeconds(getRowTime(masterList[i]));
+                if (sSec > curWallSec) {
+                    targetIdx = i;
+                    break;
+                }
+            }
+            if (targetIdx === -1) {
+                targetIdx = Math.max(0, masterList.length - 2);
+            }
+
+            let nextRow = masterList[targetIdx] || masterList[0];
+            let afterRow = masterList[targetIdx + 1] || null;
+
+            let nName = nextRow ? (getRowName(nextRow) || '다음 정류장') : '다음 정류장';
+            let nTime = nextRow ? (getRowTime(nextRow) || '--:--:--') : '--:--:--';
+            let aName = afterRow ? (getRowName(afterRow) || '(종점 도착)') : '(종점 도착)';
+            let aTime = afterRow ? (getRowTime(afterRow) || '-') : '-';
+
+            updateTrafficStopSequence(nName, nTime, aName, aTime);
+
+            // ⏱️ 초기 오차시간 배지 산출 (모달 오픈 즉시 0ms 표시)
+            if (!window.bisStopLockState || !window.bisStopLockState.lockedDelayText || window.bisStopLockState.lockedDelayText === "-") {
+                let curRow = masterList[Math.max(0, targetIdx - 1)] || masterList[0];
+                let curTimeSec = parseTimeToSeconds(getRowTime(curRow));
+                if (curTimeSec > 0) {
+                    let initDiffSec = curWallSec - curTimeSec;
+                    if (initDiffSec > 43200) initDiffSec -= 86400;
+                    else if (initDiffSec < -43200) initDiffSec += 86400;
+                    let initDiffMin = Math.round(initDiffSec / 60);
+                    if (Math.abs(initDiffMin) <= 30) {
+                        let badgeText = initDiffMin === 0 ? "0" : (initDiffMin > 0 ? `+${initDiffMin}` : `-${Math.abs(initDiffMin)}`);
+                        let badgeColor = "#00ff66";
+                        if (initDiffMin <= -4) badgeColor = "#ea4335";
+                        else if (initDiffMin >= 4) badgeColor = "#9c27b0";
+                        applyLockedDelayBadge(badgeText, badgeColor);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("⚠️ [updateTrafficStopFromMaster] 오류:", err);
+        }
+    }
+
+    // 🚦 [실시간 도로 소통 상태 판별 엔진]
+    function determineRoadTrafficStatus(stopA, stopB) {
+        try {
+            const items = window.lastTrafficFlowItems;
+            if (!items || !Array.isArray(items) || items.length === 0) return 'smooth';
+
+            const combined = `${stopA || ''} ${stopB || ''}`;
+            let matchedItem = null;
+            for (let it of items) {
+                let road = String(it.roadName || it.roadname || it.road || '').trim();
+                if (road && combined.includes(road)) {
+                    matchedItem = it;
+                    break;
+                }
+            }
+
+            if (!matchedItem && items.length > 0) {
+                let totalSpeed = 0, count = 0;
+                for (let it of items) {
+                    let spd = parseFloat(it.speed || it.prcsSpd || 0);
+                    if (spd > 0) { totalSpeed += spd; count++; }
+                }
+                if (count > 0) {
+                    let avg = totalSpeed / count;
+                    if (avg < 25) return 'jam';
+                    if (avg < 45) return 'slow';
+                    return 'smooth';
+                }
+            }
+
+            if (matchedItem) {
+                let spd = parseFloat(matchedItem.speed || matchedItem.prcsSpd || 0);
+                if (spd > 0 && spd < 20) return 'jam';
+                if (spd > 0 && spd < 40) return 'slow';
+            }
+        } catch (e) {}
+        return 'smooth';
+    }
+
+    // 🚨 [돌발상황 다시보기 및 테스트 함수] (소통창 터치 시 발동)
+    function triggerTrafficIncidentTest() {
+        try {
+            const glowLine = document.getElementById('trafficFlowGlowLine');
+            const flowDot = document.getElementById('trafficFlowDot');
+            const statusText = document.getElementById('trafficFlowStatusText');
+            const oldStatusText = statusText ? statusText.innerText : '소통원활';
+
+            // 최근 국토부 돌발상황이 있으면 그것을 표출, 없으면 데모 표출
+            let hasRealAlert = window.liveTrafficAlerts && window.liveTrafficAlerts.length > 0;
+            let titleText = '⚠️ [돌발상황] 공항신도시JC 사고';
+            let descText = '전방 1.2km 지점 2차로 추돌사고 처리 중 (정체)';
+            let voiceText = '전방 1킬로미터, 공항신도시 제이씨 부근에 사고 돌발상황이 발생했습니다. 안전운행 하세요.';
+
+            if (hasRealAlert) {
+                let realRaw = String(window.liveTrafficAlerts[0] || '');
+                titleText = '🚨 실시간 도로 돌발 알림';
+                descText = realRaw.replace(/🚨\s*\[돌발\]\s*/, '');
+                voiceText = `주의하세요. ${descText}. 안전운행 하세요.`;
+            }
+
+            // 1. 네온 글로우 라인 빨간색 전환
+            if (glowLine) {
+                glowLine.style.background = 'linear-gradient(90deg, #ef4444, #ffffff 50%, #ef4444)';
+                glowLine.style.boxShadow = '0 0 16px rgba(239, 68, 68, 0.9)';
+            }
+            if (flowDot) {
+                flowDot.style.background = '#ffffff';
+                flowDot.style.borderColor = '#ef4444';
+                flowDot.style.boxShadow = '0 0 12px #ef4444';
+            }
+            if (statusText) {
+                statusText.innerText = '돌발 주의';
+                statusText.style.color = '#ef4444';
+            }
+
+            // 2. SweetAlert2 알림 팝업
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top',
+                    icon: 'warning',
+                    title: titleText,
+                    text: descText,
+                    showConfirmButton: false,
+                    timer: 6000,
+                    timerProgressBar: true,
+                    background: '#1e293b',
+                    color: '#ffffff'
+                });
+            }
+
+            // 3. 🔊 TTS 음성 안내
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const testMsg = new SpeechSynthesisUtterance(voiceText);
+                    testMsg.lang = 'ko-KR';
+                    testMsg.rate = 1.0;
+                    testMsg.pitch = 1.0;
+                    window.speechSynthesis.speak(testMsg);
+                } catch(voiceErr) {
+                    console.warn("TTS 음성 출력 실패:", voiceErr);
+                }
+            }
+
+            // 4. 6초 후 자동 복원
+            setTimeout(() => {
+                if (statusText && statusText.innerText === '돌발 주의') {
+                    statusText.innerText = oldStatusText;
+                    statusText.style.color = '#22c55e';
+                }
+                if (glowLine) {
+                    glowLine.style.background = 'linear-gradient(90deg, #22c55e, #ffffff 50%, #22c55e)';
+                    glowLine.style.boxShadow = '0 0 14px rgba(34, 197, 94, 0.75)';
+                }
+                if (flowDot) {
+                    flowDot.style.borderColor = '#22c55e';
+                    flowDot.style.boxShadow = '0 0 10px #22c55e';
+                }
+            }, 6000);
+
+        } catch (err) {
+            console.error("돌발상황 안내 에러:", err);
+        }
     }
 
     // [노선 매핑 테이블 - 브라우저 로컬 조회용]
@@ -5279,84 +6628,49 @@ function loadLatestColleagueMessage() {
         "282": "ICB368000066"
     };
 
-    // [실시간 버스 정보 호출 함수 - 근무시간 체크 및 로컬 기기 우선 호출]
+    // [실시간 버스 정보 고속 수신 함수 - 빠른 폴백 & 지연 없는 수신]
     async function fetchLiveBisForLiveModal(routeShort, targetBusNo) {
-        // 1. 날짜 검사
         if (typeof isBisAllowedForDate === 'function' && !isBisAllowedForDate()) return;
 
-        // 2. 🛡️ 근무시간 외 로그 기록 (조회는 허용하여 대기 차량/야간 테스트 가능)
-        if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) {
-            console.log("ℹ️ [BIS 조회] 운행시간 외 상태에서 버스 위치를 조회합니다.");
-        }
-
-        // 3. 📱 사용자 로컬 기기(브라우저)에서 TAGO 직접 호출
         const cleanRoute = String(routeShort || '').trim().toUpperCase();
         const routeId = CLIENT_ROUTE_MAP[cleanRoute] || CLIENT_ROUTE_MAP[cleanRoute.replace(/[^0-9]/g, '')];
 
-        if (routeId) {
-            try {
-                const serviceKey = "ldmePwR9ORO9g6kIfA72AI7pu0YL2Fz%2Ba%2BwOGUyihH89yRYXL7pncSbytwR9IpM3Z3wuUrGJ7lmrMNTi03Mpmg%3D%3D";
-                const tagoUrl = "https://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteAcctoBusLcList"
-                    + "?serviceKey=" + serviceKey
-                    + "&cityCode=23"
-                    + "&routeId=" + routeId
-                    + "&numOfRows=100&pageNo=1&_type=xml";
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 6000); // 6초 타임아웃
-
-                const response = await fetch(tagoUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    let xmlText = await response.text();
-
-                    // 💡 [트윈 안테나 폴백: 202A/203A 타겟 차량 미발견 시 정규 노선 로컬 추가 확인]
-                    const cleanPlate = String(targetBusNo || '').replace(/[^0-9]/g, '');
-                    if ((cleanRoute === '202A' || cleanRoute === '203A') && cleanPlate && !xmlText.includes(cleanPlate)) {
-                        const regularRoute = cleanRoute.replace('A', '');
-                        const regularRouteId = CLIENT_ROUTE_MAP[regularRoute];
-                        if (regularRouteId) {
-                            try {
-                                const fallbackUrl = "https://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteAcctoBusLcList"
-                                    + "?serviceKey=" + serviceKey
-                                    + "&cityCode=23"
-                                    + "&routeId=" + regularRouteId
-                                    + "&numOfRows=100&pageNo=1&_type=xml";
-                                const fbRes = await fetch(fallbackUrl);
-                                if (fbRes.ok) {
-                                    const fbXml = await fbRes.text();
-                                    if (fbXml.includes(cleanPlate)) {
-                                        xmlText = fbXml;
-                                    }
-                                }
-                            } catch (e) { }
-                        }
-                    }
-
-                    if (typeof parseAndApplyBisData === 'function') {
-                        parseAndApplyBisData(xmlText, targetBusNo);
-                    }
-                    return; // 로컬 호출 성공 시 완료
-                }
-            } catch (localErr) {
-                console.warn("⚠️ 로컬 기기 직접 호출 실패, 서버 경유 방식으로 전환:", localErr);
-            }
-        }
-
-        // 4. 로컬 실패 또는 환경 제한 시 구글 서버 경유 폴백
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
+        // 1. GAS 환경일 때 google.script.run 직접 호출
+        if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getIncheonBusLive === 'function') {
             google.script.run
                 .withSuccessHandler(function (xmlText) {
-                    if (typeof parseAndApplyBisData === 'function') {
+                    if (typeof parseAndApplyBisData === 'function' && xmlText && !xmlText.startsWith("ERROR")) {
                         parseAndApplyBisData(xmlText, targetBusNo);
+                    } else {
+                        fallbackGasProxyBis(routeShort, targetBusNo);
                     }
                 })
                 .withFailureHandler(function (err) {
-                    console.warn("⚠️ BIS 실시간 정보 수신 일시 지연:", err);
+                    console.warn("⚠️ GAS native BIS 지연 -> 웹앱 프록시 전환:", err);
+                    fallbackGasProxyBis(routeShort, targetBusNo);
                 })
                 .getIncheonBusLive(routeShort, targetBusNo);
+            return;
         }
+
+        // 2. 외부 환경(GitHub Pages 등)인 경우: 웹앱 프록시 호출을 메인으로 신속 실행
+        fallbackGasProxyBis(routeShort, targetBusNo);
+    }
+
+    function fallbackGasProxyBis(routeShort, targetBusNo) {
+        const gasUrl = window.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec';
+        fetch(gasUrl + '?action=get_incheon_bus_live&routeShort=' + encodeURIComponent(routeShort || '') + '&targetBusNo=' + encodeURIComponent(targetBusNo || ''))
+            .then(function(r) { return r.text(); })
+            .then(function(xmlText) {
+                if (typeof parseAndApplyBisData === 'function' && xmlText && (xmlText.includes('<response>') || xmlText.includes('<items>') || xmlText.includes('<header>'))) {
+                    parseAndApplyBisData(xmlText, targetBusNo);
+                } else {
+                    console.warn("⚠️ [BIS 프록시] 올바른 XML 응답이 아님:", xmlText ? xmlText.substring(0, 100) : "empty");
+                }
+            })
+            .catch(function(err) {
+                console.warn("⚠️ BIS 웹앱 프록시 fetch 수신 실패:", err);
+            });
     }
 
     // ================================================================
@@ -5398,8 +6712,20 @@ function loadLatestColleagueMessage() {
 
             const bisVehicleEl = document.getElementById('bisVehicleNo');
             if (!targetBus) {
-                if (bisVehicleEl) bisVehicleEl.innerText = `인천70아${targetPlateNo} (운행대기)`;
-                applyLockedDelayBadge("-", "#94a3b8");
+                if (bisVehicleEl) {
+                    let cleanP = String(targetPlateNo).includes('인천') ? targetPlateNo : `인천70아${targetPlateNo}`;
+                    bisVehicleEl.innerText = cleanP;
+                }
+
+                // 🚦 [운행대기 시에도 masterCache 기반 실제 세부 BIS 정류장명 및 표준시간 표출]
+                const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
+                if (masterCache && masterCache.length > 0 && typeof updateTrafficStopFromMaster === 'function') {
+                    updateTrafficStopFromMaster(masterCache);
+                } else if (window.lastValidNextStop && window.lastValidNextStop.name) {
+                    if (typeof updateTrafficStopSequence === 'function') {
+                        updateTrafficStopSequence(window.lastValidNextStop.name, window.lastValidNextStop.time, '(종점 도착)', '-');
+                    }
+                }
                 return;
             }
 
@@ -5466,41 +6792,70 @@ function loadLatestColleagueMessage() {
             const now = new Date();
             const currentWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-            // 4. 지능형 다요소 정류장 매칭 (정류장ID + 명칭 + 진행방향 + 시각근접 종합 스코어링)
-            // - 1회차, 2회차, 순환노선 모두에서 100% 오차 없는 정밀 매칭 보장
+            // ================================================================
+            // 🎯 [시간 앵커 기반 스마트 슬라이딩 윈도우 (Sliding Window) 매칭 엔진]
+            // - 전체 130개 정류장을 무차별 검색하지 않고, 현재 시각 및 직전 위치 기준
+            //   앞뒤 ±5개 정류장 윈도우 내에서만 정밀 매칭하여 종점/차고지 점프 100% 원천 차단!
+            // ================================================================
             let matchedIndex = -1;
 
             if (masterCache && masterCache.length > 0) {
+                // 1. 기준점(Anchor Index) 산출
+                let anchorIndex = 0;
+                if (window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0 && window.lastMatchedMasterIndex < masterCache.length) {
+                    anchorIndex = window.lastMatchedMasterIndex;
+                } else {
+                    let minTimeDiff = Infinity;
+                    for (let i = 0; i < masterCache.length; i++) {
+                        let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
+                        if (sSec > 0) {
+                            let diff = Math.abs(currentWallSec - sSec);
+                            if (diff > 43200) diff = Math.abs(diff - 86400);
+                            if (diff < minTimeDiff) {
+                                minTimeDiff = diff;
+                                anchorIndex = i;
+                            }
+                        }
+                    }
+                }
+
+                // 2. 탐색 슬라이딩 윈도우 설정: [anchorIndex - 2 ~ anchorIndex + 6]
+                // 버스는 직전 위치보다 크게 후진하지 않으며 전진하므로 앞쪽으로 넓게 탐색
+                let winStart = Math.max(0, anchorIndex - 2);
+                let winEnd = Math.min(masterCache.length - 1, anchorIndex + 6);
+
                 let candidates = [];
-                for (let i = 0; i < masterCache.length; i++) {
+                for (let i = winStart; i <= winEnd; i++) {
+                    let rSeq = getRowSeq(masterCache[i]);
                     let rId = getRowStopId(masterCache[i]);
                     let rName = getRowStopName(masterCache[i]);
+                    let isSeqMatch = (curBisNodeOrd > 0 && rSeq > 0 && curBisNodeOrd === rSeq);
                     let isIdMatch = curBisStopId && rId && (rId === curBisStopId);
                     let isExactName = curBisStopName && rName && (rName === curBisStopName);
                     let isPartialName = curBisStopName && rName && (rName.includes(curBisStopName) || curBisStopName.includes(rName));
 
-                    if (isIdMatch || isExactName || isPartialName) {
+                    if (isSeqMatch || isIdMatch || isExactName || isPartialName) {
                         let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
                         let diff = Math.abs(currentWallSec - sSec);
-                        if (diff > 43200) diff = Math.abs(diff - 86400); // 24시간 래핑
+                        if (diff > 43200) diff = Math.abs(diff - 86400);
 
                         let score = 0;
-                        if (isIdMatch) score += 1000;
-                        if (isExactName) score += 500;
-                        else if (isPartialName) score += 200;
+                        if (isSeqMatch && isIdMatch) score += 5000; // 🎯 순번과 정류장 ID 동시 일치: 100% 자석 매칭!
+                        else if (isSeqMatch) score += 3000;
+                        else if (isIdMatch) score += 1000;
+                        if (isExactName) score += 600;
+                        else if (isPartialName) score += 300;
 
-                        // 직전 매칭 위치 기반 순방향 보너스 (회차 내 안정적인 전진 보장)
-                        if (window.lastMatchedMasterIndex !== null && window.lastMatchedMasterIndex >= 0) {
-                            let idxDiff = i - window.lastMatchedMasterIndex;
-                            if (idxDiff >= 0 && idxDiff <= 8) {
-                                score += (10 - idxDiff) * 30; // 직전 정류장 직후 1~8개에 높은 가산점
-                            } else if (idxDiff < 0) {
-                                score -= 150; // 역방향 점프 감점
-                            }
+                        // 직전 정류장 대비 순방향 진행 보너스 (1~3개 앞 정류장에 집중 가산)
+                        let stepDiff = i - anchorIndex;
+                        if (stepDiff >= 0 && stepDiff <= 3) {
+                            score += (4 - stepDiff) * 50;
+                        } else if (stepDiff < 0) {
+                            score -= 80; // 역방향 감점
                         }
 
-                        // 시간 차이에 따른 감점 (1분당 10점 감점, 최대 500점)
-                        score -= Math.min(500, (diff / 60) * 10);
+                        // 시간 차이에 따른 감점
+                        score -= Math.min(300, (diff / 60) * 10);
 
                         candidates.push({ index: i, score: score, diff: diff });
                     }
@@ -5510,22 +6865,8 @@ function loadLatestColleagueMessage() {
                     candidates.sort((a, b) => b.score - a.score);
                     matchedIndex = candidates[0].index;
                 } else {
-                    // 특수 상황(차고지 등): 현재 시각과 가장 가까운 정류장 탐색 (1시간 이내만 유효)
-                    let timeCandidates = [];
-                    for (let i = 0; i < masterCache.length; i++) {
-                        let sSec = parseTimeToSeconds(getRowStdTime(masterCache[i]));
-                        if (sSec > 0) {
-                            let diff = Math.abs(currentWallSec - sSec);
-                            if (diff > 43200) diff = Math.abs(diff - 86400);
-                            timeCandidates.push({ index: i, diff: diff });
-                        }
-                    }
-                    if (timeCandidates.length > 0) {
-                        timeCandidates.sort((a, b) => a.diff - b.diff);
-                        if (timeCandidates[0].diff <= 3600) {
-                            matchedIndex = timeCandidates[0].index;
-                        }
-                    }
+                    // 윈도우 내에서 이름 매칭이 안 잡히더라도 엉뚱한 종점으로 튀지 않고 현재 앵커 유지
+                    matchedIndex = anchorIndex;
                 }
             }
 
@@ -5534,11 +6875,14 @@ function loadLatestColleagueMessage() {
             let currentTimeStr = "--:--:--";
             let nextStopName = "(다음 정류장)";
             let nextTimeStr = "--:--:--";
+            let thirdStopName = "(다음다음)";
+            let thirdTimeStr = "--:--:--";
 
             if (matchedIndex !== -1) {
                 window.lastMatchedMasterIndex = matchedIndex;
                 let currentRow = masterCache[matchedIndex];
                 let nextRow = masterCache[matchedIndex + 1] || null;
+                let thirdRow = masterCache[matchedIndex + 2] || null;
 
                 currentStopName = getRowStopName(currentRow) || currentStopName;
                 currentTimeStr = getRowStdTime(currentRow);
@@ -5546,9 +6890,42 @@ function loadLatestColleagueMessage() {
                 if (nextRow) {
                     nextStopName = getRowStopName(nextRow);
                     nextTimeStr = getRowStdTime(nextRow);
+                    if (thirdRow) {
+                        thirdStopName = getRowStopName(thirdRow);
+                        thirdTimeStr = getRowStdTime(thirdRow);
+                    } else {
+                        thirdStopName = "(종점 도착)";
+                        thirdTimeStr = "-";
+                    }
                 } else {
-                    nextStopName = "(종점 도착)";
-                    nextTimeStr = "-";
+                    // 🛡️ [종점 점프 절대 방어선]
+                    // masterCache 끝에 닿았더라도 직전 정상 정류장 또는 masterCache의 실시간 위치 정류장 보존!
+                    if (window.lastValidNextStop && window.lastValidNextStop.name && window.lastValidNextStop.name !== "(종점 도착)") {
+                        nextStopName = window.lastValidNextStop.name;
+                        nextTimeStr = window.lastValidNextStop.time || "-";
+                        thirdStopName = "(종점 도착)";
+                        thirdTimeStr = "-";
+                    } else if (masterCache && masterCache.length > 0) {
+                        let targetIdx = 0;
+                        for (let mi = 0; mi < masterCache.length; mi++) {
+                            let msSec = parseTimeToSeconds(getRowStdTime(masterCache[mi]));
+                            if (msSec > currentWallSec) {
+                                targetIdx = mi;
+                                break;
+                            }
+                        }
+                        let mNext = masterCache[targetIdx] || masterCache[masterCache.length - 1];
+                        let mAfter = masterCache[targetIdx + 1] || null;
+                        nextStopName = getRowStopName(mNext) || '(종점 도착)';
+                        nextTimeStr = getRowStdTime(mNext) || '-';
+                        thirdStopName = mAfter ? (getRowStopName(mAfter) || '(종점 도착)') : '(종점 도착)';
+                        thirdTimeStr = mAfter ? (getRowStdTime(mAfter) || '-') : '-';
+                    } else {
+                        nextStopName = "(종점 도착)";
+                        nextTimeStr = "-";
+                        thirdStopName = "-";
+                        thirdTimeStr = "-";
+                    }
                 }
             }
 
@@ -5561,6 +6938,11 @@ function loadLatestColleagueMessage() {
             if (nextTimeEl) nextTimeEl.innerText = nextTimeStr;
             if (currentStopEl) currentStopEl.innerText = currentStopName;
             if (currentTimeEl) currentTimeEl.innerText = currentTimeStr;
+
+            // 🚦 [3번째 박스] 실시간 도로 소통 및 2연속 정류장 흐름(다음 ━━━━ 다음다음) UI 바인딩
+            if (typeof updateTrafficStopSequence === 'function') {
+                updateTrafficStopSequence(nextStopName, nextTimeStr, thirdStopName, thirdTimeStr);
+            }
 
             // ==============================================================
             // 🔒 [절대 오차 고정(Lock) 메커니즘]
@@ -11178,12 +12560,28 @@ function stopVoiceTTS() {
 
 
 
-// DOM 준비 시 드래그 초기화
+// DOM 준비 시 드래그 초기화 및 게이트웨이 이벤트 연결
 window.addEventListener('DOMContentLoaded', function () {
   setTimeout(() => {
     initVoiceWidgetDrag();
   }, 400);
+
+  // 게이트웨이 화면: PIN 입력 후 엔터 / 다음 단계 버튼 클릭
+  const gatewayPinInput = document.getElementById('gatewayPinInput');
+  const gatewayNextBtn = document.getElementById('gatewayNextBtn');
+  if (gatewayPinInput) {
+    gatewayPinInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') handleGatewayNext();
+    });
+  }
+  if (gatewayNextBtn) {
+    gatewayNextBtn.addEventListener('click', function() {
+      handleGatewayNext();
+    });
+  }
 });
+
+window.handleGatewayNext = handleGatewayNext;
 
 </script>
 
