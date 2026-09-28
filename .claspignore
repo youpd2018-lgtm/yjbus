@@ -1,0 +1,15 @@
+# GAS 백엔드에만 필요한 파일만 push 되도록 설정
+# 프론트엔드 파일 전체 제외
+js/**
+css/**
+gh-pages/**
+**/*.html
+*.html
+*.md
+*.jpg
+*.png
+*.txt
+chunk_main.js
+script_splitter.js
+refactor_to_standard.js
+node_modules/**
