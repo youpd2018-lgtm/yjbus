@@ -13,3 +13,6 @@ chunk_main.js
 script_splitter.js
 refactor_to_standard.js
 node_modules/**
+icons/**
+sw.js
+manifest.json

@@ -68,11 +68,32 @@ function loadLatestColleagueMessage() {
         return Math.round(R * c);
     }
 
-    // 스마트폰 GPS 실시간 추적 시작
-    function startLiveGpsTracking(duty) {
-        if (window.liveGpsWatchId && navigator.geolocation) {
+    // 라이브 모달이 실제로 열려 있는지 여부 (GPS는 이 동안에만 허용)
+    function isLiveModalOpen() {
+        const modal = document.getElementById('liveModal');
+        return !!(modal && modal.classList.contains('active') && modal.style.display !== 'none');
+    }
+
+    // 🛰️ 스마트폰 GPS 추적 완전 해제 (배터리 보호) — 모달 닫힘 시 호출
+    function stopLiveGpsTracking() {
+        if (window.liveGpsWatchId !== null && window.liveGpsWatchId !== undefined && navigator.geolocation) {
             navigator.geolocation.clearWatch(window.liveGpsWatchId);
-            window.liveGpsWatchId = null;
+        }
+        window.liveGpsWatchId = null;
+        window.lastGpsPosition = null;
+        window.curBusGpsLat = null;
+        window.curBusGpsLon = null;
+        window.curBusSpeed = null;
+    }
+
+    // 스마트폰 GPS 실시간 추적 시작 (라이브 모달이 열려 있을 때만 동작)
+    function startLiveGpsTracking(duty) {
+        stopLiveGpsTracking();
+
+        // 모달이 닫힌 상태(비동기 지연 콜백, 권한 요청 응답 등)에서는 절대 시작하지 않음
+        if (!isLiveModalOpen()) {
+            console.log("🔋 [GPS] 라이브 모달이 닫혀 있어 위치 추적을 시작하지 않습니다.");
+            return;
         }
 
         if (!navigator.geolocation) {
@@ -91,6 +112,7 @@ function loadLatestColleagueMessage() {
 
         window.liveGpsWatchId = navigator.geolocation.watchPosition(
             (pos) => {
+                if (!isLiveModalOpen()) { stopLiveGpsTracking(); return; }
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const speedKmh = pos.coords.speed !== null && pos.coords.speed >= 0 ? Math.round(pos.coords.speed * 3.6) : null;

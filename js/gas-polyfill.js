@@ -1,4 +1,4 @@
-window.GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec";
+// GAS 웹 앱 주소는 js/app-config.js 에서 설정합니다 (window.GAS_WEB_APP_URL)
 if (typeof google === 'undefined') window.google = {};
 if (!google.script) google.script = {};
 
