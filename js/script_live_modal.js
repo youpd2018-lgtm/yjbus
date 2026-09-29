@@ -856,7 +856,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             };
 
             const fallbackFetch = () => {
-                const gasUrl = window.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbxke2kYQ3AAo7gCXXHZ8-MHH5_pCRxcc5yHESjAALWaftT2B7xcCg1g7Iedp08s9Zw5/exec';
+                const gasUrl = window.GAS_WEB_APP_URL;
+                if (!gasUrl) { applyResult({ success: false }); return; }
                 fetch(gasUrl + '?action=get_standard_master&uniqueKey=' + encodeURIComponent(uniqueKey))
                     .then(r => r.json())
                     .then(res => applyResult(res))
