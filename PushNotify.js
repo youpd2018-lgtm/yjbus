@@ -1,7 +1,8 @@
 // ================================================================
 // 🔔 [서버 푸시 발송] PushNotify.js
-// - '첫 운행 1시간 전' 알림: 매분 실행되는 트리거(checkFirstRunPush)가 오늘 배차를 검사해
+// - '첫 운행 1시간 전' 알림: 5분마다 실행되는 트리거(checkFirstRunPush)가 오늘 배차를 검사해
 //   기사의 FCM 토큰(DB 시트 'fcm_{기사명}_...')으로 푸시를 발송합니다.
+//   (실행 시간 절약: 아래 PUSH_ACTIVE_HOURS 시간대 밖에서는 시트를 읽지 않고 바로 종료)
 // - 사전 설정(1회):
 //   1) 스크립트 속성 FCM_SERVICE_ACCOUNT = Firebase 서비스 계정 JSON 전체 (절대 코드/저장소에 넣지 마세요)
 //   2) (선택) 스크립트 속성 APP_URL = 알림 클릭 시 열 주소
@@ -12,6 +13,11 @@ const PUSH_TZ_OFFSET = '+09:00';               // 근무표 기준 시간대 (KS
 const PUSH_LEAD_MIN = 60;                      // 첫 운행 몇 분 전에 알릴지
 const PUSH_DEFAULT_APP_URL = 'https://youpd2018-lgtm.github.io/yjbus/';
 const PUSH_WORK_TYPES = ['정상', '대타'];       // 알림 대상 근무 형태
+// 실제로 검사하는 시간대(KST, 시 단위, 끝 시각 포함). 이 밖의 시간에는 바로 종료합니다.
+//  - 오전 근무(첫 운행 04~07시): 알림은 03~06시  → [3, 6]  (6시대 전체 포함)
+//  - 오후 근무(첫 운행 12~16시): 알림은 11~15시  → [11, 15] (15시대 전체 포함)
+const PUSH_ACTIVE_HOURS = [[3, 6], [11, 15]];
+const PUSH_TRIGGER_INTERVAL_MIN = 5;           // 트리거 실행 간격(분): 1, 5, 10, 15, 30 중 하나
 
 // ---------------------------------------------------------------
 // 순수 로직 (시트/네트워크 의존 없음)
@@ -66,6 +72,11 @@ function shouldSendFirstRunPush(nowMs, firstRunMs, leadMin) {
   return nowMs >= firstRunMs - (leadMin || PUSH_LEAD_MIN) * 60000 && nowMs < firstRunMs;
 }
 
+// 현재 시(KST, 0~23)가 검사 대상 시간대인지 확인
+function isPushActiveHour(hour) {
+  return PUSH_ACTIVE_HOURS.some(function (r) { return hour >= r[0] && hour <= r[1]; });
+}
+
 function pushTryParse_(v) {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'object') return v;
@@ -73,14 +84,17 @@ function pushTryParse_(v) {
 }
 
 // ---------------------------------------------------------------
-// 메인 트리거 함수 (매분 실행)
+// 메인 트리거 함수 (5분마다 실행)
 // ---------------------------------------------------------------
 
 function checkFirstRunPush() {
+  const now = new Date();
+  // 검사 시간대가 아니면 시트를 읽지 않고 바로 종료 (실행 시간 한도 보호)
+  if (!isPushActiveHour(Number(Utilities.formatDate(now, 'Asia/Seoul', 'H')))) return;
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(20000)) return; // 중복 실행 방지
   try {
-    const now = new Date();
     const nowMs = now.getTime();
     const today = Utilities.formatDate(now, 'Asia/Seoul', 'yyyy-MM-dd');
 
@@ -240,8 +254,8 @@ function installFirstRunPushTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'checkFirstRunPush') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('checkFirstRunPush').timeBased().everyMinutes(1).create();
-  console.log('checkFirstRunPush 트리거(1분 간격)를 설치했습니다.');
+  ScriptApp.newTrigger('checkFirstRunPush').timeBased().everyMinutes(PUSH_TRIGGER_INTERVAL_MIN).create();
+  console.log('checkFirstRunPush 트리거(' + PUSH_TRIGGER_INTERVAL_MIN + '분 간격)를 설치했습니다.');
 }
 
 // 특정 기사에게 테스트 푸시 발송: sendTestPush('홍길동')
