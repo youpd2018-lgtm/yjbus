@@ -84,6 +84,10 @@
           style="background: #0f172a; color: #38bdf8; border: 1.5px solid #38bdf8; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(56, 189, 248, 0.2);">
           <iconify-icon icon="mdi:refresh" style="font-size: 15px;"></iconify-icon>
         </button>
+        <button type="button" class="push-btn" id="pushBtn" onclick="togglePushNotifications()" title="푸시 알림 켜기"
+          style="background: #0f172a; color: #fde047; border: 1.5px solid #fde047; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.55;">
+          <iconify-icon icon="mdi:bell-ring" style="font-size: 15px;"></iconify-icon>
+        </button>
         <button type="button" class="logout-btn" id="logoutBtn" onclick="logoutDriver()" title="로그아웃"
           style="background: #0f172a; color: #84cc16; border: 1.5px solid #84cc16; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(132, 204, 22, 0.2);">
           <iconify-icon icon="mdi:power" style="font-size: 15px;"></iconify-icon>
@@ -1306,6 +1310,9 @@
 
 
 
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
     <script src="js/gas-polyfill.js"></script>
     <script src="js/script_live_modal.js"></script>
     <script src="js/script_weather_msg.js"></script>
@@ -1316,6 +1323,7 @@
     <script src="js/script_gateway_memo.js"></script>
     <script src="js/script_schedule.js"></script>
     <script src="js/script_board_memo.js"></script>
+    <script src="js/push_fcm.js"></script>
     <!-- 📲 PWA 서비스 워커 등록 -->
     <script>
       if ('serviceWorker' in navigator) {

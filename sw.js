@@ -4,7 +4,7 @@
 // - CDN(SweetAlert2/iconify/폰트)은 stale-while-revalidate
 // - GAS(script.google.com), 버스/날씨/AI 등 API 요청은 절대 캐시하지 않고 그대로 통과
 // ※ 셸 파일을 수정하면 CACHE_VERSION을 올려 주세요.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `yjbus-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `yjbus-cdn-${CACHE_VERSION}`;
 
@@ -24,13 +24,15 @@ const SHELL_FILES = [
   'js/script_gateway_memo.js',
   'js/script_schedule.js',
   'js/script_board_memo.js',
+  'js/firebase-config.js',
+  'js/push_fcm.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
   'yeongjong.png'
 ];
 
-const CDN_HOSTS = ['cdn.jsdelivr.net', 'code.iconify.design', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+const CDN_HOSTS = ['cdn.jsdelivr.net', 'www.gstatic.com', 'code.iconify.design', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -88,4 +90,45 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(staleWhileRevalidate(request, CDN_CACHE));
   }
   // 그 외(GAS, 버스 API 등)는 respondWith 하지 않아 브라우저가 그대로 네트워크 처리
+});
+
+// ================================================================
+// 🔔 FCM 백그라운드 푸시 (앱이 닫혀 있어도 수신)
+// - Firebase SDK 로딩에 실패해도 오프라인 캐시 기능은 영향받지 않도록 try/catch 처리
+// - 발송 서버는 data 메시지({title, body, url, tag})로 보내는 것을 권장 (notification 페이로드는 FCM이 자동 표시)
+// ================================================================
+try {
+  importScripts('js/firebase-config.js');
+  importScripts(
+    `https://www.gstatic.com/firebasejs/${self.FIREBASE_SDK_VERSION}/firebase-app-compat.js`,
+    `https://www.gstatic.com/firebasejs/${self.FIREBASE_SDK_VERSION}/firebase-messaging-compat.js`
+  );
+  firebase.initializeApp(self.FIREBASE_CONFIG);
+  const messaging = firebase.messaging();
+  messaging.onBackgroundMessage((payload) => {
+    if (payload.notification) return; // notification 페이로드는 SDK가 이미 표시함
+    const d = payload.data || {};
+    return self.registration.showNotification(d.title || '영종운수', {
+      body: d.body || '',
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      tag: d.tag || 'yjbus-push',
+      data: { url: d.url || './' }
+    });
+  });
+} catch (err) {
+  console.warn('[SW] FCM 초기화 실패:', err);
+}
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });
