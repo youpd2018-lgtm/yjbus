@@ -895,7 +895,9 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         }
 
         // 🛰️ GPS 추적 안전 중단 (배터리 보호)
-        if (window.liveGpsWatchId && navigator.geolocation) {
+        if (typeof stopLiveGpsTracking === 'function') {
+            stopLiveGpsTracking();
+        } else if (window.liveGpsWatchId != null && navigator.geolocation) {
             navigator.geolocation.clearWatch(window.liveGpsWatchId);
             window.liveGpsWatchId = null;
         }
