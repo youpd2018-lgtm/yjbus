@@ -567,6 +567,10 @@ function doPost(e) {
       const answer = askGeminiVoiceAssistant(query, context, history);
       return ContentService.createTextOutput(JSON.stringify({ success: true, answer: answer })).setMimeType(ContentService.MimeType.JSON);
     }
+    if (postData && postData.action === 'save_gps_track') {
+      const res = typeof saveGpsTrack === 'function' ? saveGpsTrack(postData) : { success: false, error: "saveGpsTrack 함수 미정의" };
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
     if (postData && postData.action === 'save_to_server') {
       saveToServer(postData.key, postData.value);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);

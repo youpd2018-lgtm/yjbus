@@ -919,6 +919,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             modal.classList.remove('active');
         }
 
+        if (typeof gpsRecFlush === 'function') gpsRecFlush();   // 모은 GPS 기록을 서버로 올림
+
         // 🛰️ GPS 추적 안전 중단 (배터리 보호)
         if (typeof stopLiveGpsTracking === 'function') {
             stopLiveGpsTracking();
