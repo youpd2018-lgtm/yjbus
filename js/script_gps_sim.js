@@ -368,9 +368,7 @@ function loadLatestColleagueMessage() {
                     if (Math.abs(diffMin) <= 60) {
                         const absMin = Math.abs(diffMin);
                         let badgeText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
-                        let badgeColor = "#00ff66";
-                        if (diffMin <= -3) badgeColor = "#ea4335";
-                        else if (diffMin >= 3) badgeColor = "#9c27b0";
+                        let badgeColor = delayBadgeColor(diffMin);
 
                         window.bisStopLockState = window.bisStopLockState || {};
                         window.bisStopLockState.lockedStopKey = "GPS_STOP_" + closestIdx;
@@ -648,9 +646,7 @@ function loadLatestColleagueMessage() {
 
         const absMin = Math.abs(diffMin);
         let badgeText = absMin === 0 ? "0" : (diffMin > 0 ? `+${absMin}` : `-${absMin}`);
-        let badgeColor = "#00ff66";
-        if (diffMin <= -3) badgeColor = "#ea4335";
-        else if (diffMin >= 3) badgeColor = "#9c27b0";
+        let badgeColor = delayBadgeColor(diffMin);
 
         window.bisStopLockState = window.bisStopLockState || {};
         window.bisStopLockState.lockedStopKey = "GPS_SIM_" + idx;
@@ -799,27 +795,9 @@ function loadLatestColleagueMessage() {
             // 🛡️ 이상치 방어 (60분 초과)
             if (Math.abs(diffMin) > 60) return;
 
-            let badgeText = "0";
-            let badgeColor = "#34c759"; // 정시: 에메랄드 그린
-
-            if (diffMin <= -3) {
-                // 조발 (3분 이상 빠름: 빨간색 경고)
-                badgeText = `-${Math.abs(diffMin)}`;
-                badgeColor = "#ea4335";
-            } else if (diffMin >= 3) {
-                // 지연 (3분 이상 지연: 보라색)
-                badgeText = `+${diffMin}`;
-                badgeColor = "#9c27b0";
-            } else if (diffMin === 0) {
-                badgeText = "0";
-                badgeColor = "#34c759";
-            } else if (diffMin > 0) {
-                badgeText = `+${diffMin}`;
-                badgeColor = "#34c759";
-            } else {
-                badgeText = `-${Math.abs(diffMin)}`;
-                badgeColor = "#34c759";
-            }
+            // ±5분까지 초록, ±6분부터 주황
+            let badgeText = diffMin === 0 ? "0" : (diffMin > 0 ? `+${diffMin}` : `-${Math.abs(diffMin)}`);
+            let badgeColor = delayBadgeColor(diffMin);
 
             // 배지 UI 즉시 갱신 (GmarketSans, 고시인성 네온 색상)
             badgeEl.innerText = badgeText;
@@ -833,7 +811,7 @@ function loadLatestColleagueMessage() {
             badgeEl.style.border = `2.5px solid ${badgeColor}`;
             badgeEl.style.background = (badgeColor === "#34c759" || badgeColor === "#00ff66")
                 ? "rgba(52, 199, 89, 0.18)"
-                : (badgeColor === "#ea4335" ? "rgba(234, 67, 53, 0.18)" : "rgba(156, 39, 176, 0.18)");
+                : "rgba(245, 158, 11, 0.2)";
             badgeEl.style.boxShadow = `0 0 14px ${badgeColor}66`;
 
             // 현재 정류장 기준으로 고정 → 다음 정류장 통과(GPS) 전까지 유지
@@ -848,7 +826,7 @@ function loadLatestColleagueMessage() {
 
     // 🚦 신호등 알약 상태 적용: state = 'ok' | 'slow' | 'jam' | 'off'
     function setTrafficLamp(state, label) {
-        const flow = document.querySelector('#liveTrafficStopBox .tf-flow');
+        const flow = document.querySelector('#liveModal .tf-flow');
         const txt = document.getElementById('trafficFlowStatusText');
         if (flow) flow.setAttribute('data-s', state);
         if (txt) txt.innerText = label;
@@ -1014,9 +992,7 @@ function loadLatestColleagueMessage() {
                     let initDiffMin = Math.round(initDiffSec / 60);
                     if (Math.abs(initDiffMin) <= 30) {
                         let badgeText = initDiffMin === 0 ? "0" : (initDiffMin > 0 ? `+${initDiffMin}` : `-${Math.abs(initDiffMin)}`);
-                        let badgeColor = "#00ff66";
-                        if (initDiffMin <= -4) badgeColor = "#ea4335";
-                        else if (initDiffMin >= 4) badgeColor = "#9c27b0";
+                        let badgeColor = delayBadgeColor(initDiffMin);
                         applyLockedDelayBadge(badgeText, badgeColor);
                     }
                 }
@@ -1066,7 +1042,7 @@ function loadLatestColleagueMessage() {
     }
 
     // 🚨 [돌발상황 다시보기 및 테스트 함수] (소통창 터치 시 발동)
-    function triggerTrafficIncidentTest() {
+    function triggerTrafficIncidentTest(customText) {
         try {
             const glowLine = document.getElementById('trafficFlowGlowLine');
             const flowDot = document.getElementById('trafficFlowDot');
@@ -1079,8 +1055,11 @@ function loadLatestColleagueMessage() {
             let descText = '전방 1.2km 지점 2차로 추돌사고 처리 중 (정체)';
             let voiceText = '전방 1킬로미터, 공항신도시 제이씨 부근에 사고 돌발상황이 발생했습니다. 안전운행 하세요.';
 
+            if (typeof customText === 'string' && customText) {
+                hasRealAlert = true;
+            }
             if (hasRealAlert) {
-                let realRaw = String(window.liveTrafficAlerts[0] || '');
+                let realRaw = (typeof customText === 'string' && customText) ? customText : String(window.liveTrafficAlerts[0] || '');
                 titleText = '🚨 실시간 도로 돌발 알림';
                 descText = realRaw.replace(/🚨\s*\[돌발\]\s*/, '');
                 voiceText = `주의하세요. ${descText}. 안전운행 하세요.`;
@@ -1098,7 +1077,7 @@ function loadLatestColleagueMessage() {
                     title: titleText,
                     text: descText,
                     showConfirmButton: false,
-                    timer: 6000,
+                    timer: 8000,
                     timerProgressBar: true,
                     background: '#1e293b',
                     color: '#ffffff'
@@ -1119,11 +1098,11 @@ function loadLatestColleagueMessage() {
                 }
             }
 
-            // 4. 6초 후 자동 복원
+            // 4. 15초 후 자동 복원 (빨간불 깜빡임 유지)
             setTimeout(() => {
                 const st = document.getElementById('trafficFlowStatusText');
                 if (st && st.innerText === '돌발 주의') setTrafficLamp('ok', oldStatusText);
-            }, 6000);
+            }, 15000);
 
         } catch (err) {
             console.error("돌발상황 안내 에러:", err);

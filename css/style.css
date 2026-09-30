@@ -2861,7 +2861,7 @@ iconify-icon {
 /* ================================================================ */
 .tf-card {
     position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
-    margin: 10px 0 0 0; padding: 16px 14px 14px; border-radius: 22px; box-sizing: border-box;
+    margin: 10px 0 0 0; padding: 16px 12px 16px; border-radius: 22px; box-sizing: border-box;
     background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.04));
     border: 1px solid rgba(255,255,255,.22); border-top-color: rgba(255,255,255,.4);
     box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25);
@@ -2872,7 +2872,7 @@ iconify-icon {
 .tf-role { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 11px; letter-spacing: .08em; color: #93a3bd; font-weight: 600; }
 .tf-time {
     font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700;
-    font-size: clamp(24px, 7.4vw, 32px); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; color: #f4f7fb;
+    font-size: clamp(21px, 6.4vw, 30px); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; color: #f4f7fb;
 }
 .tf-cur .tf-time { color: #7dd3fc; text-shadow: 0 0 18px rgba(125,211,252,.35); }
 .tf-sec { font-size: .6em; color: #93a3bd; font-weight: 500; }
@@ -2882,31 +2882,34 @@ iconify-icon {
 }
 .tf-cur .tf-name { color: #c7e6f7; }
 
-.tf-flow { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 58px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.tf-flow { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; margin: 16px auto 0; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .tf-flow[data-s="ok"] { --tfc: #4ade80; }
 .tf-flow[data-s="slow"] { --tfc: #fbbf24; }
 .tf-flow[data-s="jam"] { --tfc: #f87171; }
 .tf-flow[data-s="off"] { --tfc: #64748b; }
-.tf-flow-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--tfc); }
-.tf-lamp { display: flex; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 2px 6px rgba(0,0,0,.5); }
-.tf-lamp i { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,.12); }
-.tf-flow[data-s="ok"] .tf-lamp i:nth-child(1) { background: #4ade80; box-shadow: 0 0 10px #4ade80; }
-.tf-flow[data-s="slow"] .tf-lamp i:nth-child(2) { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
-.tf-flow[data-s="jam"] .tf-lamp i:nth-child(3) { background: #f87171; box-shadow: 0 0 10px #f87171; animation: tfBlink 1s ease-in-out infinite; }
+.tf-flow-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap; color: var(--tfc); }
+.tf-lamp { display: flex; gap: 9px; padding: 11px 16px; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 2px 6px rgba(0,0,0,.5); }
+.tf-lamp i { width: 17px; height: 17px; border-radius: 50%; background: rgba(255,255,255,.12); }
+.tf-flow[data-s="ok"] .tf-lamp i:nth-child(1) { background: #4ade80; box-shadow: 0 0 14px #4ade80; }
+.tf-flow[data-s="slow"] .tf-lamp i:nth-child(2) { background: #fbbf24; box-shadow: 0 0 14px #fbbf24; }
+.tf-flow[data-s="jam"] .tf-lamp i:nth-child(3) { background: #f87171; box-shadow: 0 0 14px #f87171; animation: tfBlink 1s ease-in-out infinite; }
 @keyframes tfBlink { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .tf-flow[data-s="jam"] .tf-lamp i:nth-child(3) { animation: none; } }
 
 /* 🧭 간단 길안내: 정류장 카드 가운데(신호등 자리)에 화살표 + 거리 + 안내, 신호등은 카드 위쪽 가운데로 이동 */
-.tf-nav { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 74px; max-width: 110px; color: #fff; }
+.tf-nav { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 88px; max-width: 108px; color: #fff; }
 .tf-nav[hidden] { display: none; }
 .tf-nav-arrow { display: inline-flex; color: #7dd3fc; filter: drop-shadow(0 0 8px rgba(125,211,252,.55)); }
-.tf-nav-dist { font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700; font-size: 17px; line-height: 1.1; }
-.tf-nav-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 12px; font-weight: 700; color: #e2e8f0; text-align: center; line-height: 1.2; }
-.tf-card.tf-navmode { padding-top: 26px; }
-.tf-card.tf-navmode .tf-flow { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); min-width: 0; gap: 0; }
-.tf-card.tf-navmode .tf-flow-text { display: none; }
-.tf-card.tf-navmode .tf-lamp { padding: 3px 7px; gap: 4px; }
-.tf-card.tf-navmode .tf-lamp i { width: 8px; height: 8px; }
-.nav-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: #94a3b8; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); padding: 3px 8px; border-radius: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.tf-nav-dist { font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700; font-size: 24px; line-height: 1.1; }
+.tf-nav-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 15px; font-weight: 700; color: #e2e8f0; text-align: center; line-height: 1.2; }
+.nav-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13.2px; font-weight: 800; color: #94a3b8; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); padding: 3.3px 8.8px; border-radius: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .nav-chip.on { color: #7dd3fc; background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.5); }
 .nav-chip[hidden] { display: none; }
+
+/* 라이브 모달: 큰 덩어리(위쪽 그룹 / 거점 시퀀스 / 정류장 그룹) 사이 여유 간격을 고르게 배분 */
+#liveModal .live-modal-content { gap: 22px !important; }
+#liveModal .live-group, #liveModal .ios-seq-card-wrapper { margin-top: auto !important; margin-bottom: auto !important; }
+#liveModal .live-group .tf-card { margin-top: 0; }
+.tf-card .tf-cur { grid-column: 1; }
+.tf-card .tf-nav { grid-column: 2; }
+.tf-card .tf-stop.tf-next { grid-column: 3; }

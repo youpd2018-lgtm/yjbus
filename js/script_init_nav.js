@@ -19,6 +19,11 @@
     // ================================================================
     // 🏷️ [오차 배지 스타일러]
     // ================================================================
+    // 오차 배지 색 규칙: ±5분까지 초록, ±6분부터 주황
+    function delayBadgeColor(diffMin) {
+        return Math.abs(diffMin) >= 6 ? "#f59e0b" : "#34c759";
+    }
+
     function applyLockedDelayBadge(displayText, targetColor) {
         const badgeEl = document.getElementById('bisDelayBadge');
         const nextStopBox = document.querySelector('.current-stop-highlight-bar');
@@ -28,7 +33,7 @@
             badgeEl.style.display = "inline-flex";
             badgeEl.style.border = `2.5px solid ${targetColor}`;
             badgeEl.style.color = "#ffffff";
-            badgeEl.style.background = (targetColor === "#00ff66" || targetColor === "#34c759") ? "rgba(52, 199, 89, 0.2)" : (targetColor === "#ea4335" ? "rgba(234, 67, 53, 0.2)" : (targetColor === "#9c27b0" ? "rgba(156, 39, 176, 0.2)" : "rgba(148, 163, 184, 0.15)"));
+            badgeEl.style.background = (targetColor === "#00ff66" || targetColor === "#34c759") ? "rgba(52, 199, 89, 0.2)" : (targetColor === "#f59e0b" ? "rgba(245, 158, 11, 0.2)" : "rgba(148, 163, 184, 0.15)");
             badgeEl.style.boxShadow = `0 0 14px ${targetColor}55`;
         }
 

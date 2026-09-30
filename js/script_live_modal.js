@@ -1040,40 +1040,39 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 
 
 // ================================================================
-// 🚨 라이브 모달 하단 메시지 박스: 평소 = 날씨, 새 돌발·교통 정보가 오면 잠깐(건당 15초) 돌발 정보로 바뀌었다가 날씨로 복귀
+// 🚨 새 돌발·교통 정보 자동 알림: 팝업 + 음성 안내 + 신호등 빨간불 깜빡임 (신호등을 눌렀을 때와 같은 동작)
+//  - 라이브 모달이 열려 있을 때만 알림 (열려 있지 않으면 다음 갱신 때 다시 확인)
+//  - 같은 돌발은 한 번만 알림
+//  - 버스에서 NEAR_KM 이내(또는 거리를 알 수 없는 것)만 알림. 여러 건이면 9초 간격으로 차례로
 // ================================================================
 (function () {
-    var SHOW_MS = 15 * 1000;
-    var seen = {};        // 이미 보여 준 돌발 (같은 내용을 반복해서 띄우지 않음)
+    var NEAR_KM = 3;
+    var GAP_MS = 9000;
+    var seen = {};
     var queue = [];
     var busy = false;
 
-    function setView(text) {
-        var weather = document.getElementById('liveWeatherView');
-        var line = document.getElementById('liveAlertLine');
-        var box = document.getElementById('liveWeatherBox');
-        if (text) {
-            if (weather) weather.style.display = 'none';
-            if (line) { line.textContent = '🚨 ' + String(text).replace(/^🚨\s*/, ''); line.style.display = 'flex'; }
-            if (box) { box.style.borderColor = 'rgba(250, 204, 21, 0.75)'; box.style.background = 'rgba(66, 32, 6, 0.85)'; }
-        } else {
-            if (line) { line.style.display = 'none'; line.textContent = ''; }
-            if (weather) weather.style.display = 'flex';
-            if (box) { box.style.borderColor = ''; box.style.background = ''; }
-        }
+    function distOf(text) {
+        var m = /\(([\d.]+)km 전방\)/.exec(text);
+        return m ? parseFloat(m[1]) : null;
     }
-
     function next() {
         var text = queue.shift();
-        if (!text) { busy = false; setView(null); return; }
+        if (!text) { busy = false; return; }
         busy = true;
-        setView(text);
-        setTimeout(next, SHOW_MS);
+        if (typeof triggerTrafficIncidentTest === 'function') triggerTrafficIncidentTest(text);
+        setTimeout(next, GAP_MS);
     }
 
     window.renderLiveModalAlerts = function () {
+        var modal = document.getElementById('liveModal');
+        var open = !!(modal && modal.classList.contains('active'));
+        if (!open) return;
         (window.liveTrafficAlerts || []).forEach(function (t) {
-            if (!seen[t]) { seen[t] = true; queue.push(t); }
+            if (seen[t]) return;
+            seen[t] = true;   // 멀어서 알리지 않는 것도 다시 검사하지 않음
+            var d = distOf(t);
+            if (d === null || d <= NEAR_KM) queue.push(t);
         });
         if (!busy && queue.length > 0) next();
     };

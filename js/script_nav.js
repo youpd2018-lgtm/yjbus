@@ -137,16 +137,16 @@
         if (m >= 100) return Math.round(m / 10) * 10 + 'm';
         return Math.max(10, Math.round(m / 10) * 10) + 'm';
     }
+    // 화살표 아이콘: Phosphor Icons(MIT 무료 오픈소스, iconify.design) 굵은 채움형을 그대로 넣어 둠
+    var ICON_ARROW = "<path fill=\"currentColor\" d=\"M231.39 123.06A8 8 0 0 1 224 128h-40v80a16 16 0 0 1-16 16H88a16 16 0 0 1-16-16v-80H32a8 8 0 0 1-5.66-13.66l96-96a8 8 0 0 1 11.32 0l96 96a8 8 0 0 1 1.73 8.72\"/>";
+    var ICON_UTURN = "<path fill=\"currentColor\" d=\"M232 144a64.07 64.07 0 0 1-64 64H80a8 8 0 0 1 0-16h88a48 48 0 0 0 0-96H88v40a8 8 0 0 1-13.66 5.66l-48-48a8 8 0 0 1 0-11.32l48-48A8 8 0 0 1 88 40v40h80a64.07 64.07 0 0 1 64 64\"/>";
+    var ICON_ROUND = "<path fill=\"currentColor\" d=\"M228 48v48a12 12 0 0 1-12 12h-48a12 12 0 0 1 0-24h19l-7.8-7.8a75.55 75.55 0 0 0-53.32-22.26h-.43a75.5 75.5 0 0 0-53.06 21.63a12 12 0 1 1-16.78-17.16a99.38 99.38 0 0 1 69.87-28.47h.52a99.42 99.42 0 0 1 70.2 29.29L204 67V48a12 12 0 0 1 24 0m-44.39 132.43a75.5 75.5 0 0 1-53.09 21.63h-.43a75.55 75.55 0 0 1-53.32-22.26L69 172h19a12 12 0 0 0 0-24H40a12 12 0 0 0-12 12v48a12 12 0 0 0 24 0v-19l7.8 7.8a99.42 99.42 0 0 0 70.2 29.26h.56a99.38 99.38 0 0 0 69.87-28.47a12 12 0 0 0-16.78-17.16Z\"/>";
     var ARROW_ROT = { straight: 0, left: -90, right: 90, slightleft: -45, slightright: 45 };
     function arrowSvg(key) {
-        if (key === 'uturn') {
-            return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20V9a4 4 0 0 1 8 0v5"/><path d="M12.5 11.5 16 15l3.5-3.5"/></svg>';
-        }
-        if (key === 'round') {
-            return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="5"/><path d="M12 22v-4"/><path d="M12 8V3"/><path d="m9.5 5 2.5-2.5L14.5 5"/></svg>';
-        }
-        var rot = ARROW_ROT[key] || 0;
-        return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(' + rot + 'deg)"><path d="M12 20V5"/><path d="m6 11 6-6 6 6"/></svg>';
+        var body = ICON_ARROW, rot = ARROW_ROT[key] || 0;
+        if (key === 'uturn') { body = ICON_UTURN; rot = 0; }
+        else if (key === 'round') { body = ICON_ROUND; rot = 0; }
+        return '<svg viewBox="0 0 256 256" width="46" height="46" style="transform: rotate(' + rot + 'deg)">' + body + '</svg>';
     }
 
     function setNavView(view) {   // view: null(숨김) 또는 {key, dist, text}
