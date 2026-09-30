@@ -1175,21 +1175,23 @@ button.action-btn:hover {
     border-bottom-right-radius: 8px !important;
 }
 
-/* 3. 운행 마친 회차 행 (적당히 흐릿하고 또렷하게 식별되도록 수정) */
+/* 3. 운행 마친 회차 행 (지난 시간도 또렷하게 읽히되, 다음 운행과는 구분되도록 조정) */
+/* 행(tr)과 칸(td)에 투명도가 이중으로 적용돼 너무 흐려지던 문제 → 행은 1, 칸만 살짝 흐리게 */
+#resTimetable tr.past-trip {
+    opacity: 1 !important;
+}
+
 #resTimetable tr.past-trip td {
-    opacity: 0.62 !important;
-    /* 투명도를 높여 가독성 개선 */
-    color: #94a3b8 !important;
-    /* 글자 색상 밝게 */
+    opacity: 0.85 !important;
+    color: #b6c2d4 !important;
     background: transparent !important;
-    filter: grayscale(30%) !important;
-    /* 블러 제거, 흑백 효과 완화 */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+    filter: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 #resTimetable tr.past-trip td * {
-    color: #64748b !important;
-    border-color: rgba(100, 116, 139, 0.25) !important;
+    color: #aab7ca !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
     background-color: transparent !important;
     box-shadow: none !important;
 }
