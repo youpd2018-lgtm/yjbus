@@ -409,6 +409,34 @@ function loadLatestColleagueMessage() {
         const shift = parts[1] || 'PM';
         const trip = parts[2] || '1';
 
+        // ★ 내 근무 회차: 저장된 근무표 앵커로 표준시간을 계산해서(계산 방식) 모의주행에 사용
+        if (val === 'TODAY') {
+            const ans = prompt('몇 회차로 시험할까요? (숫자만 입력)', '1');
+            if (ans === null) return;
+            const prevRound = window.currentTripRoundNumber;
+            window.currentTripRoundNumber = `${parseInt(ans, 10) || 1}회차`;
+            let d;
+            try { d = getTodayDutyInfo(); } finally { window.currentTripRoundNumber = prevRound; }
+            if (!d || !d.tripTimes) {
+                alert('선택한 날짜에 저장된 근무표에서 그 회차의 시간을 찾지 못했습니다.\n(근무가 등록된 날짜인지, 회차 번호가 맞는지 확인하세요)');
+                return;
+            }
+            const rows = await StdCalc.computeTripRows(d.routeShort, d.baseRoute, d.tripTimes);
+            if (!rows) {
+                alert('계산 불가: ' + (StdCalc.getLastError() || '앵커/시간을 확인하세요'));
+                return;
+            }
+            window.standardMasterCache = rows;
+            window.currentTripMasterCache = rows;
+            window.lastPassedStopIndex = null;
+            window.simState.currentIndex = 0;
+            window.simState.active = true;
+            console.log(`🧮 [모의주행-내 근무] ${d.uniqueKey} ${d.routeShort} ${JSON.stringify(d.tripTimes)} → ${rows.length}개 정류장`);
+            updateSimPanelDisplay();
+            simStepForward(0);
+            return;
+        }
+
         const uniqueKey = `${route}${shift}${trip}`;
         const duty = {
             routeNo: route,
@@ -639,7 +667,8 @@ function loadLatestColleagueMessage() {
             }
             const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
             if (curDuty && curDuty.uniqueKey) {
-                if (duty.uniqueKey !== curDuty.uniqueKey || !window.standardMasterCache || window.standardMasterCache.length === 0) {
+                const simRunning = window.simState && window.simState.active;   // 모의주행 중에는 시험용 시간표를 덮어쓰지 않음
+                if (!simRunning && (duty.uniqueKey !== curDuty.uniqueKey || !window.standardMasterCache || window.standardMasterCache.length === 0)) {
                     duty = curDuty;
                     window.lastMatchedMasterIndex = null;
                     window.lastPassedStopIndex = null;
