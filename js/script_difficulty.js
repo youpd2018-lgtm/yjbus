@@ -4,11 +4,13 @@
 //  - 빨강: 이 노선 이 순번 아주 힘듦 / 노랑: 그럭저럭 / 파랑: 아주 편함
 //  - 저장: BOARD_DB 시트 (category=DIFFICULTY, targetKey="노선-순번",
 //          writer=선택한 기사 이름, content=red|yellow|blue)
+//    + DIFFICULTY_LOG: 날짜|기사|노선-순번|시각 / 색 / 기사 → 바꿀 때마다 새 줄로 누적
 //    기존 loadBoardMemo / saveBoardMemo 를 그대로 사용 (백엔드 수정 없음)
-//  - 누구나 바꿀 수 있고, 바꾼 사람 이름으로 같은 줄이 갱신됨
+//  - 누구나 바꿀 수 있음
 // ================================================================
 (function () {
-  var CATEGORY = 'DIFFICULTY';
+  var CATEGORY = 'DIFFICULTY';          // 현재 색 (노선-순번당 1줄)
+  var LOG_CATEGORY = 'DIFFICULTY_LOG';  // 누적 기록 (바꿀 때마다 1줄)
   var COLORS = {
     red:    { bg: '#fca5a5', ring: '#f87171' },
     yellow: { bg: '#fde68a', ring: '#fbbf24' },
@@ -90,10 +92,21 @@
     try { localStorage.setItem('yb_diff_' + currentKey, color); } catch (e) {}
     render();
     if (typeof google !== 'undefined' && google.script && google.script.run) {
+      var writer = getWriter();
+      var d = new Date();
+      var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+      var day = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+      var time = p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+      // ① 누적 기록: 매번 새 줄 (targetKey = 날짜|기사|노선-순번|시각, content = 색)
       google.script.run
         .withSuccessHandler(function () {})
         .withFailureHandler(function () {})
-        .saveBoardMemo(CATEGORY, currentKey, color, getWriter());
+        .saveBoardMemo(LOG_CATEGORY, day + '|' + writer + '|' + currentKey + '|' + time, color, writer);
+      // ② 현재 색 표시용: 노선-순번마다 한 줄만 유지 (화면에 보여줄 최신 색)
+      google.script.run
+        .withSuccessHandler(function () {})
+        .withFailureHandler(function () {})
+        .saveBoardMemo(CATEGORY, currentKey, color, writer);
     }
   }
 
