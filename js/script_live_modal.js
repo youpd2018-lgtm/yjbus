@@ -654,6 +654,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     async function openLiveModal() {
         // 0. 모달 열릴 때 이전 매칭 상태 및 잠금 상태 초기화 (회차 간 간섭 방지)
         window.lastMatchedMasterIndex = null;
+        window.lastPassedStopIndex = null; // 재오픈 시 현재 정류장 통과를 다시 감지해 오차를 재고정
         window.bisStopLockState = window.bisStopLockState || {};
         window.bisStopLockState.lockedStopKey = null;
         window.bisStopLockState.lockedDelayText = "0";

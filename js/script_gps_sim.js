@@ -293,6 +293,13 @@ function loadLatestColleagueMessage() {
 
                         applyLockedDelayBadge(badgeText, badgeColor);
                         console.log(`🎯 [GPS 정류장 통과 감지] ${getRowName(curRow)} (거리: ${minDistance}m) -> 오차: ${badgeText}분 확정 동결!`);
+                    } else {
+                        // 이상치(60분 초과): 이전 정류장 오차가 남지 않도록 초기화
+                        window.bisStopLockState = window.bisStopLockState || {};
+                        window.bisStopLockState.lockedStopKey = "GPS_STOP_" + closestIdx;
+                        window.bisStopLockState.lockedDelayText = "-";
+                        window.bisStopLockState.lockedTargetColor = "#94a3b8";
+                        applyLockedDelayBadge("-", "#94a3b8");
                     }
                 }
             }
@@ -644,7 +651,7 @@ function loadLatestColleagueMessage() {
     }
 
     // ⏱️ [오차시간 통합 계산 & 배지 렌더러] (3번째 박스와 100% 동일한 데이터 소스 연동)
-    function syncLiveDelayBadgeWithTargetTime(targetTimeStr) {
+    function syncLiveDelayBadgeWithTargetTime(targetTimeStr, stopName) {
         try {
             const badgeEl = document.getElementById('bisDelayBadge');
             if (!badgeEl) return;
@@ -713,7 +720,9 @@ function loadLatestColleagueMessage() {
                 : (badgeColor === "#ea4335" ? "rgba(234, 67, 53, 0.18)" : "rgba(156, 39, 176, 0.18)");
             badgeEl.style.boxShadow = `0 0 14px ${badgeColor}66`;
 
+            // 현재 정류장 기준으로 고정 → 다음 정류장 통과(GPS) 전까지 유지
             window.bisStopLockState = window.bisStopLockState || {};
+            window.bisStopLockState.lockedStopKey = "TIME_" + (stopName || cleanTime);
             window.bisStopLockState.lockedDelayText = badgeText;
             window.bisStopLockState.lockedTargetColor = badgeColor;
         } catch (err) {
@@ -772,8 +781,9 @@ function loadLatestColleagueMessage() {
             if (nextTimeEl) nextTimeEl.innerText = cleanNextTime;
 
             // ⏱️ [오차시간 실시간 동기화] 3번째 박스의 다음 정류장 표준시간으로 오차 배지 즉시 계산!
-            if (cleanNextTime && cleanNextTime !== '--:--:--' && cleanNextTime !== '-') {
-                syncLiveDelayBadgeWithTargetTime(cleanNextTime);
+            // 오차는 '현재 정류장' 기준. 현재 정류장이 없으면(출발 전) 갱신하지 않음
+            if (cleanCurTime && cleanCurTime !== '--:--:--' && cleanCurTime !== '-') {
+                syncLiveDelayBadgeWithTargetTime(cleanCurTime, cleanCurName);
             }
 
             // 2. 도로 소통 상태 판별 (원활 / 서행 / 정체)
