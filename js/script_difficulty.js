@@ -148,11 +148,11 @@
     var txt = (src.textContent || '').trim();
     if (!box.firstChild && logo) {
       var img = logo.cloneNode(true);
-      img.style.cssText = 'height:22px;width:22px;object-fit:contain;flex-shrink:0;';
+      img.style.cssText = 'height:19px;width:19px;object-fit:contain;flex-shrink:0;opacity:.7;';
       box.appendChild(img);
       var sp = document.createElement('span');
       sp.id = 'ybHeroTitleText';
-      sp.style.cssText = 'font-size:17px;font-weight:900;color:#f1f5f9;letter-spacing:-0.3px;text-shadow:0 1px 6px rgba(0,0,0,.7);';
+      sp.style.cssText = 'font-size:15px;font-weight:700;color:#94a3b8;letter-spacing:-0.3px;text-shadow:0 1px 6px rgba(0,0,0,.7);';
       box.appendChild(sp);
     }
     var out = document.getElementById('ybHeroTitleText');
