@@ -2871,7 +2871,7 @@ iconify-icon {
 .tf-stop.tf-next { align-items: flex-end; text-align: right; }
 .tf-role { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 11px; letter-spacing: .08em; color: #93a3bd; font-weight: 600; }
 .tf-time {
-    font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace; font-weight: 600;
+    font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700;
     font-size: clamp(24px, 7.4vw, 32px); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; color: #f4f7fb;
 }
 .tf-cur .tf-time { color: #7dd3fc; text-shadow: 0 0 18px rgba(125,211,252,.35); }
