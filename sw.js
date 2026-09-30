@@ -4,7 +4,7 @@
 // - CDN(SweetAlert2/iconify/폰트)은 stale-while-revalidate
 // - GAS(script.google.com), 버스/날씨/AI 등 API 요청은 절대 캐시하지 않고 그대로 통과
 // ※ 셸 파일을 수정하면 CACHE_VERSION을 올려 주세요.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const SHELL_CACHE = `yjbus-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `yjbus-cdn-${CACHE_VERSION}`;
 
@@ -55,7 +55,8 @@ self.addEventListener('activate', (event) => {
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
-    const res = await fetch(request);
+    // cache:'no-cache' → 브라우저 HTTP 캐시(GitHub Pages 기본 10분)를 쓰기 전에 서버에 변경 여부를 확인
+    const res = await fetch(request, { cache: 'no-cache' });
     if (res && res.ok) cache.put(request, res.clone());
     return res;
   } catch (err) {
