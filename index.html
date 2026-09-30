@@ -989,17 +989,24 @@
       <div class="live-modal-content ios-widget-modal"
         style="display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; max-height: 92vh; overflow-y: auto; padding: 16px 14px 12px 14px;">
 
-        <!-- 1. 헤더 (LIVE배지/날짜 삭제 & 영종도 날씨만 1px 확대 표시) -->
+        <!-- 1. 헤더: 오늘의 한마디 박스와 같은 모양의 날씨 박스 (기본 메시지 = 영종도 날씨 + 풍속, 20분마다 갱신) -->
         <div class="ios-header"
-          style="margin-bottom: 2px; padding-bottom: 6px; display: flex; justify-content: flex-start; align-items: center;">
-          <div class="ios-title-wrap" style="align-items: center; gap: 6px;">
+          style="margin-bottom: 2px; padding-bottom: 0; display: block;">
+          <div id="liveWeatherBox"
+            style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: #ffffff;">
             <span class="ios-weather-title"
-              style="font-size: 17px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 5px;">
+              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 6px;">
               <span id="weatherIconDisplay"
                 style="color: #fbbf24; font-size: 1.25em; display: inline-flex; align-items: center;">
                 <iconify-icon icon="solar:sun-bold"></iconify-icon>
               </span>
               <span>영종도 <span id="weatherTempDisplay">--℃</span> (<span id="weatherStatusDisplay">조회 중</span>)</span>
+            </span>
+            <span id="weatherWindBox"
+              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 5px;">
+              <span aria-hidden="true">💨</span>
+              <span>풍속 <span id="weatherWindDisplay">--</span></span>
+              <span id="weatherWindLevel" style="font-size: 12.5px; font-weight: 800;"></span>
             </span>
           </div>
           <!-- 💡 JS 에러 방지용 히든 날짜 ID 보존 -->

@@ -723,7 +723,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                 msgWidget.style.display = 'block';
                 if (typeof loadLatestColleagueMessage === 'function') loadLatestColleagueMessage();
             } else {
-                msgWidget.style.display = 'none';
+                msgWidget.style.display = 'block';   // 한마디 박스는 메인 상단에 있으므로 날짜와 상관없이 유지
             }
         }
 
@@ -947,73 +947,101 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // ================================================================
     // 🌤️ [실시간 영종도 날씨] Open-Meteo API 호출 (API 키 불필요, 고신뢰)
     // ================================================================
-    async function fetchYeongjongWeather() {
+    var WEATHER_REFRESH_MS = 20 * 60 * 1000;   // 날씨는 20분에 한 번만 새로 받아옴
+    window._weatherCache = window._weatherCache || null;   // { at: 받은 시각(ms), current: {...} }
+
+    // 풍향(도) → 한글 방위 (바람이 불어오는 방향)
+    function windDirToText(deg) {
+        if (typeof deg !== 'number') return '';
+        var names = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+        return names[Math.round(deg / 45) % 8] + '풍';
+    }
+
+    // 풍속(m/s) 단계: 운전에 영향이 커지는 기준으로 색과 문구를 정함
+    function windLevelInfo(ms) {
+        if (ms >= 14) return { text: '위험', color: '#f87171' };
+        if (ms >= 10) return { text: '강풍', color: '#fb923c' };
+        if (ms >= 7)  return { text: '주의', color: '#fde047' };
+        return { text: '보통', color: '#86efac' };
+    }
+
+    function renderYeongjongWeather(current) {
+        const tempEl = document.getElementById('weatherTempDisplay');
+        const statusEl = document.getElementById('weatherStatusDisplay');
+        const windEl = document.getElementById('weatherWindDisplay');
+        const levelEl = document.getElementById('weatherWindLevel');
+        const iconEl = document.getElementById('weatherIconDisplay');
+
+        if (tempEl) tempEl.innerText = `${Math.round(current.temperature_2m)}℃`;
+
+        const wind = Number(current.wind_speed_10m) || 0;
+        const gust = Number(current.wind_gusts_10m);
+        const dir = windDirToText(current.wind_direction_10m);
+        if (windEl) {
+            let t = `${dir ? dir + ' ' : ''}${wind.toFixed(1)}m/s`;
+            if (!isNaN(gust) && gust > 0) t += ` (돌풍 ${gust.toFixed(1)})`;
+            windEl.innerText = t;
+        }
+        if (levelEl) {
+            const lv = windLevelInfo(wind);
+            levelEl.innerText = lv.text;
+            levelEl.style.color = lv.color;
+        }
+
+        const code = current.weather_code;
+        let weatherText = "맑음";
+        let emoji = '☀️';
+        if (code === 0) {
+            weatherText = "맑음";
+        } else if (code >= 1 && code <= 3) {
+            weatherText = code === 1 ? "구름조금" : "흐림";
+            emoji = '☁️';
+        } else if (code === 45 || code === 48) {
+            weatherText = "안개";
+            emoji = '🌫️';
+        } else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+            weatherText = "비";
+            emoji = '🌧️';
+        } else if (code >= 71 && code <= 77) {
+            weatherText = "눈";
+            emoji = '❄️';
+        } else if (code >= 95) {
+            weatherText = "뇌우";
+            emoji = '🌩️';
+        }
+        if (statusEl) statusEl.innerText = weatherText;
+        if (iconEl) iconEl.innerText = emoji;
+    }
+
+    // force=true: 무조건 새로 받아옴(20분 타이머) / 그 외: 20분이 안 지났으면 저장해 둔 값을 그대로 표시
+    async function fetchYeongjongWeather(force) {
         try {
-            const tempEl = document.getElementById('weatherTempDisplay');
+            const cache = window._weatherCache;
+            if (force !== true && cache && (Date.now() - cache.at) < WEATHER_REFRESH_MS) {
+                renderYeongjongWeather(cache.current);
+                return;
+            }
+
             const statusEl = document.getElementById('weatherStatusDisplay');
-            const windEl = document.getElementById('weatherWindDisplay');
-            const humEl = document.getElementById('weatherHumidityDisplay');
-            const iconEl = document.getElementById('weatherIconDisplay');
+            if (statusEl && !cache) statusEl.innerText = "조회 중...";
 
-            if (statusEl) statusEl.innerText = "조회 중...";
-
-            const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.4917&longitude=126.4883&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia%2FSeoul");
+            const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=37.4917&longitude=126.4883&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul");
             if (!res.ok) throw new Error("Weather HTTP " + res.status);
             const data = await res.json();
-            const current = data.current;
-
-            if (tempEl) tempEl.innerText = `${Math.round(current.temperature_2m)}℃`;
-            if (windEl) windEl.innerText = `${current.wind_speed_10m.toFixed(1)}m/s`;
-            if (humEl) humEl.innerText = `${current.relative_humidity_2m}%`;
-
-            const code = current.weather_code;
-            let weatherText = "맑음";
-            let weatherIcon = "solar:sun-bold";
-            let iconColor = "#fbbf24";
-
-            if (code === 0) {
-                weatherText = "맑음";
-                weatherIcon = "solar:sun-bold";
-                iconColor = "#fbbf24";
-            } else if (code >= 1 && code <= 3) {
-                weatherText = code === 1 ? "구름조금" : "흐림";
-                weatherIcon = "solar:cloudy-sun-bold";
-                iconColor = "#94a3b8";
-            } else if (code === 45 || code === 48) {
-                weatherText = "안개";
-                weatherIcon = "solar:fog-bold";
-                iconColor = "#94a3b8";
-            } else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-                weatherText = "비";
-                weatherIcon = "solar:cloud-rain-bold";
-                iconColor = "#38bdf8";
-            } else if (code >= 71 && code <= 77) {
-                weatherText = "눈";
-                weatherIcon = "solar:cloud-snowfall-bold";
-                iconColor = "#e2e8f0";
-            } else if (code >= 95) {
-                weatherText = "뇌우";
-                weatherIcon = "solar:lightning-bold";
-                iconColor = "#f59e0b";
-            }
-
-            if (statusEl) statusEl.innerText = weatherText;
-            if (iconEl) {
-                let emoji = '☀️';
-                if (code >= 1 && code <= 3) emoji = '☁️';
-                if (code === 45 || code === 48) emoji = '🌫️';
-                if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) emoji = '🌧️';
-                if (code >= 71 && code <= 77) emoji = '❄️';
-                if (code >= 95) emoji = '🌩️';
-                iconEl.innerText = emoji;
-
-                if (!window.weatherIntervalTimer) {
-                    window.weatherIntervalTimer = setInterval(fetchYeongjongWeather, 3600000);
-                }
-            }
+            window._weatherCache = { at: Date.now(), current: data.current };
+            renderYeongjongWeather(data.current);
         } catch (e) {
             console.warn("날씨 정보 조회 실패:", e);
-            const statusEl = document.getElementById('weatherStatusDisplay');
-            if (statusEl) statusEl.innerText = "영종 쾌청";
+            if (window._weatherCache) {
+                renderYeongjongWeather(window._weatherCache.current);   // 실패 시 마지막으로 받은 값 유지
+            } else {
+                const statusEl = document.getElementById('weatherStatusDisplay');
+                if (statusEl) statusEl.innerText = "조회 실패";
+            }
         }
+    }
+
+    // 20분마다 자동 갱신 (모달을 닫아 둔 동안에도 값이 최신이 되도록)
+    if (!window.weatherIntervalTimer) {
+        window.weatherIntervalTimer = setInterval(function () { fetchYeongjongWeather(true); }, WEATHER_REFRESH_MS);
     }
