@@ -1109,7 +1109,7 @@ button.action-btn:hover {
     background: rgba(15, 23, 42, 0.3) !important;
     color: #94a3b8 !important;
     font-weight: 800 !important;
-    font-size: 12px !important;
+    font-size: 15px !important;
     letter-spacing: 0.3px !important;
     border-bottom: 1.5px solid rgba(255, 255, 255, 0.12) !important;
     padding: 8px 3px !important;
@@ -2835,4 +2835,13 @@ iconify-icon {
     border: 1.5px solid #f59e0b;
     color: #ffffff;
     box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+/* =========================================================================
+   🔤 메인화면 전체 폰트를 G마켓 산스로 통일 (아이콘은 영향 없음)
+   ========================================================================= */
+#mainAppHeader, #mainAppHeader *,
+#mainPage, #mainPage *,
+#appNavTabs, #appNavTabs * {
+    font-family: 'GmarketSans', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
 }

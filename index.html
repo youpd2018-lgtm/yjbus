@@ -67,8 +67,8 @@
 
     <!-- 상단 헤더 영역 (로그인 화면에서는 숨김 처리되며 로그인 후 표시) -->
     <div class="header" id="mainAppHeader"
-      style="display: none; justify-content: space-between; align-items: center; padding: 6px 12px; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px;">
-      <div class="title-area">
+      style="display: none; justify-content: space-between; align-items: center; padding: 0; background: transparent; border: none; margin-bottom: 10px;">
+      <div class="title-area" style="display: none;">
         <h1 id="appHeaderTitle"
           style="margin: 0; font-size: 15px; font-weight: 900; color: #60a5fa; display: flex; align-items: center; gap: 7px;">
           <!-- 💡 영종운수 공식 엠블럼 로고 -->
@@ -79,7 +79,25 @@
           <span id="headerTitleText">영종운수 스마트근무표</span>
         </h1>
       </div>
-      <div class="top-controls" style="display: flex; gap: 20px;">
+      <!-- 📢 오늘의 한마디 (헤더 자리, 기존 대비 약 20% 축소) -->
+        <!-- 4. 📢 오늘의 한마디 + 돌발/소통정보 통합 스마트 위젯 -->
+        <div id="liveMessageWidget" onclick="openWriteMessagePrompt()" title="터치하여 응원의 한마디 작성"
+          style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 10px 14px; margin: 0; flex: 1 1 auto; min-width: 0; zoom: 0.8; overflow: hidden; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12); cursor: pointer;">
+
+          <!-- 메시지 표시 영역 -->
+          <div class="message-ticker-wrap" style="min-height: 26px; padding: 0; display: flex; align-items: center;">
+            <div id="liveColleagueMessage" class="message-ticker-text"
+              style="width: 100%; display: flex; align-items: center;">
+              <span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
+                <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
+                로딩 중...
+              </span>
+            </div>
+          </div>
+        </div>
+
+      <!-- 새로고침/푸시/로그아웃 버튼: 나중에 설정 페이지로 이동 예정 (지금은 숨김) -->
+      <div class="top-controls" style="display: none; gap: 20px; margin-left: 10px; flex-shrink: 0;">
         <button type="button" class="refresh-btn" id="refreshBtn" onclick="location.reload()" title="새로고침"
           style="background: #0f172a; color: #38bdf8; border: 1.5px solid #38bdf8; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 5px rgba(56, 189, 248, 0.2);">
           <iconify-icon icon="mdi:refresh" style="font-size: 15px;"></iconify-icon>
@@ -257,8 +275,13 @@
       </div>
 
       <!-- [1번 카드] 3D 버스 배경 & 좌측 타이포그래피 HUD -->
-      <div class="bus-hero-container" id="mainBusHeroCard">
+      <div class="bus-hero-container" id="mainBusHeroCard" style="height: 264px;">
+        <!-- 🎨 비밀 난이도 색 버튼 (js/script_difficulty.js) -->
+        <div id="ybDiffWrap"></div>
         <div class="bus-hero-content">
+
+          <!-- 🏷️ 로고 + OOO 기사님 근무표 (기존 헤더 제목을 이 자리로 이동, js/script_difficulty.js가 채움) -->
+          <div id="ybHeroTitle" style="display:flex;align-items:center;gap:6px;margin:-9px 0 0 -7px;"></div>
 
           <!-- 1행: 노선번호(202) + 6순번 / 평일16대 + 바로 옆 맞춤 차량번호 박스 -->
           <div class="bli-top-area">
@@ -1155,29 +1178,6 @@
           </div>
         </div>
 
-        <!-- 4. 📢 오늘의 한마디 + 돌발/소통정보 통합 스마트 위젯 -->
-        <div id="liveMessageWidget" onclick="openWriteMessagePrompt()" title="터치하여 응원의 한마디 작성"
-          style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 10px 14px; margin: 10px 0 0 0; overflow: hidden; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.12); cursor: pointer;">
-
-          <!-- 메시지 표시 영역 -->
-          <div class="message-ticker-wrap" style="min-height: 26px; padding: 0; display: flex; align-items: center;">
-            <div id="liveColleagueMessage" class="message-ticker-text"
-              style="width: 100%; display: flex; align-items: center;">
-              <span style="color: #94a3b8; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px;">
-                <iconify-icon icon="line-md:loading-loop" style="color: #38bdf8; font-size: 17px;"></iconify-icon>
-                로딩 중...
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 하단 설명 (위젯 바깥) -->
-        <div style="text-align: center; margin-top: 6px; padding-bottom: 4px;">
-          <span style="font-size: 11px; font-weight: 500; color: #64748b; letter-spacing: -0.3px;">
-            👆 박스를 터치해서 새 메세지 작성
-          </span>
-        </div>
-
         <!-- 💡 JS 호환용 숨김 컨테이너 -->
         <div id="newFeatureContainer" style="display: none !important;">
           <span id="bisNextStop"></span>
@@ -1319,6 +1319,7 @@
     <script src="js/script_gateway_memo.js"></script>
     <script src="js/script_schedule.js"></script>
     <script src="js/script_board_memo.js"></script>
+    <script src="js/script_difficulty.js"></script>
     <script src="js/push_fcm.js"></script>
     <!-- 📲 PWA 서비스 워커 등록 -->
     <script>
