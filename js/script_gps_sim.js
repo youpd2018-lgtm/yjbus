@@ -203,14 +203,13 @@ function loadLatestColleagueMessage() {
         const gpsStatusText = document.getElementById('gpsStatusText');
         const plate = duty && duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
 
+        // 차량번호 줄에는 번호만 표시 (GPS 상태는 오른쪽 뱃지에만 표시)
+        if (bisVehicleEl) bisVehicleEl.innerText = plate;
         if (isWaiting) {
-            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 📡 GPS 수신 대기`;
             if (gpsStatusText) gpsStatusText.innerText = 'GPS 수신 대기';
         } else if (speedKmh !== null) {
-            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 🛰️ GPS (${speedKmh} km/h)`;
             if (gpsStatusText) gpsStatusText.innerText = `GPS (${speedKmh} km/h)`;
         } else {
-            if (bisVehicleEl) bisVehicleEl.innerText = `${plate} · 🛰️ GPS 연결됨`;
             if (gpsStatusText) gpsStatusText.innerText = 'GPS 연결됨';
         }
     }
