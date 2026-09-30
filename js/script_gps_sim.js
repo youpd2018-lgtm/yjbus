@@ -866,6 +866,8 @@ function loadLatestColleagueMessage() {
     // 🚦 [표준시간 마스터 데이터로부터 3번째 박스 즉시 렌더링 (0ms 빠른 바인딩)]
     function updateTrafficStopFromMaster(masterList) {
         if (!masterList || !Array.isArray(masterList) || masterList.length === 0) return;
+        // 모의주행 중에는 현재 시각 기준 자동 표출이 시뮬레이터의 정류장 표시를 덮어쓰지 않도록 건너뜀
+        if (window.simState && window.simState.active) return;
         try {
             const now = new Date();
             const curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
