@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>표준시간 계산 점검</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  label { display: block; font-size: 13px; color: #94a3b8; margin: 10px 0 4px; }
+  select, input, button { font-size: 16px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; }
+  button { background: #2563eb; border: 0; margin-top: 14px; font-weight: 700; }
+  .row3 { display: flex; gap: 8px; }
+  .row3 > div { flex: 1; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+  td, th { padding: 6px 4px; border-bottom: 1px solid #1e293b; text-align: left; }
+  td.t { font-variant-numeric: tabular-nums; color: #38bdf8; }
+  tr.anchor td { background: #3b1d1d; font-weight: 700; }
+  #msg { margin-top: 12px; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  .hint { font-size: 12px; color: #64748b; margin-top: 6px; }
+</style>
+</head>
+<body>
+<h1>🧮 표준시간 계산 점검</h1>
+
+<label>노선 (회차가 202A/203A 로 시작하는 경우 A 선택)</label>
+<select id="route">
+  <option>202</option><option>202A</option><option>203</option><option>203A</option>
+  <option>204</option><option>205</option><option>206</option><option>221</option><option>281</option><option>282</option>
+</select>
+
+<label>근무표 시간 (time1 출발 / time2 기점 / time3 도착, 없으면 비워두기)</label>
+<div class="row3">
+  <div><input id="t1" placeholder="08:26" inputmode="numeric"></div>
+  <div><input id="t2" placeholder="10:27" inputmode="numeric"></div>
+  <div><input id="t3" placeholder="12:28" inputmode="numeric"></div>
+</div>
+<div class="hint">예) 202A 1회차: 비움 / 04:40 / 05:10 &nbsp;·&nbsp; 203A 1회차: 04:40 / 06:08 / 07:44 &nbsp;·&nbsp; 자정 넘김: 24:00</div>
+
+<button id="go">계산하기</button>
+<div id="msg"></div>
+<table id="out"></table>
+
+<script src="js/app-config.js"></script>
+<script src="js/script_std_calc.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('go').onclick = async () => {
+    const route = $('route').value;
+    const base = route.replace(/A$/, '');
+    const times = { time1: $('t1').value.trim(), time2: $('t2').value.trim(), time3: $('t3').value.trim() };
+    $('msg').textContent = '계산 중...';
+    $('out').innerHTML = '';
+    const rows = await StdCalc.computeTripRows(route, base, times);
+    if (!rows) { $('msg').textContent = '계산 불가: 노선 JSON을 못 받았거나 앵커/시간 입력을 확인하세요.'; return; }
+    const anchorTimes = [times.time1, times.time2, times.time3].filter(Boolean).map(t => StdCalc.secToHms(StdCalc.hmsToSec(t)));
+    $('msg').textContent = `정류장 ${rows.length}개  ·  ${rows[0].stdTime} → ${rows[rows.length - 1].stdTime}`;
+    $('out').innerHTML = '<tr><th>#</th><th>정류장</th><th>표준시간</th></tr>' + rows.map((r, i) =>
+      `<tr class="${anchorTimes.includes(r.stdTime) ? 'anchor' : ''}"><td>${i + 1}</td><td>${r.name}</td><td class="t">${r.stdTime}</td></tr>`).join('');
+  };
+</script>
+</body>
+</html>
