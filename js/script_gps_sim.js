@@ -844,6 +844,22 @@ function loadLatestColleagueMessage() {
         }
     }
 
+    // 🚦 신호등 알약 상태 적용: state = 'ok' | 'slow' | 'jam' | 'off'
+    function setTrafficLamp(state, label) {
+        const flow = document.querySelector('#liveTrafficStopBox .tf-flow');
+        const txt = document.getElementById('trafficFlowStatusText');
+        if (flow) flow.setAttribute('data-s', state);
+        if (txt) txt.innerText = label;
+    }
+
+    // 표준시간 표시: 시:분은 크게, 초는 작고 흐리게
+    function setStopTimeText(el, timeStr) {
+        if (!el) return;
+        const m = /^(\d{1,2}:\d{2})(:\d{2})$/.exec(String(timeStr));
+        if (m) el.innerHTML = m[1] + '<span class="tf-sec">' + m[2] + '</span>';
+        else el.innerText = timeStr;
+    }
+
     // 🚦 [3번째 박스] 도로 소통 및 2연속 정류장 흐름(다음 정류장 ━━━━ 다음다음 정류장) 렌더러
     function updateTrafficStopSequence(nextName, nextTime, afterName, afterTime, statusOverride, curName, curTime) {
         try {
@@ -886,13 +902,13 @@ function loadLatestColleagueMessage() {
                 curEl.innerText = cleanCurName;
                 curEl.title = cleanCurName;
             }
-            if (curTimeEl) curTimeEl.innerText = cleanCurTime;
+            setStopTimeText(curTimeEl, cleanCurTime);
 
             if (nextEl) {
                 nextEl.innerText = cleanNextName;
                 nextEl.title = cleanNextName;
             }
-            if (nextTimeEl) nextTimeEl.innerText = cleanNextTime;
+            setStopTimeText(nextTimeEl, cleanNextTime);
 
             // ⏱️ [오차시간 실시간 동기화] 3번째 박스의 다음 정류장 표준시간으로 오차 배지 즉시 계산!
             // 오차는 '현재 정류장' 기준. 현재 정류장이 없으면(출발 전) 갱신하지 않음
@@ -925,19 +941,7 @@ function loadLatestColleagueMessage() {
                 statusLabel = '소통원활';
             }
 
-            if (glowLine) {
-                glowLine.style.background = `linear-gradient(90deg, ${themeColor}, #ffffff 50%, ${themeColor})`;
-                glowLine.style.boxShadow = `0 0 14px ${glowColor}`;
-            }
-            if (flowDot) {
-                flowDot.style.background = '#ffffff';
-                flowDot.style.borderColor = themeColor;
-                flowDot.style.boxShadow = `0 0 10px ${themeColor}`;
-            }
-            if (statusText) {
-                statusText.innerText = statusLabel;
-                statusText.style.color = themeColor;
-            }
+            setTrafficLamp((flowStatus === 'jam' || flowStatus === '정체') ? 'jam' : (flowStatus === 'slow' || flowStatus === '서행') ? 'slow' : 'ok', statusLabel);
 
             // 이전 호환용 ID 동기화
             const old1 = document.getElementById('trafficStopName1');
@@ -1080,20 +1084,8 @@ function loadLatestColleagueMessage() {
                 voiceText = `주의하세요. ${descText}. 안전운행 하세요.`;
             }
 
-            // 1. 네온 글로우 라인 빨간색 전환
-            if (glowLine) {
-                glowLine.style.background = 'linear-gradient(90deg, #ef4444, #ffffff 50%, #ef4444)';
-                glowLine.style.boxShadow = '0 0 16px rgba(239, 68, 68, 0.9)';
-            }
-            if (flowDot) {
-                flowDot.style.background = '#ffffff';
-                flowDot.style.borderColor = '#ef4444';
-                flowDot.style.boxShadow = '0 0 12px #ef4444';
-            }
-            if (statusText) {
-                statusText.innerText = '돌발 주의';
-                statusText.style.color = '#ef4444';
-            }
+            // 1. 신호등을 빨간불(돌발 주의)로 전환
+            setTrafficLamp('jam', '돌발 주의');
 
             // 2. SweetAlert2 알림 팝업
             if (typeof Swal !== 'undefined') {
@@ -1127,18 +1119,8 @@ function loadLatestColleagueMessage() {
 
             // 4. 6초 후 자동 복원
             setTimeout(() => {
-                if (statusText && statusText.innerText === '돌발 주의') {
-                    statusText.innerText = oldStatusText;
-                    statusText.style.color = '#22c55e';
-                }
-                if (glowLine) {
-                    glowLine.style.background = 'linear-gradient(90deg, #22c55e, #ffffff 50%, #22c55e)';
-                    glowLine.style.boxShadow = '0 0 14px rgba(34, 197, 94, 0.75)';
-                }
-                if (flowDot) {
-                    flowDot.style.borderColor = '#22c55e';
-                    flowDot.style.boxShadow = '0 0 10px #22c55e';
-                }
+                const st = document.getElementById('trafficFlowStatusText');
+                if (st && st.innerText === '돌발 주의') setTrafficLamp('ok', oldStatusText);
             }, 6000);
 
         } catch (err) {

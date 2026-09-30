@@ -3,6 +3,8 @@
 
 <head>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
   <link rel="stylesheet" href="css/style.css">
 
   <meta charset="UTF-8">
@@ -1098,58 +1100,23 @@
           </div>
         </div>
 
-        <!-- 3. [도로 소통 및 2연속 정류장 흐름 카드] (현재 정류장 ━━━━ 다음 정류장) -->
-        <div id="liveTrafficStopBox" class="traffic-stop-flow-card"
-          style="background: #1e293b; border: 1.2px solid #334155; border-radius: 14px; padding: 12px 14px; margin: 10px 0 0 0; box-shadow: 0 6px 18px rgba(0,0,0,0.4);">
+        <!-- 3. [정류장 카드] 현재 정류장 (신호등) 다음 정류장. 표준시간을 가장 크게, 교통상황은 가운데 신호등 알약 (터치하면 최근 돌발상황 다시보기) -->
+        <div id="liveTrafficStopBox" class="tf-card">
+          <div class="tf-stop tf-cur">
+            <span class="tf-role">현재</span>
+            <span id="trafficStopTimeNext" class="tf-time">--:--:--</span>
+            <span id="trafficStopNameNext" class="tf-name" title="현재 정류장">현재 정류장</span>
+          </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 14px;">
+          <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
+            <div id="trafficFlowLamp" class="tf-lamp"><i></i><i></i><i></i></div>
+            <span id="trafficFlowStatusText" class="tf-flow-text">소통원활</span>
+          </div>
 
-            <!-- 좌측: 현재 정류장 -->
-            <div
-              style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
-              <div id="trafficStopNameNext" title="현재 정류장"
-                style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                현재 정류장
-              </div>
-              <span id="trafficStopTimeNext"
-                style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
-                --:--:--
-              </span>
-            </div>
-
-            <!-- 중앙: 소통 라인 & 소통 상태 텍스트 (터치 시 최근 돌발상황 다시보기 및 음성 안내) -->
-            <div onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내"
-              style="flex: 1.1; min-width: 85px; max-width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 4px; cursor: pointer; user-select: none;">
-              <!-- 멋진 네온 글로우 소통 라인 -->
-              <div
-                style="position: relative; width: 100%; display: flex; align-items: center; justify-content: center;">
-                <div id="trafficFlowGlowLine"
-                  style="width: 100%; height: 5px; border-radius: 4px; background: linear-gradient(90deg, #22c55e, #86efac 50%, #22c55e); box-shadow: 0 0 14px rgba(34, 197, 94, 0.75); transition: all 0.4s ease;">
-                </div>
-                <div id="trafficFlowDot"
-                  style="position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 8px #22c55e; border: 2px solid #22c55e; transition: all 0.4s ease;">
-                </div>
-              </div>
-              <!-- 라인 아래 소통 상태 텍스트 (소통원활 / 서행 / 정체) -->
-              <div id="trafficFlowStatusText"
-                style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 14.5px; font-weight: 800; color: #22c55e; margin-top: 6px; letter-spacing: -0.3px; white-space: nowrap; transition: color 0.4s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">
-                소통원활
-              </div>
-            </div>
-
-            <!-- 우측: 다음 정류장 -->
-            <div
-              style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-              <div id="trafficStopNameAfter" title="다음 정류장"
-                style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: right; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                다음 정류장
-              </div>
-              <span id="trafficStopTimeAfter"
-                style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
-                --:--:--
-              </span>
-            </div>
-
+          <div class="tf-stop tf-next">
+            <span class="tf-role">다음</span>
+            <span id="trafficStopTimeAfter" class="tf-time">--:--:--</span>
+            <span id="trafficStopNameAfter" class="tf-name" title="다음 정류장">다음 정류장</span>
           </div>
 
           <!-- 이전 버전 ID 호환용 숨김 엘리먼트 -->

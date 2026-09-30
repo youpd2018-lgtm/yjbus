@@ -762,20 +762,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             const nextTime = document.getElementById('trafficStopTimeNext'); if (nextTime) nextTime.innerText = '-';
             const afterName = document.getElementById('trafficStopNameAfter'); if (afterName) afterName.innerText = '-';
             const afterTime = document.getElementById('trafficStopTimeAfter'); if (afterTime) afterTime.innerText = '-';
-            const statusText = document.getElementById('trafficFlowStatusText');
-            if (statusText) {
-                statusText.innerText = '-';
-                statusText.style.color = '#94a3b8';
-            }
-            const glowLine = document.getElementById('trafficFlowGlowLine');
-            if (glowLine) glowLine.style.background = '#475569';
-            const flowDot = document.getElementById('trafficFlowDot');
-            if (flowDot) {
-                flowDot.style.background = '#94a3b8';
-                flowDot.style.borderColor = '#475569';
-                flowDot.style.boxShadow = 'none';
-            }
-            
+            if (typeof setTrafficLamp === 'function') setTrafficLamp('off', '-');
+
             const liveModalRoute = document.querySelector('#liveModal .route-badge');
             if (liveModalRoute) liveModalRoute.innerText = "-";
 
