@@ -4,8 +4,8 @@
 //   근무표 앵커시간(time1~3)으로 회차의 정류장별 표준시간을 계산합니다.
 // - 정류장 시간 = 구간 시작 + (구간 끝 - 구간 시작) × (L 누적 비율)
 // - 노선 JSON은 GAS(get_route_stops)에서 노선당 1회만 받아 localStorage에 보관합니다.
-// - 모드(localStorage 'yb_std_mode'): 'compare'(기본: 기존값 사용 + 계산값 비교 로그)
-//                                     'calc'   (계산값 우선, 실패 시 기존 방식)
+// - 모드(localStorage 'yb_std_mode'): 'calc'   (기본: 계산값 우선, 실패 시 기존 방식)
+//                                     'compare'(기존값 사용 + 계산값 비교 로그)
 //                                     'legacy' (기존 방식만)
 // ================================================================
 (function () {
@@ -15,7 +15,7 @@
     let lastError = '';
 
     function getMode() {
-        try { return localStorage.getItem('yb_std_mode') || 'compare'; } catch (e) { return 'compare'; }
+        try { return localStorage.getItem('yb_std_mode') || 'calc'; } catch (e) { return 'calc'; }
     }
     function setMode(mode) {
         try { localStorage.setItem('yb_std_mode', mode); } catch (e) { }

@@ -870,15 +870,27 @@ function loadLatestColleagueMessage() {
         if (window.simState && window.simState.active) return;
         try {
             const now = new Date();
-            const curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            let curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
             const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
             const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
 
+            // 🌙 자정을 넘는 회차: 표준시간이 00:xx 로 되돌아가는 지점부터 하루(86400초)를 더해 이어지게 보정
+            const unwrapped = [];
+            let dayOffset = 0, prevSec = -1;
+            for (let i = 0; i < masterList.length; i++) {
+                let sec = parseTimeToSeconds(getRowTime(masterList[i]));
+                if (prevSec >= 0 && sec + dayOffset < prevSec - 43200) dayOffset += 86400;
+                unwrapped.push(sec + dayOffset);
+                prevSec = sec + dayOffset;
+            }
+            // 회차가 자정을 넘고 현재가 자정 이후(예: 00:30)라면 현재 시각에도 하루를 더해 비교
+            if (dayOffset > 0 && unwrapped.length > 0 && curWallSec < unwrapped[0] - 43200) curWallSec += 86400;
+
             // 현재 시각보다 이후에 있는 첫 정류장 탐색
             let targetIdx = -1;
             for (let i = 0; i < masterList.length; i++) {
-                let sSec = parseTimeToSeconds(getRowTime(masterList[i]));
+                let sSec = unwrapped[i];
                 if (sSec > curWallSec) {
                     targetIdx = i;
                     break;
