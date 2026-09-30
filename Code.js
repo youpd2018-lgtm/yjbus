@@ -98,6 +98,19 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // 💡 [노선 정류장 JSON 엔드포인트: 앱이 앵커시간으로 표준시간을 계산할 때 사용]
+  if (e && e.parameter && e.parameter.action === 'get_route_stops') {
+    let result;
+    try {
+      result = typeof getRouteStopsForApp === 'function'
+        ? getRouteStopsForApp(e.parameter.route || "")
+        : { success: false, error: "getRouteStopsForApp 함수 미정의" };
+    } catch(err) {
+      result = { success: false, error: err.toString() };
+    }
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (e && e.parameter && e.parameter.action === 'get_sample_keys') {
     const res = typeof getSampleStandardMasterKeys === 'function' ? getSampleStandardMasterKeys() : { success: false };
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);

@@ -154,7 +154,23 @@
             baseRoute, effectiveRoute, cleanBusCount, seqFormatted, turnFormatted, turnInt
         });
 
+        // 🧮 오늘 회차의 근무표 앵커시간(time1~3): 표준시간 계산 엔진(StdCalc)용
+        let tripTimes = null;
+        try {
+            let dk = typeof getDriverKey === 'function' ? getDriverKey(`sched_${searchDateStr}`) : `sched_${searchDateStr}`;
+            let savedDuty = localStorage.getItem(dk);
+            if (savedDuty && typeof customGetItem === 'function') {
+                let sd = JSON.parse(savedDuty);
+                let tt = customGetItem(sd.route, sd.seq);
+                if (tt && tt[turnInt - 1]) {
+                    let row = tt[turnInt - 1];
+                    tripTimes = { time1: row.time1 || '', time2: row.time2 || '', time3: row.time3 || '' };
+                }
+            }
+        } catch (e) { }
+
         return {
+            tripTimes: tripTimes,
             rawRoute: routeText,
             baseRoute: baseRoute,
             routeShort: effectiveRoute, // BIS 조회 및 노선키용 (202A, 203A 자동 분기)
@@ -840,6 +856,9 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                     window.masterKeyMemoryCache[uniqueKey] = res.data;
                     window.standardMasterCache = res.data;
                     window.currentTripMasterCache = res.data;
+                    if (!res.calculated && window.StdCalc && window.StdCalc.getMode() === 'compare') {
+                        window.StdCalc.compareWithLegacy(duty, res.data);
+                    }
                     console.log(`📥 [고유키 매칭 완료] 키: ${uniqueKey} (총 ${res.data.length}개 정류장 수신)`);
 
                     if (typeof updateTrafficStopFromMaster === 'function') {
@@ -869,6 +888,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             };
 
             // GAS 네이티브 환경 우선 호출, 실패 또는 부재 시 HTTP fetch 폴백
+            const runLegacy = () => {
             if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getStandardMasterForLiveByKey === 'function') {
                 google.script.run
                     .withSuccessHandler((res) => {
@@ -885,6 +905,19 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                     .getStandardMasterForLiveByKey(uniqueKey);
             } else {
                 fallbackFetch();
+            }
+            };
+
+            // 🧮 계산 모드: 노선 JSON + 근무표 앵커로 계산, 불가하면 기존 standard_master 방식으로 폴백
+            if (window.StdCalc && window.StdCalc.getMode() === 'calc' && duty.tripTimes) {
+                window.StdCalc.computeTripRows(duty.routeShort, duty.baseRoute, duty.tripTimes)
+                    .then(rows => {
+                        if (rows && rows.length > 0) applyResult({ success: true, data: rows, calculated: true });
+                        else runLegacy();
+                    })
+                    .catch(() => runLegacy());
+            } else {
+                runLegacy();
             }
         });
     }
