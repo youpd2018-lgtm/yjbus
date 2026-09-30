@@ -1084,7 +1084,7 @@ button.action-btn:hover {
     /* 보일듯 말듯한 고급스러운 은은한 회색 구분선 */
     border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
-    padding: 9px 3px !important;
+    padding: 6px 3px !important;
     text-align: center !important;
     color: #f8fafc;
     white-space: nowrap;
@@ -1112,7 +1112,7 @@ button.action-btn:hover {
     font-size: 15px !important;
     letter-spacing: 0.3px !important;
     border-bottom: 1.5px solid rgba(255, 255, 255, 0.12) !important;
-    padding: 8px 3px !important;
+    padding: 6px 3px !important;
 }
 
 /* 첫 번째 열 (회차): 차분한 보조 톤 */
