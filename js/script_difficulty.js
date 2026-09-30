@@ -25,8 +25,7 @@
   if (typeof window.formatMessageDisplay === 'function') {
     var origFormat = window.formatMessageDisplay;
     window.formatMessageDisplay = function (raw) {
-      return String(origFormat(raw)).split('#86efac').join('#fde047')
-        .replace(/<span style="font-size: 13\.5px; color: #94a3b8 !important;[^"]*">\[[^\]]*\]<\/span>/, '');  // 이름 표시 제거
+      return String(origFormat(raw)).split('#86efac').join('#fde047');
     };
   }
 
