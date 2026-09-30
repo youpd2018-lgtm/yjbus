@@ -23,8 +23,9 @@
 
     // "HH:MM" / "HH:MM:SS" → 초 (24:00 이상 허용, 빈 값은 null)
     function hmsToSec(str) {
-        const s = String(str || '').trim();
+        let s = String(str || '').trim().replace(/[：.]/g, ':');
         if (!s || s === '-') return null;
+        if (/^\d{3,4}$/.test(s)) s = s.slice(0, -2) + ':' + s.slice(-2);   // 0826 → 08:26
         const p = s.split(':').map(Number);
         if (p.some(isNaN) || p.length < 2) return null;
         return p[0] * 3600 + p[1] * 60 + (p[2] || 0);
@@ -120,10 +121,12 @@
 
     // 근무표 앵커 → 회차 정류장 목록 (실패 시 null)
     async function computeTripRows(effectiveRoute, baseRoute, times) {
-        if (!times) return null;
+        lastError = '';
+        const fail = (msg) => { lastError = msg; return null; };
+        if (!times) return fail('근무표 시간(time1~3)이 없습니다.');
         const t = [hmsToSec(times.time1), hmsToSec(times.time2), hmsToSec(times.time3)];
         const nz = t.filter(v => v !== null);
-        if (nz.length < 2) return null;
+        if (nz.length < 2) return fail(`인식된 시간이 ${nz.length}개입니다 (최소 2개 필요). 입력값: "${times.time1}" / "${times.time2}" / "${times.time3}" — 08:26 형식으로 입력하세요.`);
 
         // 24시를 넘어 이어지는 앵커(예: 23:50 → 00:20)는 하루를 더해 증가하도록 보정
         for (let i = 1; i < nz.length; i++) {
@@ -134,11 +137,13 @@
         if (isA) {
             // 202A / 203A: 편도 노선 전체(앵커 2개) + (시간이 3개면) 정규 노선 기점→도착
             const rA = await loadRoute(effectiveRoute);
-            if (!rA || rA.anchors.length < 2) return null;
+            if (!rA) return fail(lastError || `${effectiveRoute} 노선 JSON을 받지 못했습니다.`);
+            if (rA.anchors.length < 2) return fail(`${effectiveRoute} 앵커가 ${rA.anchors.length}개입니다 (2개 필요).`);
             let rows = legRows(rA, rA.anchors[0], rA.anchors[rA.anchors.length - 1], nz[0], nz[1], false);
             if (nz.length >= 3) {
                 const rB = await loadRoute(baseRoute);
-                if (!rB || rB.anchors.length < 3) return null;
+                if (!rB) return fail(lastError || `${baseRoute} 노선 JSON을 받지 못했습니다.`);
+                if (rB.anchors.length < 3) return fail(`${baseRoute} 앵커가 ${rB.anchors.length}개입니다 (3개 필요).`);
                 rows = rows.concat(legRows(rB, rB.anchors[1], rB.anchors[2], nz[1], nz[2], true));
             }
             return toStdRows(rows);
@@ -146,7 +151,8 @@
 
         // 정규 노선(앵커 3개): time1=출발, time2=기점, time3=도착 (공란 슬롯은 건너뜀)
         const r = await loadRoute(effectiveRoute);
-        if (!r || r.anchors.length < 3) return null;
+        if (!r) return fail(lastError || `${effectiveRoute} 노선 JSON을 받지 못했습니다.`);
+        if (r.anchors.length < 3) return fail(`${effectiveRoute} 앵커가 ${r.anchors.length}개입니다 (정규 노선은 3개 필요). 202A/203A 는 노선에서 A를 선택하세요.`);
         const [a0, a1, a2] = r.anchors;
         const has = [t[0] !== null, t[1] !== null, t[2] !== null];
         // 자정 보정을 슬롯 기준으로 다시 적용
@@ -161,7 +167,7 @@
         let rows = [];
         if (has[0] && has[1]) rows = rows.concat(legRows(r, a0, a1, ts[0], ts[1], false));
         if (has[1] && has[2]) rows = rows.concat(legRows(r, a1, a2, ts[1], ts[2], has[0]));
-        return rows.length ? toStdRows(rows) : null;
+        return rows.length ? toStdRows(rows) : fail('계산할 구간이 없습니다. 시간 3개 중 연속된 두 슬롯(출발+기점 또는 기점+도착)이 필요합니다.');
     }
 
     // ---------------- 기존 standard_master 와 비교 (검증용) ----------------
