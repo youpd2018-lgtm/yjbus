@@ -577,7 +577,7 @@
         } else if (dateStr < todayYmd) {
             setMainCardStatus(false, '', '운행종료', '#94a3b8');
         } else {
-            setMainCardStatus(true, '교대까지', '00:00', '#ffffff');
+            setMainCardStatus(false, '', '운행준비중', '#f59e0b');  // 바로 아래 updateLiveStatusAndHighlight()가 실제 카운트로 덮어씀
         }
 
         // 4. 공식 시간표 렌더링 및 실시간 타이머 가동
@@ -1083,7 +1083,9 @@
             if (liveCardTimeSub) liveCardTimeSub.innerText = '';
 
             // ⭐ [라이브 모달 상태 복원 & 정류장 표지판 연동]
-            if (nextStop.stopIdx === 1) {
+            // 회차의 첫 정차 시각(시간표에서 비어 있지 않은 첫 칸)이 다음 목표면 '출발까지' 카운트
+            let isTripStart = (stopsSequence.find(s => s.tripIdx === nextStop.tripIdx) === nextStop);
+            if (isTripStart) {
                 // 출발지 대기 중 (운행 출발 전) -> 출발장소명이 아닌 '운행대기중' 표기!
                 liveCardStatus.innerText = `[${window.currentTripRoundNumber}] 운행대기중`;
                 if (indicator) indicator.style.backgroundColor = '#fbbc05';
@@ -1115,7 +1117,8 @@
                 ? parseTimeToDate(timing.handoverTime, searchDateStr)
                 : null;
 
-            let isBeforeHandover = (handoverDate && now < handoverDate);
+            // 오전 근무: 첫 회차 출발까지 카운트 / 오후 근무: 교대까지 카운트 → 교대 시각이 지나면 오후 첫 회차 출발까지 카운트
+            let isBeforeHandover = (timeType === '오후' && handoverDate && now < handoverDate);
             let targetDate = isBeforeHandover ? handoverDate : firstStop.timeDate;
             let targetLabel = isBeforeHandover ? '교대까지' : `${firstStop.tripIdx}회차 출발까지`;
 
