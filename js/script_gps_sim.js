@@ -301,6 +301,7 @@ function loadLatestColleagueMessage() {
 
     // 🎯 [핵심] GPS 위치 수신 시 정류장 통과 판정 및 오차시간 확정 잠금(Lock)
     function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
+        if (typeof navOnGps === 'function') { try { navOnGps(lat, lon); } catch (e) { console.warn('길안내 오류:', e); } }
         const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
         if (!masterCache || masterCache.length === 0) return;
 

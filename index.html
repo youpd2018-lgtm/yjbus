@@ -1052,6 +1052,10 @@
             <iconify-icon icon="mdi:bus" style="font-size: 15px; color: #38bdf8;"></iconify-icon>
             <span id="bisVehicleNo">인천70아1214</span>
           </span>
+          <span style="display: inline-flex; gap: 6px; margin-left: auto;">
+            <span id="navToggleBtn" class="nav-chip" onclick="toggleNav()" title="간단 길안내 켜기/끄기"><iconify-icon icon="solar:map-arrow-right-bold" style="font-size: 15px;"></iconify-icon><span class="lbl">길안내 끔</span></span>
+            <span id="navVoiceBtn" class="nav-chip" onclick="toggleNavVoice()" title="음성 안내 켜기/끄기" hidden><iconify-icon icon="solar:volume-loud-bold" style="font-size: 15px;"></iconify-icon><span class="lbl">음성 끔</span></span>
+          </span>
           <span id="bisLastUpdatedWrap"
             style="display: none; align-items: center; gap: 4px; font-size: 12px; color: #94a3b8;">
             <span id="bisLastUpdated"></span>
@@ -1106,6 +1110,12 @@
             <span class="tf-role">현재</span>
             <span id="trafficStopTimeNext" class="tf-time">--:--:--</span>
             <span id="trafficStopNameNext" class="tf-name" title="현재 정류장">현재 정류장</span>
+          </div>
+
+          <div id="tfNav" class="tf-nav" hidden>
+            <span id="tfNavArrow" class="tf-nav-arrow"></span>
+            <span id="tfNavDist" class="tf-nav-dist">--</span>
+            <span id="tfNavText" class="tf-nav-text">--</span>
           </div>
 
           <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
@@ -1290,6 +1300,7 @@
     <script src="js/script_live_modal.js"></script>
     <script src="js/script_weather_msg.js"></script>
     <script src="js/script_gps_sim.js"></script>
+    <script src="js/script_nav.js"></script>
     <script src="js/script_init_nav.js"></script>
     <script src="js/script_stats_view.js"></script>
     <script src="js/script_schedule_ui.js"></script>

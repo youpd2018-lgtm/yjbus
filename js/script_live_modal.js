@@ -676,6 +676,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         window.bisStopLockState.lockedDelayText = "0";
         window.bisStopLockState.lockedTargetColor = "#00ff66";
 
+        if (typeof navReset === 'function') navReset();   // 길안내: 이전 회차 경로 초기화
+
         // 1. 시퀀스 박스(P1, P2, P3) 시간 동기화 (메인 시간표 기반)
         if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
             syncSequenceBoxesFromMainSchedule();
