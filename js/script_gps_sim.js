@@ -212,6 +212,7 @@ function loadLatestColleagueMessage() {
         const gpsStatusText = document.getElementById('gpsStatusText');
         const plate = duty && duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
 
+        setSpeedDisplay(isWaiting ? null : speedKmh);
         // 차량번호 줄에는 번호만 표시 (GPS 상태는 오른쪽 뱃지에만 표시)
         if (bisVehicleEl) bisVehicleEl.innerText = plate;
         if (isWaiting) {
@@ -259,6 +260,7 @@ function loadLatestColleagueMessage() {
         const base = window._gpsLastFixAt || window._gpsWatchStartedAt || Date.now();
         if (Date.now() - base > GPS_STALE_MS) {
             setGpsBadgeBad(true, 'GPS 끊김');
+            setSpeedDisplay(null);
             // 끊긴 채로 계속되면 조용히 다시 연결 시도
             if (Date.now() - (window._gpsLastRetryAt || 0) > GPS_AUTO_RETRY_MS) {
                 window._gpsLastRetryAt = Date.now();
@@ -830,6 +832,12 @@ function loadLatestColleagueMessage() {
         const txt = document.getElementById('trafficFlowStatusText');
         if (flow) flow.setAttribute('data-s', state);
         if (txt) txt.innerText = label;
+    }
+
+    // 정류장 카드 가운데 속도계: 속도를 모르면 "--"
+    function setSpeedDisplay(speedKmh) {
+        const el = document.getElementById('tfSpeedNum');
+        if (el) el.innerText = (speedKmh === null || speedKmh === undefined || isNaN(speedKmh)) ? '--' : String(speedKmh);
     }
 
     // 표준시간 표시: 시:분은 크게, 초는 작고 흐리게
