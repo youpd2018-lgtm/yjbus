@@ -12,11 +12,11 @@
   var CATEGORY = 'DIFFICULTY';          // 현재 색 (노선-순번당 1줄)
   var LOG_CATEGORY = 'DIFFICULTY_LOG';  // 누적 기록 (바꿀 때마다 1줄)
   var COLORS = {
-    red:    { bg: '#fca5a5', ring: '#f87171' },
-    yellow: { bg: '#fde68a', ring: '#fbbf24' },
-    blue:   { bg: '#93c5fd', ring: '#60a5fa' }
+    red:    { bg: '#ff2d55', ring: '#ff6b8a', glow: 'rgba(255,45,85,.85)' },
+    yellow: { bg: '#ffe600', ring: '#fff27a', glow: 'rgba(255,230,0,.8)' },
+    blue:   { bg: '#00c8ff', ring: '#7fe4ff', glow: 'rgba(0,200,255,.85)' }
   };
-  var NONE = { bg: '#e2e8f0', ring: '#cbd5e1' };
+  var NONE = { bg: '#0f172a', ring: '#38bdf8', glow: 'rgba(56,189,248,.45)' };
   var current = '';      // 현재 노선-순번의 색 (red/yellow/blue/'')
   var currentKey = '';
   var open = false;
@@ -25,7 +25,8 @@
   if (typeof window.formatMessageDisplay === 'function') {
     var origFormat = window.formatMessageDisplay;
     window.formatMessageDisplay = function (raw) {
-      return String(origFormat(raw)).split('#86efac').join('#fde047');
+      return String(origFormat(raw)).split('#86efac').join('#fde047')
+        .replace(/<span style="font-size: 13\.5px; color: #94a3b8 !important;[^"]*">\[[^\]]*\]<\/span>/, '');  // 이름 표시 제거
     };
   }
 
@@ -45,7 +46,7 @@
   function dot(color, size, extra) {
     var c = COLORS[color] || NONE;
     return 'width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + c.bg +
-      ';border:2px solid ' + c.ring + ';padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);' + (extra || '');
+      ';border:1.5px solid ' + c.ring + ';padding:0;cursor:pointer;box-shadow:0 0 6px ' + c.glow + ',0 0 14px ' + c.glow + ';' + (extra || '');
   }
 
   function render() {
@@ -59,7 +60,7 @@
         html += '<button type="button" data-c="' + c + '" style="' + dot(c, 24, c === current ? 'outline:2px solid #fff;outline-offset:1px;' : '') + '"></button>';
       });
     }
-    html += '<button type="button" id="ybDiffMain" style="' + dot(current, 22, 'opacity:.9;') + '"></button>';
+    html += '<button type="button" id="ybDiffMain" style="' + dot(current, 22, '') + '"></button>';
     wrap.innerHTML = html;
   }
 
@@ -152,11 +153,11 @@
       box.appendChild(img);
       var sp = document.createElement('span');
       sp.id = 'ybHeroTitleText';
-      sp.style.cssText = 'font-size:15px;font-weight:900;color:#e2e8f0;letter-spacing:-0.3px;text-shadow:0 1px 6px rgba(0,0,0,.7);';
+      sp.style.cssText = 'font-size:17px;font-weight:900;color:#f1f5f9;letter-spacing:-0.3px;text-shadow:0 1px 6px rgba(0,0,0,.7);';
       box.appendChild(sp);
     }
     var out = document.getElementById('ybHeroTitleText');
-    if (out) out.textContent = txt;
+    if (out) out.textContent = txt.replace(/\s*근무표\s*$/, '');
   }
   function start() {
     var src = document.getElementById('headerTitleText');
