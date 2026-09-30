@@ -171,7 +171,8 @@ function _buildUnifiedList(collegeMsgs) {
     return m && m.trim() && m !== '__LOADING_INDICATOR__';
   });
   if (valid.length === 0) valid.push('안전운행 하시고 오늘도 좋은 하루 되세요! [영종운수]');
-  return (window.liveTrafficAlerts || []).concat(valid);
+  // 돌발·교통 정보는 메인 상단 박스에 섞지 않고 라이브 모달 메시지창에서만 보여 줌
+  return valid;
 }
 
 // ── 단일 메시지 즉시 출력 ────────────────────────────────────────
@@ -373,14 +374,8 @@ function processIncidentsList(incidents, busLat, busLon) {
     }
   });
   _cleanExpiredTraffic();
-  if (newAlerts.length > 0) {
-    window._priorityQueue = window._priorityQueue || [];
-    newAlerts.forEach(function(t) { window._priorityQueue.push({ text: t }); });
-  }
-  var baseMsgs = (currentMsgRotationList || []).filter(function(m) {
-    return m && !m.startsWith('🚨') && !m.includes('[돌발]');
-  });
-  renderMessages(baseMsgs.length > 0 ? baseMsgs : []);
+  // 메인 한마디 박스는 건드리지 않고, 라이브 모달 메시지창만 갱신
+  if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();
 }
 
 function fallbackDirectFetch(busLat, busLon) {

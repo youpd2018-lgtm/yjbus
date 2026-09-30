@@ -1045,3 +1045,37 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     if (!window.weatherIntervalTimer) {
         window.weatherIntervalTimer = setInterval(function () { fetchYeongjongWeather(true); }, WEATHER_REFRESH_MS);
     }
+
+
+// ================================================================
+// 🚨 라이브 모달 메시지창: 돌발·교통 정보 표시 (메인 상단 박스에서는 표시하지 않음)
+//  - 정보가 없으면 줄 자체를 숨기고 날씨만 보여 줌
+//  - 여러 건이면 5초마다 한 건씩 번갈아 표시
+// ================================================================
+(function () {
+    var idx = 0;
+    var timer = null;
+
+    function show() {
+        var el = document.getElementById('liveAlertLine');
+        if (!el) return;
+        var list = window.liveTrafficAlerts || [];
+        if (list.length === 0) {
+            el.style.display = 'none';
+            el.textContent = '';
+            if (timer) { clearInterval(timer); timer = null; }
+            return;
+        }
+        idx = idx % list.length;
+        el.style.display = 'flex';
+        el.textContent = '🚨 ' + String(list[idx]).replace(/^🚨\s*/, '');
+    }
+
+    window.renderLiveModalAlerts = function () {
+        show();
+        var list = window.liveTrafficAlerts || [];
+        if (list.length > 1 && !timer) {
+            timer = setInterval(function () { idx++; show(); }, 5000);
+        }
+    };
+})();

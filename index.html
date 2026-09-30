@@ -1008,6 +1008,9 @@
               <span>풍속 <span id="weatherWindDisplay">--</span></span>
               <span id="weatherWindLevel" style="font-size: 12.5px; font-weight: 800;"></span>
             </span>
+            <!-- 🚨 돌발·교통 정보 (있을 때만 표시, 여러 건이면 5초마다 번갈아) -->
+            <div id="liveAlertLine"
+              style="display: none; width: 100%; font-size: 14px; font-weight: 800; color: #facc15; align-items: flex-start; gap: 5px; line-height: 1.35; word-break: keep-all;"></div>
           </div>
           <!-- 💡 JS 에러 방지용 히든 날짜 ID 보존 -->
           <span id="liveModalDateText" style="display: none !important;"></span>
