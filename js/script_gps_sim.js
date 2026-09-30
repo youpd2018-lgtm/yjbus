@@ -309,9 +309,10 @@ function loadLatestColleagueMessage() {
         let nTime = nextRow ? getRowTime(nextRow) : '--:--:--';
         let aName = afterRow ? getRowName(afterRow) : '(종점 도착)';
         let aTime = afterRow ? getRowTime(afterRow) : '-';
+        let curRow = displayTargetIdx > 0 ? masterCache[displayTargetIdx - 1] : null;
 
         if (typeof updateTrafficStopSequence === 'function') {
-            updateTrafficStopSequence(nName, nTime, aName, aTime);
+            updateTrafficStopSequence(nName, nTime, aName, aTime, undefined, curRow ? getRowName(curRow) : '', curRow ? getRowTime(curRow) : '');
         }
     }
 
@@ -548,9 +549,10 @@ function loadLatestColleagueMessage() {
         let nTime = nextRow ? getRowTime(nextRow) : '--:--:--';
         let aName = afterRow ? getRowName(afterRow) : '(종점 도착)';
         let aTime = afterRow ? getRowTime(afterRow) : '-';
+        let curRow = displayTargetIdx > 0 ? masterCache[displayTargetIdx - 1] : null;
 
         if (typeof updateTrafficStopSequence === 'function') {
-            updateTrafficStopSequence(nName, nTime, aName, aTime);
+            updateTrafficStopSequence(nName, nTime, aName, aTime, undefined, curRow ? getRowName(curRow) : '', curRow ? getRowTime(curRow) : '');
         }
 
         console.log(`🎮 [모의주행 통과] #${idx + 1} ${getRowName(master[idx])} -> 오차: ${badgeText}분 확정 동결!`);
@@ -720,12 +722,13 @@ function loadLatestColleagueMessage() {
     }
 
     // 🚦 [3번째 박스] 도로 소통 및 2연속 정류장 흐름(다음 정류장 ━━━━ 다음다음 정류장) 렌더러
-    function updateTrafficStopSequence(nextName, nextTime, afterName, afterTime, statusOverride) {
+    function updateTrafficStopSequence(nextName, nextTime, afterName, afterTime, statusOverride, curName, curTime) {
         try {
-            const nextEl = document.getElementById('trafficStopNameNext');
-            const nextTimeEl = document.getElementById('trafficStopTimeNext');
-            const afterEl = document.getElementById('trafficStopNameAfter');
-            const afterTimeEl = document.getElementById('trafficStopTimeAfter');
+            // 좌측 = 현재 정류장, 우측 = 다음 정류장 (ID는 기존 호환 유지: Next=좌측, After=우측)
+            const curEl = document.getElementById('trafficStopNameNext');
+            const curTimeEl = document.getElementById('trafficStopTimeNext');
+            const nextEl = document.getElementById('trafficStopNameAfter');
+            const nextTimeEl = document.getElementById('trafficStopTimeAfter');
             const glowLine = document.getElementById('trafficFlowGlowLine');
             const flowDot = document.getElementById('trafficFlowDot');
             const statusText = document.getElementById('trafficFlowStatusText');
@@ -751,17 +754,22 @@ function loadLatestColleagueMessage() {
                 window.lastValidNextStop = { name: cleanNextName, time: cleanNextTime };
             }
 
+            let cleanCurName = String(curName || '').trim();
+            if (!cleanCurName || cleanCurName === '-' || cleanCurName === 'null') cleanCurName = "출발 전";
+            let cleanCurTime = String(curTime || '').trim().replace(/\[|\]/g, '');
+            if (!cleanCurTime || cleanCurTime === '-' || cleanCurTime === 'null') cleanCurTime = "--:--:--";
+
+            if (curEl) {
+                curEl.innerText = cleanCurName;
+                curEl.title = cleanCurName;
+            }
+            if (curTimeEl) curTimeEl.innerText = cleanCurTime;
+
             if (nextEl) {
                 nextEl.innerText = cleanNextName;
                 nextEl.title = cleanNextName;
             }
             if (nextTimeEl) nextTimeEl.innerText = cleanNextTime;
-
-            if (afterEl) {
-                afterEl.innerText = cleanAfterName;
-                afterEl.title = cleanAfterName;
-            }
-            if (afterTimeEl) afterTimeEl.innerText = cleanAfterTime;
 
             // ⏱️ [오차시간 실시간 동기화] 3번째 박스의 다음 정류장 표준시간으로 오차 배지 즉시 계산!
             if (cleanNextTime && cleanNextTime !== '--:--:--' && cleanNextTime !== '-') {
@@ -848,7 +856,8 @@ function loadLatestColleagueMessage() {
             let aName = afterRow ? (getRowName(afterRow) || '(종점 도착)') : '(종점 도착)';
             let aTime = afterRow ? (getRowTime(afterRow) || '-') : '-';
 
-            updateTrafficStopSequence(nName, nTime, aName, aTime);
+            let masterCurRow = targetIdx > 0 ? masterList[targetIdx - 1] : null;
+            updateTrafficStopSequence(nName, nTime, aName, aTime, undefined, masterCurRow ? getRowName(masterCurRow) : '', masterCurRow ? getRowTime(masterCurRow) : '');
 
             // ⏱️ 초기 오차시간 배지 산출 (모달 오픈 즉시 0ms 표시)
             if (!window.bisStopLockState || !window.bisStopLockState.lockedDelayText || window.bisStopLockState.lockedDelayText === "-") {

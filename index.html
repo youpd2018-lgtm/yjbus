@@ -1088,18 +1088,18 @@
           </div>
         </div>
 
-        <!-- 3. [도로 소통 및 2연속 정류장 흐름 카드] (다음 정류장 ━━━━ 다음다음 정류장) -->
+        <!-- 3. [도로 소통 및 2연속 정류장 흐름 카드] (현재 정류장 ━━━━ 다음 정류장) -->
         <div id="liveTrafficStopBox" class="traffic-stop-flow-card"
           style="background: #1e293b; border: 1.2px solid #334155; border-radius: 14px; padding: 12px 14px; margin: 10px 0 0 0; box-shadow: 0 6px 18px rgba(0,0,0,0.4);">
 
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 14px;">
 
-            <!-- 좌측: 다음 정류장 -->
+            <!-- 좌측: 현재 정류장 -->
             <div
               style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
-              <div id="trafficStopNameNext" title="다음 정류장"
+              <div id="trafficStopNameNext" title="현재 정류장"
                 style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                다음 정류장
+                현재 정류장
               </div>
               <span id="trafficStopTimeNext"
                 style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
@@ -1127,12 +1127,12 @@
               </div>
             </div>
 
-            <!-- 우측: 다음다음 정류장 -->
+            <!-- 우측: 다음 정류장 -->
             <div
               style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-              <div id="trafficStopNameAfter" title="다음다음 정류장"
+              <div id="trafficStopNameAfter" title="다음 정류장"
                 style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: right; letter-spacing: -0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                다음다음
+                다음 정류장
               </div>
               <span id="trafficStopTimeAfter"
                 style="font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;">
