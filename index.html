@@ -1118,6 +1118,11 @@
         </div>
 
         <div class="live-group" id="liveGroupStop">
+        <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
+          <div id="trafficFlowLamp" class="tf-lamp"><i></i><i></i><i></i></div>
+          <span id="trafficFlowStatusText" class="tf-flow-text">소통원활</span>
+        </div>
+
         <!-- 3. [정류장 카드] 현재 정류장 (신호등) 다음 정류장. 표준시간을 가장 크게, 교통상황은 가운데 신호등 알약 (터치하면 최근 돌발상황 다시보기) -->
         <div id="liveTrafficStopBox" class="tf-card">
           <div class="tf-stop tf-cur">
@@ -1149,10 +1154,6 @@
             <div id="trafficFlowLine1"></div>
             <div id="trafficFlowLine2"></div>
           </div>
-        </div>
-        <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
-          <div id="trafficFlowLamp" class="tf-lamp"><i></i><i></i><i></i></div>
-          <span id="trafficFlowStatusText" class="tf-flow-text">소통원활</span>
         </div>
         </div>
 

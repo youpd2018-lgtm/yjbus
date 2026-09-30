@@ -2906,10 +2906,10 @@ iconify-icon {
 .nav-chip.on { color: #7dd3fc; background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.5); }
 .nav-chip[hidden] { display: none; }
 
-/* 라이브 모달: 큰 덩어리(위쪽 그룹 / 거점 시퀀스 / 정류장 그룹) 사이 여유 간격을 고르게 배분 */
-#liveModal .live-modal-content { gap: 22px !important; }
-#liveModal .live-group, #liveModal .ios-seq-card-wrapper { margin-top: auto !important; margin-bottom: auto !important; }
-#liveModal .live-group .tf-card { margin-top: 0; }
-.tf-card .tf-cur { grid-column: 1; }
-.tf-card .tf-nav { grid-column: 2; }
-.tf-card .tf-stop.tf-next { grid-column: 3; }
+/* 라이브 모달 간격: 위쪽부터 차례로 배치 (카운트 박스 묶음 → 거점 시퀀스 → 신호등 → 정류장 카드), 남는 여백은 닫기 버튼 위로 */
+#liveModal .live-modal-content { gap: 0 !important; }
+#liveModal .live-group, #liveModal .ios-seq-card-wrapper { margin-top: 0 !important; margin-bottom: 0 !important; }
+#liveModal .ios-seq-card-wrapper { margin-top: 26px !important; }      /* 길안내 켬 버튼 하나 높이 */
+#liveModal #liveGroupStop { margin-top: 82px !important; }             /* 신호등 알약 높이의 두 배 */
+#liveModal #liveGroupStop .tf-flow { margin: 0 auto 12px; }
+#liveModal .ios-footer { margin-top: auto !important; padding-top: 16px; }
