@@ -121,3 +121,35 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
+
+// ================================================================
+// 🏷️ 메인 카드 빈자리: 로고 + "OOO 기사님 근무표" 타이포그래피
+//  - 기존 헤더(숨겨 둠, 나중에 재활용)의 로고·제목을 복제해서 표시
+// ================================================================
+(function () {
+  function sync() {
+    var box = document.getElementById('ybHeroTitle');
+    var src = document.getElementById('headerTitleText');
+    var logo = document.querySelector('#appHeaderTitle img');
+    if (!box || !src) return;
+    var txt = (src.textContent || '').trim();
+    if (!box.firstChild && logo) {
+      var img = logo.cloneNode(true);
+      img.style.cssText = 'height:22px;width:22px;object-fit:contain;flex-shrink:0;';
+      box.appendChild(img);
+      var sp = document.createElement('span');
+      sp.id = 'ybHeroTitleText';
+      sp.style.cssText = 'font-size:15px;font-weight:900;color:#e2e8f0;letter-spacing:-0.3px;text-shadow:0 1px 6px rgba(0,0,0,.7);';
+      box.appendChild(sp);
+    }
+    var out = document.getElementById('ybHeroTitleText');
+    if (out) out.textContent = txt;
+  }
+  function start() {
+    var src = document.getElementById('headerTitleText');
+    if (src) new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
