@@ -56,9 +56,12 @@
         const url = window.GAS_WEB_APP_URL;
         if (!url) return Promise.resolve(null);
 
-        inflight[name] = fetch(url + '?action=get_route_stops&route=' + encodeURIComponent(name))
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
+        inflight[name] = fetch(url + '?action=get_route_stops&route=' + encodeURIComponent(name), ctrl ? { signal: ctrl.signal } : undefined)
             .then(r => r.text().then(text => ({ status: r.status, text })))
             .then(({ status, text }) => {
+                if (timer) clearTimeout(timer);
                 delete inflight[name];
                 let res = null;
                 try { res = JSON.parse(text); } catch (e) {
@@ -74,8 +77,11 @@
                 return res;
             })
             .catch(err => {
+                if (timer) clearTimeout(timer);
                 delete inflight[name];
-                lastError = `[${name}] 요청 실패: ${err}`;
+                lastError = (err && err.name === 'AbortError')
+                    ? `[${name}] 30초 안에 응답이 없음 (서버가 오래 걸리거나 접속이 막힘)`
+                    : `[${name}] 요청 실패: ${err}`;
                 console.warn(`⚠️ [노선 ${name}] JSON 로드 실패:`, err);
                 return null;
             });
