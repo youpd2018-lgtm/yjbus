@@ -83,7 +83,7 @@ function getRouteStopsForApp(routeName) {
       warn: warn
     };
 
-    try { cache.put(ROUTE_STOPS_CACHE_PREFIX + name, JSON.stringify(result), 21600); } catch (ce) {}
+    try { cache.put(ROUTE_STOPS_CACHE_PREFIX + name, JSON.stringify(result), 600); } catch (ce) {}
     return result;
   } catch (err) {
     return { success: false, error: String(err) };

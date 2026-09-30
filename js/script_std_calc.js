@@ -10,7 +10,7 @@
 // ================================================================
 (function () {
     const ROUTE_CACHE_PREFIX = 'yb_route_v1_';
-    const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const ROUTE_CACHE_TTL_MS = 60 * 60 * 1000;
     const inflight = {};
     let lastError = '';
 
