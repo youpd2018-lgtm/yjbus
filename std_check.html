@@ -24,6 +24,17 @@
 <body>
 <h1>🧮 표준시간 계산 점검</h1>
 
+<div style="background:#1e293b;border-radius:10px;padding:12px;margin-bottom:14px;">
+  <div style="font-size:13px;color:#94a3b8;">📱 이 기기의 앱이 쓰는 표준시간 방식</div>
+  <div id="modeNow" style="font-size:16px;font-weight:700;margin:6px 0 8px;"></div>
+  <div style="display:flex;gap:6px;">
+    <button class="modeBtn" data-mode="legacy" style="margin:0;padding:8px 4px;font-size:14px;">기존 방식</button>
+    <button class="modeBtn" data-mode="compare" style="margin:0;padding:8px 4px;font-size:14px;">비교(기본)</button>
+    <button class="modeBtn" data-mode="calc" style="margin:0;padding:8px 4px;font-size:14px;">계산 방식</button>
+  </div>
+  <div class="hint">바꾼 뒤 앱을 완전히 종료했다가 다시 켜세요. 문제가 생기면 "기존 방식"으로 되돌리면 됩니다. (이 폰/브라우저에만 적용)</div>
+</div>
+
 <label>노선 (회차가 202A/203A 로 시작하는 경우 A 선택)</label>
 <select id="route">
   <option>202</option><option>202A</option><option>203</option><option>203A</option>
@@ -46,6 +57,10 @@
 <script src="js/script_std_calc.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
+  const MODE_LABEL = { legacy: '기존 방식 (standard_master)', compare: '비교 (기존 값 사용 + 계산값 비교 기록)', calc: '계산 방식 (노선 JSON + 근무표 앵커)' };
+  function showMode() { $('modeNow').textContent = '현재: ' + MODE_LABEL[StdCalc.getMode()]; }
+  document.querySelectorAll('.modeBtn').forEach(b => { b.onclick = () => { StdCalc.setMode(b.dataset.mode); showMode(); }; });
+  showMode();
   $('go').onclick = async () => {
     const route = $('route').value;
     const base = route.replace(/A$/, '');
