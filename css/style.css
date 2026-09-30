@@ -2887,7 +2887,7 @@ iconify-icon {
 .tf-flow[data-s="slow"] { --tfc: #fbbf24; }
 .tf-flow[data-s="jam"] { --tfc: #f87171; }
 .tf-flow[data-s="off"] { --tfc: #64748b; }
-.tf-flow-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap; color: var(--tfc); }
+.tf-flow-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 16px; font-weight: 700; white-space: nowrap; color: var(--tfc); }
 .tf-lamp { display: flex; gap: 9px; padding: 11px 16px; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 2px 6px rgba(0,0,0,.5); }
 .tf-lamp i { width: 17px; height: 17px; border-radius: 50%; background: rgba(255,255,255,.12); }
 .tf-flow[data-s="ok"] .tf-lamp i:nth-child(1) { background: #4ade80; box-shadow: 0 0 14px #4ade80; }
@@ -2910,6 +2910,15 @@ iconify-icon {
 #liveModal .live-modal-content { gap: 0 !important; }
 #liveModal .live-group, #liveModal .ios-seq-card-wrapper { margin-top: 0 !important; margin-bottom: 0 !important; }
 #liveModal .ios-seq-card-wrapper { margin-top: 26px !important; }      /* 길안내 켬 버튼 하나 높이 */
-#liveModal #liveGroupStop { margin-top: 82px !important; }             /* 신호등 알약 높이의 두 배 */
-#liveModal #liveGroupStop .tf-flow { margin: 0 auto 12px; }
-#liveModal .ios-footer { margin-top: auto !important; padding-top: 16px; }
+#liveModal #liveGroupStop { margin-top: 65px !important; }             /* 시간카운트 박스 ~ 거점 시퀀스 간격과 같게 */
+#liveModal #liveGroupStop .tf-flow { margin: 0 0 65px; }             /* 신호등 박스 ~ 정류장 카드도 같은 간격 */
+#liveModal .ios-footer { margin-top: 30px !important; padding-top: 0; }   /* 내용이 끝나는 자리 바로 아래로 따라 올라옴 */
+
+/* 신호등 바깥 박스: 다른 박스들은 튀어나온 느낌, 이 박스는 안쪽으로 음푹 들어간 느낌 */
+.tf-flow {
+    width: 100%; box-sizing: border-box; padding: 7px 16px; border-radius: 18px; gap: 12px;
+    background: linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,.2));
+    border: 1px solid rgba(255,255,255,.05); border-bottom-color: rgba(255,255,255,.12);
+    box-shadow: inset 0 4px 10px rgba(0,0,0,.6), inset 0 -1px 2px rgba(255,255,255,.06);
+}
+.tf-flow .tf-lamp { background: rgba(0,0,0,.25); box-shadow: inset 0 2px 5px rgba(0,0,0,.55); }
