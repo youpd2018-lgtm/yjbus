@@ -269,6 +269,15 @@
         // 4. 실시간 카운트다운 타이머 및 월 선택기 초기화
         setInterval(updateLiveStatusAndHighlight, 1000);
         initMonthSelect();
+
+        // 5. 상단 '오늘의 한마디' 박스: 접속하자마자 불러오고, 이후 5분마다 새로 고침
+        //    (예전에는 라이브 모달을 열 때만 불러와서 처음에 '로딩 중'으로 남아 있었음)
+        if (typeof loadLatestColleagueMessage === 'function') {
+            loadLatestColleagueMessage();
+            setInterval(function () {
+                if (!document.hidden) loadLatestColleagueMessage();
+            }, 5 * 60 * 1000);
+        }
     };
 
     function initGateway() {
