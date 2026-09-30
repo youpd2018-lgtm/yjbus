@@ -103,6 +103,9 @@ function loadLatestColleagueMessage() {
         }
 
         console.log("🛰️ [GPS 엔진 가동] 실시간 위성 위치 추적을 시작합니다.");
+        window._gpsDuty = duty;
+        window._gpsWatchStartedAt = Date.now();
+        window._gpsLastFixAt = 0;
 
         const options = {
             enableHighAccuracy: true, // 고정밀 GPS 위성 모드
@@ -122,6 +125,7 @@ function loadLatestColleagueMessage() {
                 window.curBusGpsLon = lon;
                 window.curBusSpeed = speedKmh;
                 window.lastGpsPosition = { lat, lon, speedKmh, accuracy, time: new Date() };
+                window._gpsLastFixAt = Date.now();
 
                 // 위치 수신 성공 시 권한 배너 즉시 숨김
                 const permBanner = document.getElementById('gpsPermissionBanner');
@@ -152,6 +156,7 @@ function loadLatestColleagueMessage() {
         const plate = duty && duty.busNo ? (String(duty.busNo).includes('인천') ? duty.busNo : `인천70아${duty.busNo}`) : '배차 차량 없음';
 
         if (banner) banner.style.display = 'block';
+        setGpsBadgeBad(true);
 
         if (err && err.code === 1) { // PERMISSION_DENIED (권한 거부/미허용)
             if (titleEl) titleEl.innerText = '위치(GPS) 권한을 허용해 주세요';
@@ -190,6 +195,10 @@ function loadLatestColleagueMessage() {
                     alert('위치 권한이 차단되어 있습니다.\n\n[해결 방법]\n1. 브라우저 상단 주소창 왼쪽 자물쇠(🔒) 또는 설정 아이콘을 누릅니다.\n2. [사이트 설정] 또는 [위치] 항목을 찾아 "허용"으로 변경해 주세요.');
                 } else if (err.code === 2) {
                     alert('스마트폰의 [위치(GPS)]가 꺼져 있습니다.\n\n스마트폰 화면 상단바를 아래로 내려 [위치] 아이콘을 켜주세요.');
+                } else {
+                    // 시간 초과 등: 신호를 잡는 중일 수 있으니 추적은 그대로 시작 (수신되면 자동 연결)
+                    const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : { busNo: '1214' };
+                    startLiveGpsTracking(duty);
                 }
             },
             { enableHighAccuracy: true, timeout: 8000 }
@@ -209,8 +218,84 @@ function loadLatestColleagueMessage() {
             if (gpsStatusText) gpsStatusText.innerText = 'GPS 수신 대기';
         } else if (speedKmh !== null) {
             if (gpsStatusText) gpsStatusText.innerText = `GPS (${speedKmh} km/h)`;
+            setGpsBadgeBad(false);
         } else {
             if (gpsStatusText) gpsStatusText.innerText = 'GPS 연결됨';
+            setGpsBadgeBad(false);
+        }
+    }
+
+    // ================================================================
+    // 🔴 [GPS 끊김 감지] 위치 수신이 한동안 없으면 우측 상단 GPS 버튼이 빨간색으로 바뀜
+    //  - 버튼을 누르면 재연결 창이 뜸 (관리자 1.2초 꾹 누르기는 그대로 모의주행 패널)
+    // ================================================================
+    var GPS_STALE_MS = 15 * 1000;        // 마지막 위치 수신 후 15초 넘으면 끊김으로 판단
+    var GPS_AUTO_RETRY_MS = 30 * 1000;   // 끊긴 채로 있으면 30초마다 자동 재시도
+
+    function setGpsBadgeBad(bad, text) {
+        const badge = document.getElementById('gpsAdminTrigger');
+        const icon = document.getElementById('gpsBadgeIcon');
+        const txt = document.getElementById('gpsStatusText');
+        if (!badge) return;
+        if (bad) {
+            badge.style.color = '#fecaca';
+            badge.style.background = 'rgba(127, 29, 29, 0.95)';
+            badge.style.borderColor = '#ef4444';
+            badge.classList.add('gps-badge-bad');
+            if (icon) icon.style.color = '#fca5a5';
+            if (txt && text) txt.innerText = text;
+        } else {
+            badge.style.color = '#38bdf8';
+            badge.style.background = 'rgba(15, 23, 42, 0.92)';
+            badge.style.borderColor = 'rgba(56, 189, 248, 0.55)';
+            badge.classList.remove('gps-badge-bad');
+            if (icon) icon.style.color = '#38bdf8';
+        }
+    }
+
+    function checkGpsStale() {
+        if (window.simState && window.simState.active) return;            // 모의주행 중에는 검사 안 함
+        if (!isLiveModalOpen() || window.liveGpsWatchId == null) return;   // 추적 중일 때만
+        const base = window._gpsLastFixAt || window._gpsWatchStartedAt || Date.now();
+        if (Date.now() - base > GPS_STALE_MS) {
+            setGpsBadgeBad(true, 'GPS 끊김');
+            // 끊긴 채로 계속되면 조용히 다시 연결 시도
+            if (Date.now() - (window._gpsLastRetryAt || 0) > GPS_AUTO_RETRY_MS) {
+                window._gpsLastRetryAt = Date.now();
+                startLiveGpsTracking(window._gpsDuty || (typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : null));
+            }
+        }
+    }
+    setInterval(checkGpsStale, 3000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) checkGpsStale(); });
+
+    // GPS 버튼을 눌렀을 때: 재연결 창
+    function onGpsBadgeClick() {
+        if (Date.now() - (window._gpsLongPressAt || 0) < 1500) return;   // 관리자 꾹 누르기 직후의 클릭은 무시
+        if (window.simState && window.simState.active) return;
+        const bad = document.getElementById('gpsAdminTrigger')?.classList.contains('gps-badge-bad');
+        const doReconnect = () => {
+            setGpsBadgeBad(false);
+            const txt = document.getElementById('gpsStatusText');
+            if (txt) txt.innerText = 'GPS 연결 중...';
+            window._gpsLastFixAt = 0;
+            window._gpsWatchStartedAt = Date.now();
+            requestGpsPermission();
+        };
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: bad ? 'GPS 연결이 끊어졌어요' : 'GPS를 다시 연결할까요?',
+                text: bad ? '[다시 연결]을 누르면 위치를 새로 잡아요.' : '지금은 정상 연결 중이에요. 그래도 다시 연결할 수 있어요.',
+                icon: bad ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonText: '다시 연결',
+                cancelButtonText: '닫기',
+                confirmButtonColor: '#0284c7',
+                background: '#1e293b',
+                color: '#fff'
+            }).then(r => { if (r.isConfirmed) doReconnect(); });
+        } else if (confirm(bad ? 'GPS 연결이 끊어졌습니다. 다시 연결할까요?' : 'GPS를 다시 연결할까요?')) {
+            doReconnect();
         }
     }
 
@@ -350,6 +435,7 @@ function loadLatestColleagueMessage() {
             if (pressTimer) clearTimeout(pressTimer);
             pressTimer = setTimeout(() => {
                 if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+                window._gpsLongPressAt = Date.now();
                 toggleAdminSimPanel(true);
             }, 1200); // 1.2초 길게 누르면 비밀 패널 오픈!
         };

@@ -2845,3 +2845,13 @@ iconify-icon {
 #appNavTabs, #appNavTabs * {
     font-family: 'GmarketSans', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
 }
+
+
+/* 🔴 GPS 끊김 버튼: 깜빡여서 눈에 띄게 */
+@keyframes gpsBadgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75); }
+    50% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+}
+.gps-badge-bad {
+    animation: gpsBadgePulse 1.4s ease-in-out infinite;
+}
