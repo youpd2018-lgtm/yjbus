@@ -1048,34 +1048,41 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 
 
 // ================================================================
-// 🚨 라이브 모달 메시지창: 돌발·교통 정보 표시 (메인 상단 박스에서는 표시하지 않음)
-//  - 정보가 없으면 줄 자체를 숨기고 날씨만 보여 줌
-//  - 여러 건이면 5초마다 한 건씩 번갈아 표시
+// 🚨 라이브 모달 하단 메시지 박스: 평소 = 날씨, 새 돌발·교통 정보가 오면 잠깐(건당 15초) 돌발 정보로 바뀌었다가 날씨로 복귀
 // ================================================================
 (function () {
-    var idx = 0;
-    var timer = null;
+    var SHOW_MS = 15 * 1000;
+    var seen = {};        // 이미 보여 준 돌발 (같은 내용을 반복해서 띄우지 않음)
+    var queue = [];
+    var busy = false;
 
-    function show() {
-        var el = document.getElementById('liveAlertLine');
-        if (!el) return;
-        var list = window.liveTrafficAlerts || [];
-        if (list.length === 0) {
-            el.style.display = 'none';
-            el.textContent = '';
-            if (timer) { clearInterval(timer); timer = null; }
-            return;
+    function setView(text) {
+        var weather = document.getElementById('liveWeatherView');
+        var line = document.getElementById('liveAlertLine');
+        var box = document.getElementById('liveWeatherBox');
+        if (text) {
+            if (weather) weather.style.display = 'none';
+            if (line) { line.textContent = '🚨 ' + String(text).replace(/^🚨\s*/, ''); line.style.display = 'flex'; }
+            if (box) { box.style.borderColor = 'rgba(250, 204, 21, 0.75)'; box.style.background = 'rgba(66, 32, 6, 0.85)'; }
+        } else {
+            if (line) { line.style.display = 'none'; line.textContent = ''; }
+            if (weather) weather.style.display = 'flex';
+            if (box) { box.style.borderColor = ''; box.style.background = ''; }
         }
-        idx = idx % list.length;
-        el.style.display = 'flex';
-        el.textContent = '🚨 ' + String(list[idx]).replace(/^🚨\s*/, '');
+    }
+
+    function next() {
+        var text = queue.shift();
+        if (!text) { busy = false; setView(null); return; }
+        busy = true;
+        setView(text);
+        setTimeout(next, SHOW_MS);
     }
 
     window.renderLiveModalAlerts = function () {
-        show();
-        var list = window.liveTrafficAlerts || [];
-        if (list.length > 1 && !timer) {
-            timer = setInterval(function () { idx++; show(); }, 5000);
-        }
+        (window.liveTrafficAlerts || []).forEach(function (t) {
+            if (!seen[t]) { seen[t] = true; queue.push(t); }
+        });
+        if (!busy && queue.length > 0) next();
     };
 })();

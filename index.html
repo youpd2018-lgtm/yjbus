@@ -989,32 +989,8 @@
       <div class="live-modal-content ios-widget-modal"
         style="display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; max-height: 92vh; overflow-y: auto; padding: 16px 14px 12px 14px;">
 
-        <!-- 1. 헤더: 오늘의 한마디 박스와 같은 모양의 날씨 박스 (기본 메시지 = 영종도 날씨 + 풍속, 20분마다 갱신) -->
-        <div class="ios-header"
-          style="margin-bottom: 2px; padding-bottom: 0; display: block;">
-          <div id="liveWeatherBox"
-            style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: #ffffff;">
-            <span class="ios-weather-title"
-              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 6px;">
-              <span id="weatherIconDisplay"
-                style="color: #fbbf24; font-size: 1.25em; display: inline-flex; align-items: center;">
-                <iconify-icon icon="solar:sun-bold"></iconify-icon>
-              </span>
-              <span>영종도 <span id="weatherTempDisplay">--℃</span> (<span id="weatherStatusDisplay">조회 중</span>)</span>
-            </span>
-            <span id="weatherWindBox"
-              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 5px;">
-              <span aria-hidden="true">💨</span>
-              <span>풍속 <span id="weatherWindDisplay">--</span></span>
-              <span id="weatherWindLevel" style="font-size: 12.5px; font-weight: 800;"></span>
-            </span>
-            <!-- 🚨 돌발·교통 정보 (있을 때만 표시, 여러 건이면 5초마다 번갈아) -->
-            <div id="liveAlertLine"
-              style="display: none; width: 100%; font-size: 14px; font-weight: 800; color: #facc15; align-items: flex-start; gap: 5px; line-height: 1.35; word-break: keep-all;"></div>
-          </div>
-          <!-- 💡 JS 에러 방지용 히든 날짜 ID 보존 -->
-          <span id="liveModalDateText" style="display: none !important;"></span>
-        </div>
+        <!-- 💡 JS 에러 방지용 히든 날짜 ID 보존 -->
+        <span id="liveModalDateText" style="display: none !important;"></span>
 
         <!-- 📍 [GPS 권한 및 위치 켜기 안내 배너] (위치 꺼짐/거부 시에만 표출) -->
         <div id="gpsPermissionBanner"
@@ -1186,6 +1162,29 @@
             <div id="trafficFlowLine1"></div>
             <div id="trafficFlowLine2"></div>
           </div>
+        </div>
+
+        <!-- 4. 하단 메시지 박스: 평소에는 영종도 날씨 + 풍속(20분마다 갱신), 새 돌발상황이 오면 잠깐 돌발 정보로 바뀌었다가 다시 날씨로 돌아옴 -->
+        <div id="liveWeatherBox"
+          style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1.6px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 10px 14px; margin-top: 10px; min-height: 26px; color: #ffffff; transition: border-color 0.3s ease, background 0.3s ease;">
+          <div id="liveWeatherView" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;">
+            <span class="ios-weather-title"
+              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 6px;">
+              <span id="weatherIconDisplay"
+                style="color: #fbbf24; font-size: 1.25em; display: inline-flex; align-items: center;">
+                <iconify-icon icon="solar:sun-bold"></iconify-icon>
+              </span>
+              <span>영종도 <span id="weatherTempDisplay">--℃</span> (<span id="weatherStatusDisplay">조회 중</span>)</span>
+            </span>
+            <span id="weatherWindBox"
+              style="font-size: 15px; font-weight: 800; color: #ffffff; display: inline-flex; align-items: center; gap: 5px;">
+              <span aria-hidden="true">💨</span>
+              <span>풍속 <span id="weatherWindDisplay">--</span></span>
+              <span id="weatherWindLevel" style="font-size: 12.5px; font-weight: 800;"></span>
+            </span>
+          </div>
+          <div id="liveAlertLine"
+            style="display: none; font-size: 14.5px; font-weight: 800; color: #facc15; align-items: flex-start; gap: 5px; line-height: 1.4; word-break: keep-all;"></div>
         </div>
 
         <!-- 💡 JS 호환용 숨김 컨테이너 -->
