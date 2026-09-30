@@ -12,6 +12,7 @@
     const ROUTE_CACHE_PREFIX = 'yb_route_v1_';
     const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     const inflight = {};
+    let lastError = '';
 
     function getMode() {
         try { return localStorage.getItem('yb_std_mode') || 'compare'; } catch (e) { return 'compare'; }
@@ -56,16 +57,25 @@
         if (!url) return Promise.resolve(null);
 
         inflight[name] = fetch(url + '?action=get_route_stops&route=' + encodeURIComponent(name))
-            .then(r => r.json())
-            .then(res => {
+            .then(r => r.text().then(text => ({ status: r.status, text })))
+            .then(({ status, text }) => {
                 delete inflight[name];
-                if (!res || !res.success || !Array.isArray(res.stops) || res.stops.length === 0) return null;
+                let res = null;
+                try { res = JSON.parse(text); } catch (e) {
+                    lastError = `[${name}] 응답이 JSON이 아님 (HTTP ${status}). 웹 앱이 새 버전으로 배포되지 않았을 수 있음. 응답 앞부분: ${text.slice(0, 120).replace(/\s+/g, ' ')}`;
+                    return null;
+                }
+                if (!res || !res.success || !Array.isArray(res.stops) || res.stops.length === 0) {
+                    lastError = `[${name}] 서버 응답: ${JSON.stringify(res).slice(0, 200)}`;
+                    return null;
+                }
                 if (res.warn) console.warn(`⚠️ [노선 ${name}] ${res.warn}`);
                 try { localStorage.setItem(ROUTE_CACHE_PREFIX + name, JSON.stringify({ t: Date.now(), data: res })); } catch (e) { }
                 return res;
             })
             .catch(err => {
                 delete inflight[name];
+                lastError = `[${name}] 요청 실패: ${err}`;
                 console.warn(`⚠️ [노선 ${name}] JSON 로드 실패:`, err);
                 return null;
             });
@@ -174,5 +184,5 @@
         });
     }
 
-    window.StdCalc = { getMode, setMode, loadRoute, computeTripRows, compareWithLegacy, hmsToSec, secToHms };
+    window.StdCalc = { getLastError: () => lastError, clearRouteCache: (n) => { try { localStorage.removeItem(ROUTE_CACHE_PREFIX + n); } catch (e) { } }, getMode, setMode, loadRoute, computeTripRows, compareWithLegacy, hmsToSec, secToHms };
 })();

@@ -52,8 +52,9 @@
     const times = { time1: $('t1').value.trim(), time2: $('t2').value.trim(), time3: $('t3').value.trim() };
     $('msg').textContent = '계산 중...';
     $('out').innerHTML = '';
+    StdCalc.clearRouteCache(route); StdCalc.clearRouteCache(base);
     const rows = await StdCalc.computeTripRows(route, base, times);
-    if (!rows) { $('msg').textContent = '계산 불가: 노선 JSON을 못 받았거나 앵커/시간 입력을 확인하세요.'; return; }
+    if (!rows) { $('msg').textContent = '계산 불가: ' + (StdCalc.getLastError() || '앵커/시간 입력을 확인하세요 (노선의 앵커 개수와 입력한 시간 개수가 맞는지).'); return; }
     const anchorTimes = [times.time1, times.time2, times.time3].filter(Boolean).map(t => StdCalc.secToHms(StdCalc.hmsToSec(t)));
     $('msg').textContent = `정류장 ${rows.length}개  ·  ${rows[0].stdTime} → ${rows[rows.length - 1].stdTime}`;
     $('out').innerHTML = '<tr><th>#</th><th>정류장</th><th>표준시간</th></tr>' + rows.map((r, i) =>
