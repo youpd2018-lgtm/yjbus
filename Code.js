@@ -17,6 +17,17 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // 💡 [API 엔드포인트: 일일근무표 시트의 오늘~N일 근무정보 (앱이 폰에 저장해 구차장이 사용)]
+  if (e && e.parameter && e.parameter.action === 'get_daily_roster') {
+    let res;
+    try {
+      res = getDailyRoster(parseInt(e.parameter.days, 10) || 5);
+    } catch (err) {
+      res = { success: false, error: err.toString() };
+    }
+    return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // 💡 [API 엔드포인트: Gemini 직접 테스트용]
   if (e && e.parameter && e.parameter.action === 'test_gemini') {
     let testRes = {};
@@ -236,6 +247,7 @@ function askGeminiVoiceAssistant(query, context, history) {
 
     const systemPrompt = "너의 이름은 영종운수 상황실의 든든한 1등 살림꾼, '구차장'이야. " +
       "운전 중인 기사님이 듣기 편하도록 반드시 1~2문장의 간결하고 명확한 구어체로 대답하고 특수문자나 별표(*)는 절대 쓰지 마. " +
+      "제공된 [구차장의 승무 브리핑 수첩]의 [일일근무표] 구역은 폰에 저장된 공식 근무표와 시간표이므로 가장 먼저 믿고 그 안에서 답을 찾아. 그 안에 답이 없을 때만 도구를 써. " +
       "제공된 [구차장의 승무 브리핑 수첩] 정보를 우선적으로 참고하되, 내일이나 다음주 등 특정 날짜의 일정을 물어보면 " +
       "반드시 'search_driver_schedule' 도구를 사용해 날짜별 근무형태(오전/오후), 노선, 순번을 정확하게 파악해! " +
       "특히 여러 날짜(예: 월, 화, 수)를 물어볼 때 절대 임의로 묶어서 추측하지 말고, 날짜별로 순번이 다를 수 있으니 각각 확인해야 해. " +
@@ -530,6 +542,42 @@ function askGeminiVoiceAssistant(query, context, history) {
     console.error("askGeminiVoiceAssistant Exception:", err);
     return "요청을 처리하는 도중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
   }
+}
+
+// 📅 [일일근무표 시트 읽기] 오늘부터 days일 이내 행만 돌려준다 (5분 캐시)
+// - 시트 첫 줄 제목: Key / 근무일자 / 기사명 / 근무형태 / 노선명 / 차량번호 / 순번 / 근무시간
+// - rows: [근무일자, 기사명, 근무형태, 노선명, 차량번호, 순번, 근무시간]
+function getDailyRoster(days) {
+  days = Math.max(1, Math.min(days || 5, 10));
+  const today = Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "daily_roster_" + today + "_" + days;
+  const cached = cache.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('일일근무표');
+  if (!sheet) return { success: false, error: "일일근무표 시트를 찾을 수 없습니다." };
+  const values = sheet.getDataRange().getDisplayValues();
+  if (values.length < 2) return { success: true, today: today, rows: [] };
+
+  const header = values[0].map(h => String(h).trim());
+  const col = name => header.indexOf(name);
+  const cDate = col('근무일자'), cName = col('기사명'), cType = col('근무형태'),
+        cRoute = col('노선명'), cBus = col('차량번호'), cSeq = col('순번'), cTime = col('근무시간');
+  if (cDate < 0 || cName < 0) return { success: false, error: "일일근무표 제목 줄에서 '근무일자'/'기사명'을 찾을 수 없습니다." };
+
+  const end = Utilities.formatDate(new Date(Date.now() + (days - 1) * 86400000), "Asia/Seoul", "yyyy-MM-dd");
+  const pick = (r, c) => c >= 0 ? String(r[c]).trim() : "";
+  const rows = [];
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    const d = pick(r, cDate).replace(/\./g, '-').replace(/\s/g, '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < today || d > end) continue;
+    rows.push([d, pick(r, cName), pick(r, cType), pick(r, cRoute), pick(r, cBus), pick(r, cSeq), pick(r, cTime)]);
+  }
+  const res = { success: true, today: today, days: days, rows: rows };
+  try { cache.put(cacheKey, JSON.stringify(res), 300); } catch (e) {} // 캐시 한도(100KB) 초과 시 무시
+  return res;
 }
 
 // 🩺 [Gemini API 연결 상태 점검용 엔드포인트]

@@ -732,7 +732,8 @@ ${sequenceReport}
 ${statsReport}
 ${liveGpsTrafficReport}
 - 오늘 전체 기사 배차 요약 (일부):
-${userSchedList.slice(0, 25).join('\n')}`;
+${userSchedList.slice(0, 25).join('\n')}
+${typeof buildDailyRosterReport === 'function' ? buildDailyRosterReport(query, myName) : ''}`;
 }
 
 // 🖐️ 플로팅 마이크 위젯 드래그 지원 (터치 탭 오작동 방지 최적화)
