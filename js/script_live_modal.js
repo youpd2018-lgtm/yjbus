@@ -108,6 +108,16 @@
             currentTripRound = 1;
         }
 
+        // 🛡️ [회차 유지] 시간표상 다음 회차로 넘어갈 시각이어도, 지연으로 아직 이번 회차 종점에 도착하지 못했으면
+        //    (직전에 GPS로 이 회차를 운행 중이었고 종점 미도착) 다음 회차로 바꾸지 않는다 → 오차시간이 다음 회차 기준으로 어긋나는 문제 방지
+        try {
+            const st = JSON.parse(localStorage.getItem('yb_live_turn') || 'null');
+            if (st && st.date === searchDateStr && st.turn >= 1 && !st.reachedEnd &&
+                currentTripRound === st.turn + 1 && (Date.now() - (st.at || 0)) < 30 * 60000) {
+                currentTripRound = st.turn;
+            }
+        } catch (e) { }
+
         const seqInt = parseInt(seqNumText, 10) || 1;
         const countInt = parseInt(detectedBusCount, 10) || 16;
         const turnInt = parseInt(currentTripRound, 10) || 1;
@@ -820,6 +830,15 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     function loadStandardMasterCache(duty) {
         return new Promise((resolve) => {
             if (!duty) duty = {};
+            // 지금 운행 중인 회차 기록 (같은 회차면 '종점 도착' 여부를 그대로 유지)
+            try {
+                if (duty.turnNum) {
+                    const dStr = (document.getElementById('searchDate') || {}).value || new Date().toISOString().split('T')[0];
+                    const old = JSON.parse(localStorage.getItem('yb_live_turn') || 'null');
+                    const same = old && old.date === dStr && old.turn === duty.turnNum;
+                    localStorage.setItem('yb_live_turn', JSON.stringify({ date: dStr, turn: duty.turnNum, reachedEnd: same ? !!old.reachedEnd : false, at: Date.now() }));
+                }
+            } catch (e) { }
             const rawKey = duty.uniqueKey || duty.tripMasterId || '';
             const uniqueKey = String(rawKey).trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
 

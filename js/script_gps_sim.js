@@ -416,6 +416,16 @@ function loadLatestColleagueMessage() {
             }
         }
 
+        // 회차 유지용 기록 갱신: 마지막 정류장(종점)을 통과하면 '종점 도착'으로 표시해 다음 회차로 넘어갈 수 있게 함
+        try {
+            const stt = JSON.parse(localStorage.getItem('yb_live_turn') || 'null');
+            if (stt) {
+                stt.at = Date.now();
+                if (window.lastPassedStopIndex !== null && window.lastPassedStopIndex >= masterCache.length - 1) stt.reachedEnd = true;
+                localStorage.setItem('yb_live_turn', JSON.stringify(stt));
+            }
+        } catch (e) { }
+
         // 4. 3번째 카드(소통정보 카드) 다음 정류장 / 다음다음 정류장 자동 표출
         let displayTargetIdx = (window.lastPassedStopIndex !== null) ? window.lastPassedStopIndex + 1 : anchorIdx;
         displayTargetIdx = Math.min(masterCache.length - 1, Math.max(0, displayTargetIdx));
