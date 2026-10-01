@@ -292,8 +292,6 @@
         document.getElementById('gatewayNewName').value = '';
         document.getElementById('gatewayNewPin').value = '';
         const ph = document.getElementById('gatewayNewPhone'); if (ph) ph.value = '';
-        const op = document.getElementById('gatewayOldPin'); if (op) op.value = '';
-        const opw = document.getElementById('gatewayOldPinWrap'); if (opw) opw.style.display = 'none';
         document.getElementById('gatewayFamilyName').value = '';
         document.getElementById('gatewayFamilyPin').value = '';
         document.getElementById('gatewayUserSelectionArea').style.display = 'none';
@@ -354,20 +352,10 @@
             .loadFromServer();
     }
 
-    // 이름을 입력할 때, 예전에 등록된(4자리) 기사 이름이면 '예전 비밀번호' 칸을 보여줌
-    function gatewayCheckLegacyName() {
-        const name = (document.getElementById('gatewayNewName').value || '').trim();
-        const wrap = document.getElementById('gatewayOldPinWrap');
-        if (!wrap) return;
-        const exist = getUsersList().find(u => u.name === name);
-        wrap.style.display = (exist && exist.userType !== 'family' && !isDriverV2(exist)) ? 'block' : 'none';
-    }
-
     function gatewaySaveDriver() {
         const name = document.getElementById('gatewayNewName').value.trim();
         const pin = document.getElementById('gatewayNewPin').value.trim();
         const phone = (document.getElementById('gatewayNewPhone').value || '').replace(/[^0-9]/g, '');
-        const oldPin = (document.getElementById('gatewayOldPin').value || '').trim();
 
         if (!name) { alert("이름을 입력해주세요."); return; }
         if (!/^\d{6}$/.test(pin)) { alert("기사번호 6자리 숫자를 입력해주세요."); return; }
@@ -385,17 +373,7 @@
 
             const now = new Date().toISOString();
             if (exist) {
-                // 예전(4자리)에 등록했던 이름: 본인 확인 후 새 정보로 바꾸고, 기존 근무 기록은 그대로 사용
-                if (!oldPin) {
-                    const wrap = document.getElementById('gatewayOldPinWrap');
-                    if (wrap) wrap.style.display = 'block';
-                    alert("예전에 등록된 이름입니다.\n예전 비밀번호 4자리를 아래 칸에 입력해주세요. (처음 한 번만 확인합니다)");
-                    return;
-                }
-                if (oldPin !== String(exist.pin).trim()) {
-                    alert("예전 비밀번호가 맞지 않습니다. 모르시면 관리자에게 문의해주세요.");
-                    return;
-                }
+                // 예전(4자리)에 등록했던 이름: 새 정보로 바꾸고, 기존 근무 기록은 그대로 사용
                 exist.pin = pin;
                 exist.phone = phone;
                 exist.active = true;
