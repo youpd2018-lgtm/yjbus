@@ -16,8 +16,8 @@
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
 
-    window.navIsOn = function () { return lsGet(LS_ON) === '1'; };
-    window.navVoiceIsOn = function () { return lsGet(LS_VOICE) === '1'; };
+    window.navIsOn = function () { return !!(window.isGpsAdmin && window.isGpsAdmin()) && lsGet(LS_ON) === '1'; };   // 길안내는 관리자만
+    window.navVoiceIsOn = function () { return window.navIsOn() && lsGet(LS_VOICE) === '1'; };
 
     // ---------- 거리 계산 ----------
     function hav(lat1, lon1, lat2, lon2) {
@@ -228,8 +228,10 @@
     function refreshButtons() {
         var on = window.navIsOn(), v = window.navVoiceIsOn();
         var nb = document.getElementById('navToggleBtn'), vb = document.getElementById('navVoiceBtn');
+        var adm = !!(window.isGpsAdmin && window.isGpsAdmin());
+        if (nb) nb.hidden = !adm;
         if (nb) { nb.classList.toggle('on', on); nb.querySelector('.lbl').textContent = on ? '길안내 켬' : '길안내 끔'; }
-        if (vb) { vb.classList.toggle('on', v); vb.querySelector('.lbl').textContent = v ? '음성 켬' : '음성 끔'; vb.hidden = !on; }
+        if (vb) { vb.classList.toggle('on', v); vb.querySelector('.lbl').textContent = v ? '음성 켬' : '음성 끔'; vb.hidden = !on || !adm; }
     }
     window.toggleNav = function () {
         var on = !window.navIsOn();
@@ -246,6 +248,7 @@
         else { try { window.speechSynthesis.cancel(); } catch (e) { } }
     };
     window.navReset = function () { st = { from: -1, steps: [], idx: 0, spoken: {}, loading: false, loadedKey: '', failedAt: 0 }; setNavView(null); };
+    window.navRefreshButtons = refreshButtons;
     document.addEventListener('DOMContentLoaded', refreshButtons);
     window.addEventListener('load', refreshButtons);
 })();

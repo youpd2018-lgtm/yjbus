@@ -668,6 +668,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // 🚀 [Live 모달 열기] 화면 표시 및 실시간 BIS/표준시간 동시 호출
     // ================================================================
     async function openLiveModal() {
+        if (typeof gpsRecInit === 'function') { try { gpsRecInit(); } catch (e) { } }
+        if (typeof navRefreshButtons === 'function') { try { navRefreshButtons(); } catch (e) { } }
         // 가족 사용자는 라이브 모달을 사용하지 않음 (기사님 전용)
         if (typeof isFamilyUser !== 'undefined' && isFamilyUser) return;
         // 0. 모달 열릴 때 이전 매칭 상태 및 잠금 상태 초기화 (회차 간 간섭 방지)
