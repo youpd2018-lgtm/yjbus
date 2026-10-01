@@ -230,7 +230,8 @@ function askGeminiVoiceAssistant(query, context, history) {
     }
 
     const primaryModel = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) ? GEMINI_MODEL : "gemini-flash-lite-latest";
-    const fallbackList = [primaryModel, "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3-flash-preview"];
+    // 한도(쿼터)가 모델마다 따로라서, 같은 모델의 다른 이름(-latest 등)은 빼고 서로 다른 모델만 사용
+    const fallbackList = [primaryModel, "gemini-3.1-flash-lite", "gemini-3-flash-preview"];
     const candidateModels = fallbackList.filter((m, idx) => fallbackList.indexOf(m) === idx);
 
     const systemPrompt = "너의 이름은 영종운수 상황실의 든든한 1등 살림꾼, '구차장'이야. " +
@@ -448,7 +449,7 @@ function askGeminiVoiceAssistant(query, context, history) {
           let finalAnswer = "";
           let currentJson = json;
 
-          while (attempt < 8) {
+          while (attempt < 5) {
             attempt++;
             let part = currentJson.candidates[0].content.parts[0];
             
