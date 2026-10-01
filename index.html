@@ -498,7 +498,7 @@
 
         <!-- 4대 액션 아이콘 그리드 -->
         <div class="stats-actions-grid">
-          <button type="button" class="stats-action-btn" id="btnStatsSummary" onclick="selectStatsSubView('summary')">
+          <button type="button" class="stats-action-btn active" id="btnStatsSummary" onclick="selectStatsSubView('summary')">
             <iconify-icon icon="mdi:chart-box-outline" style="font-size: 20px; color: #fbbf24;"></iconify-icon>
             <span>근무통계</span>
           </button>
@@ -510,7 +510,7 @@
             <iconify-icon icon="mdi:account-group" style="font-size: 20px; color: #22c55e;"></iconify-icon>
             <span>모든사용자</span>
           </button>
-          <button type="button" class="stats-action-btn active" id="btnStatsRoute"
+          <button type="button" class="stats-action-btn" id="btnStatsRoute"
             onclick="selectStatsSubView('route')">
             <iconify-icon icon="mdi:bus-marker" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
             <span>노선시간표</span>
@@ -519,7 +519,7 @@
 
         <!-- [뷰 1] 노선별 전체 시간표 -->
         <div id="subViewRoute" class="stats-sub-view"
-          style="background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
+          style="display: none; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
           <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 6px;">
             <h3
@@ -590,7 +590,7 @@
 
         <!-- [뷰 4] 통계 (1단: 나의 발자취 / 2단: 최고 기록 트로피) -->
         <div id="subViewSummary" class="stats-sub-view"
-          style="display: none; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
+          style="background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
           <!-- 상단 월 선택기 -->
           <div class="date-navigator" style="margin-bottom: 12px; padding: 6px 8px;">
             <button class="date-nav-btn" onclick="moveStatMonth(-1)" style="padding: 4px 10px; font-size: 12px;">

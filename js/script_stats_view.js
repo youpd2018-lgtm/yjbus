@@ -73,7 +73,7 @@
     // ================================================================
     // 📊 [근무정보 서브 뷰 제어] 4대 액션 버튼 (노선시간표/주간일정/모든사용자/통계)
     // ================================================================
-    window.currentStatsSubView = 'route';
+    window.currentStatsSubView = 'summary';
 
     function selectStatsSubView(subViewName) {
         window.currentStatsSubView = subViewName;

@@ -627,7 +627,7 @@
         } else if (pageId === 'statsPage') {
             let tab = document.getElementById('tabStats');
             if (tab) tab.classList.add('active');
-            if (!window.currentStatsSubView) window.currentStatsSubView = 'route';
+            if (!window.currentStatsSubView) window.currentStatsSubView = 'summary';
             selectStatsSubView(window.currentStatsSubView);
         } else if (pageId === 'settingsPage') {
             let tab = document.getElementById('tabSettings');
