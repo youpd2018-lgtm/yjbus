@@ -2929,3 +2929,15 @@ iconify-icon {
 .tf-speed-ico { color: #7dd3fc; filter: drop-shadow(0 0 6px rgba(125,211,252,.5)); }
 .tf-speed-num { font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700; font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .tf-speed-unit { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 12px; font-weight: 600; color: #93a3bd; letter-spacing: .04em; }
+
+/* 근무정보 > 노선시간표: 노선·순번 선택과 시간표 숫자를 G마켓 산스로 통일 */
+#viewRouteSelect,
+#viewSeqSelect,
+#viewRouteSelect option,
+#viewSeqSelect option,
+#routeTimetableDisplayArea table,
+#routeTimetableDisplayArea th,
+#routeTimetableDisplayArea td {
+    font-family: 'GmarketSans', -apple-system, sans-serif !important;
+    font-variant-numeric: tabular-nums;
+}
