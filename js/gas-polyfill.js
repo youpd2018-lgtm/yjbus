@@ -20,7 +20,7 @@ if (!google.script) google.script = {};
         const payload = {
           action: 'ask_gemini',
           query: query || "",
-          context: (context || "").slice(0, 1500),
+          context: (context || "").slice(0, 8000),
           history: history || []
         };
         fetch(window.GAS_WEB_APP_URL, {
