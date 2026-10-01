@@ -212,8 +212,8 @@
         renderDrivingHabitRows();
     }
 
-    // 급출발·급정거·과속·급회전·급차선 변경 5개 항목 (이번 회차 / 오늘 / 이달 공통)
-    const DRIVING_HABIT_ITEMS = ['급출발', '급정거', '과속', '급회전', '급차선 변경'];
+    // 급출발·급정거·과속·급회전 4개 항목 (이번 회차 / 오늘 / 이달 공통)
+    const DRIVING_HABIT_ITEMS = ['급출발', '급정거', '과속', '급회전'];
 
     function renderDrivingHabitRows(values) {
         ['cur', 'today', 'month'].forEach(scope => {
