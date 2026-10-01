@@ -73,13 +73,41 @@
     } catch (e) { console.warn('로컬 알림 표시 실패:', e); }
   }
 
+  // 🔊 알림음 (앱이 켜져 있을 때 재생). 폰 정책상 첫 터치 때 한 번 '잠금 해제'해 둔다
+  const ALARM_SOUND_URL = 'sounds/start_alarm.mp3';
+  let alarmAudio = null;
+  function getAlarmAudio() {
+    if (!alarmAudio) {
+      try { alarmAudio = new Audio(ALARM_SOUND_URL); alarmAudio.preload = 'auto'; } catch (e) { alarmAudio = null; }
+    }
+    return alarmAudio;
+  }
+  function unlockAlarmAudio() {
+    const au = getAlarmAudio();
+    if (!au) return;
+    au.muted = true;
+    const p = au.play();
+    const done = () => { try { au.pause(); au.currentTime = 0; au.muted = false; } catch (e) { } };
+    if (p && p.then) p.then(done).catch(() => { au.muted = false; }); else done();
+  }
+  document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
+  function playAlarmSound() {
+    const au = getAlarmAudio();
+    if (!au) return;
+    try { au.pause(); au.currentTime = 0; au.muted = false; au.volume = 1; const p = au.play(); if (p && p.catch) p.catch(e => console.warn('알림음 재생 실패:', e)); } catch (e) { }
+  }
+  function stopAlarmSound() { if (alarmAudio) { try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (e) { } } }
+
   function notify(info, trip) {
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
     const body = `${trip.text} 출발` + (trip.place ? ` · ${trip.place}` : '') + ` · ${info.sched.route} ${info.sched.seq}` + (info.sched.busNo && info.sched.busNo !== '-' ? ` · 차량 ${info.sched.busNo}` : '');
     showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
     try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
+    playAlarmSound();
     if (window.Swal) {
-      Swal.fire({ toast: true, position: 'top', timer: 8000, showConfirmButton: false, title: title, text: body });
+      // 소리 끄기 버튼: 누르거나 알림이 사라지면 소리 정지
+      Swal.fire({ toast: true, position: 'top', timer: 20000, showConfirmButton: true, confirmButtonText: '소리 끄기', title: title, text: body })
+        .then(stopAlarmSound);
     }
   }
 
