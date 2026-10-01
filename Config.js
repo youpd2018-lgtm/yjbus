@@ -9,5 +9,6 @@ const SHEET_ID = '1kczhJRVEJ4r4dEXX_UFPOThMhuW3WDKB1LX97OxGvrA';
 const BUS_SERVICE_KEY = 'ldmePwR9ORO9g6kIfA72AI7pu0YL2Fz%2Ba%2BwOGUyihH89yRYXL7pncSbytwR9IpM3Z3wuUrGJ7lmrMNTi03Mpmg%3D%3D';
 
 // 🤖 Google Gemini AI API 설정
-const GEMINI_API_KEY = 'AQ.Ab8RN6LGcfsubQAP6NuHHNBnIcXdf8VmgfFEsG_IKrkVyctfmg';
+// 키는 GitHub에 올리지 않는다: Apps Script > 프로젝트 설정 > 스크립트 속성에 GEMINI_API_KEY 로 저장
+const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY') || '';
 const GEMINI_MODEL = 'gemini-flash-lite-latest';
