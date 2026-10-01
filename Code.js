@@ -738,6 +738,7 @@ function searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType) {
     const rounds = rt && rt.data && rt.data[sNum + '순번'];
     if (!Array.isArray(rounds) || rounds.length === 0) return;
     const heads = rt.headers || [];
+    const role = ['출발', '기점(회차)', '도착'];
     let swap = "";
     const lines = rounds.map((r, i) => {
       const cells = [];
@@ -745,12 +746,12 @@ function searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType) {
         const t = r['time' + n];
         if (!t) return;
         const isSwap = r['c' + n] === 'yellow';
-        if (isSwap) swap = t;
-        cells.push((heads[k] || ('지점' + n)) + " " + t + (isSwap ? "(교대시간)" : ""));
+        if (isSwap) swap = t + " (" + (heads[k] || role[k]) + ")";
+        cells.push((role[k] + " " + (heads[k] || "") + " " + t + (isSwap ? "(교대시간)" : "")).replace(/\s+/g, " "));
       });
       return (i + 1) + "회차: " + cells.join(" / ");
     });
-    out += `\n[${name} ${sNum}순번 운행 시간표]\n` + lines.join("\n") + (swap ? `\n※ 교대시간: ${swap}` : "");
+    out += `\n[${name} ${sNum}순번 운행 시간표]\n※ 장소: 출발=${heads[0] || '-'}, 기점(회차)=${heads[1] || '-'}, 도착=${heads[2] || '-'}\n` + lines.join("\n") + (swap ? `\n※ 교대시간: ${swap}` : "");
   });
   return out ? out.trim() : null;
 }

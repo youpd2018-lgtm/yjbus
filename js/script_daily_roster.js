@@ -49,6 +49,8 @@ function loadRouteDataMapLocal() {
 }
 
 // 노선 시간표 한 순번을 글로 만든다 (노란색 칸 = 교대시간)
+// headers[0]=출발 장소, headers[1]=기점(회차) 장소, headers[2]=도착 장소 / time1=출발, time2=기점, time3=도착
+const TT_ROLE = ['출발', '기점(회차)', '도착'];
 function describeSeqTimetable(routeMap, route, seqLabel) {
   const rt = routeMap && routeMap[route];
   const rounds = rt && rt.data && rt.data[seqLabel];
@@ -61,12 +63,13 @@ function describeSeqTimetable(routeMap, route, seqLabel) {
       const t = r['time' + n];
       if (!t) return;
       const isSwap = r['c' + n] === 'yellow';
-      if (isSwap) swap = t;
-      cells.push(`${heads[k] || ('지점' + n)} ${t}${isSwap ? '(교대시간)' : ''}`);
+      if (isSwap) swap = `${t} (${heads[k] || TT_ROLE[k]})`;
+      cells.push(`${TT_ROLE[k]} ${heads[k] || ''} ${t}${isSwap ? '(교대시간)' : ''}`.replace(/\s+/g, ' '));
     });
     return `${i + 1}회차: ${cells.join(' / ')}`;
   });
-  return lines.join('\n  ') + (swap ? `\n  ※ 교대시간: ${swap}` : '');
+  const placeLine = `※ ${route} 장소: 출발=${heads[0] || '-'}, 기점(회차)=${heads[1] || '-'}, 도착=${heads[2] || '-'}`;
+  return placeLine + '\n  ' + lines.join('\n  ') + (swap ? `\n  ※ 교대시간: ${swap}` : '');
 }
 
 // 질문에서 날짜를 읽는다 (오늘/내일/모레/글피, N월 N일, N일). 못 읽으면 null
