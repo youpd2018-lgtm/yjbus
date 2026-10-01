@@ -6,6 +6,7 @@
 // ================================================================
 (function () {
   const LEAD_MIN = 10;               // 몇 분 전에 알릴지
+  const GRACE_MIN = 2;               // 10분 전 시각부터 이 시간(분) 안에서만 울림 (그 뒤에 앱을 켜면 울리지 않음)
   const CHECK_MS = 15 * 1000;        // 확인 주기
   const WORK_TYPES = ['정상', '대타']; // 알림 대상 근무 형태
   let timerId = null;
@@ -75,26 +76,30 @@
 
   // 🔊 알림음 (앱이 켜져 있을 때 재생). 폰 정책상 첫 터치 때 한 번 '잠금 해제'해 둔다
   const ALARM_SOUND_URL = 'sounds/start_alarm.mp3';
+  const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
   let alarmAudio = null;
   function getAlarmAudio() {
     if (!alarmAudio) {
-      try { alarmAudio = new Audio(ALARM_SOUND_URL); alarmAudio.preload = 'auto'; } catch (e) { alarmAudio = null; }
+      try { alarmAudio = new Audio(); alarmAudio.preload = 'auto'; alarmAudio.src = ALARM_SOUND_URL; } catch (e) { alarmAudio = null; }
     }
     return alarmAudio;
   }
+  // 첫 터치 때 '무음 파일'로 재생 권한만 열어 둔다 (실제 알림음은 절대 재생하지 않음)
   function unlockAlarmAudio() {
     const au = getAlarmAudio();
     if (!au) return;
-    au.muted = true;
-    const p = au.play();
-    const done = () => { try { au.pause(); au.currentTime = 0; au.muted = false; } catch (e) { } };
-    if (p && p.then) p.then(done).catch(() => { au.muted = false; }); else done();
+    try {
+      au.src = SILENT_WAV;
+      const p = au.play();
+      const done = () => { try { au.pause(); au.currentTime = 0; au.src = ALARM_SOUND_URL; au.load(); } catch (e) { } };
+      if (p && p.then) p.then(done).catch(() => { try { au.src = ALARM_SOUND_URL; } catch (e) { } }); else done();
+    } catch (e) { }
   }
   document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
   function playAlarmSound() {
     const au = getAlarmAudio();
     if (!au) return;
-    try { au.pause(); au.currentTime = 0; au.muted = false; au.volume = 1; const p = au.play(); if (p && p.catch) p.catch(e => console.warn('알림음 재생 실패:', e)); } catch (e) { }
+    try { if (String(au.src).indexOf('start_alarm') === -1) au.src = ALARM_SOUND_URL; au.pause(); au.currentTime = 0; au.muted = false; au.volume = 1; const p = au.play(); if (p && p.catch) p.catch(e => console.warn('알림음 재생 실패:', e)); } catch (e) { }
   }
   function stopAlarmSound() { if (alarmAudio) { try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (e) { } } }
 
@@ -143,8 +148,8 @@
     if (!info || info.trips.length === 0) return;
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-    // 회차 출발 10분 전부터 출발 시각 전까지만 (늦게 켠 경우 이미 지난 회차는 알리지 않음)
-    const due = info.trips.filter(t => nowMin >= t.mins - LEAD_MIN && nowMin < t.mins);
+    // 정확히 '출발 10분 전' 시각부터 2분 안에서만 울림 (그 시각이 지난 뒤 앱을 켜면 울리지 않음)
+    const due = info.trips.filter(t => nowMin >= t.mins - LEAD_MIN && nowMin < t.mins - LEAD_MIN + GRACE_MIN);
     due.forEach(trip => {
       const doneKey = `yb_local_alarm_${info.today}_${info.driver}_${trip.idx}_${trip.text}`;
       try { if (localStorage.getItem(doneKey)) return; localStorage.setItem(doneKey, String(Date.now())); } catch (e) { }
