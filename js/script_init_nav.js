@@ -632,7 +632,7 @@
         } else if (pageId === 'settingsPage') {
             let tab = document.getElementById('tabSettings');
             if (tab) tab.classList.add('active');
-            switchSettingsSubPage('regPage');
+            if (typeof selectSettingsView === 'function') selectSettingsView('schedule');
         } else if (pageId === 'routeConfigPage') {
             // 4번 노선설정 탭 진입 시
             let tab = document.getElementById('tabRouteConfig');

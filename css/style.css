@@ -2997,3 +2997,29 @@ iconify-icon {
     font-family: 'GmarketSans', -apple-system, sans-serif !important;
     font-variant-numeric: tabular-nums;
 }
+
+/* 설정: 좌우 선택 버튼 (정상근무/휴무, 오전/오후, 알림 켜기/끄기) */
+.seg-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.seg-btn {
+    height: 44px;
+    border-radius: 10px;
+    border: 1.5px solid #475569;
+    background: #0f172a;
+    color: #94a3b8;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.seg-btn.active {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
+}

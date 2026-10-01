@@ -91,6 +91,7 @@
   }
 
   function updatePushButton() {
+    if (typeof window.onPushStateChanged === 'function') window.onPushStateChanged();
     const btn = document.getElementById('pushBtn');
     if (!btn) return;
     const on = 'Notification' in window && Notification.permission === 'granted' && !!localStorage.getItem(TOKEN_LS_KEY);
@@ -98,11 +99,18 @@
     btn.title = on ? '푸시 알림 켜짐 (눌러서 끄기)' : '푸시 알림 켜기';
   }
 
+  function isPushOn() {
+    return 'Notification' in window && Notification.permission === 'granted' && !!localStorage.getItem(TOKEN_LS_KEY);
+  }
+
   window.togglePushNotifications = function () {
     const on = 'Notification' in window && Notification.permission === 'granted' && !!localStorage.getItem(TOKEN_LS_KEY);
     return on ? disablePushNotifications() : enablePushNotifications();
   };
   window.refreshPushToken = refreshPushToken;
+  window.enablePushNotifications = enablePushNotifications;
+  window.disablePushNotifications = disablePushNotifications;
+  window.isPushOn = isPushOn;
 
   window.addEventListener('load', function () {
     updatePushButton();

@@ -186,7 +186,29 @@
     // ==========================================
     // 👁️ [근무 형태 토글] 휴무 선택 시 노선/차량 숨김
     // ==========================================
+    // 좌우 선택 버튼(근무형태, 오전/오후): 숨은 입력칸 값과 버튼 모양을 맞춤
+    function syncSegButtons() {
+        const wt = document.getElementById('workType');
+        if (wt && wt.value !== '정상' && wt.value !== '휴무') wt.value = '정상';   // 예전 '대타' 기록은 정상근무로 보임
+        const tm = document.getElementById('workTimeType');
+        if (tm && tm.value !== '오전' && tm.value !== '오후') tm.value = '오전';
+        [['workType', 'segWorkType'], ['workTimeType', 'segWorkTimeType']].forEach(([inputId, rowId]) => {
+            const input = document.getElementById(inputId);
+            document.querySelectorAll('#' + rowId + ' .seg-btn').forEach(b => {
+                b.classList.toggle('active', !!input && b.dataset.value === input.value);
+            });
+        });
+    }
+
+    function setSeg(inputId, value) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.value = value;
+        if (inputId === 'workType') toggleInputs(); else syncSegButtons();
+    }
+
     function toggleInputs() {
+        syncSegButtons();
         const workType = document.getElementById('workType')?.value;
         const busSection = document.getElementById('busNoSection');
         const routeSection = document.getElementById('schedRouteSection');
@@ -255,6 +277,8 @@
             if (regSeqEl) regSeqEl.value = '1순번';
             if (workTimeTypeEl) workTimeTypeEl.value = '오전';
         }
+
+        syncSegButtons();
 
         // 항상 활성화 유지
         enableScheduleEditMode();
