@@ -1104,10 +1104,6 @@
             <iconify-icon icon="mdi:bus" style="font-size: 16.5px; color: #38bdf8;"></iconify-icon>
             <span id="bisVehicleNo">인천70아1214</span>
           </span>
-          <span style="display: inline-flex; gap: 6px; margin-left: auto;">
-            <span id="navToggleBtn" class="nav-chip" onclick="toggleNav()" title="간단 길안내 켜기/끄기"><iconify-icon icon="solar:map-arrow-right-bold" style="font-size: 16.5px;"></iconify-icon><span class="lbl">길안내 끔</span></span>
-            <span id="navVoiceBtn" class="nav-chip" onclick="toggleNavVoice()" title="음성 안내 켜기/끄기" hidden><iconify-icon icon="solar:volume-loud-bold" style="font-size: 16.5px;"></iconify-icon><span class="lbl">음성 끔</span></span>
-          </span>
           <span id="bisLastUpdatedWrap"
             style="display: none; align-items: center; gap: 4px; font-size: 12px; color: #94a3b8;">
             <span id="bisLastUpdated"></span>
@@ -1177,12 +1173,6 @@
             <svg class="tf-speed-ico" viewBox="0 0 256 256" width="20" height="20"><path fill="currentColor" d="M209.88 69.83A115.2 115.2 0 0 0 128 36h-.41C63.85 36.22 12 88.76 12 153.13V176a20 20 0 0 0 20 20h192a20 20 0 0 0 20-20v-24a115.25 115.25 0 0 0-34.12-82.17M220 172h-92.68l46.44-65a12 12 0 1 0-19.52-14l-56.42 79H36v-18.87c0-1.72 0-3.43.14-5.13H56a12 12 0 0 0 0-24H40.62c10.91-33.39 40-58.52 75.38-63.21V80a12 12 0 0 0 24 0V60.8a92 92 0 0 1 75.66 63.2H200a12 12 0 0 0 0 24h19.9c.06 1.33.1 2.66.1 4Z"/></svg>
             <span id="tfSpeedNum" class="tf-speed-num">--</span>
             <span class="tf-speed-unit">km/h</span>
-          </div>
-
-          <div id="tfNav" class="tf-nav" hidden>
-            <span id="tfNavArrow" class="tf-nav-arrow"></span>
-            <span id="tfNavDist" class="tf-nav-dist">--</span>
-            <span id="tfNavText" class="tf-nav-text">--</span>
           </div>
 
           <div class="tf-stop tf-next">
@@ -1340,7 +1330,6 @@
     <script src="js/script_live_modal.js"></script>
     <script src="js/script_weather_msg.js"></script>
     <script src="js/script_gps_sim.js"></script>
-    <script src="js/script_nav.js"></script>
     <script src="js/script_gps_rec.js"></script>
     <script src="js/script_init_nav.js"></script>
     <script src="js/script_driving_habit.js"></script>

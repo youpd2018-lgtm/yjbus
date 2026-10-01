@@ -305,7 +305,6 @@ function loadLatestColleagueMessage() {
     function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
         if (typeof gpsRecAdd === 'function') gpsRecAdd(lat, lon, speedKmh, window.lastGpsPosition ? window.lastGpsPosition.accuracy : 0);
         if (window.DrivingHabit && window.lastGpsPosition) window.DrivingHabit.onFix(speedKmh, window.lastGpsPosition.accuracy, window.lastGpsPosition.heading, duty);
-        if (typeof navOnGps === 'function') { try { navOnGps(lat, lon); } catch (e) { console.warn('길안내 오류:', e); } }
         const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
         if (!masterCache || masterCache.length === 0) return;
 

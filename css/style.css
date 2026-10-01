@@ -2953,11 +2953,6 @@ iconify-icon {
 @media (prefers-reduced-motion: reduce) { .tf-flow[data-s="jam"] .tf-lamp i:nth-child(3) { animation: none; } }
 
 /* 🧭 간단 길안내: 정류장 카드 가운데(신호등 자리)에 화살표 + 거리 + 안내, 신호등은 카드 위쪽 가운데로 이동 */
-.tf-nav { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 88px; max-width: 108px; color: #fff; }
-.tf-nav[hidden] { display: none; }
-.tf-nav-arrow { display: inline-flex; color: #7dd3fc; filter: drop-shadow(0 0 8px rgba(125,211,252,.55)); }
-.tf-nav-dist { font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700; font-size: 24px; line-height: 1.1; }
-.tf-nav-text { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 15px; font-weight: 700; color: #e2e8f0; text-align: center; line-height: 1.2; }
 .nav-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13.2px; font-weight: 800; color: #94a3b8; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); padding: 3.3px 8.8px; border-radius: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .nav-chip.on { color: #7dd3fc; background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.5); }
 .nav-chip[hidden] { display: none; }
@@ -2981,9 +2976,8 @@ iconify-icon {
 }
 .tf-flow .tf-lamp { background: rgba(0,0,0,.25); box-shadow: inset 0 2px 5px rgba(0,0,0,.55); }
 
-/* 🚀 길안내를 쓰지 않을 때(또는 안내할 회전이 없을 때) 정류장 카드 가운데에 현재 속도 표시 */
+/* 🚀 정류장 카드 가운데에 현재 속도 표시 */
 .tf-card .tf-speed { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 88px; color: #fff; }
-.tf-card.tf-navmode .tf-speed { display: none; }
 .tf-speed-ico { color: #7dd3fc; filter: drop-shadow(0 0 6px rgba(125,211,252,.5)); }
 .tf-speed-num { font-family: 'GmarketSans', -apple-system, sans-serif; font-weight: 700; font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .tf-speed-unit { font-family: 'IBM Plex Sans KR', 'GmarketSans', -apple-system, sans-serif; font-size: 12px; font-weight: 600; color: #93a3bd; letter-spacing: .04em; }
