@@ -203,86 +203,30 @@
         // 4박스 연동
         safeSetText('statMyDaysSummary', `${normalCount}일 / ${restCount}일`);
         safeSetText('statMyAmPm', `오전 ${weekdayAm + holidayAm}회 / 오후 ${weekdayPm + holidayPm}회`);
-        let sortedRoutes = Object.entries(routeMap).sort((a, b) => b[1] - a[1]);
-        safeSetText('statMyTopRoute', sortedRoutes.length > 0 ? `${sortedRoutes[0][0]} (${sortedRoutes[0][1]}회)` : '-');
         let totalInfoEl = document.getElementById('statMyTotalInfo');
         if (totalInfoEl) {
             totalInfoEl.innerHTML = `${h}시간 ${m}분<br>${totalDist.toFixed(1)}KM`;
         }
 
-        // 2단: 최고 기록 (동점자 지원 및 황금 트로피 엠블럼 표시)
-        let drivers = typeof getUsersList === 'function' ? getUsersList().filter(u => u.userType !== 'family') : [];
-        let bestTimeSecs = totalSecs;
-        let bestDist = totalDist;
-        let bestDays = normalCount;
+        // 2단: 나의 운행 습관 (UI만 먼저. 값은 나중에 기능 연결)
+        renderDrivingHabitRows();
+    }
 
-        let driverStats = {};
-        driverStats[window.currentDriver || '나'] = { secs: totalSecs, dist: totalDist, days: normalCount, maxStreak: myMaxStreak };
+    // 급출발·급정거·과속·급회전·급차선 변경 5개 항목 (이번 회차 / 오늘 / 이달 공통)
+    const DRIVING_HABIT_ITEMS = ['급출발', '급정거', '과속', '급회전', '급차선 변경'];
 
-        drivers.forEach(dObj => {
-            let dName = dObj.name;
-            if (dName === window.currentDriver) return;
-
-            let dSecs = 0, dDist = 0, dDays = 0, dStreak = 0, dMaxS = 0;
-            for (let day = 1; day <= daysInMonth; day++) {
-                let mStr = String(month).padStart(2, '0');
-                let dStr = `${year}-${mStr}-${String(day).padStart(2, '0')}`;
-                let saved = localStorage.getItem(`jpil_user_${dName}_sched_${dStr}`);
-                if (saved) {
-                    try {
-                        let data = JSON.parse(saved);
-                        let workType = data.workType ? String(data.workType).trim() : '';
-                        if (workType === '정상' || workType === '대타') {
-                            dStreak++;
-                            if (dStreak > dMaxS) dMaxS = dStreak;
-                            dDays++;
-                            if (typeof customGetItem === 'function' && typeof calculateWorkSummary === 'function') {
-                                let list = customGetItem(data.route, data.seq);
-                                if (list && list.length > 0) {
-                                    let summary = calculateWorkSummary(list, data.time, data.route, data.seq);
-                                    if (summary) {
-                                        dDist += Number(summary.distance) || 0;
-                                        dSecs += Number(summary.totalSecs) || 0;
-                                    }
-                                }
-                            }
-                        } else if (workType === '휴무' || workType === '휴일' || workType === '연차' || workType === '공가' || workType === '병가') {
-                            dStreak = 0;
-                        }
-                    } catch (e) { }
-                } else {
-                    dStreak = 0;
-                }
-            }
-            driverStats[dName] = { secs: dSecs, dist: dDist, days: dDays, maxStreak: dMaxS };
-            if (dSecs > bestTimeSecs) bestTimeSecs = dSecs;
-            if (dDist > bestDist) bestDist = dDist;
-            if (dDays > bestDays) bestDays = dDays;
+    function renderDrivingHabitRows(values) {
+        ['cur', 'today', 'month'].forEach(scope => {
+            const el = document.getElementById('habitList_' + scope);
+            if (!el) return;
+            const compact = scope === 'month';
+            const v = (values && values[scope]) || {};
+            el.innerHTML = DRIVING_HABIT_ITEMS.map(name => {
+                const cnt = String(v[name] || 0).padStart(2, '0');
+                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 11 : 13}px; padding:${compact ? 1 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
+                    `<span>${name}</span><span style="color:#e2e8f0; font-weight:900;">${cnt}회</span></div>`;
+            }).join('');
         });
-
-        let globalMaxStreak = 0;
-        Object.values(driverStats).forEach(s => {
-            if (s.maxStreak > globalMaxStreak) globalMaxStreak = s.maxStreak;
-        });
-
-        function getTops(field, maxVal, formatter) {
-            if (maxVal <= 0) return '-';
-            let winners = Object.entries(driverStats).filter(([name, s]) => s[field] === maxVal).map(([name]) => name);
-            if (winners.length === 0) return '-';
-            let winnerText = winners.length === 1 ? winners[0] : `${winners[0]} 외 ${winners.length - 1}명`;
-            return `${winnerText} (${formatter(maxVal)})`;
-        }
-
-        safeSetText('rankBestTime', getTops('secs', bestTimeSecs, s => `${Math.floor(s / 3600)}시간`));
-        safeSetText('rankBestKm', getTops('dist', bestDist, d => `${d.toFixed(1)} km`));
-
-        if (globalMaxStreak > 0) {
-            let winners = Object.entries(driverStats).filter(([name, s]) => s.maxStreak === globalMaxStreak).map(([name]) => name);
-            let streakText = winners.length === 1 ? `${winners[0]} (${globalMaxStreak}일)` : `${winners[0]}(${globalMaxStreak}일) 외 ${winners.length - 1}명`;
-            safeSetText('rankBestStreak', streakText);
-        } else {
-            safeSetText('rankBestStreak', '기록 없음');
-        }
     }
 
     // ================================================================

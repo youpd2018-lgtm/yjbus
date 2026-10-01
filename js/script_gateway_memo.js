@@ -143,7 +143,6 @@
 
         let sortedRoutesFootprint = Object.entries(routeMap).sort((a, b) => b[1] - a[1]);
         let topRouteText = sortedRoutesFootprint.length > 0 ? `${sortedRoutesFootprint[0][0]}번 (${sortedRoutesFootprint[0][1]}회)` : '-';
-        safeSetText('statMyTopRoute', topRouteText);
 
         let totalInfoEl = document.getElementById('statMyTotalInfo');
         if (totalInfoEl) {

@@ -498,10 +498,9 @@
 
         <!-- 4대 액션 아이콘 그리드 -->
         <div class="stats-actions-grid">
-          <button type="button" class="stats-action-btn active" id="btnStatsRoute"
-            onclick="selectStatsSubView('route')">
-            <iconify-icon icon="mdi:bus-marker" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
-            <span>노선시간표</span>
+          <button type="button" class="stats-action-btn" id="btnStatsSummary" onclick="selectStatsSubView('summary')">
+            <iconify-icon icon="mdi:chart-box-outline" style="font-size: 20px; color: #fbbf24;"></iconify-icon>
+            <span>근무통계</span>
           </button>
           <button type="button" class="stats-action-btn" id="btnStatsWeekly" onclick="selectStatsSubView('weekly')">
             <iconify-icon icon="mdi:calendar-week" style="font-size: 20px; color: #60a5fa;"></iconify-icon>
@@ -511,9 +510,10 @@
             <iconify-icon icon="mdi:account-group" style="font-size: 20px; color: #22c55e;"></iconify-icon>
             <span>모든사용자</span>
           </button>
-          <button type="button" class="stats-action-btn" id="btnStatsSummary" onclick="selectStatsSubView('summary')">
-            <iconify-icon icon="solar:cup-bold" style="font-size: 20px; color: #fbbf24;"></iconify-icon>
-            <span>통계</span>
+          <button type="button" class="stats-action-btn active" id="btnStatsRoute"
+            onclick="selectStatsSubView('route')">
+            <iconify-icon icon="mdi:bus-marker" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
+            <span>노선시간표</span>
           </button>
         </div>
 
@@ -620,12 +620,11 @@
                 <div id="statMyDaysSummary" style="font-size: 14px; font-weight: 900; color: #22c55e; margin-top: 2px;">
                   -</div>
               </div>
-              <!-- 박스 2 (Top Right) -->
+              <!-- 박스 2 (Top Right): 이달의 운행 -->
               <div
                 style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px; text-align: center;">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">최다 노선</div>
-                <div id="statMyTopRoute" style="font-size: 14px; font-weight: 900; color: #e2e8f0; margin-top: 2px;">-
-                </div>
+                <div style="font-size: 11px; color: #94a3b8; font-weight: bold; margin-bottom: 4px;">이달의 운행</div>
+                <div id="habitList_month"></div>
               </div>
               <!-- 박스 3 (Bottom Left) -->
               <div
@@ -640,38 +639,21 @@
               </div>
             </div>
           </div>
-          <!-- 2단: 최고 기록 (트로피 엠블럼) -->
+          <!-- 2단: 나의 운행 습관 -->
           <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 10px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-              <iconify-icon icon="solar:cup-bold"
-                style="font-size: 26px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
-              <div>
-                <div style="font-size: 14px; font-weight: 900; color: #fbbf24;">이달의 최고 기록</div>
-                <div style="font-size: 11px; color: #94a3b8;">영종운수 최고의 열정 기사님</div>
-              </div>
+              <iconify-icon icon="mdi:steering"
+                style="font-size: 24px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
+              <div style="font-size: 14px; font-weight: 900; color: #fbbf24;">나의 운행 습관</div>
             </div>
-
-            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 8px 10px; border-radius: 6px;">
-                <span style="color: #94a3b8; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                  <iconify-icon icon="mdi:clock-check-outline" style="color: #38bdf8;"></iconify-icon> 최고 근무시간
-                </span>
-                <span id="rankBestTime" style="font-weight: 900; color: #38bdf8;">-</span>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
+                <div style="font-size: 13px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 운행</div>
+                <div id="habitList_cur"></div>
               </div>
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 8px 10px; border-radius: 6px;">
-                <span style="color: #94a3b8; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                  <iconify-icon icon="mdi:speedometer" style="color: #f97316;"></iconify-icon> 최고 근무거리
-                </span>
-                <span id="rankBestKm" style="font-weight: 900; color: #f97316;">-</span>
-              </div>
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 8px 10px; border-radius: 6px;">
-                <span style="color: #94a3b8; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                  <iconify-icon icon="mdi:fire" style="color: #f97316;"></iconify-icon> 최고 연속근무
-                </span>
-                <span id="rankBestStreak" style="font-weight: 900; color: #fbbf24;">-</span>
+              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
+                <div style="font-size: 13px; font-weight: 900; color: #22c55e; margin-bottom: 6px;">오늘의 운행</div>
+                <div id="habitList_today"></div>
               </div>
             </div>
           </div>
