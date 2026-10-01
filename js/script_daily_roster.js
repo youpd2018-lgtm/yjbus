@@ -4,7 +4,11 @@
 // - 구차장 질문 시 서버 시트 검색 없이 이 데이터로 수첩(buildDailyRosterReport)을 만든다
 // ================================================================
 const DAILY_ROSTER_KEY = 'yb_daily_roster';
-const DAILY_ROSTER_TTL_MS = 30 * 60 * 1000; // 30분
+
+function localDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function loadDailyRosterCache() {
   try {
@@ -16,14 +20,15 @@ function loadDailyRosterCache() {
 
 function refreshDailyRoster(force) {
   const cached = loadDailyRosterCache();
-  if (!force && cached && Date.now() - cached.fetchedAt < DAILY_ROSTER_TTL_MS) return;
+  // 하루 한 번: 오늘 이미 받아 둔 게 있으면 다시 받지 않는다
+  if (!force && cached && cached.savedDate === localDateStr()) return;
   if (!window.GAS_WEB_APP_URL) return;
   fetch(window.GAS_WEB_APP_URL + '?action=get_daily_roster&days=5')
     .then(r => r.json())
     .then(data => {
       if (data && data.success && Array.isArray(data.rows)) {
         try {
-          localStorage.setItem(DAILY_ROSTER_KEY, JSON.stringify({ fetchedAt: Date.now(), today: data.today, rows: data.rows }));
+          localStorage.setItem(DAILY_ROSTER_KEY, JSON.stringify({ fetchedAt: Date.now(), savedDate: localDateStr(), today: data.today, rows: data.rows }));
         } catch (e) { }
       } else {
         console.warn('일일근무표 불러오기 실패:', data && data.error);
@@ -32,7 +37,7 @@ function refreshDailyRoster(force) {
     .catch(err => console.warn('일일근무표 네트워크 오류:', err));
 }
 
-// 앱을 연 뒤 화면이 뜨고 조금 있다가 조용히 받아 둔다 (+ 앱으로 다시 돌아올 때 오래됐으면 갱신)
+// 앱을 연 뒤 화면이 뜨고 조금 있다가 조용히 받아 둔다 (하루 한 번, 날짜가 바뀌면 다시)
 window.addEventListener('load', () => setTimeout(() => refreshDailyRoster(false), 3000));
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshDailyRoster(false); });
 
