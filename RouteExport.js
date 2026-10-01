@@ -9,7 +9,7 @@
 
 var ROUTE_MASTER_SHEET_NAME = '노선마스터';
 var ROUTE_ANCHOR_COLOR = '#ea9999';   // 구글시트 '연한 빨강 2'
-var ROUTE_STOPS_CACHE_PREFIX = 'ROUTE_STOPS_V1_';
+var ROUTE_STOPS_CACHE_PREFIX = 'ROUTE_STOPS_V2_';
 
 // 노선마스터 열 (1-based): D=순서 E=정류장ID G=정류장명 H=위도 I=경도 L=구간소요시간
 function isAnchorBackground_(bg) {
@@ -51,7 +51,7 @@ function getRouteStopsForApp(routeName) {
 
     var startRow = first + 2;
     var numRows = last - first + 1;
-    var values = sheet.getRange(startRow, 1, numRows, 13).getDisplayValues();
+    var values = sheet.getRange(startRow, 1, numRows, 14).getDisplayValues();
     var backgrounds = sheet.getRange(startRow, 7, numRows, 1).getBackgrounds();
 
     var stops = [];
@@ -67,7 +67,8 @@ function getRouteStopsForApp(routeName) {
         String(row[6]).trim(),                        // G: 정류장명
         parseFloat(row[7]) || null,                   // H: 위도
         parseFloat(row[8]) || null,                   // I: 경도
-        cum                                           // 누적 구간소요시간(초)
+        cum,                                          // 누적 구간소요시간(초)
+        parseFloat(row[13]) || 50                     // N: 제한속도(km/h, 비어 있으면 50)
       ]);
       if (isAnchorBackground_(backgrounds[r][0])) anchors.push(stops.length - 1);
     }
@@ -79,7 +80,7 @@ function getRouteStopsForApp(routeName) {
       route: name,
       totalSec: cum,
       anchors: anchors,     // stops 배열 인덱스
-      stops: stops,         // [id, name, lat, lng, cumSec]
+      stops: stops,         // [id, name, lat, lng, cumSec, 제한속도]
       warn: warn
     };
 
