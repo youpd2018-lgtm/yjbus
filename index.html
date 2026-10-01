@@ -145,13 +145,13 @@
         </div>
         <div
           style="font-size: 14px; color: #cbd5e1; margin-bottom: 16px; text-align: center; font-weight: bold; word-break: keep-all;">
-          등록된 4자리 번호를 넣으면 내 이름을 사용할 수 있습니다.
+          기사님은 기사번호 6자리, 가족은 비밀번호 4자리를 넣어 주세요.
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
           <!-- 초대형 PIN 입력창 (차량번호 입력창과 동일하게 모바일 숫자패드 즉시 호출: type="tel" inputmode="numeric" pattern="[0-9]*") -->
           <input type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="gatewayPinInput"
-            maxlength="4" placeholder="••••"
+            maxlength="6" placeholder="••••••"
             style="width: 100%; max-width: 240px; height: 54px; text-align: center; font-size: 28px; letter-spacing: 6px; font-weight: bold; border: 3px solid #60a5fa; border-radius: 12px; box-sizing: border-box; background: #0f172a; color: #ffffff; -webkit-text-security: disc;">
 
           <button type="button" class="action-btn"
@@ -182,22 +182,32 @@
           <span
             style="font-size: 16px; font-weight: 900; color: #60a5fa; display: flex; align-items: center; gap: 6px;">
             <iconify-icon icon="mdi:account-plus" class="app-icon"
-              style="color: #60a5fa; font-size: 18px;"></iconify-icon> 신규 기사님 등록
+              style="color: #60a5fa; font-size: 18px;"></iconify-icon> 기사님 가입
           </span>
           <span class="arrow" style="font-size: 16px; font-weight: bold; color: #94a3b8;"><iconify-icon
               icon="mdi:chevron-right"></iconify-icon></span>
         </div>
         <div class="accordion-content" id="addUserAccordionContent" style="padding: 14px 12px; background: #1e293b;">
           <div style="display: flex; flex-direction: column; gap: 10px;">
-            <input type="text" id="gatewayNewName" placeholder="기사님 이름 (예: 홍길동)"
+            <input type="text" id="gatewayNewName" placeholder="기사님 이름 (예: 홍길동)" oninput="gatewayCheckLegacyName()"
               style="width: 100%; height: 46px; font-size: 16px; font-weight: bold; padding: 0 12px; border: 2px solid #475569; border-radius: 8px; box-sizing: border-box; background: #0f172a; color: #ffffff;">
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="gatewayNewPin" maxlength="4"
-              placeholder="비밀번호 4자리 (예: 1234)"
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="gatewayNewPin" maxlength="6"
+              placeholder="기사번호 6자리 (비밀번호로 사용)"
               style="width: 100%; height: 46px; font-size: 16px; font-weight: bold; text-align: center; border: 2px solid #475569; border-radius: 8px; box-sizing: border-box; background: #0f172a; color: #ffffff; -webkit-text-security: disc;">
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="gatewayNewPhone" maxlength="13"
+              placeholder="전화번호 (숫자만, 예: 01012345678)"
+              style="width: 100%; height: 46px; font-size: 16px; font-weight: bold; text-align: center; border: 2px solid #475569; border-radius: 8px; box-sizing: border-box; background: #0f172a; color: #ffffff;">
+            <!-- 예전에 등록했던 이름이면 나타남: 본인 확인용 -->
+            <div id="gatewayOldPinWrap" style="display: none;">
+              <div style="font-size: 12px; color: #fbbf24; font-weight: bold; margin-bottom: 4px;">예전에 등록된 이름이에요. 예전 비밀번호 4자리를 한 번만 확인할게요. (기존 근무 기록은 그대로 이어져요)</div>
+              <input type="tel" inputmode="numeric" pattern="[0-9]*" id="gatewayOldPin" maxlength="4"
+                placeholder="예전 비밀번호 4자리"
+                style="width: 100%; height: 46px; font-size: 16px; font-weight: bold; text-align: center; border: 2px solid #d97706; border-radius: 8px; box-sizing: border-box; background: #0f172a; color: #ffffff; -webkit-text-security: disc;">
+            </div>
             <button type="button" class="mini-btn"
               style="background:#16a34a; color:#ffffff; border:none; height: 46px; font-size: 16px; font-weight: 900; border-radius: 8px; box-shadow: 0 3px 8px rgba(22, 163, 74, 0.4); margin-top: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"
               onclick="gatewaySaveUsers('driver')">
-              <iconify-icon icon="mdi:check-circle" style="font-size: 18px;"></iconify-icon> 신규 기사님 저장
+              <iconify-icon icon="mdi:check-circle" style="font-size: 18px;"></iconify-icon> 기사 가입하기
             </button>
           </div>
         </div>

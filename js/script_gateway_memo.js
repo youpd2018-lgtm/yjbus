@@ -1086,6 +1086,7 @@
         if (savedUserJson) {
             try {
                 const userObj = JSON.parse(savedUserJson);
+                if (typeof isValidLoginUser === 'function' && !isValidLoginUser(userObj)) throw new Error('예전 4자리 기사 정보: 다시 가입 필요');
                 selectDriver(userObj);
                 const header = document.querySelector('.header') || document.getElementById('mainAppHeader');
                 if (header) header.style.display = 'flex';
@@ -1095,13 +1096,16 @@
                 return;
             } catch (e) {
                 console.error("세션 복원 실패:", e);
+                ['autoLoginPin', 'loggedInUser', 'yeongjong_logged_user'].forEach(k => localStorage.removeItem(k));
             }
         }
 
         if (savedUserName) {
             const users = getUsersList();
             const found = users.find(u => u.name === savedUserName);
-            if (found) {
+            if (found && typeof isValidLoginUser === 'function' && !isValidLoginUser(found)) {
+                ['autoLoginPin', 'loggedInUser', 'yeongjong_logged_user'].forEach(k => localStorage.removeItem(k));
+            } else if (found) {
                 selectDriver(found);
                 const header = document.querySelector('.header') || document.getElementById('mainAppHeader');
                 if (header) header.style.display = 'flex';
@@ -1142,8 +1146,8 @@
         const pinInput = document.getElementById('gatewayPinInput');
         const inputPin = pinInput ? pinInput.value.trim() : '';
 
-        if (!inputPin || inputPin.length !== 4) {
-            if (!isAutoLogin) alert('비밀번호 4자리를 정확히 입력해주세요.');
+        if (!/^(\d{4}|\d{6})$/.test(inputPin)) {
+            if (!isAutoLogin) alert('기사님은 기사번호 6자리, 가족은 비밀번호 4자리를 정확히 입력해주세요.');
             return;
         }
 
@@ -1177,39 +1181,33 @@
         listDiv.innerHTML = '';
         let matchedNames = [];
 
-        if (dbData) {
-            for (let key in dbData) {
-                let val = dbData[key];
-                if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-                    try { val = JSON.parse(val); } catch (e) { }
-                }
-
-                if (Array.isArray(val)) {
-                    val.forEach(item => {
-                        if (item && String(item.pin).trim() === inputPin) {
-                            if (item.name) matchedNames.push(item.name);
-                        }
-                    });
-                } else if (String(val).trim() === inputPin) {
-                    matchedNames.push(key);
-                } else if (val && typeof val === 'object' && String(val.pin).trim() === inputPin) {
-                    matchedNames.push(val.name || key);
-                }
-            }
+        // 서버에서 받은 최신 사용자 목록(없으면 이 기기에 저장된 목록)에서만 찾는다
+        let users = typeof getUsersList === 'function' ? getUsersList() : [];
+        if (dbData && dbData['yeongjong_users_db']) {
+            try {
+                let raw = dbData['yeongjong_users_db'];
+                let parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+                if (Array.isArray(parsed)) users = parsed;
+            } catch (e) { }
         }
 
-        // 로컬 사용자 DB에서도 매칭 확인
-        let localUsers = typeof getUsersList === 'function' ? getUsersList() : [];
-        localUsers.forEach(item => {
-            if (item && String(item.pin).trim() === inputPin) {
-                if (item.name) matchedNames.push(item.name);
+        // 기사님 = 기사번호 6자리, 가족 = 비밀번호 4자리 (예전 4자리 기사 정보는 로그인 불가 → 다시 가입)
+        users.forEach(item => {
+            if (!item || String(item.pin).trim() !== inputPin || !item.name) return;
+            if (item.userType === 'family') {
+                if (inputPin.length === 4) matchedNames.push(item.name);
+            } else if (inputPin.length === 6 && /^\d{6}$/.test(String(item.pin).trim())) {
+                matchedNames.push(item.name);
             }
         });
 
         matchedNames = Array.from(new Set(matchedNames));
 
         if (matchedNames.length === 0) {
-            listDiv.innerHTML = '<div style="color:#ef4444; font-weight:bold; padding:12px; text-align:center;">입력하신 비밀번호와 일치하는 사용자가 없습니다.</div>';
+            let msg = inputPin.length === 4
+                ? '일치하는 가족 사용자가 없습니다.<br><span style="font-size:12px; color:#fbbf24;">기사님은 기사번호 6자리로 로그인합니다. 예전에 등록하셨다면 아래 [기사님 가입]에서 다시 가입해주세요.</span>'
+                : '입력하신 기사번호와 일치하는 기사님이 없습니다.<br><span style="font-size:12px; color:#fbbf24;">아직 가입 전이면 아래 [기사님 가입]에서 가입해주세요.</span>';
+            listDiv.innerHTML = '<div style="color:#ef4444; font-weight:bold; padding:12px; text-align:center;">' + msg + '</div>';
             return;
         }
 

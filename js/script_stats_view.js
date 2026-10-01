@@ -339,7 +339,11 @@
             confirmButtonColor: '#10b981',
             background: '#1e293b',
             color: '#fff',
-            preConfirm: (v) => String(v || '').replace(/[^0-9]/g, '')
+            preConfirm: (v) => {
+                const digits = String(v || '').replace(/[^0-9]/g, '');
+                if (!/^\d{10,11}$/.test(digits)) { Swal.showValidationMessage('전화번호를 숫자 10~11자리로 입력해주세요'); return false; }
+                return digits;
+            }
         }).then(r => {
             if (!r.isConfirmed) return;
             save(r.value);

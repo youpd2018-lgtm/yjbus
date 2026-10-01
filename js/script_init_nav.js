@@ -291,6 +291,9 @@
         document.getElementById('gatewayPinInput').value = '';
         document.getElementById('gatewayNewName').value = '';
         document.getElementById('gatewayNewPin').value = '';
+        const ph = document.getElementById('gatewayNewPhone'); if (ph) ph.value = '';
+        const op = document.getElementById('gatewayOldPin'); if (op) op.value = '';
+        const opw = document.getElementById('gatewayOldPinWrap'); if (opw) opw.style.display = 'none';
         document.getElementById('gatewayFamilyName').value = '';
         document.getElementById('gatewayFamilyPin').value = '';
         document.getElementById('gatewayUserSelectionArea').style.display = 'none';
@@ -309,27 +312,101 @@
         }
     }
 
-    function gatewaySaveUsers(type) {
-        if (type === 'driver') {
-            let name = document.getElementById('gatewayNewName').value.trim();
-            let pin = document.getElementById('gatewayNewPin').value.trim();
+    // 기사 로그인 규칙: 기사번호 6자리가 비밀번호. 예전 4자리 기사 정보는 로그인할 수 없고 다시 가입해야 함 (가족은 4자리 그대로)
+    function isDriverV2(u) {
+        return !!u && u.userType !== 'family' && /^\d{6}$/.test(String(u.pin || '').trim());
+    }
+    function isValidLoginUser(u) {
+        if (!u) return false;
+        if (u.userType === 'family') return true;
+        return isDriverV2(u);
+    }
 
-            if (!name) { alert("이름을 입력해주세요."); return; }
-            if (!pin || pin.length !== 4) { alert("4자리 숫자로 된 번호를 입력해주세요."); return; }
+    // 가입 직전에 서버의 최신 사용자 목록을 받아옴 (다른 사람 가입 기록을 덮어쓰지 않도록). 서버에 연결하지 못하면 null
+    function fetchFreshUsers(cb) {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) { cb(getUsersList()); return; }
+        google.script.run
+            .withSuccessHandler(function (data) {
+                let list = null;
+                try {
+                    const raw = data && data['yeongjong_users_db'];
+                    list = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+                } catch (e) { list = null; }
+                if (Array.isArray(list)) {
+                    localStorage.setItem('yeongjong_users_db', JSON.stringify(list));
+                    cb(list);
+                } else {
+                    cb(getUsersList());
+                }
+            })
+            .withFailureHandler(function () { cb(null); })
+            .loadFromServer();
+    }
 
-            let users = getUsersList();
-            if (users.some(u => u.name === name)) {
-                alert("이미 등록된 이름입니다.");
-                return;
+    // 이름을 입력할 때, 예전에 등록된(4자리) 기사 이름이면 '예전 비밀번호' 칸을 보여줌
+    function gatewayCheckLegacyName() {
+        const name = (document.getElementById('gatewayNewName').value || '').trim();
+        const wrap = document.getElementById('gatewayOldPinWrap');
+        if (!wrap) return;
+        const exist = getUsersList().find(u => u.name === name);
+        wrap.style.display = (exist && exist.userType !== 'family' && !isDriverV2(exist)) ? 'block' : 'none';
+    }
+
+    function gatewaySaveDriver() {
+        const name = document.getElementById('gatewayNewName').value.trim();
+        const pin = document.getElementById('gatewayNewPin').value.trim();
+        const phone = (document.getElementById('gatewayNewPhone').value || '').replace(/[^0-9]/g, '');
+        const oldPin = (document.getElementById('gatewayOldPin').value || '').trim();
+
+        if (!name) { alert("이름을 입력해주세요."); return; }
+        if (!/^\d{6}$/.test(pin)) { alert("기사번호 6자리 숫자를 입력해주세요."); return; }
+        if (!/^\d{10,11}$/.test(phone)) { alert("전화번호를 숫자만 10~11자리로 입력해주세요."); return; }
+
+        fetchFreshUsers(function (users) {
+            if (!users) { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); return; }
+
+            const exist = users.find(u => u.name === name);
+            if (exist && exist.userType === 'family') { alert("가족 사용자로 이미 등록된 이름입니다."); return; }
+            if (exist && isDriverV2(exist)) { alert("이미 가입된 이름입니다.\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요."); return; }
+            if (users.some(u => u.name !== name && isDriverV2(u) && String(u.pin).trim() === pin)) {
+                alert("이미 다른 기사님이 사용 중인 기사번호입니다."); return;
             }
 
-            users.push({ name: name, pin: pin, active: true, userType: 'driver' });
+            const now = new Date().toISOString();
+            if (exist) {
+                // 예전(4자리)에 등록했던 이름: 본인 확인 후 새 정보로 바꾸고, 기존 근무 기록은 그대로 사용
+                if (!oldPin) {
+                    const wrap = document.getElementById('gatewayOldPinWrap');
+                    if (wrap) wrap.style.display = 'block';
+                    alert("예전에 등록된 이름입니다.\n예전 비밀번호 4자리를 아래 칸에 입력해주세요. (처음 한 번만 확인합니다)");
+                    return;
+                }
+                if (oldPin !== String(exist.pin).trim()) {
+                    alert("예전 비밀번호가 맞지 않습니다. 모르시면 관리자에게 문의해주세요.");
+                    return;
+                }
+                exist.pin = pin;
+                exist.phone = phone;
+                exist.active = true;
+                exist.userType = 'driver';
+                exist.registeredAt = now;
+            } else {
+                users.push({ name: name, pin: pin, phone: phone, active: true, userType: 'driver', registeredAt: now });
+            }
             saveUsersList(users);
             document.getElementById('gatewayNewName').value = '';
             document.getElementById('gatewayNewPin').value = '';
-            alert(`'${name}' 기사님이 추가되었습니다!`);
+            alert(`'${name}' 기사님 가입이 완료되었습니다!\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요.`);
 
             toggleAccordion('addUserAccordionContent', document.getElementById('addUserAccordionContent').previousElementSibling);
+            initGateway();
+        });
+    }
+
+    function gatewaySaveUsers(type) {
+        if (type === 'driver') {
+            gatewaySaveDriver();
+            return;
         } else if (type === 'family') {
             let name = document.getElementById('gatewayFamilyName').value.trim();
             let pin = document.getElementById('gatewayFamilyPin').value.trim();
@@ -536,7 +613,7 @@
             div.style.border = '1px solid var(--border-color)';
 
             let userTypeBadge = u.userType === 'family' ? `<span style="color:#d97706; font-size:11px;">[가족: ${u.targetDriver}]</span>` : '<span style="color:var(--primary); font-size:11px;">[기사]</span>';
-            let infoText = `<div><strong>${u.name}</strong> <span style="font-size:12px; color:var(--sub-text);">(번호: ${u.pin})</span> ${userTypeBadge}</div>`;
+            let infoText = `<div><strong>${u.name}</strong> <span style="font-size:12px; color:var(--sub-text);">(번호: ${u.pin}${u.phone ? ' · ' + u.phone : ''})</span> ${userTypeBadge}${(u.userType !== 'family' && !isDriverV2(u)) ? ' <span style="color:#ef4444; font-size:11px;">[재가입 필요]</span>' : ''}</div>`;
 
             let btnArea = document.createElement('div');
             btnArea.style.display = 'flex';
