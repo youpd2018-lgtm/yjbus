@@ -1079,6 +1079,12 @@
             searchDateEl.value = `${y}-${m}-${d}`;
         }
 
+        // 주소 뒤에 ?logout=1 을 붙여 열면 로그인 정보를 지우고 대문으로 (가족 사용자 테스트용 강제 로그아웃)
+        if (/[?&]logout=1/.test(location.search)) {
+            ['autoLoginPin', 'loggedInUser', 'yeongjong_logged_user'].forEach(k => localStorage.removeItem(k));
+            try { history.replaceState(null, '', location.pathname); } catch (e) { }
+        }
+
         // 2. 저장된 기사 정보 확인 후 자동 로그인 진행
         const savedUserJson = localStorage.getItem('yeongjong_logged_user');
         const savedUserName = localStorage.getItem('loggedInUser');
