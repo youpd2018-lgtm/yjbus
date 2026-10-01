@@ -1155,10 +1155,6 @@
         </div>
 
         <div class="live-group" id="liveGroupStop">
-        <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
-          <div id="trafficFlowLamp" class="tf-lamp"><i></i><i></i><i></i></div>
-          <span id="trafficFlowStatusText" class="tf-flow-text">소통원활</span>
-        </div>
 
         <!-- 3. [정류장 카드] 현재 정류장 (신호등) 다음 정류장. 표준시간을 가장 크게, 교통상황은 가운데 신호등 알약 (터치하면 최근 돌발상황 다시보기) -->
         <div id="liveTrafficStopBox" class="tf-card">
@@ -1168,10 +1164,9 @@
             <span id="trafficStopNameNext" class="tf-name" title="현재 정류장">현재 정류장</span>
           </div>
 
-          <div id="tfSpeed" class="tf-speed" title="현재 속도">
-            <svg class="tf-speed-ico" viewBox="0 0 256 256" width="20" height="20"><path fill="currentColor" d="M209.88 69.83A115.2 115.2 0 0 0 128 36h-.41C63.85 36.22 12 88.76 12 153.13V176a20 20 0 0 0 20 20h192a20 20 0 0 0 20-20v-24a115.25 115.25 0 0 0-34.12-82.17M220 172h-92.68l46.44-65a12 12 0 1 0-19.52-14l-56.42 79H36v-18.87c0-1.72 0-3.43.14-5.13H56a12 12 0 0 0 0-24H40.62c10.91-33.39 40-58.52 75.38-63.21V80a12 12 0 0 0 24 0V60.8a92 92 0 0 1 75.66 63.2H200a12 12 0 0 0 0 24h19.9c.06 1.33.1 2.66.1 4Z"/></svg>
-            <span id="tfSpeedNum" class="tf-speed-num">--</span>
-            <span class="tf-speed-unit">km/h</span>
+          <div class="tf-flow" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
+            <div id="trafficFlowLamp" class="tf-lamp"><i></i><i></i><i></i></div>
+            <span id="trafficFlowStatusText" class="tf-flow-text">소통원활</span>
           </div>
 
           <div class="tf-stop tf-next">
