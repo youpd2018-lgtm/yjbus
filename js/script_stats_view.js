@@ -223,7 +223,7 @@
             const v = (values && values[scope]) || {};
             el.innerHTML = DRIVING_HABIT_ITEMS.map(name => {
                 const cnt = String(v[name] || 0).padStart(2, '0');
-                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 11 : 13}px; padding:${compact ? 1 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
+                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 13 : 14}px; padding:${compact ? 0 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
                     `<span>${name}</span><span style="color:#e2e8f0; font-weight:900;">${cnt}회</span></div>`;
             }).join('');
         });
