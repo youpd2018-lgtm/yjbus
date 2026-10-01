@@ -356,6 +356,7 @@ function loadLatestColleagueMessage() {
             if (window.lastPassedStopIndex !== closestIdx) {
                 window.lastPassedStopIndex = closestIdx;
                 window.lastMatchedMasterIndex = closestIdx;
+                if (window.LivePos) window.LivePos.publish(getRowName(masterCache[closestIdx]));   // 가족에게 현재 정류장 알리기
 
                 let curRow = masterCache[closestIdx];
                 let stdTimeStr = getRowTime(curRow);

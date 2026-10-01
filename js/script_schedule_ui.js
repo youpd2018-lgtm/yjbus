@@ -871,6 +871,16 @@
                 iconHtml = '<iconify-icon icon="solar:chat-line-outline" style="font-size: 1.1em; vertical-align: -3px; margin-left: 4px;"></iconify-icon>';
             }
 
+            // 운행중일 때는 '운행중' 대신 지금 있는 정류장 이름을 보여줌 (없으면 '운행중')
+            let nameFontSize = '18px';
+            if (value === '운행중' && window.LivePos) {
+                const curStop = window.LivePos.getStopName();
+                if (curStop) {
+                    displayValue = curStop;
+                    nameFontSize = curStop.length > 10 ? '13px' : (curStop.length > 7 ? '15px' : '17px');
+                }
+            }
+
             if (subLabelEl) {
                 // 이모지 깜빡임(flicker) 방지를 위해 내용이 변경되었을 때만 업데이트
                 const newHtml = displayValue + iconHtml;
@@ -879,7 +889,7 @@
                 }
                 subLabelEl.style.display = 'block';
                 subLabelEl.style.color = stateColor;
-                subLabelEl.style.fontSize = '18px';
+                subLabelEl.style.fontSize = nameFontSize;
             }
             // 하단에는 시간 타이머 외에는 텍스트가 들어가지 않게 하고, 타이머 없을 때는 완전히 비워둠
             if (timerWrapEl) {

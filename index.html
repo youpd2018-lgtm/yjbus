@@ -252,6 +252,10 @@
       <button class="file-tab" id="tabStats" onclick="switchPage('statsPage')" title="근무 정보">
         <iconify-icon icon="mdi:calendar-month-outline"></iconify-icon> <span>근무정보</span>
       </button>
+      <button class="file-tab" id="tabEmergency" onclick="switchPage('emergencyPage')" title="긴급전화"
+        style="color: #f87171;">
+        <iconify-icon icon="mdi:phone-alert"></iconify-icon> <span>긴급전화</span>
+      </button>
       <button class="file-tab" id="tabSettings" onclick="switchPage('settingsPage')" title="설정">
         <iconify-icon icon="mdi:cog-outline"></iconify-icon> <span>설정</span>
       </button>
@@ -826,6 +830,17 @@
     </div> <!-- 👈 3번 설정 페이지(id="settingsPage")를 닫아주는 </div> 태그 -->
 
     <!-- ========================================== -->
+    <!-- 📞 긴급전화 페이지 (emergencyPage): 기사 전용 -->
+    <!-- ========================================== -->
+    <div id="emergencyPage" class="page" style="display: none; padding: 4px 0;">
+      <div style="padding: 0 4px 4px;">
+        <div style="font-size: 16px; font-weight: 900; color: #f8fafc;">긴급전화</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">[전화걸기]를 누르면 바로 전화가 연결돼요</div>
+      </div>
+      <div id="emergencyList"></div>
+    </div>
+
+    <!-- ========================================== -->
     <!-- 4. [관리자 전용] 노선설정 페이지 (routeConfigPage) -->
     <!-- ========================================== -->
     <div id="routeConfigPage" class="page" style="display: none;">
@@ -1328,6 +1343,8 @@
     <script src="js/script_gps_rec.js"></script>
     <script src="js/script_init_nav.js"></script>
     <script src="js/script_driving_habit.js"></script>
+    <script src="js/script_emergency.js"></script>
+    <script src="js/script_live_pos.js"></script>
     <script src="js/script_stats_view.js"></script>
     <script src="js/script_schedule_ui.js"></script>
     <script src="js/script_gateway_memo.js"></script>

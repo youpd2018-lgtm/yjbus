@@ -1356,6 +1356,8 @@
         const headerTitle = document.getElementById('headerTitleText');
         const tabSettings = document.getElementById('tabSettings');
         const tabRouteConfig = document.getElementById('tabRouteConfig');
+        const tabEmergency = document.getElementById('tabEmergency');
+        if (tabEmergency) tabEmergency.style.display = isFamily ? 'none' : 'flex';
 
         if (isFamily) {
             isFamilyUser = true;

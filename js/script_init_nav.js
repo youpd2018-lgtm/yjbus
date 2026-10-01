@@ -494,11 +494,14 @@
         let tabSettings = document.getElementById('tabSettings');         // 3번 근무설정 탭
         let tabRouteConfig = document.getElementById('tabRouteConfig');     // 4번 관리자 노선설정 탭
 
+        const tabEmergency = document.getElementById('tabEmergency');
         if (isFamilyUser) {
             if (tabSettings) tabSettings.style.display = 'none';
             if (tabRouteConfig) tabRouteConfig.style.display = 'none';
+            if (tabEmergency) tabEmergency.style.display = 'none';
         } else {
             if (tabSettings) tabSettings.style.display = 'flex';
+            if (tabEmergency) tabEmergency.style.display = 'flex';
             if (currentDriver === ADMIN_DRIVER || currentDriver.includes('유재필')) {
                 if (tabRouteConfig) tabRouteConfig.style.display = 'flex';
             } else {
@@ -646,7 +649,7 @@
     // ==========================================
     function switchPage(pageId) {
         // 권한 예외 처리
-        if (isFamilyUser && (pageId === 'settingsPage' || pageId === 'routeConfigPage')) {
+        if (isFamilyUser && (pageId === 'settingsPage' || pageId === 'routeConfigPage' || pageId === 'emergencyPage')) {
             alert("가족 사용자는 해당 메뉴를 사용할 수 없습니다.");
             return;
         }
@@ -695,6 +698,10 @@
             if (tab) tab.classList.add('active');
             if (!window.currentStatsSubView) window.currentStatsSubView = 'summary';
             selectStatsSubView(window.currentStatsSubView);
+        } else if (pageId === 'emergencyPage') {
+            let tab = document.getElementById('tabEmergency');
+            if (tab) tab.classList.add('active');
+            if (typeof renderEmergencyPage === 'function') renderEmergencyPage();
         } else if (pageId === 'settingsPage') {
             let tab = document.getElementById('tabSettings');
             if (tab) tab.classList.add('active');

@@ -668,6 +668,8 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // 🚀 [Live 모달 열기] 화면 표시 및 실시간 BIS/표준시간 동시 호출
     // ================================================================
     async function openLiveModal() {
+        // 가족 사용자는 라이브 모달을 사용하지 않음 (기사님 전용)
+        if (typeof isFamilyUser !== 'undefined' && isFamilyUser) return;
         // 0. 모달 열릴 때 이전 매칭 상태 및 잠금 상태 초기화 (회차 간 간섭 방지)
         window.lastMatchedMasterIndex = null;
         window.lastPassedStopIndex = null; // 재오픈 시 현재 정류장 통과를 다시 감지해 오차를 재고정
@@ -920,6 +922,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         }
 
         if (typeof gpsRecFlush === 'function') gpsRecFlush();   // 모은 GPS 기록을 서버로 올림
+        if (window.LivePos) window.LivePos.clear();             // 가족에게 보이던 현재 정류장 지우기
 
         // 🛰️ GPS 추적 안전 중단 (배터리 보호)
         if (typeof stopLiveGpsTracking === 'function') {
