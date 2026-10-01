@@ -34,7 +34,7 @@ function getTagoRouteId(routeNo) {
   if (cachedId) return cachedId;
 
   try {
-    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "ldmePwR9ORO9g6kIfA72AI7pu0YL2Fz%2Ba%2BwOGUyihH89yRYXL7pncSbytwR9IpM3Z3wuUrGJ7lmrMNTi03Mpmg%3D%3D";
+    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "";
     var url = "http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteNoList"
       + "?serviceKey=" + serviceKey
       + "&cityCode=23"
@@ -84,7 +84,7 @@ function getTagoRouteId(routeNo) {
 // 🚌 2. 취득한 routeId로 실시간 버스 위치 조회 (특수노선 202A/203A 스마트 트윈 폴백 지원)
 function getIncheonBusLive(routeShort, targetPlateNo) {
   try {
-    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "ldmePwR9ORO9g6kIfA72AI7pu0YL2Fz%2Ba%2BwOGUyihH89yRYXL7pncSbytwR9IpM3Z3wuUrGJ7lmrMNTi03Mpmg%3D%3D";
+    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "";
 
     var routeId = getTagoRouteId(routeShort);
     if (!routeId) {
@@ -145,7 +145,8 @@ function getIncheonBusLive(routeShort, targetPlateNo) {
 // ================================================================
 // 🚨 [국토교통부 ITS] 실시간 교통 돌발상황 및 소통정보 모듈
 // ================================================================
-const ITS_API_KEY = "6d86062ec0c14cee9f37825336f7608c";
+// 키는 GitHub에 올리지 않는다: Apps Script > 프로젝트 설정 > 스크립트 속성에 ITS_API_KEY 로 저장
+const ITS_API_KEY = PropertiesService.getScriptProperties().getProperty('ITS_API_KEY') || "";
 
 // 1. 실시간 돌발상황 (사고, 공사, 통제) 조회 및 3분 캐싱
 function getTrafficIncidentLive() {

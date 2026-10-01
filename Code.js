@@ -28,24 +28,6 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 💡 [API 엔드포인트: Gemini 직접 테스트용]
-  if (e && e.parameter && e.parameter.action === 'test_gemini') {
-    let testRes = {};
-    try {
-      const testUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + GEMINI_API_KEY;
-      const resp = UrlFetchApp.fetch(testUrl, {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify({ contents: [{ parts: [{ text: "안녕" }] }] }),
-        muteHttpExceptions: true
-      });
-      testRes = { code: resp.getResponseCode(), body: JSON.parse(resp.getContentText()) };
-    } catch(err) {
-      testRes = { error: err.toString() };
-    }
-    return ContentService.createTextOutput(JSON.stringify(testRes)).setMimeType(ContentService.MimeType.JSON);
-  }
-
   // 💡 [API 엔드포인트: 실시간 DB 데이터 로드]
   if (e && e.parameter && e.parameter.action === 'load_from_server') {
     let dbData = {};
@@ -236,6 +218,17 @@ function doGet(e) {
 // ================================================================
 function askGeminiVoiceAssistant(query, context, history) {
   try {
+    // 🛡️ 남용 방지: 입력 길이 제한 + 분당/하루 호출 한도 (주소를 아는 누구나 호출할 수 있어서 한도 소진을 막는다)
+    query = String(query || "").slice(0, 300);
+    context = String(context || "").slice(0, 9000);
+    if (Array.isArray(history)) {
+      history = history.slice(-6).map(h => ({ role: h && h.role === 'model' ? 'model' : 'user', text: String((h && h.text) || "").slice(0, 600) }));
+    } else {
+      history = [];
+    }
+    const limitMsg = geminiRateLimitMessage_();
+    if (limitMsg) return limitMsg;
+
     if (typeof GEMINI_API_KEY === 'undefined' || !GEMINI_API_KEY) {
       return "Gemini API 키가 설정되지 않았습니다.";
     }
@@ -580,6 +573,37 @@ function getDailyRoster(days) {
   return res;
 }
 
+// 🛡️ 구차장 호출 한도: 1분에 GEMINI_MAX_PER_MIN 번, 하루(한국시간)에 GEMINI_MAX_PER_DAY 번까지만 허용. 넘으면 안내 문장을 돌려준다
+const GEMINI_MAX_PER_MIN = 20;
+const GEMINI_MAX_PER_DAY = 250;
+function geminiRateLimitMessage_() {
+  try {
+    const now = new Date();
+    const minKey = "gem_min_" + Utilities.formatDate(now, "Asia/Seoul", "yyyyMMddHHmm");
+    const dayKey = "gem_day_" + Utilities.formatDate(now, "Asia/Seoul", "yyyyMMdd");
+    const cache = CacheService.getScriptCache();
+    const props = PropertiesService.getScriptProperties();
+    const lock = LockService.getScriptLock();
+    lock.waitLock(5000);
+    try {
+      const minCnt = Number(cache.get(minKey) || 0) + 1;
+      if (minCnt > GEMINI_MAX_PER_MIN) return "지금 질문이 너무 많아요. 잠시 후 다시 말씀해 주세요.";
+      const dayCnt = Number(props.getProperty(dayKey) || 0) + 1;
+      if (dayCnt > GEMINI_MAX_PER_DAY) return "오늘 구차장이 대답할 수 있는 횟수를 모두 썼어요. 내일 다시 불러 주세요.";
+      cache.put(minKey, String(minCnt), 120);
+      props.setProperty(dayKey, String(dayCnt));
+      // 지난 날짜 기록 정리
+      const all = props.getProperties();
+      Object.keys(all).forEach(k => { if (k.indexOf("gem_day_") === 0 && k !== dayKey) props.deleteProperty(k); });
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (e) {
+    // 한도 계산에 실패해도 구차장은 계속 동작하게 둔다
+  }
+  return "";
+}
+
 // 🩺 [Gemini API 연결 상태 점검용 엔드포인트]
 function testGeminiApiConnection() {
   try {
@@ -628,25 +652,6 @@ function doPost(e) {
     if (postData && (postData.action === 'save_board_memo' || postData.action === 'save_board_item')) {
       const res = typeof saveBoardMemo === 'function' ? saveBoardMemo(postData.category, postData.targetKey, postData.content, postData.writer) : { success: false };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (postData && postData.action === 'debug_sheet') {
-       const ss = SpreadsheetApp.openById(SHEET_ID);
-       const sheet = ss.getSheetByName(postData.sheetName);
-       if (!sheet) return ContentService.createTextOutput("Sheet not found");
-       const data = sheet.getDataRange().getDisplayValues().slice(0, 10); // first 10 rows
-       return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (postData && postData.action === 'debug_shift') {
-       const res = searchShiftPartnerInSheet(postData.r, postData.s, postData.w, postData.d);
-       return ContentService.createTextOutput(JSON.stringify({ result: res })).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (postData && postData.action === 'debug_driver') {
-       const res = searchDriverScheduleInSheet(postData.name);
-       return ContentService.createTextOutput(JSON.stringify({ result: res })).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (postData && postData.action === 'debug_timetable') {
-       const res = searchRouteTimetableInSheet(postData.r, postData.s);
-       return ContentService.createTextOutput(JSON.stringify({ result: res })).setMimeType(ContentService.MimeType.JSON);
     }
     return ContentService.createTextOutput(JSON.stringify({ success: true, received: true })).setMimeType(ContentService.MimeType.JSON);
   } catch(err) {

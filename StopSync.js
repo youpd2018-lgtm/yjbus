@@ -149,7 +149,7 @@ function syncStopCoordinatesToStandardMaster() {
     backupStandardMaster();
 
     // 2단계: TAGO 공공데이터 API로부터 영종운수 10개 노선 전 정류장 위도/경도 맵 수집
-    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "ldmePwR9ORO9g6kIfA72AI7pu0YL2Fz%2Ba%2BwOGUyihH89yRYXL7pncSbytwR9IpM3Z3wuUrGJ7lmrMNTi03Mpmg%3D%3D";
+    var serviceKey = typeof BUS_SERVICE_KEY !== 'undefined' ? BUS_SERVICE_KEY : "";
     var routeMap = {
       "202": "ICB365000059",
       "202A": "ICB368000006",
