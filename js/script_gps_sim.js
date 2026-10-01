@@ -326,6 +326,34 @@ function loadLatestColleagueMessage() {
             }
         }
 
+        // 1-1. 통과 기록이 없을 때(라이브 모달을 껐다 켠 직후 등)는 시각이 아니라 'GPS 위치'로 현재 구간을 먼저 찾는다
+        //      (지연·조기 운행으로 표준시간과 실제 위치가 많이 다르면 시각 기준 앵커가 엉뚱한 정류장이 되기 때문)
+        if (window.lastPassedStopIndex === null || window.lastPassedStopIndex === undefined || window.lastPassedStopIndex < 0) {
+            const dists = masterCache.map((row) => {
+                const la = parseFloat(row.lat !== undefined ? row.lat : (Array.isArray(row) ? row[8] : null));
+                const lo = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : null));
+                return (la && lo) ? calculateGpsDistanceMeters(lat, lon, la, lo) : Infinity;
+            });
+            let best = -1, bestD = Infinity;
+            dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
+            if (best !== -1 && bestD <= 1500) {
+                // 기점·종점이 같은 장소인 순환 노선: 비슷한 거리(30m 차이 이내)면 시각상 가까운 정류장을 택함
+                let pick = best;
+                dists.forEach((d, i) => { if (d <= bestD + 30 && Math.abs(i - anchorIdx) < Math.abs(pick - anchorIdx)) pick = i; });
+                if (bestD <= 55) {
+                    anchorIdx = pick; // 아래 통과 판정에서 이 정류장을 통과한 것으로 확정
+                } else {
+                    // 정류장 사이에 있는 경우: 앞·뒤 이웃 중 가까운 쪽으로 어느 구간인지 판단 (이미 지난 정류장 = 구간의 앞쪽)
+                    const prevD = pick > 0 ? dists[pick - 1] : Infinity;
+                    const nextD = pick < dists.length - 1 ? dists[pick + 1] : Infinity;
+                    const passed = (nextD < prevD) ? pick : Math.max(0, pick - 1);
+                    window.lastPassedStopIndex = passed;
+                    window.lastMatchedMasterIndex = passed;
+                    anchorIdx = passed;
+                }
+            }
+        }
+
         // 2. 전방 및 주변 정류장 탐색 (앞뒤 5개 정류장 슬라이딩 윈도우)
         let winStart = Math.max(0, anchorIdx - 1);
         let winEnd = Math.min(masterCache.length - 1, anchorIdx + 4);
