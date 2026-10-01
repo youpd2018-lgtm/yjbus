@@ -552,6 +552,10 @@ function doPost(e) {
       const res = typeof saveGpsTrack === 'function' ? saveGpsTrack(postData) : { success: false, error: "saveGpsTrack 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
+    if (postData && postData.action === 'save_driving_habit') {
+      const res = typeof saveDrivingHabit === 'function' ? saveDrivingHabit(postData) : { success: false, error: "saveDrivingHabit 함수 미정의" };
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
     if (postData && postData.action === 'save_to_server') {
       saveToServer(postData.key, postData.value);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);

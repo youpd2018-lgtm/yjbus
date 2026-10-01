@@ -114,6 +114,7 @@
                 stdTime: time,
                 lat: s[2],
                 lng: s[3],
+                limit: s[5],
                 4: s[0], 5: s[1], 6: time, 8: s[2], 9: s[3]
             };
         });

@@ -209,7 +209,12 @@
         }
 
         // 2단: 나의 운행 습관 (UI만 먼저. 값은 나중에 기능 연결)
-        renderDrivingHabitRows();
+        const hb = (window.DrivingHabit && window.DrivingHabit.getCounts()) || { cur: {}, today: {} };
+        renderDrivingHabitRows({
+            cur: hb.cur,
+            today: hb.today,
+            month: window.DrivingHabit ? window.DrivingHabit.getMonth(year, month) : {}
+        });
     }
 
     // 급출발·급정거·과속·급회전 4개 항목 (이번 회차 / 오늘 / 이달 공통)
