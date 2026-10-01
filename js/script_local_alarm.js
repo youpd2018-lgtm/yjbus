@@ -104,11 +104,38 @@
     showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
     try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
     playAlarmSound();
-    if (window.Swal) {
-      // 소리 끄기 버튼: 누르거나 알림이 사라지면 소리 정지
-      Swal.fire({ toast: true, position: 'top', timer: 20000, showConfirmButton: true, confirmButtonText: '소리 끄기', title: title, text: body })
-        .then(stopAlarmSound);
-    }
+    showAlarmBanner(title, body);
+  }
+
+  // 📢 화면 위 알림 배너 (Swal 등 외부 라이브러리에 의존하지 않아 아이폰에서도 항상 표시)
+  let bannerTimer = null;
+  function showAlarmBanner(title, body) {
+    try {
+      let el = document.getElementById('localAlarmBanner');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'localAlarmBanner';
+        el.style.cssText = 'position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top, 0px) + 10px);z-index:2147483000;' +
+          'background:#1e293b;color:#fff;border:2px solid #facc15;border-radius:14px;padding:12px 14px;' +
+          'box-shadow:0 8px 24px rgba(0,0,0,.45);display:flex;align-items:center;gap:10px;font-family:inherit;';
+        el.innerHTML = '<div style="flex:1;min-width:0"><div id="localAlarmBannerTitle" style="font-size:17px;font-weight:900;"></div>' +
+          '<div id="localAlarmBannerBody" style="font-size:14px;margin-top:3px;color:#cbd5e1;word-break:keep-all;"></div></div>' +
+          '<button type="button" id="localAlarmBannerBtn" style="flex:none;background:#facc15;color:#0f172a;border:none;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:900;">소리 끄기</button>';
+        document.body.appendChild(el);
+        el.querySelector('#localAlarmBannerBtn').addEventListener('click', hideAlarmBanner);
+      }
+      el.querySelector('#localAlarmBannerTitle').textContent = title;
+      el.querySelector('#localAlarmBannerBody').textContent = body;
+      el.style.display = 'flex';
+      clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(hideAlarmBanner, 20000);
+    } catch (e) { console.warn('알림 배너 표시 실패:', e); }
+  }
+  function hideAlarmBanner() {
+    clearTimeout(bannerTimer);
+    stopAlarmSound();
+    const el = document.getElementById('localAlarmBanner');
+    if (el) el.style.display = 'none';
   }
 
   function check() {
