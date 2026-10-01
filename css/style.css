@@ -2953,11 +2953,6 @@ iconify-icon {
 @media (prefers-reduced-motion: reduce) { .tf-flow[data-s="jam"] .tf-lamp i:nth-child(3) { animation: none; } }
 
 /* 🧭 간단 길안내: 정류장 카드 가운데(신호등 자리)에 화살표 + 거리 + 안내, 신호등은 카드 위쪽 가운데로 이동 */
-.nav-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13.2px; font-weight: 800; color: #94a3b8; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); padding: 3.3px 8.8px; border-radius: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
-.nav-chip.on { color: #7dd3fc; background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.5); }
-.nav-chip[hidden] { display: none; }
-.rec-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 8px 0; }
-.rec-bar[hidden] { display: none; }
 
 /* 라이브 모달 간격: 위쪽부터 차례로 배치 (카운트 박스 묶음 → 거점 시퀀스 → 신호등 → 정류장 카드), 남는 여백은 닫기 버튼 위로 */
 #liveModal .live-modal-content { gap: 0 !important; }

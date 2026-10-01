@@ -668,7 +668,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // 🚀 [Live 모달 열기] 화면 표시 및 실시간 BIS/표준시간 동시 호출
     // ================================================================
     async function openLiveModal() {
-        if (typeof gpsRecInit === 'function') { try { gpsRecInit(); } catch (e) { } }
         if (typeof navRefreshButtons === 'function') { try { navRefreshButtons(); } catch (e) { } }
         // 가족 사용자는 라이브 모달을 사용하지 않음 (기사님 전용)
         if (typeof isFamilyUser !== 'undefined' && isFamilyUser) return;
@@ -921,7 +920,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
             modal.classList.remove('active');
         }
 
-        if (typeof gpsRecFlush === 'function') gpsRecFlush();   // 모은 GPS 기록을 서버로 올림
 
         // 🛰️ GPS 추적 안전 중단 (배터리 보호)
         if (typeof stopLiveGpsTracking === 'function') {

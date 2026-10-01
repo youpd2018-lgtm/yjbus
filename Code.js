@@ -620,14 +620,6 @@ function doPost(e) {
       const answer = askGeminiVoiceAssistant(query, context, history);
       return ContentService.createTextOutput(JSON.stringify({ success: true, answer: answer })).setMimeType(ContentService.MimeType.JSON);
     }
-    if (postData && postData.action === 'save_gps_track') {
-      const res = typeof saveGpsTrack === 'function' ? saveGpsTrack(postData) : { success: false, error: "saveGpsTrack 함수 미정의" };
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (postData && postData.action === 'gps_track_status') {
-      const res = typeof gpsTrackStatus === 'function' ? gpsTrackStatus(postData) : { success: false, error: "gpsTrackStatus 함수 미정의" };
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    }
     if (postData && postData.action === 'save_driving_habit') {
       const res = typeof saveDrivingHabit === 'function' ? saveDrivingHabit(postData) : { success: false, error: "saveDrivingHabit 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
