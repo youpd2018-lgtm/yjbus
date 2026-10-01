@@ -573,28 +573,19 @@ function getDailyRoster(days) {
   return res;
 }
 
-// 🛡️ 구차장 호출 한도: 1분에 GEMINI_MAX_PER_MIN 번, 하루(한국시간)에 GEMINI_MAX_PER_DAY 번까지만 허용. 넘으면 안내 문장을 돌려준다
+// 🛡️ 구차장 호출 한도: 1분에 GEMINI_MAX_PER_MIN 번까지만 허용 (짧은 시간에 몰아서 부르는 남용 방지). 넘으면 안내 문장을 돌려준다
+// - 하루 한도는 구글 무료 단계의 자체 한도에 맡긴다
 const GEMINI_MAX_PER_MIN = 20;
-const GEMINI_MAX_PER_DAY = 250;
 function geminiRateLimitMessage_() {
   try {
-    const now = new Date();
-    const minKey = "gem_min_" + Utilities.formatDate(now, "Asia/Seoul", "yyyyMMddHHmm");
-    const dayKey = "gem_day_" + Utilities.formatDate(now, "Asia/Seoul", "yyyyMMdd");
+    const minKey = "gem_min_" + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyyMMddHHmm");
     const cache = CacheService.getScriptCache();
-    const props = PropertiesService.getScriptProperties();
     const lock = LockService.getScriptLock();
     lock.waitLock(5000);
     try {
       const minCnt = Number(cache.get(minKey) || 0) + 1;
       if (minCnt > GEMINI_MAX_PER_MIN) return "지금 질문이 너무 많아요. 잠시 후 다시 말씀해 주세요.";
-      const dayCnt = Number(props.getProperty(dayKey) || 0) + 1;
-      if (dayCnt > GEMINI_MAX_PER_DAY) return "오늘 구차장이 대답할 수 있는 횟수를 모두 썼어요. 내일 다시 불러 주세요.";
       cache.put(minKey, String(minCnt), 120);
-      props.setProperty(dayKey, String(dayCnt));
-      // 지난 날짜 기록 정리
-      const all = props.getProperties();
-      Object.keys(all).forEach(k => { if (k.indexOf("gem_day_") === 0 && k !== dayKey) props.deleteProperty(k); });
     } finally {
       lock.releaseLock();
     }
