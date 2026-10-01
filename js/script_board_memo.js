@@ -219,6 +219,9 @@ function toggleVoiceAssistant(e) {
     return;
   }
 
+  // 가족 사용자는 구차장을 쓸 수 없음
+  if (typeof isFamilyUser !== 'undefined' && isFamilyUser) return;
+
   // 🌟 [핵심] 사용자가 마이크를 다시 누르면 -> 대화 모드 및 녹음 완전 종료!
   if (isVoiceActive) {
     stopVoiceAssistant();

@@ -519,9 +519,9 @@
         const appNavTabs = document.getElementById('appNavTabs');
         if (appNavTabs) appNavTabs.style.display = 'flex';
 
-        // 🎙️ 로그인 완료 후 플로팅 마이크 위젯 표시
+        // 🎙️ 로그인 완료 후 플로팅 마이크 위젯 표시 (가족 사용자는 숨김)
         const voiceWidget = document.getElementById('floatingVoiceWidget');
-        if (voiceWidget) voiceWidget.style.display = 'flex';
+        if (voiceWidget) voiceWidget.style.display = isFamilyUser ? 'none' : 'flex';
 
         const mainAppEl = document.getElementById('mainAppContainer') || document.getElementById('mainPage') || document.getElementById('schedulePage');
         if (mainAppEl) {
@@ -685,7 +685,7 @@
         // 🎙️ 대문화면에서는 마이크 숨김, 로그인 후에는 노출
         const voiceWidget = document.getElementById('floatingVoiceWidget');
         if (voiceWidget) {
-            voiceWidget.style.display = (pageId === 'gatewayPage') ? 'none' : 'flex';
+            voiceWidget.style.display = (pageId === 'gatewayPage' || isFamilyUser) ? 'none' : 'flex';
         }
 
         // 각 탭별 처리 및 active 클래스 부여

@@ -1347,9 +1347,9 @@
         const navTabs = document.getElementById('appNavTabs');
         if (navTabs) navTabs.style.display = 'flex';
 
-        // 🎙️ 로그인 후 마이크 위젯 노출
+        // 🎙️ 로그인 후 마이크 위젯 노출 (가족 사용자는 숨김)
         const voiceWidget = document.getElementById('floatingVoiceWidget');
-        if (voiceWidget) voiceWidget.style.display = 'flex';
+        if (voiceWidget) voiceWidget.style.display = isFamily ? 'none' : 'flex';
 
         let mainPage = document.getElementById('mainPage') || document.getElementById('schedulePage');
         if (mainPage) {
