@@ -39,24 +39,3 @@ function loadKeyFromServer(key) {
   }
   return "";
 }
-
-function getRouteStopMasterData(routeShort) {
-  try {
-    var ss = SpreadsheetApp.openById(SHEET_ID);
-    var routeStr = String(routeShort).trim();
-    var sheet = ss.getSheetByName(routeStr);
-    if (!sheet) {
-      var sheets = ss.getSheets();
-      for (var i = 0; i < sheets.length; i++) {
-        if (sheets[i].getName().indexOf(routeStr) !== -1) {
-          sheet = sheets[i];
-          break;
-        }
-      }
-    }
-    if (!sheet) sheet = ss.getSheets()[0];
-    return { success: true, data: sheet.getDataRange().getValues() };
-  } catch (e) {
-    return { success: false, error: e.toString() };
-  }
-}

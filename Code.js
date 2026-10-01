@@ -63,8 +63,7 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'get_initial_data') {
     let busXml = "";
     try { busXml = getIncheonBusLive('202'); } catch(err) { busXml = ""; }
-    const logo = typeof YJ_OFFICIAL_LOGO_DATA_URI !== 'undefined' ? YJ_OFFICIAL_LOGO_DATA_URI : '';
-    const result = { success: true, busXml: busXml, logo: logo };
+    const result = { success: true, busXml: busXml };
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -206,27 +205,9 @@ function doGet(e) {
     return ContentService.createTextOutput(xml).setMimeType(ContentService.MimeType.XML);
   }
 
-  let busXmlData = "";
-  try {
-    busXmlData = getIncheonBusLive('202');
-  } catch (e) {
-    busXmlData = "ERROR: " + e.toString();
-  }
-
-
-  const template = HtmlService.createTemplateFromFile('Index');
-  template.initialBusData = busXmlData;
-  template.officialLogo = typeof YJ_OFFICIAL_LOGO_DATA_URI !== 'undefined' ? YJ_OFFICIAL_LOGO_DATA_URI : '';
-
-  return template.evaluate()
-    .setTitle('영종운수 스마트근무표')
-    .setFaviconUrl('https://img.icons8.com/fluency/96/bus.png')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  // 알 수 없는 요청: 간단한 안내만 반환 (화면은 GitHub Pages 앱에서 제공)
+  return ContentService.createTextOutput(JSON.stringify({ success: true, message: '영종운수 스마트근무표 API' }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ================================================================
