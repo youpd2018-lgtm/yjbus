@@ -149,16 +149,6 @@
     notify(info || { sched: { route: '-', seq: '-' } }, (info && info.trips[0]) || { idx: 1, text: '--:--', place: '' });
   };
 
-  // 시험용: 주소 뒤에 ?alarmtest=1 을 붙여 열면 로그인 후 몇 초 뒤에 알림(소리 포함)을 한 번 띄운다
-  if (/[?&]alarmtest=1/.test(location.search)) {
-    window.addEventListener('load', () => setTimeout(() => {
-      // 폰은 화면을 한 번 터치해야 소리가 나므로, 터치할 때까지 기다렸다가 재생
-      const fire = () => window.testLocalStartAlarm();
-      if (navigator.userActivation && navigator.userActivation.hasBeenActive) fire();
-      else document.addEventListener('pointerdown', () => setTimeout(fire, 300), { once: true });
-    }, 6000));
-  }
-
   window.addEventListener('load', () => setTimeout(start, 4000));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
 })();
