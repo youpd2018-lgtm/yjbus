@@ -922,7 +922,6 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         }
 
         if (typeof gpsRecFlush === 'function') gpsRecFlush();   // 모은 GPS 기록을 서버로 올림
-        if (window.LivePos) window.LivePos.clear();             // 가족에게 보이던 현재 정류장 지우기
 
         // 🛰️ GPS 추적 안전 중단 (배터리 보호)
         if (typeof stopLiveGpsTracking === 'function') {
