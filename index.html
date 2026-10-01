@@ -605,9 +605,28 @@
             </button>
           </div>
 
-          <!-- 1단: 나의 발자취 -->
+          <!-- 1단: 나의 운행 습관 -->
+          <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 10px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <iconify-icon icon="mdi:steering"
+                style="font-size: 24px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
+              <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">나의 운행 습관</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
+                <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 운행</div>
+                <div id="habitList_cur"></div>
+              </div>
+              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
+                <div style="font-size: 14px; font-weight: 900; color: #22c55e; margin-bottom: 6px;">오늘의 운행</div>
+                <div id="habitList_today"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2단: 나의 발자취 -->
           <div
-            style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; margin-bottom: 12px;">
+            style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px;">
             <div
               style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
               <iconify-icon icon="solar:history-bold" style="font-size: 16px;"></iconify-icon> 나의 발자취
@@ -634,24 +653,6 @@
                 style="grid-column: 2; grid-row: 1 / 4; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column;">
                 <div style="font-size: 15px; font-weight: 900; color: #fbbf24; margin-bottom: 6px;">이달의 운행</div>
                 <div id="habitList_month" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;"></div>
-              </div>
-            </div>
-          </div>
-          <!-- 2단: 나의 운행 습관 -->
-          <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-              <iconify-icon icon="mdi:steering"
-                style="font-size: 24px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
-              <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">나의 운행 습관</div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
-                <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 운행</div>
-                <div id="habitList_cur"></div>
-              </div>
-              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
-                <div style="font-size: 14px; font-weight: 900; color: #22c55e; margin-bottom: 6px;">오늘의 운행</div>
-                <div id="habitList_today"></div>
               </div>
             </div>
           </div>

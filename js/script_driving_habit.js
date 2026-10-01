@@ -6,8 +6,8 @@
 //   · 급정거: 1초에 7.5km/h 이상 줄어 속도가 3km/h 이하가 됨 (직전 속도 8km/h 이상)
 //   · 과속: 제한속도 +20km/h 초과가 3번 연속 (제한속도 정보가 없으면 판정 안 함)
 //   · 급회전: 15km/h 이상에서 2초 안에 진행 방향이 60~120도 바뀜
-// - 값: 이번 회차(cur)는 이 폰 기준, 오늘·이달은 서버(운행습관 시트) 합계 + 아직 못 올린 횟수(pending)
-//   (폰·태블릿·공용폰을 섞어 써도 서버가 기준이 됩니다)
+// - 값: 이번 회차(cur)·오늘은 이 폰 기준, 이달은 서버(운행습관 시트) 합계
+//   (하루 동안은 단말기를 바꾸지 않으므로 오늘은 이 폰 값을 바로 보여주고, 이달은 서버 합계(오늘 제외) + 오늘 값)
 // ================================================================
 (function () {
     var NAMES = ['급출발', '급정거', '과속', '급회전'];
@@ -188,19 +188,22 @@
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (!res || !res.success) return null;
-                var monthSum = zero(), today = zero(), ts = todayStr();
+                var monthOther = zero(), serverToday = zero(), ts = todayStr();
                 Object.keys(res.days || {}).forEach(function (date) {
                     NAMES.forEach(function (n, i) {
                         var v = Number(res.days[date][i]) || 0;
-                        monthSum[n] += v;
-                        if (date === ts) today[n] += v;
+                        if (date === ts) serverToday[n] += v; else monthOther[n] += v;
                     });
                 });
-                var p = loadPending();
-                if (p.date === ts) NAMES.forEach(function (n) { today[n] += p.v[n]; });
-                var prefix = year + '-' + pad(month) + '-';
-                if (p.date.indexOf(prefix) === 0) NAMES.forEach(function (n) { monthSum[n] += p.v[n]; });
-                return { today: today, month: monthSum };
+                // 오늘 값: 이 폰 기록과 (서버 + 아직 못 올린 횟수) 중 큰 쪽
+                var p = loadPending(), local = loadDay(ts).total, todayEff = zero();
+                NAMES.forEach(function (n) {
+                    var srv = serverToday[n] + (p.date === ts ? p.v[n] : 0);
+                    todayEff[n] = Math.max(local[n], srv);
+                });
+                var monthSum = monthOther;
+                if (ts.indexOf(year + '-' + pad(month) + '-') === 0) NAMES.forEach(function (n) { monthSum[n] += todayEff[n]; });
+                return { today: todayEff, month: monthSum };
             })
             .catch(function () { return null; });
     }

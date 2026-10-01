@@ -208,10 +208,10 @@
             totalInfoEl.innerHTML = `${h}시간 ${m}분<br>${totalDist.toFixed(1)}KM`;
         }
 
-        // 2단: 나의 운행 습관 (UI만 먼저. 값은 나중에 기능 연결)
-        // 이번 회차는 이 폰 기준, 오늘·이달은 서버 합계(받아오는 동안은 0으로 표시)
+        // 2단: 나의 운행 습관 (이번 회차·오늘·이달)
+        // 이번 회차·오늘은 이 폰 기준(바로 표시), 이달은 서버 합계(받아오는 동안은 0으로 표시)
         const hb = (window.DrivingHabit && window.DrivingHabit.getCounts()) || { cur: {}, today: {} };
-        renderDrivingHabitRows({ cur: hb.cur, today: {}, month: {} });
+        renderDrivingHabitRows({ cur: hb.cur, today: hb.today, month: {} });
         if (window.DrivingHabit) {
             window.DrivingHabit.fetchServer(year, month).then(srv => {
                 if (!srv) return;
