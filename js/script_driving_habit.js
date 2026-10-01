@@ -6,7 +6,8 @@
 //   · 급정거: 1초에 7.5km/h 이상 줄어 속도가 3km/h 이하가 됨 (직전 속도 8km/h 이상)
 //   · 과속: 제한속도 +20km/h 초과가 3번 연속 (제한속도 정보가 없으면 판정 안 함)
 //   · 급회전: 15km/h 이상에서 2초 안에 진행 방향이 60~120도 바뀜
-// - 값: 이번 회차(cur) / 오늘(today) / 이달(합계는 날짜별 저장값을 더함)
+// - 값: 이번 회차(cur)는 이 폰 기준, 오늘·이달은 서버(운행습관 시트) 합계 + 아직 못 올린 횟수(pending)
+//   (폰·태블릿·공용폰을 섞어 써도 서버가 기준이 됩니다)
 // ================================================================
 (function () {
     var NAMES = ['급출발', '급정거', '과속', '급회전'];
@@ -18,7 +19,7 @@
     var cool = {};                // 항목별 마지막 집계 시각(초)
     var overCnt = 0, overArmed = true;
     var lastTripKey = '', lastStopIdx = null;
-    var dirty = false, uploading = false;
+    var uploading = false;
 
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
@@ -37,13 +38,28 @@
     }
     function saveDay(date, d) { lsSet(dayKey(date), JSON.stringify(d)); }
 
+    // 아직 서버에 못 올린 횟수 (기사별)
+    function pendKey() { return KEY_PREFIX + 'pending_' + driver(); }
+    function loadPending() {
+        try {
+            var o = JSON.parse(lsGet(pendKey()) || 'null');
+            if (o && o.date) return { date: o.date, v: Object.assign(zero(), o.v || {}) };
+        } catch (e) { }
+        return { date: todayStr(), v: zero() };
+    }
+    function savePending(p) { lsSet(pendKey(), JSON.stringify(p)); }
+    function pendTotal(p) { return NAMES.reduce(function (a, n) { return a + p.v[n]; }, 0); }
+
     function count(name, nowSec) {
         var date = todayStr();
         var d = loadDay(date);
         d.cur[name]++; d.total[name]++;
         saveDay(date, d);
+        var p = loadPending();
+        if (p.date !== date && pendTotal(p) > 0) { uploadPending(p); p = { date: date, v: zero() }; }
+        p.date = date; p.v[name]++;
+        savePending(p);
         cool[name] = nowSec;
-        dirty = true;
         console.log('🚨 [운행습관] ' + name + ' +1');
     }
 
@@ -130,20 +146,32 @@
         } catch (e) { console.warn('운행습관 집계 오류:', e); }
     }
 
-    // 서버(운행습관 시트)로 오늘 합계 올리기
+    // 서버(운행습관 시트)로 '새로 늘어난 횟수' 올리기 (성공한 만큼만 pending에서 뺌)
+    function uploadPending(p) {
+        var url = window.GAS_WEB_APP_URL;
+        if (!url || !driver()) return;
+        var sent = Object.assign({}, p.v), sentDate = p.date;
+        uploading = true;
+        fetch(url, {
+            method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+            body: JSON.stringify({ action: 'save_driving_habit', date: sentDate, driver: driver(), start: sent['급출발'], stop: sent['급정거'], speed: sent['과속'], turn: sent['급회전'] })
+        }).then(function (r) { return r.json(); })
+            .then(function (res) {
+                uploading = false;
+                if (res && res.success) {
+                    var now = loadPending();
+                    if (now.date === sentDate) NAMES.forEach(function (n) { now.v[n] = Math.max(0, now.v[n] - sent[n]); });
+                    savePending(now);
+                }
+            })
+            .catch(function () { uploading = false; });
+    }
+
     function upload() {
         try {
-            var url = window.GAS_WEB_APP_URL;
-            if (!url || uploading || !dirty || !driver()) return;
-            var date = todayStr();
-            var t = loadDay(date).total;
-            uploading = true;
-            fetch(url, {
-                method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
-                body: JSON.stringify({ action: 'save_driving_habit', date: date, driver: driver(), start: t['급출발'], stop: t['급정거'], speed: t['과속'], turn: t['급회전'] })
-            }).then(function (r) { return r.json(); })
-                .then(function (res) { uploading = false; if (res && res.success) dirty = false; })
-                .catch(function () { uploading = false; });
+            if (uploading || !driver()) return;
+            var p = loadPending();
+            if (pendTotal(p) > 0) uploadPending(p);
         } catch (e) { uploading = false; }
     }
 
@@ -152,24 +180,34 @@
         return { cur: d.cur, today: d.total };
     }
 
-    // 해당 월의 합계 (이 폰에 저장된 날짜별 값을 더함)
-    function getMonth(year, month) {
-        var sum = zero();
-        var prefix = KEY_PREFIX + driver() + '_' + year + '-' + pad(month) + '-';
-        try {
-            for (var i = 0; i < localStorage.length; i++) {
-                var k = localStorage.key(i);
-                if (k && k.indexOf(prefix) === 0) {
-                    var o = JSON.parse(localStorage.getItem(k) || 'null');
-                    if (o && o.total) NAMES.forEach(function (n) { sum[n] += Number(o.total[n]) || 0; });
-                }
-            }
-        } catch (e) { }
-        return sum;
+    // 서버에서 해당 월의 오늘·이달 합계를 받아옴 (아직 못 올린 횟수는 더해서 돌려줌). 실패하면 null
+    function fetchServer(year, month) {
+        var url = window.GAS_WEB_APP_URL;
+        if (!url || !driver()) return Promise.resolve(null);
+        return fetch(url + '?action=get_driving_habit&driver=' + encodeURIComponent(driver()) + '&year=' + year + '&month=' + month)
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res || !res.success) return null;
+                var monthSum = zero(), today = zero(), ts = todayStr();
+                Object.keys(res.days || {}).forEach(function (date) {
+                    NAMES.forEach(function (n, i) {
+                        var v = Number(res.days[date][i]) || 0;
+                        monthSum[n] += v;
+                        if (date === ts) today[n] += v;
+                    });
+                });
+                var p = loadPending();
+                if (p.date === ts) NAMES.forEach(function (n) { today[n] += p.v[n]; });
+                var prefix = year + '-' + pad(month) + '-';
+                if (p.date.indexOf(prefix) === 0) NAMES.forEach(function (n) { monthSum[n] += p.v[n]; });
+                return { today: today, month: monthSum };
+            })
+            .catch(function () { return null; });
     }
 
-    window.DrivingHabit = { onFix: onFix, upload: upload, getCounts: getCounts, getMonth: getMonth };
-    setInterval(upload, 60000);
+    window.DrivingHabit = { onFix: onFix, upload: upload, getCounts: getCounts, fetchServer: fetchServer };
+    setInterval(upload, 30000);
+    window.addEventListener('load', function () { setTimeout(upload, 5000); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });
     window.addEventListener('pagehide', upload);
 })();
