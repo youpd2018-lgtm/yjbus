@@ -1478,6 +1478,9 @@
             const navTabs = document.getElementById('appNavTabs');
             if (navTabs) navTabs.style.display = 'none';
 
+            // 근무정보·설정 등 열려 있던 모든 페이지를 닫음 (대문 아래에 딸려오지 않도록)
+            document.querySelectorAll('.page').forEach(p => { if (p.id !== 'gatewayPage') p.classList.remove('active'); });
+
             // 4. 대문(게이트웨이) 페이지 활성화
             const gatewayPage = document.getElementById('gatewayPage');
             if (gatewayPage) {
