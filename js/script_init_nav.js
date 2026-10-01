@@ -312,6 +312,17 @@
         }
     }
 
+    // 대문의 [기사님 가입] / [가족 사용자 등록] 접고 펴기
+    function toggleAccordion(contentId, headerEl) {
+        const content = document.getElementById(contentId);
+        if (!content) return;
+        const open = !content.classList.contains('open');
+        content.classList.toggle('open', open);
+        const arrow = headerEl && headerEl.querySelector ? headerEl.querySelector('.arrow') : null;
+        if (arrow) arrow.style.transform = open ? 'rotate(90deg)' : '';
+    }
+    window.toggleAccordion = toggleAccordion;
+
     // 기사 로그인 규칙: 기사번호 6자리가 비밀번호. 예전 4자리 기사 정보는 로그인할 수 없고 다시 가입해야 함 (가족은 4자리 그대로)
     function isDriverV2(u) {
         return !!u && u.userType !== 'family' && /^\d{6}$/.test(String(u.pin || '').trim());
