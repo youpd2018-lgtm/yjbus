@@ -36,6 +36,15 @@
         return p;
     }
 
+    // 구차장 음성 전화 찾기가 쓰는 연락처 목록 (이름과 번호는 폰 안에서만 사용)
+    window.ytEmergencyContacts = function () {
+        var list = [];
+        EMERGENCY_GROUPS.forEach(function (g) {
+            g.items.forEach(function (it) { list.push({ name: it.name, phone: it.phone, group: g.title }); });
+        });
+        return list;
+    };
+
     window.renderEmergencyPage = function () {
         var box = document.getElementById('emergencyList');
         if (!box) return;

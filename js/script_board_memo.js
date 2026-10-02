@@ -129,6 +129,9 @@ function createFreshRecognition() {
       const queryText = event.results[0][0].transcript.trim();
       if (!queryText) return;
 
+      // 📞 "○○에게 전화해줘"는 폰 안에서 연락처를 찾아 [전화걸기] 버튼으로 안내 (제미나이로 보내지 않음)
+      try { if (typeof window.ytVoiceCallTry === 'function' && window.ytVoiceCallTry(queryText)) return; } catch (e) { console.warn('음성 전화 찾기 오류:', e); }
+
       playVoiceChime('finish');
       updateVoiceWidgetState('thinking');
 

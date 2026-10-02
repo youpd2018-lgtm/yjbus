@@ -35,6 +35,7 @@ const SHELL_FILES = [
   'js/script_local_alarm.js',
   'js/script_timetable_data.js',
   'js/script_roster_data.js',
+  'js/script_voice_call.js',
   'data/roster/all.json',
   'data/timetable/all.json',
   'sounds/start_alarm.mp3',
