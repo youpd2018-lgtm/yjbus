@@ -1,0 +1,48 @@
+name: GAS 배포 (수동)
+
+# 버튼을 눌렀을 때만 실행됩니다. (자동 실행 없음)
+on:
+  workflow_dispatch:
+    inputs:
+      description:
+        description: '배포 설명 (예: 구차장 수정)'
+        required: false
+        default: 'GitHub Actions 배포'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # main 브랜치에서, 저장소 주인이 누를 때만 실행
+    if: github.ref == 'refs/heads/main' && github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: clasp 설치
+        run: npm install -g @google/clasp@2.4.2
+
+      - name: Google 로그인 정보 준비
+        env:
+          CLASPRC: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC" > ~/.clasprc.json
+          chmod 600 ~/.clasprc.json
+
+      - name: 코드 올리기 (clasp push)
+        run: clasp push --force
+
+      - name: 새 버전으로 배포 (주소 유지)
+        env:
+          DEPLOY_ID: ${{ secrets.GAS_DEPLOYMENT_ID }}
+          DESC: ${{ github.event.inputs.description }}
+        run: clasp deploy --deploymentId "$DEPLOY_ID" --description "$DESC"
+
+      - name: 로그인 정보 삭제
+        if: always()
+        run: rm -f ~/.clasprc.json
