@@ -284,3 +284,10 @@ function sendTestPush(driverName) {
     tag: 'test', url: PropertiesService.getScriptProperties().getProperty('APP_URL') || PUSH_DEFAULT_APP_URL
   });
 }
+
+// 편집기에서 이 함수를 선택해 실행: 스크립트 속성 TEST_PUSH_NAME 에 적힌 기사에게 테스트 푸시 발송
+function sendTestPushToMe() {
+  const name = PropertiesService.getScriptProperties().getProperty('TEST_PUSH_NAME');
+  if (!name) { console.log('스크립트 속성 TEST_PUSH_NAME 에 기사 이름을 먼저 입력하세요.'); return 0; }
+  return sendTestPush(name);
+}
