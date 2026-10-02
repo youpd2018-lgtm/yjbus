@@ -113,9 +113,9 @@ if (!google.script) google.script = {};
           .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
         return bridgeProxy;
       },
-      adminSendPush: function(title, body, targets) {
+      adminSendPush: function(title, body, targets, sender) {
         const url = window.GAS_WEB_APP_URL + "?action=admin_send_push&title=" + encodeURIComponent(title || '') + "&body=" + encodeURIComponent(body || '')
-          + "&targets=" + encodeURIComponent(targets || '*');
+          + "&targets=" + encodeURIComponent(targets || '*') + "&sender=" + encodeURIComponent(sender || '');
         fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
           .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
         return bridgeProxy;

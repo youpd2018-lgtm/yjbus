@@ -295,11 +295,14 @@ function sendTestPushToMe() {
 
 // ---------------------------------------------------------------
 // 관리자가 직접 쓴 알림 보내기 (Auth.js의 admin_send_push 에서만 부름)
+// sender: 알림 끝에 붙는 보낸사람 이름(선택)
 // targets: '*' = 알림을 켜 둔 모든 기사 / 그 밖에는 쉼표로 이은 기사 이름
 // ---------------------------------------------------------------
-function pushAdminSend_(title, body, targets) {
+function pushAdminSend_(title, body, targets, sender) {
   title = String(title || '').trim().slice(0, 40);
   body = String(body || '').trim().slice(0, 200);
+  sender = String(sender || '').trim().slice(0, 20);
+  if (sender) body += '\n- ' + sender;   // 받는 사람이 누가 보냈는지 알 수 있게
   if (!title || !body) return { success: false, message: '제목과 내용을 모두 입력해 주세요.' };
 
   const users = authReadUsers_().filter(function (u) { return u && u.active !== false && u.userType !== 'family'; });

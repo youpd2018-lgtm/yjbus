@@ -274,7 +274,7 @@ function authHandle_(p, viewer) {
     case 'update_my_phone': return authUpdateMyPhone_(viewer, p.phone);
     case 'admin_approve_user': return authAdminApproveUser_(viewer, p.name);
     case 'admin_delete_user': return authAdminDeleteUser_(viewer, p.name);
-    case 'admin_send_push': return authIsAdmin_(viewer) ? pushAdminSend_(p.title, p.body, p.targets) : { success: false, message: '관리자만 할 수 있습니다.' };
+    case 'admin_send_push': return authIsAdmin_(viewer) ? pushAdminSend_(p.title, p.body, p.targets, p.sender) : { success: false, message: '관리자만 할 수 있습니다.' };
     default: return null;
   }
 }

@@ -896,6 +896,8 @@
               style="width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
             <textarea id="adminPushBody" maxlength="200" rows="4" placeholder="내용 (200자까지)"
               style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; resize: vertical;"></textarea>
+            <input id="adminPushSender" type="text" maxlength="20" placeholder="보낸사람 (예: 영종운수 관리팀)"
+              style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
             <div class="seg-row" id="segPushTarget" style="margin-bottom: 8px;">
               <button type="button" class="seg-btn active" data-value="all" onclick="setPushTarget('all')">전체 기사</button>
               <button type="button" class="seg-btn" data-value="pick" onclick="setPushTarget('pick')">특정 기사 고르기</button>
@@ -903,7 +905,11 @@
             <div id="adminPushPickList" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
             <button type="button" id="adminPushSendBtn" onclick="sendAdminPush()"
               style="width: 100%; padding: 12px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 15px; font-weight: 900; cursor: pointer;">알림 보내기</button>
+            <button type="button" id="adminPushSaveBtn" onclick="saveAdminPushTemplate()"
+              style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #475569; border-radius: 10px; background: transparent; color: #cbd5e1; font-size: 14px; font-weight: 800; cursor: pointer;">이 메시지 저장</button>
             <div id="adminPushResult" style="font-size: 13px; color: #94a3b8; margin-top: 10px; white-space: pre-line;"></div>
+            <div style="margin-top: 14px; font-size: 13px; font-weight: 900; color: #f8fafc;">저장한 메시지</div>
+            <div id="adminPushSavedList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
           </div>
         </div>
 
