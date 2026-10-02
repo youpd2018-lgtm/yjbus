@@ -8,7 +8,7 @@
 
 const AUTH_ADMIN_NAME = '유재필';
 const AUTH_USERS_KEY = 'yeongjong_users_db';
-const AUTH_PUBLIC_ACTIONS = { login_by_pin: true, register_driver: true, register_family: true };
+const AUTH_PUBLIC_ACTIONS = { login_by_pin: true, register_driver: true, register_family: true, get_route_stops: true }; // get_route_stops: 정류장 이름·위치·구간시간(공개 정보)이라 로그인 없이 허용 (사용자 지시 2026-10-02)
 const AUTH_MAX_FAIL_PER_NAME = 15;     // 같은 이름으로 10분에 15번 틀리면 잠시 막음
 const AUTH_MAX_FAIL_GLOBAL = 20;       // 기사번호만으로 찾는 로그인은 10분에 20번 틀리면 잠시 막음
 const AUTH_FAIL_WINDOW_SEC = 600;
