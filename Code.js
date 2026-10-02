@@ -366,6 +366,16 @@ function askGeminiVoiceAssistant(query, context, history) {
           }
         },
         {
+          name: "get_weather",
+          description: "영종도 지역의 현재 날씨와 앞으로 몇 시간의 강수·기온 예보를 조회합니다. 날씨, 비, 눈, 기온, 바람, 우산이 필요한지 물을 때 사용합니다.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              hours: { type: "STRING", description: "앞으로 몇 시간 예보까지 볼지 (기본 6, 최대 24)" }
+            }
+          }
+        },
+        {
           name: "learn_user_rule",
           description: "기사님이 구차장(AI)에게 새로운 대화 방식이나 규칙, 기억해야 할 사실 등을 명시적으로 지시할 때 이를 영구적으로 기억하도록 학습합니다.",
           parameters: {
@@ -455,6 +465,8 @@ function askGeminiVoiceAssistant(query, context, history) {
                 funcResultText = searchRealtimeLocation(args.driver_name, args.vehicle_no, args.route_no);
               } else if (funcName === "search_shift_partner") {
                 funcResultText = searchShiftPartnerInSheet(args.route_no, args.seq_no, args.target_work_type, args.target_date);
+              } else if (funcName === "get_weather") {
+                funcResultText = getWeatherForGuchajang(args.hours);
               } else if (funcName === "learn_user_rule") {
                 try {
                   const props = PropertiesService.getScriptProperties();
@@ -893,5 +905,43 @@ function searchRealtimeLocation(driverName, vehicleNo, routeNo) {
     }
   } catch (e) {
     return "위치 검색 중 오류 발생: " + e.toString();
+  }
+}
+
+// 구차장 날씨 도구: Open-Meteo(무료, 키 없음), 영종도 좌표 기준
+function getWeatherForGuchajang(hours) {
+  try {
+    var n = Math.min(Math.max(parseInt(hours, 10) || 6, 1), 24);
+    var url = "https://api.open-meteo.com/v1/forecast?latitude=37.49&longitude=126.52"
+      + "&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m"
+      + "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code"
+      + "&wind_speed_unit=ms&timezone=Asia%2FSeoul&forecast_days=2";
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) return "날씨 정보를 가져오지 못했습니다.";
+    var d = JSON.parse(res.getContentText());
+    var wmo = function (c) {
+      if (c === 0) return "맑음";
+      if (c <= 3) return "구름 조금~흐림";
+      if (c === 45 || c === 48) return "안개";
+      if (c >= 51 && c <= 57) return "이슬비";
+      if (c >= 61 && c <= 67) return "비";
+      if (c >= 71 && c <= 77) return "눈";
+      if (c >= 80 && c <= 82) return "소나기";
+      if (c === 85 || c === 86) return "눈 소나기";
+      if (c >= 95) return "천둥번개";
+      return "알 수 없음";
+    };
+    var c = d.current;
+    var out = "영종도 현재(" + c.time + "): " + wmo(c.weather_code) + ", 기온 " + c.temperature_2m + "도(체감 " + c.apparent_temperature
+      + "도), 강수 " + c.precipitation + "mm, 바람 " + c.wind_speed_10m + "m/s(돌풍 " + c.wind_gusts_10m + "m/s)\n앞으로 " + n + "시간 예보:";
+    var h = d.hourly, now = c.time.slice(0, 13), start = 0;
+    for (var i = 0; i < h.time.length; i++) { if (h.time[i].slice(0, 13) >= now) { start = i; break; } }
+    for (var j = start + 1; j <= start + n && j < h.time.length; j++) {
+      out += "\n" + h.time[j].slice(11, 16) + " " + wmo(h.weather_code[j]) + ", " + h.temperature_2m[j] + "도, 강수확률 "
+        + h.precipitation_probability[j] + "%, 강수 " + h.precipitation[j] + "mm";
+    }
+    return out;
+  } catch (e) {
+    return "날씨 조회 중 오류: " + e.toString();
   }
 }
