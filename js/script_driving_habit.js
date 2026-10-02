@@ -99,7 +99,8 @@
     // ================================================================
     // ⏱️ [회차 평균 속도] 라이브 모달을 처음 켠 시각·그때 정류장 → 마지막으로 GPS가 잡힌 시각·그때 정류장
     // - 두 정류장 사이 거리(시간표 회차 거리를 정류장 위치 비율로 나눈 값) ÷ 그 시간
-    // - 중간에 모달을 끄거나 다른 앱·전화를 써도 시작(처음 켠 때)과 끝(마지막 GPS 때)만 보고 계산
+    // - 내 근무일(정상·대타)·운행 시간 안에서, 실제로 달리는(5km/h 이상) 동안만 잼 (쉬는 날·집에서 시험 삼아 켠 건 기록 안 함)
+    // - 중간에 모달을 끄거나 다른 앱·전화를 써도 시작(처음 달린 때)과 끝(마지막 GPS 때)만 보고 계산
     // - 종점에 도착하면 거기서 끝으로 고정 (종점에서 계속 켜 둬도 시간이 늘어나지 않음)
     // ================================================================
     var TRIP_KEY_PREFIX = 'yb_tripspd_';
@@ -142,9 +143,21 @@
         if (!(total > 0) || si < 0 || ei >= n || ei <= si) return 0;
         return (cum[ei] - cum[si]) / total;
     }
+    // 오늘 내 근무(정상·대타)이고 운행 시간 안일 때만 잰다 (쉬는 날·집에서 시험 삼아 켠 경우는 기록 안 함)
+    function onDutyNow() {
+        try {
+            var sd = JSON.parse(lsGet(typeof getDriverKey === 'function' ? getDriverKey('sched_' + todayStr()) : 'sched_' + todayStr()) || 'null');
+            var wt = sd && sd.workType ? String(sd.workType).trim() : '';
+            if (wt !== '정상' && wt !== '대타') return false;
+            if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) return false;
+            return true;
+        } catch (e) { return false; }
+    }
+    var MOVE_KMH = 5;   // 실제로 달리고 있다고 보는 속도
     function tripOnFix(speedKmh, duty) {
         try {
             if (!duty || !duty.uniqueKey) return;
+            if (!onDutyNow()) return;
             var master = window.standardMasterCache || [];
             var n = master.length, idx = window.lastPassedStopIndex;
             if (!n || typeof idx !== 'number' || idx < 0) return;
@@ -152,7 +165,9 @@
             var all = loadTrips(), list = all[date] || [];
             var rec = null;
             for (var i = list.length - 1; i >= 0; i--) { if (list[i].k === duty.uniqueKey) { rec = list[i]; break; } }
+            var moving = speedKmh >= MOVE_KMH;
             if (!rec) {
+                if (!moving) return;                  // 실제로 달리기 시작한 때부터 잼 (출발지에서 기다리는 시간은 안 넣음)
                 var dist = tripDistKm(duty);
                 if (!dist) return;
                 rec = { k: duty.uniqueKey, t: duty.turnNum, s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, d: 0, done: 0 };   // 처음 켠 시각·정류장
@@ -160,7 +175,8 @@
             } else {
                 if (rec.done) return;                 // 종점에 이미 도착한 회차는 더 늘리지 않음
                 if (idx < rec.ei) return;             // 정류장 번호가 되돌아가면(위치 오차) 무시
-                rec.e = nowMs; rec.ei = idx;           // 마지막으로 GPS가 잡힌 시각·정류장
+                if (!moving && idx < n - 1) return;   // 서 있는 동안은 끝 시각을 늘리지 않음 (마지막으로 달린 때까지만)
+                rec.e = nowMs; rec.ei = idx;           // 마지막으로 달리며 GPS가 잡힌 시각·정류장
                 if (idx >= n - 1) rec.done = 1;
             }
             rec.d = rec.D * segFraction(master, rec.si, rec.ei);
