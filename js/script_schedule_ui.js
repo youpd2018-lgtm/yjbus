@@ -315,6 +315,7 @@
         localStorage.setItem(driverKey, JSON.stringify(data));
         if (typeof saveToGAS === 'function') {
             saveToGAS(`sched_${date}`, data);
+            saveToGAS(`schededit_${date}`, '1'); // 직접 고친 근무 표시: GitHub 근무표가 덮어쓰지 않는다
         }
 
         alert(`✅ [${date}] 근무 일정이 성공적으로 저장되었습니다!`);

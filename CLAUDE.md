@@ -26,10 +26,11 @@
 
 - 무료 내비(간단 길안내, OSRM) 기능은 버스 운전에 맞지 않아 2026-10-01 완전히 삭제(`script_nav.js` 등). GPS 기록(관리자 전용)은 그대로.
 
-## 개별 시간표 (GitHub 데이터, 2026-10-02 신설, 아직 앱 연결 전)
+## 개별 시간표 (GitHub 데이터, 2026-10-02 신설, 앱 연결 완료)
 - 원본 `data/timetable/timetable.csv` (한 행 = 한 회차: 노선이름·대수·순번·회차·장소1~3·time1~3·거리·색1~3). 기준은 시트 `DBT`(검증 완료, 색은 DBT 따름). 204는 평일만.
 - 고친 뒤 `python3 tools/build_timetable.py` → `data/timetable/tt/*.json`, `index.json` 재생성. 거리 규칙: 전체 회차 = 노선 전체 km(202:100, 203:76, 204:90, 205:68, 206:70, 221:74, 281:75, 282:72), 반 회차 = 절반. 202 특수 시작 회차와 203A(마지막 순번 1회차)는 예외.
-- 다음: 앱이 이 파일을 읽도록 연결, 일일근무표도 같은 방식으로 이전. 개인정보(전화번호·키)는 Apps Script에 유지.
+- 앱 연결: `js/script_timetable_data.js`(시트 값은 없는 노선·순번의 대비용). 구차장(`Code.js`)·푸시(`PushNotify.js`)는 아직 옛 시트 데이터를 읽음.
+- 전체 기사 근무표: `data/roster/roster.csv`(한 행 = 기사 1명의 하루) → `python3 tools/build_roster.py` → `all.json`. `js/script_roster_data.js`가 앱을 열 때 `jpil_user_<이름>_sched_<날짜>`를 채운다. **앱에서 직접 고친 근무(`..._schededit_<날짜>` 표시)는 절대 덮어쓰지 않는다**(사용자 지시). 개인정보(전화번호·키)는 Apps Script에 유지.
 
 ## 다음 작업
 1. 기사들에게 소개하기 위해 **대문(첫) 페이지부터** 하나씩 고쳐 나간다.
