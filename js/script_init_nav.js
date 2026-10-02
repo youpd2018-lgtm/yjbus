@@ -328,7 +328,7 @@
                 if (!res || !res.success) { alert((res && res.message) || "가입하지 못했어요. 잠시 후 다시 시도해주세요."); return; }
                 document.getElementById('gatewayNewName').value = '';
                 document.getElementById('gatewayNewPin').value = '';
-                alert(`'${name}' 기사님 가입이 완료되었습니다!\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요.`);
+                alert(res.pending ? `'${name}' 기사님 가입을 신청했어요.\n관리자가 승인하면 기사번호로 로그인할 수 있어요.` : `'${name}' 기사님 가입이 완료되었습니다!\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요.`);
                 toggleAccordion('addUserAccordionContent', document.getElementById('addUserAccordionContent').previousElementSibling);
                 initGateway();
             })

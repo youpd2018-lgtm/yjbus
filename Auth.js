@@ -201,11 +201,12 @@ function authRegisterDriver_(p) {
     }
     const now = new Date().toISOString();
     if (exist) {
-      exist.pin = pin; exist.phone = phone; exist.active = true; exist.userType = 'driver'; exist.registeredAt = now;
+      exist.pin = pin; exist.phone = phone; exist.userType = 'driver'; exist.registeredAt = now;
     } else {
-      list.push({ name: name, pin: pin, phone: phone, active: true, userType: 'driver', registeredAt: now });
+      list.push({ name: name, pin: pin, phone: phone, active: name === AUTH_ADMIN_NAME, userType: 'driver', registeredAt: now });
     }
-    return { success: true, save: true };
+    const me = list.find(function (u) { return u && u.name === name; });
+    return { success: true, save: true, pending: me.active === false };
   });
 }
 
