@@ -867,6 +867,11 @@
         <!-- ========================================== -->
         <!-- [3번 서브 탭 페이지] 사용자 관리 -->
         <!-- ========================================== -->
+        <div class="seg-row" id="segAdminMenu" style="margin-bottom: 12px;">
+          <button type="button" class="seg-btn active" data-value="user" onclick="selectAdminMenu('user')">사용자 관리</button>
+          <button type="button" class="seg-btn" data-value="push" onclick="selectAdminMenu('push')">알림 보내기</button>
+        </div>
+
         <div id="subPageUser" class="admin-sub-page active" style="display: block;">
           <div class="section"
             style="background: rgba(30, 41, 59, 0.7); border-radius: 10px; padding: 15px; border: 1px solid #334155;">
@@ -876,6 +881,29 @@
             <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">등록된 사용자 목록을 확인하고 삭제/관리할 수 있습니다.</div>
             <div id="adminUserManageList"
               style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- 알림 보내기 -->
+        <div id="subPagePush" class="admin-sub-page" style="display: none;">
+          <div class="section"
+            style="background: rgba(30, 41, 59, 0.7); border-radius: 10px; padding: 15px; border: 1px solid #334155;">
+            <h3 style="margin-top: 0; color: #f8fafc; font-size: 15px; display: flex; align-items: center; gap: 6px;">
+              <iconify-icon icon="mdi:bell-ring" style="color: #facc15;"></iconify-icon> 알림 보내기
+            </h3>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">알림을 켜 둔 기사님 폰으로 바로 갑니다. (알림을 꺼 둔 분은 못 받아요)</div>
+            <input id="adminPushTitle" type="text" maxlength="40" placeholder="제목 (40자까지)"
+              style="width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
+            <textarea id="adminPushBody" maxlength="200" rows="4" placeholder="내용 (200자까지)"
+              style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; resize: vertical;"></textarea>
+            <div class="seg-row" id="segPushTarget" style="margin-bottom: 8px;">
+              <button type="button" class="seg-btn active" data-value="all" onclick="setPushTarget('all')">전체 기사</button>
+              <button type="button" class="seg-btn" data-value="pick" onclick="setPushTarget('pick')">특정 기사 고르기</button>
+            </div>
+            <div id="adminPushPickList" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
+            <button type="button" id="adminPushSendBtn" onclick="sendAdminPush()"
+              style="width: 100%; padding: 12px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 15px; font-weight: 900; cursor: pointer;">알림 보내기</button>
+            <div id="adminPushResult" style="font-size: 13px; color: #94a3b8; margin-top: 10px; white-space: pre-line;"></div>
           </div>
         </div>
 
@@ -1185,6 +1213,7 @@
     <script src="js/script_init_nav.js"></script>
     <script src="js/script_driving_habit.js"></script>
     <script src="js/script_emergency.js"></script>
+    <script src="js/script_admin_push.js"></script>
     <script src="js/script_stats_view.js"></script>
     <script src="js/script_schedule_ui.js"></script>
     <script src="js/script_gateway_memo.js"></script>

@@ -291,3 +291,39 @@ function sendTestPushToMe() {
   if (!name) { console.log('스크립트 속성 TEST_PUSH_NAME 에 기사 이름을 먼저 입력하세요.'); return 0; }
   return sendTestPush(name);
 }
+
+
+// ---------------------------------------------------------------
+// 관리자가 직접 쓴 알림 보내기 (Auth.js의 admin_send_push 에서만 부름)
+// targets: '*' = 알림을 켜 둔 모든 기사 / 그 밖에는 쉼표로 이은 기사 이름
+// ---------------------------------------------------------------
+function pushAdminSend_(title, body, targets) {
+  title = String(title || '').trim().slice(0, 40);
+  body = String(body || '').trim().slice(0, 200);
+  if (!title || !body) return { success: false, message: '제목과 내용을 모두 입력해 주세요.' };
+
+  const users = authReadUsers_().filter(function (u) { return u && u.active !== false && u.userType !== 'family'; });
+  let names;
+  if (String(targets || '*') === '*') {
+    names = users.map(function (u) { return u.name; });
+  } else {
+    const wanted = String(targets).split(',').map(function (n) { return n.trim(); }).filter(Boolean);
+    names = users.map(function (u) { return u.name; }).filter(function (n) { return wanted.indexOf(n) >= 0; });
+  }
+  if (names.length === 0) return { success: false, message: '받을 기사가 없습니다.' };
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('DB');
+  const rows = sheet.getDataRange().getValues();
+  const db = {};
+  for (let i = 0; i < rows.length; i++) if (rows[i][0]) db[String(rows[i][0])] = rows[i][1];
+
+  const msg = { title: title, body: body, tag: 'admin-' + Date.now(), url: PropertiesService.getScriptProperties().getProperty('APP_URL') || PUSH_DEFAULT_APP_URL };
+  let sentDrivers = 0;
+  const noToken = [];
+  names.forEach(function (name) {
+    const tokens = pushCollectTokens_(db, name);
+    if (tokens.length === 0) { noToken.push(name); return; }
+    if (pushSendToTokens_(name, tokens, msg) > 0) sentDrivers++;
+  });
+  return { success: true, sent: sentDrivers, total: names.length, noToken: noToken };
+}
