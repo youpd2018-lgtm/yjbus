@@ -3013,3 +3013,22 @@ iconify-icon {
     color: #22c55e;
     box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
 }
+
+/* 🚦 가운데 신호등 부분: 램프·글자를 키우고 살짝 볼록하게, 램프 위에 신호등 몸체·챙 윤곽을 은은하게 */
+.tf-card .tf-flow {
+    min-width: 128px; padding: 10px 14px 9px; gap: 7px; border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.22); border-top-color: rgba(255,255,255,.45);
+    box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 4px rgba(0,0,0,.25);
+}
+.tf-card .tf-lamp { position: relative; gap: 11px; padding: 10px 15px; background: rgba(0,0,0,.4); box-shadow: inset 0 2px 6px rgba(0,0,0,.6); }
+.tf-card .tf-lamp i { position: relative; width: 20px; height: 20px; }
+.tf-card .tf-lamp i::before {   /* 램프 위를 덮는 챙(바이저) 윤곽 */
+    content: ''; position: absolute; left: -3px; right: -3px; top: -4px; height: 12px;
+    border: 1.5px solid rgba(255,255,255,.3); border-bottom: 0; border-radius: 12px 12px 0 0; pointer-events: none;
+}
+.tf-card .tf-lamp::after {      /* 신호등 몸체 윤곽 */
+    content: ''; position: absolute; inset: -3px; border-radius: 999px;
+    border: 1.5px solid rgba(255,255,255,.22); pointer-events: none;
+}
+.tf-card .tf-flow-text { font-size: 17px; text-shadow: 0 0 10px color-mix(in srgb, var(--tfc) 45%, transparent); }
