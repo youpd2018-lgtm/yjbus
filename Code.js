@@ -7,11 +7,18 @@
 // ================================================================
 
 function doGet(e) {
+  // 🔐 로그인 확인: 로그인 전용 요청(login_by_pin, register_*)을 뺀 모든 요청은 이름(u)+번호(p)가 맞아야 한다
+  const gate = authGate_(e && e.parameter);
+  if (gate.error) return authJson_(gate.error);
+  const viewer = gate.user;
+  const authRes = authHandle_((e && e.parameter) || {}, viewer);
+  if (authRes) return authJson_(authRes);
+
   // 💡 [API 엔드포인트: Gemini 음성 비서 질의응답 (독립 웹앱 연동)]
   if (e && e.parameter && e.parameter.action === 'ask_gemini') {
     const query = e.parameter.query || "";
     const context = e.parameter.context || "";
-    const answer = askGeminiVoiceAssistant(query, context);
+    const answer = askGeminiVoiceAssistant(query, context, []);
     const result = { success: true, answer: answer };
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
@@ -31,9 +38,9 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'load_from_server') {
     let dbData = {};
     try {
-      dbData = loadFromServer();
+      dbData = authFilterDb_(viewer, loadFromServer());
     } catch(err) {
-      dbData = { error: err.toString() };
+      dbData = {};
     }
     const result = { success: true, data: dbData };
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -44,6 +51,7 @@ function doGet(e) {
     const key = e.parameter.key;
     const value = e.parameter.value;
     try {
+      if (!authCanWrite_(viewer, key, value)) return authJson_({ success: false, error: 'forbidden' });
       saveToServer(key, value);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
@@ -75,7 +83,7 @@ function doGet(e) {
   // 💡 [운행 습관 월 합계 조회: 근무통계 화면에서 사용]
   if (e && e.parameter && e.parameter.action === 'get_driving_habit') {
     const res = typeof getDrivingHabit === 'function'
-      ? getDrivingHabit(e.parameter.driver || "", e.parameter.year || "", e.parameter.month || "")
+      ? getDrivingHabit(authDriverFor_(viewer, e.parameter.driver), e.parameter.year || "", e.parameter.month || "")
       : { success: false, error: "getDrivingHabit 함수 미정의" };
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
@@ -85,7 +93,7 @@ function doGet(e) {
     const key = e.parameter.key || "";
     let val = "";
     try {
-      val = typeof loadKeyFromServer === 'function' ? loadKeyFromServer(key) : "";
+      val = authCanRead_(viewer, key) && typeof loadKeyFromServer === 'function' ? loadKeyFromServer(key) : "";
     } catch(err) {
       val = "";
     }
@@ -98,6 +106,7 @@ function doGet(e) {
     const key = e.parameter.key || "";
     const value = e.parameter.value || "";
     try {
+      if (!authCanWrite_(viewer, key, value)) return authJson_({ success: false, error: 'forbidden' });
       if (typeof saveToServer === 'function') saveToServer(key, value);
       return ContentService.createTextOutput(JSON.stringify({ success: true }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -568,6 +577,11 @@ function doPost(e) {
     } else if (e && e.parameter) {
       postData = e.parameter;
     }
+    const gate = authGate_(postData);
+    if (gate.error) return authJson_(gate.error);
+    const viewer = gate.user;
+    const authRes = authHandle_(postData || {}, viewer);
+    if (authRes) return authJson_(authRes);
     if (postData && postData.action === 'ask_gemini') {
       const query = postData.query || "";
       const context = postData.context || "";
@@ -576,10 +590,12 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, answer: answer })).setMimeType(ContentService.MimeType.JSON);
     }
     if (postData && postData.action === 'save_driving_habit') {
+      postData.driver = authDriverFor_(viewer, postData.driver);
       const res = typeof saveDrivingHabit === 'function' ? saveDrivingHabit(postData) : { success: false, error: "saveDrivingHabit 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
     if (postData && postData.action === 'save_to_server') {
+      if (!authCanWrite_(viewer, postData.key, postData.value)) return authJson_({ success: false, error: 'forbidden' });
       saveToServer(postData.key, postData.value);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }

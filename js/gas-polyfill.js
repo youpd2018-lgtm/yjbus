@@ -2,6 +2,46 @@
 if (typeof google === 'undefined') window.google = {};
 if (!google.script) google.script = {};
 
+// 🔐 서버(Apps Script) 요청마다 로그인한 이름(u)과 번호(p)를 붙인다. (서버가 확인한 사람에게만 응답)
+(function () {
+  if (window.__gasAuthFetchPatched) return;
+  window.__gasAuthFetchPatched = true;
+  var origFetch = window.fetch ? window.fetch.bind(window) : null;
+  if (!origFetch) return;
+  function creds() {
+    try {
+      var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null');
+      if (u && u.name && u.pin) return { u: String(u.name), p: String(u.pin) };
+    } catch (e) { }
+    try {
+      var n = localStorage.getItem('loggedInUser'), pin = localStorage.getItem('autoLoginPin');
+      if (n && pin) return { u: String(n), p: String(pin) };
+    } catch (e) { }
+    return null;
+  }
+  window.gasCredentials = creds;
+  window.fetch = function (input, init) {
+    try {
+      var base = window.GAS_WEB_APP_URL;
+      var url = (typeof input === 'string') ? input : (input && input.url);
+      var c = creds();
+      if (base && url && url.indexOf(base) === 0 && c) {
+        var method = ((init && init.method) || 'GET').toUpperCase();
+        if (method === 'POST' && init && typeof init.body === 'string') {
+          try {
+            var body = JSON.parse(init.body);
+            body.u = c.u; body.p = c.p;
+            init = Object.assign({}, init, { body: JSON.stringify(body) });
+          } catch (e) { }
+        } else if (typeof input === 'string' && url.indexOf('&u=') < 0 && url.indexOf('?u=') < 0) {
+          input = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'u=' + encodeURIComponent(c.u) + '&p=' + encodeURIComponent(c.p);
+        }
+      }
+    } catch (e) { }
+    return origFetch(input, init);
+  };
+})();
+
 (function() {
   function createGasBridge() {
     let successHandler = null;
@@ -38,12 +78,47 @@ if (!google.script) google.script = {};
         });
         return bridgeProxy;
       },
+      // 🔐 로그인(기사번호/비밀번호로 이름 찾기) · 가입 · 사용자 관리 (서버가 확인)
+      loginByPin: function(pin) {
+        const url = window.GAS_WEB_APP_URL + "?action=login_by_pin&pin=" + encodeURIComponent(pin || '');
+        fetch(url).then(res => res.json()).then(res => {
+          const raw = res && res.data && res.data['yeongjong_users_db'];
+          if (raw) { try { localStorage.setItem('yeongjong_users_db', typeof raw === 'string' ? raw : JSON.stringify(raw)); } catch (e) { } }
+          if (successHandler) successHandler(res || { success: false });
+        }).catch(err => { if (failureHandler) failureHandler(err); else if (successHandler) successHandler({ success: false, error: 'network' }); });
+        return bridgeProxy;
+      },
+      registerDriver: function(name, pin, phone) {
+        const url = window.GAS_WEB_APP_URL + "?action=register_driver&name=" + encodeURIComponent(name || '') + "&pin=" + encodeURIComponent(pin || '') + "&phone=" + encodeURIComponent(phone || '');
+        fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
+          .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' }); });
+        return bridgeProxy;
+      },
+      registerFamily: function(name, pin, target, targetPin) {
+        const url = window.GAS_WEB_APP_URL + "?action=register_family&name=" + encodeURIComponent(name || '') + "&pin=" + encodeURIComponent(pin || '')
+          + "&target=" + encodeURIComponent(target || '') + "&targetPin=" + encodeURIComponent(targetPin || '');
+        fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
+          .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' }); });
+        return bridgeProxy;
+      },
+      updateMyPhone: function(phone) {
+        const url = window.GAS_WEB_APP_URL + "?action=update_my_phone&phone=" + encodeURIComponent(phone || '');
+        fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
+          .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
+        return bridgeProxy;
+      },
+      adminDeleteUser: function(name) {
+        const url = window.GAS_WEB_APP_URL + "?action=admin_delete_user&name=" + encodeURIComponent(name || '');
+        fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
+          .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
+        return bridgeProxy;
+      },
       loadFromServer: function() {
         const url = window.GAS_WEB_APP_URL + "?action=load_from_server";
         fetch(url)
           .then(res => res.json())
           .then(data => {
-            const dbData = (data && data.data) ? data.data : (data || {});
+            const dbData = (data && data.success === false) ? {} : ((data && data.data) ? data.data : (data || {}));
             for (let k in dbData) {
               try {
                 const val = typeof dbData[k] === 'object' ? JSON.stringify(dbData[k]) : String(dbData[k]);
@@ -68,6 +143,7 @@ if (!google.script) google.script = {};
       saveToServer: function(key, value) {
         const strVal = typeof value === 'object' ? JSON.stringify(value) : String(value);
         try { localStorage.setItem(key, strVal); } catch(e) {}
+        if (key === 'yeongjong_users_db') { if (successHandler) successHandler({ success: true }); return bridgeProxy; } // 사용자 목록은 서버 전용 함수로만 고친다
         const url = window.GAS_WEB_APP_URL + "?action=save_to_server&key=" + encodeURIComponent(key) + "&value=" + encodeURIComponent(strVal);
         fetch(url).then(res => res.json()).then(res => {
             if (successHandler) successHandler(res || { success: true });

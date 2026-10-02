@@ -319,8 +319,16 @@
         const me = list.find(u => u.name === name);
         if (!me) { alert('사용자 정보를 찾지 못했습니다.'); return; }
         const save = (val) => {
-            me.phone = val;
-            if (typeof saveUsersList === 'function') saveUsersList(list);
+            // 서버가 본인 확인 후 저장하고, 성공하면 이 기기의 사본도 고친다
+            if (typeof google === 'undefined' || !google.script || !google.script.run) { alert('서버에 연결하지 못했습니다.'); return; }
+            google.script.run
+                .withSuccessHandler(function (res) {
+                    if (!res || !res.success) { alert((res && res.message) || '저장하지 못했습니다.'); return; }
+                    me.phone = String(val || '').replace(/[^0-9]/g, '');
+                    if (typeof saveUsersList === 'function') saveUsersList(list);
+                })
+                .withFailureHandler(function () { alert('서버에 연결하지 못했습니다.'); })
+                .updateMyPhone(val);
         };
         if (typeof Swal === 'undefined') {
             const v = prompt('나의 연락처 (숫자만)', me.phone || '');

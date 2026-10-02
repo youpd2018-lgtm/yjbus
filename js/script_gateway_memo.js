@@ -1162,18 +1162,26 @@
         const userArea = document.getElementById('gatewayUserSelectionArea');
         if (userArea) userArea.style.display = 'block';
 
-        // 🌟 1) 로컬 사용자 및 캐시된 데이터로 즉시 매칭 렌더링 (0ms 즉시 응답)
-        renderUserListFromDB(null, inputPin);
+        // 서버가 기사번호(비밀번호)를 확인해 일치하는 사용자만 돌려준다 (다른 사람 번호는 오지 않음)
+        const listDiv = document.getElementById('userSelectList');
+        if (listDiv) listDiv.innerHTML = '<div style="color:#94a3b8; font-weight:bold; padding:12px; text-align:center;">확인하는 중...</div>';
 
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
-                .withSuccessHandler(function (dbData) {
-                    renderUserListFromDB(dbData, inputPin);
+                .withSuccessHandler(function (res) {
+                    if (res && res.success === false) {
+                        if (listDiv) listDiv.innerHTML = '<div style="color:#ef4444; font-weight:bold; padding:12px; text-align:center;">' + (res.message || '확인하지 못했습니다. 다시 시도해 주세요.') + '</div>';
+                        return;
+                    }
+                    renderUserListFromDB(res && res.data, inputPin);
                 })
                 .withFailureHandler(function (err) {
-                    console.warn("loadFromServer error:", err);
+                    console.warn("loginByPin error:", err);
+                    if (listDiv) listDiv.innerHTML = '<div style="color:#ef4444; font-weight:bold; padding:12px; text-align:center;">서버에 연결하지 못했습니다. 인터넷을 확인해 주세요.</div>';
                 })
-                .loadFromServer();
+                .loginByPin(inputPin);
+        } else {
+            renderUserListFromDB(null, inputPin);
         }
     }
 
@@ -1331,6 +1339,8 @@
             userObj = { name: '위에', userType: 'family', targetDriver: '유재필' };
         }
         let isFamily = (userName === '위에') || (userObj && userObj.userType === 'family');
+        // 서버 요청에 붙일 로그인 정보 저장 (서버가 이름+번호를 확인함)
+        if (userObj && userObj.pin) { try { localStorage.setItem('yeongjong_logged_user', JSON.stringify(userObj)); } catch (e) { } }
 
         // 1) 로그인 대문 페이지 숨기기
         const gatewayPage = document.getElementById('gatewayPage');

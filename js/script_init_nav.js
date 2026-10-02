@@ -183,11 +183,9 @@
         return def;
     }
 
+    // 사용자 목록은 서버가 확인하며 고친다 (가입·연락처·삭제는 서버 함수로). 여기서는 이 기기의 사본만 갱신한다.
     function saveUsersList(list) {
         localStorage.setItem('yeongjong_users_db', JSON.stringify(list));
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run.saveToServer('yeongjong_users_db', JSON.stringify(list));
-        }
     }
 
     function getDefaultDistanceByRoute(routeName) {
@@ -291,17 +289,6 @@
         document.getElementById('gatewayUserSelectionArea').style.display = 'none';
         document.getElementById('userSelectList').innerHTML = '';
 
-        let drivers = getUsersList().filter(u => u.userType !== 'family');
-        let sel = document.getElementById('gatewayFamilyTargetDriver');
-        if (sel) {
-            sel.innerHTML = '';
-            drivers.forEach(d => {
-                let opt = document.createElement('option');
-                opt.value = d.name;
-                opt.innerText = `${d.name} 기사님`;
-                sel.appendChild(opt);
-            });
-        }
     }
 
     // 대문의 [기사님 가입] / [가족 사용자 등록] 접고 펴기
@@ -317,33 +304,12 @@
 
     // 기사 로그인 규칙: 기사번호 6자리가 비밀번호. 예전 4자리 기사 정보는 로그인할 수 없고 다시 가입해야 함 (가족은 4자리 그대로)
     function isDriverV2(u) {
-        return !!u && u.userType !== 'family' && /^\d{6}$/.test(String(u.pin || '').trim());
+        return !!u && u.userType !== 'family' && (u.v2 === true || /^\d{6}$/.test(String(u.pin || '').trim()));
     }
     function isValidLoginUser(u) {
         if (!u) return false;
         if (u.userType === 'family') return true;
         return isDriverV2(u);
-    }
-
-    // 가입 직전에 서버의 최신 사용자 목록을 받아옴 (다른 사람 가입 기록을 덮어쓰지 않도록). 서버에 연결하지 못하면 null
-    function fetchFreshUsers(cb) {
-        if (typeof google === 'undefined' || !google.script || !google.script.run) { cb(getUsersList()); return; }
-        google.script.run
-            .withSuccessHandler(function (data) {
-                let list = null;
-                try {
-                    const raw = data && data['yeongjong_users_db'];
-                    list = (typeof raw === 'string') ? JSON.parse(raw) : raw;
-                } catch (e) { list = null; }
-                if (Array.isArray(list)) {
-                    localStorage.setItem('yeongjong_users_db', JSON.stringify(list));
-                    cb(list);
-                } else {
-                    cb(getUsersList());
-                }
-            })
-            .withFailureHandler(function () { cb(null); })
-            .loadFromServer();
     }
 
     function gatewaySaveDriver() {
@@ -354,36 +320,20 @@
         if (!name) { alert("이름을 입력해주세요."); return; }
         if (!/^\d{6}$/.test(pin)) { alert("기사번호 6자리 숫자를 입력해주세요."); return; }
         if (!/^\d{10,11}$/.test(phone)) { alert("전화번호를 숫자만 10~11자리로 입력해주세요."); return; }
+        if (typeof google === 'undefined' || !google.script || !google.script.run) { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); return; }
 
-        fetchFreshUsers(function (users) {
-            if (!users) { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); return; }
-
-            const exist = users.find(u => u.name === name);
-            if (exist && exist.userType === 'family') { alert("가족 사용자로 이미 등록된 이름입니다."); return; }
-            if (exist && isDriverV2(exist)) { alert("이미 가입된 이름입니다.\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요."); return; }
-            if (users.some(u => u.name !== name && isDriverV2(u) && String(u.pin).trim() === pin)) {
-                alert("이미 다른 기사님이 사용 중인 기사번호입니다."); return;
-            }
-
-            const now = new Date().toISOString();
-            if (exist) {
-                // 예전(4자리)에 등록했던 이름: 새 정보로 바꾸고, 기존 근무 기록은 그대로 사용
-                exist.pin = pin;
-                exist.phone = phone;
-                exist.active = true;
-                exist.userType = 'driver';
-                exist.registeredAt = now;
-            } else {
-                users.push({ name: name, pin: pin, phone: phone, active: true, userType: 'driver', registeredAt: now });
-            }
-            saveUsersList(users);
-            document.getElementById('gatewayNewName').value = '';
-            document.getElementById('gatewayNewPin').value = '';
-            alert(`'${name}' 기사님 가입이 완료되었습니다!\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요.`);
-
-            toggleAccordion('addUserAccordionContent', document.getElementById('addUserAccordionContent').previousElementSibling);
-            initGateway();
-        });
+        // 서버가 기사 명단과 중복 번호를 확인하고 저장한다
+        google.script.run
+            .withSuccessHandler(function (res) {
+                if (!res || !res.success) { alert((res && res.message) || "가입하지 못했어요. 잠시 후 다시 시도해주세요."); return; }
+                document.getElementById('gatewayNewName').value = '';
+                document.getElementById('gatewayNewPin').value = '';
+                alert(`'${name}' 기사님 가입이 완료되었습니다!\n위쪽 번호 입력칸에 기사번호 6자리를 넣어 로그인해주세요.`);
+                toggleAccordion('addUserAccordionContent', document.getElementById('addUserAccordionContent').previousElementSibling);
+                initGateway();
+            })
+            .withFailureHandler(function () { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); })
+            .registerDriver(name, pin, phone);
     }
 
     function gatewaySaveUsers(type) {
@@ -393,21 +343,30 @@
         } else if (type === 'family') {
             let name = document.getElementById('gatewayFamilyName').value.trim();
             let pin = document.getElementById('gatewayFamilyPin').value.trim();
-            let target = document.getElementById('gatewayFamilyTargetDriver').value;
+            let target = (document.getElementById('gatewayFamilyTargetDriver').value || '').trim();
+            let targetPin = ((document.getElementById('gatewayFamilyTargetPin') || {}).value || '').trim();
 
             if (!name) { alert("가족 이름을 입력해주세요."); return; }
-            if (!pin || pin.length !== 4) { alert("4자리 비밀번호를 입력해주세요."); return; }
-            if (!target) { alert("공유받을 기사님을 선택해주세요."); return; }
+            if (!/^\d{4}$/.test(pin)) { alert("4자리 비밀번호를 입력해주세요."); return; }
+            if (!target) { alert("공유받을 기사님 이름을 입력해주세요."); return; }
+            if (!/^\d{6}$/.test(targetPin)) { alert("공유받을 기사님의 기사번호 6자리를 입력해주세요."); return; }
+            if (typeof google === 'undefined' || !google.script || !google.script.run) { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); return; }
 
-            let users = getUsersList();
-            users.push({ name: name, pin: pin, active: true, userType: 'family', targetDriver: target });
-            saveUsersList(users);
-
-            document.getElementById('gatewayFamilyName').value = '';
-            document.getElementById('gatewayFamilyPin').value = '';
-            alert(`'${name}' 가족 사용자가 추가되었습니다!\n(${target} 기사님의 근무표가 공유됩니다)`);
-
-            toggleAccordion('addFamilyAccordionContent', document.getElementById('addFamilyAccordionContent').previousElementSibling);
+            // 서버가 기사님 이름과 기사번호를 확인하고 가족 사용자를 저장한다
+            google.script.run
+                .withSuccessHandler(function (res) {
+                    if (!res || !res.success) { alert((res && res.message) || "등록하지 못했어요. 잠시 후 다시 시도해주세요."); return; }
+                    document.getElementById('gatewayFamilyName').value = '';
+                    document.getElementById('gatewayFamilyPin').value = '';
+                    document.getElementById('gatewayFamilyTargetDriver').value = '';
+                    if (document.getElementById('gatewayFamilyTargetPin')) document.getElementById('gatewayFamilyTargetPin').value = '';
+                    alert(`'${name}' 가족 사용자가 추가되었습니다!\n(${target} 기사님의 근무표가 공유됩니다)`);
+                    toggleAccordion('addFamilyAccordionContent', document.getElementById('addFamilyAccordionContent').previousElementSibling);
+                    initGateway();
+                })
+                .withFailureHandler(function () { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); })
+                .registerFamily(name, pin, target, targetPin);
+            return;
         }
         initGateway();
     }
@@ -624,12 +583,19 @@
 
     function adminDeleteUser(index) {
         let users = getUsersList();
-        if (users[index].name === ADMIN_DRIVER) { alert("관리자 계정은 삭제할 수 없습니다."); return; }
-        if (confirm(`'${users[index].name}' 사용자를 바로 삭제하시겠습니까?`)) {
-            users.splice(index, 1);
-            saveUsersList(users);
-            renderAdminUserManageList();
-        }
+        const target = users[index];
+        if (!target) return;
+        if (target.name === ADMIN_DRIVER) { alert("관리자 계정은 삭제할 수 없습니다."); return; }
+        if (!confirm(`'${target.name}' 사용자를 바로 삭제하시겠습니까?`)) return;
+        google.script.run
+            .withSuccessHandler(function (res) {
+                if (!res || !res.success) { alert((res && res.message) || "삭제하지 못했습니다."); return; }
+                users.splice(index, 1);
+                saveUsersList(users);
+                renderAdminUserManageList();
+            })
+            .withFailureHandler(function () { alert("서버에 연결하지 못했습니다."); })
+            .adminDeleteUser(target.name);
     }
 
 
