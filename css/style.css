@@ -3078,3 +3078,8 @@ iconify-icon {
     .file-tab { font-size: 12.5px; padding: 2px 0; }
     .file-tab iconify-icon { font-size: 23px; }
 }
+
+/* 관리자 메뉴: 글자 없이 노란 아이콘만 */
+#tabRouteConfig { color: #facc15; }
+#tabRouteConfig iconify-icon { font-size: 30px; color: #facc15; }
+#tabRouteConfig.active { color: #facc15; background: rgba(250, 204, 21, 0.14); }
