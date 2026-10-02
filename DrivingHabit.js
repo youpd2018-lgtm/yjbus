@@ -74,3 +74,55 @@ function getDrivingHabit(driver, year, month) {
     return { success: false, error: String(err) };
   }
 }
+
+
+// ================================================================
+// ⏱️ [회차 평균 속도 저장] '회차속도' 시트에 회차별로 한 줄씩 저장합니다.
+// - 앱이 보낸 값: date, driver, key(회차 고유키), turn(회차), start/end(ms 시각), dist(km), speed(km/h)
+// - 날짜 + 기사 + key 가 같은 줄이 있으면 그 줄을 덮어쓰고, 없으면 새 줄을 추가합니다. (다시 보내도 중복되지 않음)
+// - 앱에서 doPost(action = 'save_trip_speed')로 호출합니다. (Code.js의 doPost에 연결되어 있어야 함)
+// ================================================================
+var TRIP_SPEED_SHEET_NAME = '회차속도';
+
+function saveTripSpeed(d) {
+  try {
+    if (!d || !d.date || !d.driver || !d.key) return { success: false, error: '데이터 누락' };
+    var speed = Number(d.speed), dist = Number(d.dist);
+    if (!(speed > 0 && speed < 120) || !(dist > 0)) return { success: false, error: '값 이상' };
+    var lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var sheet = ss.getSheetByName(TRIP_SPEED_SHEET_NAME);
+      if (!sheet) {
+        sheet = ss.insertSheet(TRIP_SPEED_SHEET_NAME);
+        sheet.appendRow(['날짜', '기사', '회차키', '회차', '시작', '끝', '거리(km)', '평균속도(km/h)', '저장시각']);
+        sheet.setFrozenRows(1);
+        sheet.getRange(2, 1, 2000, 3).setNumberFormat('@');   // 날짜·기사·회차키는 글자로 (자동 변환 방지)
+      }
+      var date = String(d.date), driver = String(d.driver), key = String(d.key);
+      var tz = 'Asia/Seoul';
+      var row = [date, driver, key, Number(d.turn) || '',
+        Utilities.formatDate(new Date(Number(d.start)), tz, 'HH:mm:ss'),
+        Utilities.formatDate(new Date(Number(d.end)), tz, 'HH:mm:ss'),
+        Math.round(dist * 10) / 10, Math.round(speed * 10) / 10,
+        Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss')];
+
+      var last = sheet.getLastRow(), target = -1;
+      if (last >= 2) {
+        var keys = sheet.getRange(2, 1, last - 1, 3).getDisplayValues();
+        for (var i = keys.length - 1; i >= 0; i--) {   // 최근 줄부터 찾기
+          if (keys[i][0] === date && keys[i][1] === driver && keys[i][2] === key) { target = i + 2; break; }
+        }
+      }
+      if (target === -1) target = last + 1;
+      sheet.getRange(target, 1, 1, 3).setNumberFormat('@');
+      sheet.getRange(target, 1, 1, row.length).setValues([row]);
+      return { success: true };
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}

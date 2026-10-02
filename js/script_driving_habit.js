@@ -183,6 +183,41 @@
             all[date] = list; saveTrips(all);
         } catch (e) { }
     }
+    // 끝난 회차를 서버(회차속도 시트)에 한 줄씩 올림 (이미 올린 건 u=1 로 표시해 다시 안 올림)
+    var tripUploading = false;
+    function uploadTrips() {
+        try {
+            var url = window.GAS_WEB_APP_URL;
+            if (tripUploading || !url || !driver()) return;
+            var all = loadTrips(), ts = todayStr(), nowMs = Date.now(), todo = null;
+            Object.keys(all).some(function (date) {
+                var list = all[date];
+                for (var i = 0; i < list.length; i++) {
+                    var r = list[i];
+                    var closed = r.done || date < ts || i < list.length - 1 || (nowMs - r.e) > 30 * 60 * 1000;   // 더 이상 늘어나지 않는 회차만
+                    if (!r.u && closed && recSpeed(r) !== null) { todo = { date: date, r: r }; return true; }
+                }
+                return false;
+            });
+            if (!todo) return;
+            var rr = todo.r;
+            tripUploading = true;
+            fetch(url, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+                body: JSON.stringify({ action: 'save_trip_speed', date: todo.date, driver: driver(), key: rr.k, turn: rr.t, start: rr.s, end: rr.e, dist: Math.round(rr.d * 100) / 100, speed: Math.round(recSpeed(rr) * 10) / 10 })
+            }).then(function (r) { return r.json(); })
+                .then(function (res) {
+                    tripUploading = false;
+                    if (res && res.success) {
+                        var cur = loadTrips(), l = cur[todo.date] || [];
+                        l.forEach(function (x) { if (x.k === rr.k && x.e === rr.e) x.u = 1; });
+                        saveTrips(cur);
+                        uploadTrips();   // 다음 회차가 남았으면 이어서
+                    }
+                })
+                .catch(function () { tripUploading = false; });
+        } catch (e) { tripUploading = false; }
+    }
     // 한 회차 기록의 평균 속도 (계산할 수 없으면 null)
     function recSpeed(r) {
         var sec = (r.e - r.s) / 1000;
@@ -288,6 +323,7 @@
     }
 
     function upload() {
+        try { uploadTrips(); } catch (e) { }
         try {
             if (uploading || !driver()) return;
             var p = loadPending();
