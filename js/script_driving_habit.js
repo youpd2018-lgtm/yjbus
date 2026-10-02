@@ -97,12 +97,14 @@
     }
 
     // ================================================================
-    // ⏱️ [회차 평균 속도] 출발한 시각(첫 정류장에서 움직이기 시작)과 종점 도착 시각만 재서, 거리 ÷ 걸린 시간
-    // - 중간에 모달을 끄거나 다른 앱·전화를 써도 상관없음 (출발 때와 종점 도착 때만 모달이 열려 있으면 됨)
-    // - 출발이나 도착을 보지 못한 회차는 기록하지 않음 (평균에 안 넣음)
+    // ⏱️ [회차 평균 속도] 라이브 모달을 처음 켠 시각·그때 정류장 → 마지막으로 GPS가 잡힌 시각·그때 정류장
+    // - 두 정류장 사이 거리(시간표 회차 거리를 정류장 위치 비율로 나눈 값) ÷ 그 시간
+    // - 중간에 모달을 끄거나 다른 앱·전화를 써도 시작(처음 켠 때)과 끝(마지막 GPS 때)만 보고 계산
+    // - 종점에 도착하면 거기서 끝으로 고정 (종점에서 계속 켜 둬도 시간이 늘어나지 않음)
     // ================================================================
     var TRIP_KEY_PREFIX = 'yb_tripspd_';
-    var MOVE_KMH = 5;          // 이 속도 이상이면 '출발'
+    var MIN_TRIP_SEC = 300;       // 5분 미만은 계산 안 함
+    var MIN_TRIP_FRAC = 0.1;      // 회차 거리의 10% 미만 구간은 계산 안 함
     function tripStoreKey() { return TRIP_KEY_PREFIX + driver(); }
     function loadTrips() { try { return JSON.parse(lsGet(tripStoreKey()) || '{}') || {}; } catch (e) { return {}; } }
     function saveTrips(o) {
@@ -121,52 +123,77 @@
             return d > 0 ? d : null;
         } catch (e) { return null; }
     }
+    function rad(x) { return x * Math.PI / 180; }
+    function haversineM(a, b, c, d) {
+        var R = 6371000, dLa = rad(c - a), dLo = rad(d - b);
+        var x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+        return 2 * R * Math.asin(Math.sqrt(x));
+    }
+    // 정류장 si → ei 구간이 회차 전체 길이에서 차지하는 비율 (정류장 위치 사이 직선거리 합으로 비교)
+    function segFraction(master, si, ei) {
+        var cum = [0], n = master.length;
+        for (var i = 1; i < n; i++) {
+            var A = master[i - 1], B = master[i];
+            var la1 = parseFloat(A.lat !== undefined ? A.lat : (Array.isArray(A) ? A[8] : null)), lo1 = parseFloat(A.lng !== undefined ? A.lng : (Array.isArray(A) ? A[9] : null));
+            var la2 = parseFloat(B.lat !== undefined ? B.lat : (Array.isArray(B) ? B[8] : null)), lo2 = parseFloat(B.lng !== undefined ? B.lng : (Array.isArray(B) ? B[9] : null));
+            cum.push(cum[i - 1] + ((la1 && lo1 && la2 && lo2) ? haversineM(la1, lo1, la2, lo2) : 0));
+        }
+        var total = cum[n - 1];
+        if (!(total > 0) || si < 0 || ei >= n || ei <= si) return 0;
+        return (cum[ei] - cum[si]) / total;
+    }
     function tripOnFix(speedKmh, duty) {
         try {
             if (!duty || !duty.uniqueKey) return;
             var master = window.standardMasterCache || [];
             var n = master.length, idx = window.lastPassedStopIndex;
-            if (!n || typeof idx !== 'number') return;
+            if (!n || typeof idx !== 'number' || idx < 0) return;
             var date = todayStr(), nowMs = Date.now();
             var all = loadTrips(), list = all[date] || [];
-            var last = list.length ? list[list.length - 1] : null;
-            var openSame = last && !last.e && last.k === duty.uniqueKey;
-            if (idx === 0 && speedKmh >= MOVE_KMH) {
-                // 첫 정류장에서 움직이기 시작 = 출발 (이미 이 회차로 출발 기록이 있으면 그대로 둠)
-                if (!openSame) {
-                    var dist = tripDistKm(duty);
-                    if (dist) { list.push({ k: duty.uniqueKey, t: duty.turnNum, s: nowMs, e: 0, d: dist }); all[date] = list; saveTrips(all); }
-                }
-            } else if (idx >= n - 1 && last && !last.e && last.k === duty.uniqueKey) {
-                // 종점 통과 = 도착
-                var sec = (nowMs - last.s) / 1000;
-                if (sec >= 300 && sec <= 6 * 3600) { last.e = nowMs; } else { list.pop(); }   // 비정상(너무 짧거나 긴) 기록은 버림
-                all[date] = list; saveTrips(all);
-                console.log('⏱️ [회차 평균 속도] ' + (last.e ? (last.d / (sec / 3600)).toFixed(1) + 'km/h (' + last.d + 'km, ' + Math.round(sec / 60) + '분)' : '버림'));
+            var rec = null;
+            for (var i = list.length - 1; i >= 0; i--) { if (list[i].k === duty.uniqueKey) { rec = list[i]; break; } }
+            if (!rec) {
+                var dist = tripDistKm(duty);
+                if (!dist) return;
+                rec = { k: duty.uniqueKey, t: duty.turnNum, s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, d: 0, done: 0 };   // 처음 켠 시각·정류장
+                list.push(rec);
+            } else {
+                if (rec.done) return;                 // 종점에 이미 도착한 회차는 더 늘리지 않음
+                if (idx < rec.ei) return;             // 정류장 번호가 되돌아가면(위치 오차) 무시
+                rec.e = nowMs; rec.ei = idx;           // 마지막으로 GPS가 잡힌 시각·정류장
+                if (idx >= n - 1) rec.done = 1;
             }
+            rec.d = rec.D * segFraction(master, rec.si, rec.ei);
+            all[date] = list; saveTrips(all);
         } catch (e) { }
     }
-    // 평균 속도(km/h) 모음: cur(이번 회차) / today / month. 없으면 null. state: 'measuring' 이면 지금 재는 중
+    // 한 회차 기록의 평균 속도 (계산할 수 없으면 null)
+    function recSpeed(r) {
+        var sec = (r.e - r.s) / 1000;
+        if (!(sec >= MIN_TRIP_SEC) || sec > 8 * 3600 || !(r.D > 0) || !(r.d / r.D >= MIN_TRIP_FRAC)) return null;
+        return r.d / (sec / 3600);
+    }
+    // 평균 속도(km/h) 모음: cur(이번 회차) / today / month. 없으면 null. measuring: 이번 회차가 재는 중(아직 계산 불가)
     function getAvgSpeeds(year, month) {
         var out = { cur: null, today: null, month: null, measuring: false };
         try {
             var all = loadTrips(), ts = todayStr();
             var agg = function (trips) {
                 var dist = 0, sec = 0;
-                (trips || []).forEach(function (t) { if (t.e) { dist += t.d; sec += (t.e - t.s) / 1000; } });
+                (trips || []).forEach(function (t) { if (recSpeed(t) !== null) { dist += t.d; sec += (t.e - t.s) / 1000; } });
                 return sec > 0 ? dist / (sec / 3600) : null;
             };
             out.today = agg(all[ts]);
             var prefix = year + '-' + pad(month) + '-', md = 0, ms = 0;
             Object.keys(all).forEach(function (date) {
                 if (date.indexOf(prefix) !== 0) return;
-                all[date].forEach(function (t) { if (t.e) { md += t.d; ms += (t.e - t.s) / 1000; } });
+                all[date].forEach(function (t) { if (recSpeed(t) !== null) { md += t.d; ms += (t.e - t.s) / 1000; } });
             });
             out.month = ms > 0 ? md / (ms / 3600) : null;
             var list = all[ts] || [], last = list.length ? list[list.length - 1] : null;
             if (last) {
-                if (!last.e) out.measuring = true;
-                else out.cur = last.d / (((last.e - last.s) / 1000) / 3600);
+                var v = recSpeed(last);
+                if (v !== null) out.cur = v; else if (!last.done) out.measuring = true;
             }
         } catch (e) { }
         return out;
