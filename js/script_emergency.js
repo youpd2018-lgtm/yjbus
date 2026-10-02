@@ -57,11 +57,33 @@
                     '<div style="font-size:16px; font-weight:900; color:#f8fafc;">' + it.name + '</div>' +
                     (it.hidePhone ? '' : '<div style="font-size:12px; color:#94a3b8; margin-top:2px;">' + fmt(it.phone) + '</div>') +
                     '</div>' +
-                    '<a href="tel:' + it.phone + '" style="flex-shrink:0; display:flex; align-items:center; gap:4px; background:#16a34a; color:#fff; text-decoration:none; font-size:14px; font-weight:900; padding:10px 14px; border-radius:10px;">' +
+                    '<a href="#" onclick="return window.confirmCall(\'' + it.name + '\', \'' + it.phone + '\', ' + (it.hidePhone ? 'false' : 'true') + ');" style="flex-shrink:0; display:flex; align-items:center; gap:4px; background:#16a34a; color:#fff; text-decoration:none; font-size:14px; font-weight:900; padding:10px 14px; border-radius:10px;">' +
                     '<iconify-icon icon="mdi:phone" style="font-size:18px;"></iconify-icon> 전화걸기</a>' +
                     '</div>';
             });
         });
         box.innerHTML = html;
+    };
+
+    // 전화는 한 번 눌러서 바로 걸리지 않고, 한 번 더 확인한 뒤에 건다. (실수로 걸리는 것 방지)
+    // 사람 이름 연락처는 확인 창에도 번호를 보이지 않는다 (showNumber=false)
+    window.confirmCall = function (name, phone, showNumber) {
+        var digits = String(phone || '').replace(/[^0-9]/g, '');
+        if (!digits) return false;
+        if (typeof Swal === 'undefined') {
+            if (confirm(name + '께 전화할까요?')) location.href = 'tel:' + digits;
+            return false;
+        }
+        Swal.fire({
+            title: name + '께 전화할까요?',
+            text: showNumber ? fmt(digits) : '',
+            showCancelButton: true,
+            confirmButtonText: '전화걸기',
+            cancelButtonText: '취소',
+            confirmButtonColor: '#16a34a',
+            background: '#1e293b',
+            color: '#fff'
+        }).then(function (r) { if (r.isConfirmed) location.href = 'tel:' + digits; });
+        return false;
     };
 })();

@@ -716,7 +716,7 @@ function renderEditRouteOptions() {
             let callBtnHtml = '';
             if (!isMe) {
                 callBtnHtml = phoneDigits
-                    ? `<a href="tel:${phoneDigits}" onclick="event.stopPropagation();" style="flex-shrink: 0; align-self: center; margin: 0 8px; width: 38px; height: 38px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 6px rgba(22,163,74,0.4);" title="${u.name} 전화걸기"><iconify-icon icon="mdi:phone" style="font-size: 20px;"></iconify-icon></a>`
+                    ? `<a href="#" onclick="event.stopPropagation(); return window.confirmCall('${u.name}', '${phoneDigits}', false);" style="flex-shrink: 0; align-self: center; margin: 0 8px; width: 38px; height: 38px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 6px rgba(22,163,74,0.4);" title="${u.name} 전화걸기"><iconify-icon icon="mdi:phone" style="font-size: 20px;"></iconify-icon></a>`
                     : `<span style="flex-shrink: 0; align-self: center; margin: 0 8px; width: 38px; height: 38px; border-radius: 50%; background: #1e293b; color: #475569; display: flex; align-items: center; justify-content: center;" title="연락처 없음"><iconify-icon icon="mdi:phone-off" style="font-size: 18px;"></iconify-icon></span>`;
             }
 
