@@ -36,7 +36,7 @@
   // 반환: 바뀐 칸 수
   function fill() {
     if (!data || !data.days) return 0;
-    const from = dayStr(-2);
+    const from = dayStr(-1);
     const first = !localStorage.getItem(MIGRATE_KEY);
     let changed = 0;
     for (const date of Object.keys(data.days)) {

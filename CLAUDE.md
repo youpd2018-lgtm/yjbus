@@ -30,7 +30,7 @@
 - 원본 `data/timetable/timetable.csv` (한 행 = 한 회차: 노선이름·대수·순번·회차·장소1~3·time1~3·거리·색1~3). 기준은 시트 `DBT`(검증 완료, 색은 DBT 따름). 204는 평일만.
 - 고친 뒤 `python3 tools/build_timetable.py` → `data/timetable/tt/*.json`, `index.json` 재생성. 거리 규칙: 전체 회차 = 노선 전체 km(202:100, 203:76, 204:90, 205:68, 206:70, 221:74, 281:75, 282:72), 반 회차 = 절반. 202 특수 시작 회차와 203A(마지막 순번 1회차)는 예외.
 - 앱 연결: `js/script_timetable_data.js`(시트 값은 없는 노선·순번의 대비용). 구차장(`Code.js`)·푸시(`PushNotify.js`)·`js/script_daily_roster.js`도 GitHub 시간표·근무표를 먼저 읽고(`GithubData.js`가 GitHub Pages에서 받아 옴), 못 받으면 옛 시트 방식으로 대신한다.
-- 전체 기사 근무표: `data/roster/roster.csv`(한 행 = 기사 1명의 하루) → `python3 tools/build_roster.py` → `all.json`. `js/script_roster_data.js`가 앱을 열 때 `jpil_user_<이름>_sched_<날짜>`를 채운다. **앱에서 직접 고친 근무(`..._schededit_<날짜>` 표시)는 절대 덮어쓰지 않는다**(사용자 지시). 개인정보(전화번호·키)는 Apps Script에 유지.
+- 전체 기사 근무표: `data/roster/roster.csv`(한 행 = 기사 1명의 하루) → `python3 tools/build_roster.py` → `all.json`. **보관 규칙: 어제·오늘·미래에 등록된 근무는 전부 보관, 그보다 오래된 날짜는 빌드 때 삭제.** `js/script_roster_data.js`가 앱을 열 때 `jpil_user_<이름>_sched_<날짜>`를 채운다. **앱에서 직접 고친 근무(`..._schededit_<날짜>` 표시)는 절대 덮어쓰지 않는다**(사용자 지시). 개인정보(전화번호·키)는 Apps Script에 유지.
 
 ## 다음 작업
 1. 기사들에게 소개하기 위해 **대문(첫) 페이지부터** 하나씩 고쳐 나간다.
