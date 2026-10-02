@@ -876,6 +876,12 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                     }
                 } else {
                     console.warn(`⚠️ [standard_master] 일치하는 회차 데이터가 없습니다. (요청 키: ${uniqueKey})`);
+                    // 원인을 정류장 카드에 짧게 보여 줌 (노선 정보를 못 받았을 때 기사가 알 수 있게)
+                    try {
+                        const why = (window.StdCalc && window.StdCalc.getLastError && window.StdCalc.getLastError()) || '표준시간을 계산할 수 없습니다';
+                        const nm = document.getElementById('trafficStopNameNext');
+                        if (nm) { const em = why.match(/"error":"([^"]*)"/); nm.textContent = '⚠ ' + (em ? em[1] : why.replace(/^\[[^\]]*\]\s*/, '')).slice(0, 40); nm.title = why; }
+                    } catch (e) { }
                     // 🛡️ 기존 캐시가 이미 존재한다면 빈 배열로 날리지 않고 안전하게 유지!
                     if (!window.standardMasterCache || window.standardMasterCache.length === 0) {
                         window.standardMasterCache = [];
