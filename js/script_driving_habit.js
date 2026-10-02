@@ -4,7 +4,7 @@
 // - 기준: 한국교통안전공단 운행기록분석 위험운전행동(버스) 기준을 GPS용으로 단순화
 //   · 급출발: 멈춘 상태(3km/h 이하)에서 1초에 11km/h 이상 빨라짐
 //   · 급정거: 1초에 7.5km/h 이상 줄어 속도가 3km/h 이하가 됨 (직전 속도 8km/h 이상)
-//   · 과속: 제한속도 +20km/h 초과가 3번 연속 (제한속도 정보가 없으면 판정 안 함)
+//   · 과속: 2026-10-02 화면에서 빼서 더 세지 않음 (서버 시트 열 순서를 지키려고 항목만 남김)
 //   · 급회전: 15km/h 이상에서 2초 안에 진행 방향이 60~120도 바뀜
 // - 값: 이번 회차(cur)·오늘은 이 폰 기준, 이달은 서버(운행습관 시트) 합계
 //   (하루 동안은 단말기를 바꾸지 않으므로 오늘은 이 폰 값을 바로 보여주고, 이달은 서버 합계(오늘 제외) + 오늘 값)
@@ -222,9 +222,10 @@
                 var list = all[date];
                 if (!list.some(function (r) { return !r.u; })) return;
                 if (date >= ts && !shiftOverToday(list)) return;      // 오늘 운행이 아직 안 끝났으면 기다림
+                // 그 날짜의 계산 가능한 회차를 모두 보냄 (서버가 하루 평균을 다시 계산하므로 이미 올린 회차도 함께)
                 list.forEach(function (r) {
                     var v = recSpeed(r);
-                    if (!r.u && v !== null) batch.push({ date: date, key: r.k, turn: r.t, route: r.rt || '', seq: r.sq || '', start: r.s, end: r.e, dist: Math.round(r.d * 100) / 100, speed: Math.round(v * 10) / 10, _e: r.e });
+                    if (v !== null) batch.push({ date: date, key: r.k, turn: r.t, route: r.rt || '', seq: r.sq || '', start: r.s, end: r.e, dist: Math.round(r.d * 100) / 100, speed: Math.round(v * 10) / 10, _e: r.e });
                 });
                 dates.push(date);
             });
@@ -278,8 +279,14 @@
     }
 
     // GPS 한 번 들어올 때마다 호출
+    var bufDriver = null;
     function onFix(speedKmh, accuracy, heading, duty) {
         try {
+            // 사용자가 바뀌면(로그아웃·다른 기사 로그인) 이전 사람의 임시 기록(속도 버퍼·쿨다운·회차 상태)을 모두 버린다
+            if (bufDriver !== driver()) {
+                buf = []; cool = {}; overCnt = 0; overArmed = true; lastTripKey = ''; lastStopIdx = null;
+                bufDriver = driver();
+            }
             if (window.simState && window.simState.active) return;
             if (speedKmh === null || speedKmh === undefined) return;
             if (accuracy && accuracy > MAX_ACC_M) return;
@@ -301,18 +308,6 @@
             if (prev.v <= 3 && dv / dt >= 11 && now - (cool['급출발'] || 0) > 10) count('급출발', now);
             // 급정거
             if (prev.v >= 8 && -dv / dt >= 7.5 && cur.v <= 3 && now - (cool['급정거'] || 0) > 5) count('급정거', now);
-
-            // 과속 (제한속도 +20km/h 초과가 3번 연속)
-            var lim = currentLimit();
-            if (lim !== null) {
-                if (cur.v > lim + 20) {
-                    overCnt++;
-                    if (overCnt >= 3 && overArmed) { count('과속', now); overArmed = false; }
-                } else {
-                    overCnt = 0;
-                    if (cur.v <= lim + 15) overArmed = true;
-                }
-            }
 
             // 급회전 (15km/h 이상에서 2초 안에 60~120도)
             if (cur.v >= 15 && cur.h !== null && now - (cool['급회전'] || 0) > 8) {
