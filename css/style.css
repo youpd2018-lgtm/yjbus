@@ -2893,16 +2893,6 @@ iconify-icon {
     box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
 }
 
-/* =========================================================================
-   🔤 메인화면 전체 폰트를 G마켓 산스로 통일 (아이콘은 영향 없음)
-   ========================================================================= */
-#mainAppHeader, #mainAppHeader *,
-#mainPage, #mainPage *,
-#appNavTabs, #appNavTabs * {
-    font-family: 'GmarketSans', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
-}
-
-
 /* 🔴 GPS 끊김 버튼: 깜빡여서 눈에 띄게 */
 @keyframes gpsBadgePulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75); }
