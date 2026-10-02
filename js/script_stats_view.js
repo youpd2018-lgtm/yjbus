@@ -376,7 +376,7 @@
 
     // 서브 탭 전환 및 데이터 연동
 window.switchAdminSubTab = function(subTab) {
-  const tabs = ['timetable', 'route', 'user'];
+  const tabs = ['user']; // 시간표·노선 수정 메뉴는 삭제됨(데이터는 GitHub에서 관리)
   
   tabs.forEach(tab => {
     const btn = document.getElementById('tabBtn' + tab.charAt(0).toUpperCase() + tab.slice(1));
@@ -400,12 +400,7 @@ window.switchAdminSubTab = function(subTab) {
     }
   });
 
-  if (subTab === 'timetable') {
-    if (typeof renderEditRouteOptions === 'function') renderEditRouteOptions();
-    else if (typeof onEditRouteSelectionChange === 'function') onEditRouteSelectionChange();
-  } else if (subTab === 'route') {
-    if (typeof populateRouteActionSelect === 'function') populateRouteActionSelect();
-  } else if (subTab === 'user') {
+  if (subTab === 'user') {
     if (typeof renderAdminUserManageList === 'function') renderAdminUserManageList();
   }
 };

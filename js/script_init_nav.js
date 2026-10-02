@@ -446,7 +446,7 @@
         // 5. 페이지별 특수 로직 (관리자 노선설정 진입 시 첫번째 서브탭 자동 선택)
         if (pageId === 'routeConfigPage') {
             if (typeof switchAdminSubTab === 'function') {
-                switchAdminSubTab('timetable');
+                switchAdminSubTab('user');
             }
         }
     }
@@ -710,7 +710,7 @@
             // 4번 노선설정 탭 진입 시
             let tab = document.getElementById('tabRouteConfig');
             if (tab) tab.classList.add('active');
-            // 첫 번째 서브 탭(시간표 및 거리 수정)으로 자동 열기
-            switchAdminSubTab('timetable');
+            // 사용자 관리 화면 자동 열기
+            switchAdminSubTab('user');
         }
     }
