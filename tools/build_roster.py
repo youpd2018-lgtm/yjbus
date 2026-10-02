@@ -33,6 +33,24 @@ for i, r in enumerate(rows, 2):
     days.setdefault(d, {})[n] = {'workType': r['근무형태'], 'busNo': r['차량번호'],
         'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
 if bad: print('\n'.join(bad)); sys.exit(1)
+# 검사: 노선 이름의 종류(평일/휴일/방학)와 대수가 그날 실제 운행과 맞아야 한다 (시간표가 이것으로 정해진다)
+TT = json.load(open(os.path.join(ROOT, '..', 'timetable', 'all.json'), encoding='utf-8'))['tt']
+by = {}
+for i, r in enumerate(rows, 2):
+    if r['근무형태'].strip() == '휴무': continue
+    by.setdefault((r['근무일자'].strip(), r['노선명'].strip()), set()).add(re.sub(r'\D', '', r['순번']))
+kinds = {}
+for (d, label), seqs in sorted(by.items()):
+    m = re.fullmatch(r'(\d+[A-Z]?)(평일|휴일|방학)\((\d+)대\)', label)
+    if not m: bad.append(f'{d} 노선 이름 형식 이상: {label}'); continue
+    if label not in TT: bad.append(f'{d} {label}: 시간표에 없는 노선(종류/대수 확인)')
+    if seqs != {str(k) for k in range(1, int(m.group(3)) + 1)}:
+        bad.append(f'{d} {label}: 순번이 1~{m.group(3)}과 다름 ({len(seqs)}개: {sorted(map(int, seqs))})')
+    if m.group(1) != '204': kinds.setdefault(d, set()).add(m.group(2))
+for d, k in sorted(kinds.items()):
+    if len(k) > 1: bad.append(f'{d}: 한 날짜에 평일/휴일/방학이 섞여 있음 {sorted(k)}')
+if bad: print('\n'.join(bad)); sys.exit(1)
+
 DRV = os.path.join(ROOT, 'drivers.txt')
 drivers = [l.strip() for l in open(DRV, encoding='utf-8') if l.strip()]
 new = sorted({n for d in days.values() for n in d} - set(drivers))
