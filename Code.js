@@ -287,23 +287,11 @@ function askGeminiVoiceAssistant(query, context, history) {
             }
           }
 
-          // DBT 시트에서 시간표 및 교대 시간 추출
-          const dbtSheet = ss.getSheetByName('DBT');
+          // GitHub 시간표에서 시간표 및 교대 시간 추출
           const mySeqMatch = context.match(/(\d+)순번/);
-          if (dbtSheet && mySeqMatch) {
-            const seqStr = mySeqMatch[1] + "순번";
-            const dbtData = dbtSheet.getDataRange().getDisplayValues();
-            let ttMsg = "";
-            for(let i=0; i<dbtData.length; i++) {
-              const rowStr = dbtData[i].join(" ");
-              // 해당 노선과 순번이 모두 포함된 행 찾기
-              if(rowStr.includes(rNo) && rowStr.includes(seqStr)) {
-                 ttMsg += "\n- " + dbtData[i].filter(c => c.trim() !== "").join(" | ");
-              }
-            }
-            if (ttMsg) {
-              enrichedContext += `\n\n[오늘 노선(${rNo}번 ${seqStr}) 상세 시간표 및 교대 시간 (DBT)]${ttMsg}`;
-            }
+          if (mySeqMatch) {
+            const ttMsg = searchRouteTimetableInRouteDataMap(rNo, mySeqMatch[1], "");
+            if (ttMsg) enrichedContext += `\n\n[오늘 노선(${rNo}번 ${mySeqMatch[1]}순번) 상세 시간표 및 교대 시간]\n${ttMsg}`;
           }
         } catch(e) { }
       }
@@ -552,29 +540,7 @@ function getDailyRoster(days) {
     }
   } catch (eGh) {}
 
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('일일근무표');
-  if (!sheet) return { success: false, error: "일일근무표 시트를 찾을 수 없습니다." };
-  const values = sheet.getDataRange().getDisplayValues();
-  if (values.length < 2) return { success: true, today: today, rows: [] };
-
-  const header = values[0].map(h => String(h).trim());
-  const col = name => header.indexOf(name);
-  const cDate = col('근무일자'), cName = col('기사명'), cType = col('근무형태'),
-        cRoute = col('노선명'), cBus = col('차량번호'), cSeq = col('순번'), cTime = col('근무시간');
-  if (cDate < 0 || cName < 0) return { success: false, error: "일일근무표 제목 줄에서 '근무일자'/'기사명'을 찾을 수 없습니다." };
-
-  const end = Utilities.formatDate(new Date(Date.now() + (days - 1) * 86400000), "Asia/Seoul", "yyyy-MM-dd");
-  const pick = (r, c) => c >= 0 ? String(r[c]).trim() : "";
-  const rows = [];
-  for (let i = 1; i < values.length; i++) {
-    const r = values[i];
-    const d = pick(r, cDate).replace(/\./g, '-').replace(/\s/g, '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < today || d > end) continue;
-    rows.push([d, pick(r, cName), pick(r, cType), pick(r, cRoute), pick(r, cBus), pick(r, cSeq), pick(r, cTime)]);
-  }
-  const res = { success: true, today: today, days: days, rows: rows };
-  try { cache.put(cacheKey, JSON.stringify(res), 300); } catch (e) {} // 캐시 한도(100KB) 초과 시 무시
-  return res;
+  return { success: false, error: "GitHub 근무표를 받지 못했습니다." };
 }
 
 // 🛡️ 구차장 호출 한도: 1분에 GEMINI_MAX_PER_MIN 번까지만 허용 (짧은 시간에 몰아서 부르는 남용 방지). 넘으면 안내 문장을 돌려준다
@@ -652,22 +618,7 @@ function readDailyRosterRows() {
     const ghRows = ghRosterRows_();
     if (ghRows) return ghRows;
   } catch (eGh) {}
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('일일근무표');
-  if (!sheet) return null;
-  const values = sheet.getDataRange().getDisplayValues();
-  if (values.length < 2) return [];
-  const header = values[0].map(h => String(h).trim());
-  const col = name => header.indexOf(name);
-  const c = { date: col('근무일자'), name: col('기사명'), type: col('근무형태'), route: col('노선명'), bus: col('차량번호'), seq: col('순번'), time: col('근무시간') };
-  const pick = (r, k) => c[k] >= 0 ? String(r[c[k]]).trim() : "";
-  const rows = [];
-  for (let i = 1; i < values.length; i++) {
-    const r = values[i];
-    const date = pick(r, 'date').replace(/\./g, '-').replace(/\s/g, '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    rows.push({ date: date, name: pick(r, 'name'), type: pick(r, 'type'), route: pick(r, 'route'), bus: pick(r, 'bus'), seq: pick(r, 'seq'), time: pick(r, 'time') });
-  }
-  return rows;
+  return null;
 }
 
 function rosterRowText(r) {
@@ -679,7 +630,7 @@ function rosterRowText(r) {
 function searchDriverScheduleInSheet(driverName) {
   try {
     const rows = readDailyRosterRows();
-    if (rows === null) return "일일근무표 시트를 찾을 수 없습니다.";
+    if (rows === null) return "GitHub 근무표를 받지 못했습니다.";
     const kw = String(driverName || "").trim();
     if (!kw) return "검색어(기사님 이름 또는 차량 번호)가 필요합니다.";
     const hit = rows.filter(r => r.name.includes(kw) || (r.bus && r.bus === kw))
@@ -695,7 +646,7 @@ function searchDriverScheduleInSheet(driverName) {
 function searchShiftPartnerInSheet(routeNo, seqNo, targetWorkType, targetDate) {
   try {
     const rows = readDailyRosterRows();
-    if (rows === null) return "일일근무표 시트를 찾을 수 없습니다.";
+    if (rows === null) return "GitHub 근무표를 받지 못했습니다.";
     const rNum = String(routeNo).replace(/[^0-9A-Z]/ig, '');
     const sNum = String(seqNo).replace(/[^0-9]/g, '');
     const tWork = String(targetWorkType || '').includes('오전') ? '오전' : '오후';
@@ -717,15 +668,11 @@ function searchShiftPartnerInSheet(routeNo, seqNo, targetWorkType, targetDate) {
 
 // 🔍 routeDataMap(DB 시트의 yeongjong_shared_routeDataMap)에서 노선·순번 시간표 찾기. 못 찾으면 null
 function searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType) {
-  // 시트(DB)의 routeDataMap 위에 GitHub 시간표를 덮어쓴다 (GitHub에 없는 노선은 시트 값 사용)
+  // 시간표는 GitHub 데이터(data/timetable)만 사용한다
   let map = {};
   try {
-    const raw = loadKeyFromServer('yeongjong_shared_routeDataMap');
-    if (raw) map = (typeof raw === 'string') ? JSON.parse(raw) : raw;
-  } catch (e0) {}
-  try {
     const gh = ghRouteDataMap_();
-    if (gh) Object.keys(gh).forEach(function (k) { map[k] = gh[k]; });
+    if (gh) map = gh;
   } catch (e1) {}
   if (Object.keys(map).length === 0) return null;
   const rNum = String(routeNo).replace(/[^0-9A-Z]/ig, '');
@@ -760,64 +707,15 @@ function searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType) {
   return out ? out.trim() : null;
 }
 
-// 🔍 [Function Calling 용도] 노선 시간표 검색 (routeDataMap 우선, 없으면 DBT)
+// 🔍 [Function Calling 용도] 노선 시간표 검색 (GitHub 시간표)
 function searchRouteTimetableInSheet(routeNo, seqNo, dayType) {
   try {
-    // 1순위: DB 시트의 routeDataMap(노선별 순번 시간표). 노란 칸 = 교대시간
     const mapRes = searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType);
     if (mapRes) return mapRes;
-  } catch (e0) {}
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName('DBT');
-    if (!sheet) return "DBT 시트를 찾을 수 없습니다.";
-    
-    const range = sheet.getDataRange();
-    const data = range.getDisplayValues();
-    const colors = range.getBackgrounds();
-    
-    let ttMsg = "";
-    
-    // 유연한 검색을 위해 숫자만 추출
-    const rNum = String(routeNo).replace(/[^0-9A-Z]/ig, '');
-    const sNum = String(seqNo).replace(/[^0-9]/g, '');
-
-    for(let i=0; i<data.length; i++) {
-      const rowStr = data[i].join(" ");
-      // 노선 번호와 순번이 모두 포함된 행 찾기
-      let match = rowStr.includes(rNum) && rowStr.includes(sNum);
-      if (dayType && match) {
-         if (dayType.includes('평일') && !rowStr.includes('평일')) match = false;
-         if (dayType.includes('휴무') || dayType.includes('휴일')) {
-            if (!rowStr.includes('휴일')) match = false;
-         }
-      }
-      if(match) {
-         let rowArr = [];
-         for(let j=0; j<data[i].length; j++) {
-            let cellText = String(data[i][j]).trim();
-            if (cellText !== "") {
-               const hex = colors[i][j].toLowerCase();
-               // 오직 '노란색' 계열만 교대시간으로 간주 (빨강, 파랑 등 제외)
-               const yellowHexes = ['#ffff00', '#fff2cc', '#ffe599', '#ffd966', '#f1c232'];
-               if (yellowHexes.includes(hex)) {
-                  cellText += "(교대시간)";
-               }
-               rowArr.push(cellText);
-            }
-         }
-         ttMsg += "\n- " + rowArr.join(" | ");
-      }
-    }
-    
-    if (ttMsg) {
-      return `[${rNum}번 노선 ${sNum}순번 운행 시간표]\n* 규칙: 텍스트에 '(교대시간)' 마커가 있는 시간이 정확한 교대시간입니다. 오전 근무자는 교대시간까지 근무하며, 오후 근무자는 이 교대시간에 차량을 인계받고 다음 회차부터 운행합니다.\n${ttMsg}`;
-    } else {
-      return `${routeNo}번 노선 ${seqNo}순번의 시간표 데이터를 찾을 수 없습니다.`;
-    }
-  } catch(e) {
-    return "시간표 검색 중 오류 발생: " + e.toString();
+  } catch (e0) {
+    return "시간표 검색 중 오류 발생: " + e0.toString();
   }
+  return `${routeNo}번 노선 ${seqNo}순번의 시간표 데이터를 찾을 수 없습니다.`;
 }
 
 // 🔍 [Function Calling 용도] 실시간 버스 위치 검색 (TAGO BIS)
