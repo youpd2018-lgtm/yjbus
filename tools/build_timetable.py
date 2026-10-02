@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""data/timetable/timetable.csv -> data/timetable/tt/*.json, data/timetable/index.json
+"""data/timetable/timetable.csv -> data/timetable/tt/*.json, index.json, all.json
 
 CSV(한 행 = 한 회차)를 고친 뒤 이 파일을 실행하면 앱이 읽는 JSON 파일이 다시 만들어진다.
   python3 tools/build_timetable.py
 칸: 노선이름, 대수, 순번, 회차, 장소1~3, time1~3, 거리, 색1~3 (색: red / yellow / blue, 빈칸 = 검정)
 """
-import csv, json, os, sys, collections
+import csv, hashlib, json, os, sys, collections
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'timetable')
 CSV_PATH = os.path.join(ROOT, 'timetable.csv')
@@ -29,6 +29,7 @@ def main():
     os.makedirs(TT_DIR, exist_ok=True)
 
     index = collections.OrderedDict()
+    allmap = collections.OrderedDict()
     for (label, seq), rs in seqs.items():
         rs.sort(key=lambda r: int(r['회차']))
         rounds = []
@@ -52,9 +53,15 @@ def main():
         with open(os.path.join(TT_DIR, f'{label}_{seq}순번.json'), 'w', encoding='utf-8') as f:
             json.dump({'route': label, 'seq': f'{seq}순번', 'rounds': rounds}, f, ensure_ascii=False, indent=1)
         index.setdefault(label, []).append(seq)
+        allmap.setdefault(label, collections.OrderedDict())[str(seq)] = rounds
 
     with open(os.path.join(ROOT, 'index.json'), 'w', encoding='utf-8') as f:
         json.dump({'routes': [{'route': k, 'seqs': v} for k, v in index.items()]}, f, ensure_ascii=False, indent=1)
+
+    # 앱이 한 번에 받는 묶음 파일 (가볍게 한 번만 내려받음)
+    with open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8') as f:
+        json.dump({'rev': hashlib.md5(json.dumps(allmap, ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()[:12],
+                   'tt': allmap}, f, ensure_ascii=False, separators=(',', ':'))
 
     print(f'노선 {len(index)}개, 순번 {len(seqs)}개, 회차 {len(rows)}개')
     if problems:
