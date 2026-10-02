@@ -77,18 +77,18 @@ function getDrivingHabit(driver, year, month) {
 
 
 // ================================================================
-// ⏱️ [회차 평균 속도 저장] '회차속도' 시트에 회차별로 한 줄씩 저장합니다.
-// - 앱이 보낸 값: date, driver, key(회차 고유키), turn(회차), start/end(ms 시각), dist(km), speed(km/h)
-// - 날짜 + 기사 + key 가 같은 줄이 있으면 그 줄을 덮어쓰고, 없으면 새 줄을 추가합니다. (다시 보내도 중복되지 않음)
+// ⏱️ [회차 평균 속도 저장] '회차평균속도' 시트에 회차별로 한 줄씩 저장합니다.
+// - 앱이 운행이 끝난 뒤 한꺼번에 보냅니다: { driver, trips: [{ date, key, turn, route, seq, start, end, dist, speed }, ...] }
+// - 열: 날짜 | 운전자 | 노선 | 순번 | 회차 | 평균속도(km/h) | 시작 | 끝 | 거리(km) | 회차키 | 저장시각
+// - 날짜 + 운전자 + 회차키가 같은 줄이 있으면 그 줄을 덮어쓰고, 없으면 새 줄을 추가합니다. (다시 보내도 중복되지 않음)
 // - 앱에서 doPost(action = 'save_trip_speed')로 호출합니다. (Code.js의 doPost에 연결되어 있어야 함)
 // ================================================================
-var TRIP_SPEED_SHEET_NAME = '회차속도';
+var TRIP_SPEED_SHEET_NAME = '회차평균속도';
 
 function saveTripSpeed(d) {
   try {
-    if (!d || !d.date || !d.driver || !d.key) return { success: false, error: '데이터 누락' };
-    var speed = Number(d.speed), dist = Number(d.dist);
-    if (!(speed > 0 && speed < 120) || !(dist > 0)) return { success: false, error: '값 이상' };
+    if (!d || !d.driver || !d.trips || !d.trips.length) return { success: false, error: '데이터 누락' };
+    var driver = String(d.driver), tz = 'Asia/Seoul';
     var lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
@@ -96,29 +96,36 @@ function saveTripSpeed(d) {
       var sheet = ss.getSheetByName(TRIP_SPEED_SHEET_NAME);
       if (!sheet) {
         sheet = ss.insertSheet(TRIP_SPEED_SHEET_NAME);
-        sheet.appendRow(['날짜', '기사', '회차키', '회차', '시작', '끝', '거리(km)', '평균속도(km/h)', '저장시각']);
+        sheet.appendRow(['날짜', '운전자', '노선', '순번', '회차', '평균속도(km/h)', '시작', '끝', '거리(km)', '회차키', '저장시각']);
         sheet.setFrozenRows(1);
-        sheet.getRange(2, 1, 2000, 3).setNumberFormat('@');   // 날짜·기사·회차키는 글자로 (자동 변환 방지)
+        sheet.getRange(2, 1, 3000, 4).setNumberFormat('@');   // 날짜·운전자·노선·순번은 글자로 (자동 변환 방지)
+        sheet.getRange(2, 10, 3000, 1).setNumberFormat('@');
       }
-      var date = String(d.date), driver = String(d.driver), key = String(d.key);
-      var tz = 'Asia/Seoul';
-      var row = [date, driver, key, Number(d.turn) || '',
-        Utilities.formatDate(new Date(Number(d.start)), tz, 'HH:mm:ss'),
-        Utilities.formatDate(new Date(Number(d.end)), tz, 'HH:mm:ss'),
-        Math.round(dist * 10) / 10, Math.round(speed * 10) / 10,
-        Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss')];
-
-      var last = sheet.getLastRow(), target = -1;
+      // 기존 줄 찾기용 목록 (날짜|운전자|회차키 → 줄 번호)
+      var last = sheet.getLastRow(), index = {};
       if (last >= 2) {
-        var keys = sheet.getRange(2, 1, last - 1, 3).getDisplayValues();
-        for (var i = keys.length - 1; i >= 0; i--) {   // 최근 줄부터 찾기
-          if (keys[i][0] === date && keys[i][1] === driver && keys[i][2] === key) { target = i + 2; break; }
-        }
+        var vals = sheet.getRange(2, 1, last - 1, 10).getDisplayValues();
+        for (var i = 0; i < vals.length; i++) index[vals[i][0] + '|' + vals[i][1] + '|' + vals[i][9]] = i + 2;
       }
-      if (target === -1) target = last + 1;
-      sheet.getRange(target, 1, 1, 3).setNumberFormat('@');
-      sheet.getRange(target, 1, 1, row.length).setValues([row]);
-      return { success: true };
+      var saved = 0;
+      d.trips.forEach(function (t) {
+        var speed = Number(t.speed), dist = Number(t.dist);
+        if (!t || !t.date || !t.key || !(speed > 0 && speed < 120) || !(dist > 0)) return;
+        var date = String(t.date), key = String(t.key);
+        var row = [date, driver, String(t.route || ''), String(t.seq || ''), Number(t.turn) || '',
+          Math.round(speed * 10) / 10,
+          Utilities.formatDate(new Date(Number(t.start)), tz, 'HH:mm:ss'),
+          Utilities.formatDate(new Date(Number(t.end)), tz, 'HH:mm:ss'),
+          Math.round(dist * 10) / 10, key,
+          Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss')];
+        var id = date + '|' + driver + '|' + key, target = index[id];
+        if (!target) { last += 1; target = last; index[id] = target; }
+        sheet.getRange(target, 1, 1, 4).setNumberFormat('@');
+        sheet.getRange(target, 10, 1, 1).setNumberFormat('@');
+        sheet.getRange(target, 1, 1, row.length).setValues([row]);
+        saved++;
+      });
+      return { success: true, saved: saved };
     } finally {
       lock.releaseLock();
     }

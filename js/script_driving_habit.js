@@ -143,6 +143,9 @@
         if (!(total > 0) || si < 0 || ei >= n || ei <= si) return 0;
         return (cum[ei] - cum[si]) / total;
     }
+    function todaySched() {
+        try { return JSON.parse(lsGet(typeof getDriverKey === 'function' ? getDriverKey('sched_' + todayStr()) : 'sched_' + todayStr()) || 'null'); } catch (e) { return null; }
+    }
     // 오늘 내 근무(정상·대타)이고 운행 시간 안일 때만 잰다 (쉬는 날·집에서 시험 삼아 켠 경우는 기록 안 함)
     function onDutyNow() {
         try {
@@ -170,7 +173,8 @@
                 if (!moving) return;                  // 실제로 달리기 시작한 때부터 잼 (출발지에서 기다리는 시간은 안 넣음)
                 var dist = tripDistKm(duty);
                 if (!dist) return;
-                rec = { k: duty.uniqueKey, t: duty.turnNum, s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, d: 0, done: 0 };   // 처음 켠 시각·정류장
+                var sd0 = todaySched();
+                rec = { k: duty.uniqueKey, t: duty.turnNum, rt: sd0 ? sd0.route : '', sq: sd0 ? sd0.seq : '', s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, d: 0, done: 0 };   // 처음 켠 시각·정류장
                 list.push(rec);
             } else {
                 if (rec.done) return;                 // 종점에 이미 도착한 회차는 더 늘리지 않음
@@ -183,36 +187,59 @@
             all[date] = list; saveTrips(all);
         } catch (e) { }
     }
-    // 끝난 회차를 서버(회차속도 시트)에 한 줄씩 올림 (이미 올린 건 u=1 로 표시해 다시 안 올림)
+    // 오늘 내 근무의 마지막 회차 번호 (오전: 교대 행까지, 오후: 맨 끝까지 — 시간표 계산과 같은 규칙)
+    function lastTurnOfDuty() {
+        try {
+            var sd = todaySched();
+            if (!sd || typeof customGetItem !== 'function' || typeof getHeaderArray !== 'function') return null;
+            var list = customGetItem(sd.route, sd.seq);
+            if (!list || !list.length) return null;
+            var cols = getHeaderArray(sd.route, sd.seq).length, yellow = -1;
+            for (var i = 0; i < list.length && yellow === -1; i++) {
+                for (var c = 1; c <= cols; c++) { if (list[i]['c' + c] === 'yellow') { yellow = i; break; } }
+            }
+            var end = list.length - 1;
+            if (String(sd.time || '').indexOf('오전') >= 0) end = (yellow !== -1) ? yellow : Math.min(2, list.length - 1);
+            return end + 1;
+        } catch (e) { return null; }
+    }
+    // 오늘 운행이 끝났는가? (마지막 회차 종점 도착 / 마지막 기록 후 40분 넘게 GPS 없음)
+    function shiftOverToday(list) {
+        if (!list || !list.length) return false;
+        var lt = lastTurnOfDuty(), last = list[list.length - 1];
+        if (lt && last.t >= lt && last.done) return true;
+        return (Date.now() - last.e) > 40 * 60 * 1000;
+    }
+
+    // 운행이 끝나면 아직 안 올린 회차들을 서버(회차평균속도 시트)에 한꺼번에 올림 (올린 건 u=1 로 표시)
     var tripUploading = false;
     function uploadTrips() {
         try {
             var url = window.GAS_WEB_APP_URL;
             if (tripUploading || !url || !driver()) return;
-            var all = loadTrips(), ts = todayStr(), nowMs = Date.now(), todo = null;
-            Object.keys(all).some(function (date) {
+            var all = loadTrips(), ts = todayStr(), batch = [], dates = [];
+            Object.keys(all).forEach(function (date) {
                 var list = all[date];
-                for (var i = 0; i < list.length; i++) {
-                    var r = list[i];
-                    var closed = r.done || date < ts || i < list.length - 1 || (nowMs - r.e) > 30 * 60 * 1000;   // 더 이상 늘어나지 않는 회차만
-                    if (!r.u && closed && recSpeed(r) !== null) { todo = { date: date, r: r }; return true; }
-                }
-                return false;
+                if (!list.some(function (r) { return !r.u; })) return;
+                if (date >= ts && !shiftOverToday(list)) return;      // 오늘 운행이 아직 안 끝났으면 기다림
+                list.forEach(function (r) {
+                    var v = recSpeed(r);
+                    if (!r.u && v !== null) batch.push({ date: date, key: r.k, turn: r.t, route: r.rt || '', seq: r.sq || '', start: r.s, end: r.e, dist: Math.round(r.d * 100) / 100, speed: Math.round(v * 10) / 10, _e: r.e });
+                });
+                dates.push(date);
             });
-            if (!todo) return;
-            var rr = todo.r;
+            if (!batch.length) return;
             tripUploading = true;
             fetch(url, {
                 method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
-                body: JSON.stringify({ action: 'save_trip_speed', date: todo.date, driver: driver(), key: rr.k, turn: rr.t, start: rr.s, end: rr.e, dist: Math.round(rr.d * 100) / 100, speed: Math.round(recSpeed(rr) * 10) / 10 })
+                body: JSON.stringify({ action: 'save_trip_speed', driver: driver(), trips: batch.map(function (b) { var o = Object.assign({}, b); delete o._e; return o; }) })
             }).then(function (r) { return r.json(); })
                 .then(function (res) {
                     tripUploading = false;
                     if (res && res.success) {
-                        var cur = loadTrips(), l = cur[todo.date] || [];
-                        l.forEach(function (x) { if (x.k === rr.k && x.e === rr.e) x.u = 1; });
+                        var cur = loadTrips();
+                        batch.forEach(function (b) { (cur[b.date] || []).forEach(function (x) { if (x.k === b.key && x.e === b._e) x.u = 1; }); });
                         saveTrips(cur);
-                        uploadTrips();   // 다음 회차가 남았으면 이어서
                     }
                 })
                 .catch(function () { tripUploading = false; });
