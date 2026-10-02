@@ -16,3 +16,5 @@ node_modules/**
 icons/**
 sw.js
 manifest.json
+data/**
+tools/**

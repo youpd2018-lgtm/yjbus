@@ -1,0 +1,96 @@
+{
+ "route": "221평일(8대)",
+ "seq": "7순번",
+ "rounds": [
+  {
+   "round": 1,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "",
+   "time2": "05:20",
+   "time3": "06:55",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 37
+  },
+  {
+   "round": 2,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "07:12",
+   "time2": "08:49",
+   "time3": "10:22",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 74
+  },
+  {
+   "round": 3,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "10:52",
+   "time2": "12:29",
+   "time3": "14:02",
+   "c1": "black",
+   "c2": "black",
+   "c3": "yellow",
+   "dist": 74
+  },
+  {
+   "round": 4,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "14:32",
+   "time2": "16:09",
+   "time3": "17:42",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 74
+  },
+  {
+   "round": 5,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "18:12",
+   "time2": "19:49",
+   "time3": "21:22",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 74
+  },
+  {
+   "round": 6,
+   "places": [
+    "차고지",
+    "T2",
+    "차고지"
+   ],
+   "time1": "21:52",
+   "time2": "23:22",
+   "time3": "",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 37
+  }
+ ]
+}

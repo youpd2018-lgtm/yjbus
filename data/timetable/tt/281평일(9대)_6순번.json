@@ -1,0 +1,96 @@
+{
+ "route": "281평일(9대)",
+ "seq": "6순번",
+ "rounds": [
+  {
+   "round": 1,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "",
+   "time2": "05:00",
+   "time3": "06:20",
+   "c1": "black",
+   "c2": "red",
+   "c3": "black",
+   "dist": 37
+  },
+  {
+   "round": 2,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "07:05",
+   "time2": "08:34",
+   "time3": "10:03",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 75
+  },
+  {
+   "round": 3,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "11:03",
+   "time2": "12:28",
+   "time3": "13:53",
+   "c1": "black",
+   "c2": "black",
+   "c3": "yellow",
+   "dist": 75
+  },
+  {
+   "round": 4,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "14:43",
+   "time2": "16:13",
+   "time3": "17:43",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 75
+  },
+  {
+   "round": 5,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "18:28",
+   "time2": "19:56",
+   "time3": "21:25",
+   "c1": "black",
+   "c2": "black",
+   "c3": "black",
+   "dist": 75
+  },
+  {
+   "round": 6,
+   "places": [
+    "T2",
+    "대우하나",
+    "T2"
+   ],
+   "time1": "22:00",
+   "time2": "23:20",
+   "time3": "",
+   "c1": "red",
+   "c2": "black",
+   "c3": "black",
+   "dist": 37
+  }
+ ]
+}
