@@ -756,7 +756,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 
         // 🚦 [운행일 여부 강력 검사] 휴일/미등록/휴무/대기 등 운행일이 아니면 기능 차단
         const rawRoute = document.getElementById('resRoute')?.innerText.trim() || '';
-        const isNotDrivingDay = rawRoute === '-' || rawRoute.includes('휴일') || rawRoute.includes('휴무') || rawRoute.includes('미등록') || rawRoute.includes('대기') || !/\d/.test(rawRoute);
+        const isNotDrivingDay = rawRoute === '-' || rawRoute === '휴일' || rawRoute.includes('휴무') || rawRoute.includes('미등록') || rawRoute.includes('대기') || !/\d/.test(rawRoute);
 
         if (isNotDrivingDay) {
             // 모든 주요 기능 표시를 "-" 로 통일
