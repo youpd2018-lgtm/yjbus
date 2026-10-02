@@ -76,9 +76,19 @@ function dbCleanTargets_(rows) {
     const m = String(r[0] || '').match(/^jpil_user_(.+)_schededit_(\d{4}-\d{2}-\d{2})$/);
     if (m) keep['jpil_user_' + m[1] + '_sched_' + m[2]] = true;
   });
+  // 가족 사용자는 푸시 알림이 필요 없으므로 그 이름의 fcm_ 토큰도 지운다
+  const familyNames = [];
+  rows.forEach(function (r) {
+    if (String(r[0]) !== 'yeongjong_users_db') return;
+    try {
+      const list = JSON.parse(String(r[1]));
+      if (Array.isArray(list)) list.forEach(function (u) { if (u && u.userType === 'family' && u.name) familyNames.push(String(u.name)); });
+    } catch (e) {}
+  });
   return function isTarget(key) {
     key = String(key || '');
     if (!key) return false;
+    for (let i = 0; i < familyNames.length; i++) if (key.indexOf('fcm_' + familyNames[i] + '_') === 0) return true;
     if (/^jpil_user_.+_sched_\d{4}-\d{2}-\d{2}$/.test(key)) return !keep[key];
     if (/^yeongjong_(first_header|seq_header|shared_tt)_/.test(key)) return true;
     if (key === 'yeongjong_shared_routeDataMap') return true;
@@ -97,7 +107,7 @@ function dbCleanRun_(execute) {
   const kept = [], removed = {};
   rows.forEach(function (r) {
     if (isTarget(r[0])) {
-      const g = String(r[0]).replace(/\d{4}-\d{2}-\d{2}/g, '<날짜>').replace(/^(jpil_user_)[^_]+(_.*)$/, '$1<이름>$2').replace(/^(yeongjong_(?:first_header|seq_header|shared_tt)_).*$/, '$1<노선_순번>');
+      const g = String(r[0]).replace(/\d{4}-\d{2}-\d{2}/g, '<날짜>').replace(/^(jpil_user_)[^_]+(_.*)$/, '$1<이름>$2').replace(/^(fcm_)[^_]+(_.*)$/, '$1<이름>$2').replace(/^(yeongjong_(?:first_header|seq_header|shared_tt)_).*$/, '$1<노선_순번>');
       removed[g] = (removed[g] || 0) + 1;
     } else kept.push(r);
   });

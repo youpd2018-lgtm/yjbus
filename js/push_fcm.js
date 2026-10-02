@@ -31,7 +31,13 @@
     return 'fcm_' + String(driver || 'unknown').trim() + '_' + token.slice(-16);
   }
 
+  // 가족 사용자는 푸시 알림이 필요 없어 토큰을 만들거나 서버에 등록하지 않는다
+  function isFamilyLogin() {
+    try { return (JSON.parse(localStorage.getItem('yeongjong_logged_user')) || {}).userType === 'family'; } catch (e) { return false; }
+  }
+
   function saveTokenToServer(token) {
+    if (isFamilyLogin()) return;
     const driver = window.currentDriver || (function () {
       try { return (JSON.parse(localStorage.getItem('yeongjong_logged_user')) || {}).name; } catch (e) { return null; }
     })();
@@ -59,7 +65,7 @@
 
   // 권한이 이미 허용된 경우 토큰을 (재)발급하고 서버에 등록
   async function refreshPushToken() {
-    if (!isPushSupported() || Notification.permission !== 'granted') return null;
+    if (!isPushSupported() || Notification.permission !== 'granted' || isFamilyLogin()) return null;
     try {
       const registration = await navigator.serviceWorker.ready;
       const token = await getMessaging().getToken({
