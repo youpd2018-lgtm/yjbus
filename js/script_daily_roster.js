@@ -33,8 +33,11 @@ function refreshDailyRoster(force) {
       const rows = [];
       Object.keys(j.days).sort().forEach(date => {
         if (date < today || date > endStr) return;
-        Object.keys(j.days[date]).forEach(name => {
-          let rec = j.days[date][name];
+        const people = j.days[date];
+        // 근무표에는 근무하는 사람만 있다: 명단에 있는데 그 날짜에 없으면 휴무
+        const everyone = Array.from(new Set([...(j.drivers || []), ...Object.keys(people)]));
+        everyone.forEach(name => {
+          let rec = people[name] || { workType: '휴무' };
           try {
             if (localStorage.getItem(`jpil_user_${name}_schededit_${date}`)) {
               const mine = JSON.parse(localStorage.getItem(`jpil_user_${name}_sched_${date}`) || 'null');

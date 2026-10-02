@@ -3,9 +3,11 @@
 
 한 행 = 기사 1명의 하루 근무. 고친 뒤 python3 tools/build_roster.py 를 실행한다.
 보관 규칙: 어제·오늘·미래 근무만 보관(더 오래된 날짜는 실행할 때 지워짐).
-칸: 근무일자(YYYY-MM-DD), 기사명, 근무형태(정상/휴무/대타 등), 노선명, 차량번호, 순번, 근무시간(오전/오후/-)
-all.json 모양: {"rev":..., "days":{"2026-10-04":{"이승국":{"workType":"정상","busNo":"2514","route":"202휴일(12대)","seq":"1순번","time":"오전"}}}}
-(앱의 jpil_user_<이름>_sched_<날짜> 값과 같은 모양)
+규칙: 근무하는 사람만 적는다. 그 날짜에 이름이 없는 기사는 앱이 자동으로 휴무로 처리한다. (휴무 행은 무시된다)
+기사 전체 명단은 data/roster/drivers.txt (한 줄에 한 명). 새 기사가 근무표에 나오면 이 실행에서 자동으로 추가된다.
+칸: 근무일자(YYYY-MM-DD), 기사명, 근무형태(정상/대타 등), 노선명, 차량번호, 순번, 근무시간(오전/오후)
+all.json 모양: {"rev":..., "drivers":[이름...], "days":{"2026-10-04":{"이승국":{"workType":"정상","busNo":"2514","route":"202휴일(12대)","seq":"1순번","time":"오전"}}}}
+(days 안의 값은 앱의 jpil_user_<이름>_sched_<날짜> 값과 같은 모양, 휴무자는 days에 없음)
 """
 import csv, hashlib, json, os, sys, re, datetime
 
@@ -27,11 +29,18 @@ for i, r in enumerate(rows, 2):
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', d) or not n: bad.append(f'{i}행: 날짜/이름 이상'); continue
     if (d, n) in seen: bad.append(f'{i}행: {d} {n} 중복'); continue
     seen.add((d, n))
-    off = r['근무형태'] == '휴무'
-    days.setdefault(d, {})[n] = {'workType': r['근무형태'], 'busNo': '' if off else r['차량번호'],
-        'route': '' if off else r['노선명'], 'seq': '' if off else r['순번'], 'time': '' if off else r['근무시간']}
+    if r['근무형태'].strip() == '휴무': continue  # 휴무는 적지 않는다 (이름이 없으면 휴무)
+    days.setdefault(d, {})[n] = {'workType': r['근무형태'], 'busNo': r['차량번호'],
+        'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
 if bad: print('\n'.join(bad)); sys.exit(1)
+DRV = os.path.join(ROOT, 'drivers.txt')
+drivers = [l.strip() for l in open(DRV, encoding='utf-8') if l.strip()]
+new = sorted({n for d in days.values() for n in d} - set(drivers))
+if new:
+    drivers = sorted(set(drivers) | set(new))
+    open(DRV, 'w', encoding='utf-8').write('\n'.join(drivers) + '\n')
+    print('새 기사 명단에 추가:', ', '.join(new))
 body = json.dumps(days, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 rev = hashlib.md5(body.encode()).hexdigest()[:8]
-open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","days":%s}' % (rev, body))
+open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","drivers":%s,"days":%s}' % (rev, json.dumps(drivers, ensure_ascii=False, separators=(',', ':')), body))
 print('ok', len(days), '일', len(rows), '행', 'rev', rev)

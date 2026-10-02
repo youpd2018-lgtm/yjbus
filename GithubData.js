@@ -90,8 +90,11 @@ function ghRosterRows_(db) {
   const rows = [];
   Object.keys(j.days).sort().forEach(function (date) {
     const people = j.days[date];
-    Object.keys(people).forEach(function (name) {
-      let rec = people[name];
+    // 근무표에는 근무하는 사람만 있다: 명단(drivers)에 있는데 그 날짜에 없으면 휴무
+    const everyone = Object.keys(people);
+    (j.drivers || []).forEach(function (n) { if (!people[n]) everyone.push(n); });
+    everyone.forEach(function (name) {
+      let rec = people[name] || { workType: '휴무' };
       if (db['jpil_user_' + name + '_schededit_' + date]) {
         const mine = ghParse_(db['jpil_user_' + name + '_sched_' + date]);
         if (mine) rec = mine;

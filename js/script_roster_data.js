@@ -1,6 +1,7 @@
 // ================================================================
 // 📅 [근무표 - GitHub 데이터] data/roster/all.json 으로 기사들의 날짜별 근무(jpil_user_<이름>_sched_<날짜>)를 채운다
 // - 원본은 data/roster/roster.csv (tools/build_roster.py 로 all.json 생성)
+// - 근무표에는 근무하는 사람만 있다. 기사 명단(drivers)에 있는데 그 날짜에 없는 기사는 휴무로 처리한다
 // - 규칙: 사용자가 앱에서 직접 고친 근무(jpil_user_<이름>_schededit_<날짜> 표시)는 절대 덮어쓰지 않는다. 그 외에는 GitHub 값이 우선
 // - 서버(구글 시트) 데이터를 받은 직후에 채우기 때문에 loadDataFromGAS 뒤에 끼워 넣는다
 // ================================================================
@@ -11,6 +12,7 @@
   let data = null; // { rev, days: { '2026-10-04': { '이름': {workType,busNo,route,seq,time} } } }
   try { data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { data = null; }
 
+  const OFF = { workType: '휴무', busNo: '', route: '', seq: '', time: '' };
   function dash(v) { return v === '' || v == null ? '-' : v; }
   function toSched(r) {
     const off = r.workType === '휴무';
@@ -42,10 +44,11 @@
     for (const date of Object.keys(data.days)) {
       if (date < from) continue;
       const people = data.days[date];
-      for (const name of Object.keys(people)) {
+      const everyone = Array.from(new Set([...(data.drivers || []), ...Object.keys(people)]));
+      for (const name of everyone) {
         const key = `jpil_user_${name}_sched_${date}`;
         const markKey = `jpil_user_${name}_schededit_${date}`;
-        const gh = toSched(people[name]);
+        const gh = toSched(people[name] || OFF);
         const cur = localStorage.getItem(key);
         if (localStorage.getItem(markKey)) continue; // 직접 고친 근무: 최우선
         if (cur === gh) continue;
