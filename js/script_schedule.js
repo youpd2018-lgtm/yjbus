@@ -380,6 +380,41 @@ function loadFolderMemoTab(tabName) {
 
 // 7. 실시간 자동저장(Debounce 1.2초) 및 세션 구분선/서명 자동 바인딩
 const folderMemoTimers = {};
+
+// 📜 [이력 기록] 노선정보 / 교대정보 / 오늘의메모를 수정하고 나갈 때마다 BOARD_DB에 새 줄로 쌓아 둠
+//  - 화면에는 기존처럼 '마지막 상태'(ROUTE / SHIFT / MEMO 줄)만 보여 주고,
+//  - 이력은 종류 ROUTE_LOG / SHIFT_LOG / MEMO_LOG, 구분 키 '날짜 시각|대상|기사', 내용 = 그때의 전체 글
+//  - 같은 내용이면 다시 쌓지 않음
+const lastLoggedMemo = {};
+function logBoardMemoHistory(category, content) {
+  try {
+    const text = String(content || '');
+    const targetKey = getBoardTargetKey(category);
+    const memoId = category + '|' + targetKey;
+    if (!text.trim()) return;
+    let prev = lastLoggedMemo[memoId];
+    if (prev === undefined) {
+      try { prev = localStorage.getItem('board_log_' + memoId); } catch (e) { prev = null; }
+    }
+    if (prev === text) return;
+    lastLoggedMemo[memoId] = text;
+    try { localStorage.setItem('board_log_' + memoId, text); } catch (e) {}
+
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    const d = new Date();
+    const p2 = n => (n < 10 ? '0' : '') + n;
+    const stamp = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' +
+      p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+    const writer = getLoggedInDriverName() || '동료기사';
+    google.script.run
+      .withSuccessHandler(function () {})
+      .withFailureHandler(function () {})
+      .saveBoardMemo(category + '_LOG', stamp + '|' + targetKey + '|' + writer, text, writer);
+  } catch (e) {
+    console.warn('이력 기록 실패:', e);
+  }
+}
+
 const sessionExitFlags = { ROUTE: true, SHIFT: true };
 
 function setupFolderCardMemos() {
@@ -431,6 +466,7 @@ function setupFolderCardMemos() {
       if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
       sessionExitFlags[cfg.cat] = true;
       saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
+      logBoardMemoHistory(cfg.cat, textarea.value);   // 수정을 마치고 나갈 때 시트에 이력 한 줄 추가
     };
   });
 
