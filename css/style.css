@@ -3024,21 +3024,15 @@ iconify-icon {
 .tf-card .tf-flow-text { font-size: 17px; text-shadow: 0 0 10px color-mix(in srgb, var(--tfc) 45%, transparent); }
 
 /* 🚦 v2: 가운데 박스를 줄여 시간 크기를 되살리고, 카드 위·아래 테두리가 신호등 자리에서 곡선으로 안쪽으로 들어감 */
-.tf-card { --notch-w: 76px; --notch-h: 10px;
-    -webkit-mask: radial-gradient(ellipse var(--notch-w) var(--notch-h) at 50% 0, transparent 97%, #000 100%),
-                  radial-gradient(ellipse var(--notch-w) var(--notch-h) at 50% 100%, transparent 97%, #000 100%);
-    -webkit-mask-composite: source-in;
-    mask: radial-gradient(ellipse var(--notch-w) var(--notch-h) at 50% 0, transparent 97%, #000 100%),
-          radial-gradient(ellipse var(--notch-w) var(--notch-h) at 50% 100%, transparent 97%, #000 100%);
-    mask-composite: intersect; }
-#liveModal #liveGroupStop { filter: drop-shadow(0 8px 14px rgba(0,0,0,.4)); }
-.tf-card::before, .tf-card::after {   /* 곡선 안쪽 테두리선 */
-    content: ''; position: absolute; left: 50%; width: calc(var(--notch-w) * 2); height: var(--notch-h);
+.tf-card { --notch-w: 76px; --notch-h: 10px; }
+/* 위·아래 곡선 홈: 마스크 대신 배경색으로 채운 반타원을 얹음 (아이폰 사파리에서 마스크가 카드 내용을 숨기는 문제 방지) */
+.tf-card::before, .tf-card::after {
+    content: ''; position: absolute; left: 50%; width: calc(var(--notch-w) * 2); height: calc(var(--notch-h) + 1px);
     transform: translateX(-50%); box-sizing: border-box; pointer-events: none;
-    border: 1px solid rgba(255,255,255,.3);
+    background: var(--tf-notch-bg, #0f172a); border: 1px solid rgba(255,255,255,.3);
 }
-.tf-card::before { top: 0; border-top: 0; border-radius: 0 0 var(--notch-w) var(--notch-w) / 0 0 var(--notch-h) var(--notch-h); }
-.tf-card::after { bottom: 0; border-bottom: 0; border-radius: var(--notch-w) var(--notch-w) 0 0 / var(--notch-h) var(--notch-h) 0 0; }
+.tf-card::before { top: -1px; border-top: 0; border-radius: 0 0 var(--notch-w) var(--notch-w) / 0 0 var(--notch-h) var(--notch-h); }
+.tf-card::after { bottom: -1px; border-bottom: 0; border-radius: var(--notch-w) var(--notch-w) 0 0 / var(--notch-h) var(--notch-h) 0 0; }
 .tf-card .tf-flow { min-width: 0; padding: 6px 9px 6px; gap: 4px; border-radius: 18px; }
 .tf-card .tf-lamp { gap: 8px; padding: 7px 11px; }
 .tf-card .tf-lamp i { width: 16px; height: 16px; }
