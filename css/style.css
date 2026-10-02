@@ -3054,3 +3054,18 @@ iconify-icon {
 .tf-card .tf-lamp i { width: 16px; height: 16px; }
 .tf-card .tf-lamp i::before { height: 9px; top: -3px; }
 .tf-card .tf-flow-text { font-size: 14px; }
+
+/* ⚙️ 설정 화면 '기타 설정' 카드 (한 줄 목록 + 스위치) */
+.set-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin: 14px 0 8px; overflow: hidden; }
+.set-row { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 13px 14px; background: transparent; border: none; border-bottom: 1px solid #334155; color: #f8fafc; font-family: inherit; text-align: left; }
+.set-row:last-child { border-bottom: none; }
+.set-link { cursor: pointer; }
+.set-label { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; }
+.set-sub { font-size: 11px; font-weight: 400; color: #94a3b8; margin-top: 2px; }
+.set-arrow { color: #64748b; font-size: 22px; line-height: 1; }
+.switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: #475569; border-radius: 28px; transition: background .2s; cursor: pointer; }
+.slider::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.switch input:checked + .slider { background: #22c55e; }
+.switch input:checked + .slider::before { transform: translateX(20px); }

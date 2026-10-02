@@ -90,9 +90,8 @@
     };
     window.updateSfxSettingsUI = function () {
         var on = window.sfxIsOn();
-        var onBtn = document.getElementById('sfxOnBtn'), offBtn = document.getElementById('sfxOffBtn');
-        if (onBtn) onBtn.classList.toggle('active', on);
-        if (offBtn) offBtn.classList.toggle('active', !on);
+        var sw = document.getElementById('sfxSwitch');
+        if (sw) sw.checked = on;
         var txt = document.getElementById('sfxStateText');
         if (txt) txt.innerText = on ? '효과음이 켜져 있어요' : '효과음이 꺼져 있어요';
     };

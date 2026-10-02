@@ -688,36 +688,6 @@
     <!-- ======================================================== -->
     <div id="settingsPage" class="page" style="display: none; padding: 4px 0;">
 
-      <!-- 설정 메뉴 버튼 (근무정보와 같은 버튼식) -->
-      <div class="stats-actions-grid" id="settingsActionGrid">
-        <button type="button" class="stats-action-btn active" id="btnSetSchedule" onclick="selectSettingsView('schedule')">
-          <iconify-icon icon="mdi:calendar-edit" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
-          <span>근무설정</span>
-        </button>
-        <button type="button" class="stats-action-btn" id="btnSetContact" onclick="openContactEdit()">
-          <iconify-icon icon="mdi:phone-outline" style="font-size: 20px; color: #22c55e;"></iconify-icon>
-          <span>연락처수정</span>
-        </button>
-        <button type="button" class="stats-action-btn" id="btnSetPush" onclick="selectSettingsView('push')">
-          <iconify-icon icon="mdi:bell-ring-outline" style="font-size: 20px; color: #fde047;"></iconify-icon>
-          <span>알림받기</span>
-        </button>
-        <button type="button" class="stats-action-btn" id="btnSetSfx" onclick="selectSettingsView('sfx')">
-          <iconify-icon icon="mdi:volume-high" style="font-size: 20px; color: #f472b6;"></iconify-icon>
-          <span>효과음</span>
-        </button>
-        <button type="button" class="stats-action-btn" id="btnSetRefresh" onclick="hardRefreshApp()">
-          <iconify-icon icon="mdi:refresh" style="font-size: 20px; color: #60a5fa;"></iconify-icon>
-          <span>새로고침</span>
-        </button>
-        <!-- 로그아웃은 관리자만 보임 -->
-        <button type="button" class="stats-action-btn" id="btnSetLogout" onclick="logoutDriver()"
-          style="display: none; grid-column: 1 / -1;">
-          <iconify-icon icon="mdi:power" style="font-size: 20px; color: #84cc16;"></iconify-icon>
-          <span>로그아웃</span>
-        </button>
-      </div>
-
       <!-- [뷰 1] 근무일정등록 -->
       <div id="settingsViewSchedule">
         <div style="padding: 0 4px 8px;">
@@ -828,34 +798,26 @@
         </div>
       </div>
 
-      <!-- [뷰 2] 알림받기 -->
-      <div id="settingsViewPush" style="display: none;">
-        <div style="padding: 0 4px 8px;">
-          <div style="font-size: 16px; font-weight: 900; color: #f8fafc;">알림받기</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">첫 운행 1시간 전, 매 회차 출발 10분 전에 알려드려요</div>
+      <!-- 기타 설정: 알림 · 효과음 · 연락처 · 새로고침 · 로그아웃 -->
+      <div class="set-card">
+        <div class="set-row">
+          <iconify-icon icon="mdi:bell-ring-outline" style="font-size: 20px; color: #fde047;"></iconify-icon>
+          <div class="set-label">알림 받기<div id="pushStateText" class="set-sub"></div></div>
+          <label class="switch"><input type="checkbox" id="pushSwitch" onchange="setPushNotify(this.checked)"><span class="slider"></span></label>
         </div>
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px 10px;">
-          <div class="seg-row" id="segPush">
-            <button type="button" class="seg-btn" id="pushOnBtn" onclick="setPushNotify(true)">알림 받기</button>
-            <button type="button" class="seg-btn" id="pushOffBtn" onclick="setPushNotify(false)">알림 끄기</button>
-          </div>
-          <div id="pushStateText" style="font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center;"></div>
+        <div class="set-row">
+          <iconify-icon icon="mdi:volume-high" style="font-size: 20px; color: #f472b6;"></iconify-icon>
+          <div class="set-label">효과음<div id="sfxStateText" class="set-sub"></div></div>
+          <label class="switch"><input type="checkbox" id="sfxSwitch" onchange="setSfx(this.checked)"><span class="slider"></span></label>
         </div>
-      </div>
-
-      <!-- [뷰 3] 효과음 -->
-      <div id="settingsViewSfx" style="display: none;">
-        <div style="padding: 0 4px 8px;">
-          <div style="font-size: 16px; font-weight: 900; color: #f8fafc;">효과음</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">매 회차 출발 시각에 "띵동", 도착 시각에 차임 소리가 나요 (앱 화면이 켜져 있을 때)</div>
-        </div>
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px 10px;">
-          <div class="seg-row" id="segSfx">
-            <button type="button" class="seg-btn" id="sfxOnBtn" onclick="setSfx(true)">효과음 켜기</button>
-            <button type="button" class="seg-btn" id="sfxOffBtn" onclick="setSfx(false)">효과음 끄기</button>
-          </div>
-          <div id="sfxStateText" style="font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center;"></div>
-        </div>
+        <button type="button" class="set-row set-link" id="btnSetContact" onclick="openContactEdit()">
+          <iconify-icon icon="mdi:phone-outline" style="font-size: 20px; color: #22c55e;"></iconify-icon>
+          <div class="set-label">연락처 수정</div><span class="set-arrow">›</span>
+        </button>
+        <button type="button" class="set-row set-link" id="btnSetRefresh" onclick="hardRefreshApp()">
+          <iconify-icon icon="mdi:refresh" style="font-size: 20px; color: #60a5fa;"></iconify-icon>
+          <div class="set-label">새로고침</div><span class="set-arrow">›</span>
+        </button>
       </div>
 
     </div> <!-- 👈 3번 설정 페이지(id="settingsPage")를 닫아주는 </div> 태그 -->
@@ -930,6 +892,14 @@
             <div style="margin-top: 14px; font-size: 13px; font-weight: 900; color: #f8fafc;">저장한 메시지</div>
             <div id="adminPushSavedList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
           </div>
+        </div>
+
+        <!-- 로그아웃 (관리자 화면에서만) -->
+        <div class="set-card" style="margin-top: 16px;">
+          <button type="button" class="set-row set-link" id="btnAdminLogout" onclick="logoutDriver()">
+            <iconify-icon icon="mdi:power" style="font-size: 20px; color: #84cc16;"></iconify-icon>
+            <div class="set-label">로그아웃</div><span class="set-arrow">›</span>
+          </button>
         </div>
 
       </div> <!-- routeConfigPage 감싸는 안쪽 컨테이너 닫기 -->

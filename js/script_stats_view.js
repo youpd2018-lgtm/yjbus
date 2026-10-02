@@ -268,39 +268,20 @@
     // ⚙️ [설정 화면] 근무설정 / 연락처수정 / 알림받기 / 새로고침 / 로그아웃
     // ================================================================
     function selectSettingsView(name) {
-        const views = { schedule: 'settingsViewSchedule', push: 'settingsViewPush', sfx: 'settingsViewSfx' };
-        const btns = { schedule: 'btnSetSchedule', push: 'btnSetPush', sfx: 'btnSetSfx' };
-        Object.keys(views).forEach(k => {
-            const v = document.getElementById(views[k]);
-            if (v) v.style.display = (k === name) ? 'block' : 'none';
-            const b = document.getElementById(btns[k]);
-            if (b) b.classList.toggle('active', k === name);
-        });
-
-        // 로그아웃 버튼은 관리자에게만 보임
-        const isAdmin = (window.currentDriver === '유재필') || (typeof window.currentDriver === 'string' && window.currentDriver.includes('유재필'));
-        const logoutBtn = document.getElementById('btnSetLogout');
-        if (logoutBtn) logoutBtn.style.display = isAdmin ? 'flex' : 'none';
-
-        if (name === 'schedule') {
-            // 등록 날짜에 맞는 저장된 근무기록을 자동으로 불러옴 (날짜가 비어 있으면 오늘)
-            const regDateInput = document.getElementById('regDate');
-            if (regDateInput && !regDateInput.value && typeof getFormattedDate === 'function') regDateInput.value = getFormattedDate(new Date());
-            if (typeof loadScheduleForEdit === 'function') loadScheduleForEdit();
-        } else if (name === 'push') {
-            updatePushSettingsUI();
-        } else if (name === 'sfx') {
-            if (typeof window.updateSfxSettingsUI === 'function') window.updateSfxSettingsUI();
-        }
+        // 설정 화면은 근무일정등록이 맨 위에 항상 보이고, 아래에 기타 설정(알림·효과음·연락처·새로고침)이 이어진다
+        // 등록 날짜에 맞는 저장된 근무기록을 자동으로 불러옴 (날짜가 비어 있으면 오늘)
+        const regDateInput = document.getElementById('regDate');
+        if (regDateInput && !regDateInput.value && typeof getFormattedDate === 'function') regDateInput.value = getFormattedDate(new Date());
+        if (typeof loadScheduleForEdit === 'function') loadScheduleForEdit();
+        updatePushSettingsUI();
+        if (typeof window.updateSfxSettingsUI === 'function') window.updateSfxSettingsUI();
     }
 
     // 알림받기 화면: 현재 상태 표시
     function updatePushSettingsUI() {
         const on = typeof window.isPushOn === 'function' && window.isPushOn();
-        const onBtn = document.getElementById('pushOnBtn');
-        const offBtn = document.getElementById('pushOffBtn');
-        if (onBtn) onBtn.classList.toggle('active', on);
-        if (offBtn) offBtn.classList.toggle('active', !on);
+        const sw = document.getElementById('pushSwitch');
+        if (sw) sw.checked = on;
         const txt = document.getElementById('pushStateText');
         if (txt) txt.innerText = on ? '지금 이 기기는 알림을 받고 있어요' : '지금 이 기기는 알림이 꺼져 있어요';
     }
