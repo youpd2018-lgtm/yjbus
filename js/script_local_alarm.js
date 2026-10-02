@@ -76,7 +76,22 @@
 
   // 🔊 알림음 (앱이 켜져 있을 때 재생). 폰 정책상 첫 터치 때 한 번 '잠금 해제'해 둔다
   const ALARM_SOUND_URL = 'sounds/start_alarm.mp3';
-  const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
+  // 무음 파일: 아이폰이 인식하도록 정식 WAV 헤더를 갖춘 0.2초짜리를 만든다 (너무 짧거나 규격이 틀리면 재생 권한이 열리지 않음)
+  function makeSilentWav() {
+    try {
+      const rate = 8000, n = 1600, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+      const str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+      str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+      str(36, 'data'); v.setUint32(40, n, true);
+      for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+      let bin = ''; const u = new Uint8Array(buf);
+      for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]);
+      return 'data:audio/wav;base64,' + btoa(bin);
+    } catch (e) { return ''; }
+  }
+  const SILENT_WAV = makeSilentWav();
   let alarmAudio = null;
   function getAlarmAudio() {
     if (!alarmAudio) {
@@ -87,7 +102,7 @@
   // 첫 터치 때 '무음 파일'로 재생 권한만 열어 둔다 (실제 알림음은 절대 재생하지 않음)
   function unlockAlarmAudio() {
     const au = getAlarmAudio();
-    if (!au) return;
+    if (!au || !SILENT_WAV) return;
     try {
       au.src = SILENT_WAV;
       const p = au.play();
@@ -96,12 +111,52 @@
     } catch (e) { }
   }
   document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
+
+  // 대비책: 위 방법이 막히면 WebAudio 로 알림음을 낸다 (터치할 때마다 열어 둔다)
+  let actx = null, alarmBuf = null, alarmSrc = null;
+  function getCtx() {
+    if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) { try { actx = new AC(); } catch (e) { actx = null; } } }
+    return actx;
+  }
+  function unlockCtx() {
+    const c = getCtx();
+    if (!c) return;
+    try {
+      if (c.state !== 'running') c.resume();
+      const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource();
+      src.buffer = b; src.connect(c.destination); src.start(0);
+      if (!alarmBuf) {
+        fetch(ALARM_SOUND_URL).then(r => r.arrayBuffer())
+          .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+          .then(buf => { alarmBuf = buf; }).catch(() => { });
+      }
+    } catch (e) { }
+  }
+  ['pointerdown', 'touchend', 'click'].forEach(ev => document.addEventListener(ev, unlockCtx, { passive: true }));
+  function playViaWebAudio() {
+    try {
+      if (!actx || !alarmBuf) return false;
+      if (actx.state !== 'running') actx.resume();
+      if (alarmSrc) { try { alarmSrc.stop(); } catch (e) { } }
+      alarmSrc = actx.createBufferSource();
+      alarmSrc.buffer = alarmBuf; alarmSrc.connect(actx.destination); alarmSrc.start(0);
+      return true;
+    } catch (e) { return false; }
+  }
   function playAlarmSound() {
     const au = getAlarmAudio();
-    if (!au) return;
-    try { if (String(au.src).indexOf('start_alarm') === -1) au.src = ALARM_SOUND_URL; au.pause(); au.currentTime = 0; au.muted = false; au.volume = 1; const p = au.play(); if (p && p.catch) p.catch(e => console.warn('알림음 재생 실패:', e)); } catch (e) { }
+    if (!au) { playViaWebAudio(); return; }
+    try {
+      if (String(au.src).indexOf('start_alarm') === -1) au.src = ALARM_SOUND_URL;
+      au.pause(); au.currentTime = 0; au.muted = false; au.volume = 1;
+      const p = au.play();
+      if (p && p.catch) p.catch(e => { console.warn('알림음 재생 실패, 대비책 사용:', e); playViaWebAudio(); });
+    } catch (e) { playViaWebAudio(); }
   }
-  function stopAlarmSound() { if (alarmAudio) { try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (e) { } } }
+  function stopAlarmSound() {
+    if (alarmAudio) { try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (e) { } }
+    if (alarmSrc) { try { alarmSrc.stop(); } catch (e) { } alarmSrc = null; }
+  }
 
   function notify(info, trip) {
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
