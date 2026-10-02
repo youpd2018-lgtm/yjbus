@@ -124,6 +124,25 @@
             return d > 0 ? d : null;
         } catch (e) { return null; }
     }
+    // 지금 회차의 시간표상 총 운행 시간(초): 시간표 time1~3 중 처음~마지막 시각 차이 (없으면 null)
+    function tripSchedSec(duty) {
+        try {
+            var sd = JSON.parse(lsGet((typeof getDriverKey === 'function' ? getDriverKey('sched_' + todayStr()) : 'sched_' + todayStr())) || 'null');
+            if (!sd || typeof customGetItem !== 'function') return null;
+            var list = customGetItem(sd.route, sd.seq);
+            var row = list && list[(duty.turnNum || 1) - 1];
+            if (!row) return null;
+            var ms = [];
+            ['time1', 'time2', 'time3'].forEach(function (k) {
+                var m = /^(\d{1,2}):(\d{2})/.exec(String(row[k] || '').trim());
+                if (m) ms.push(parseInt(m[1], 10) * 60 + parseInt(m[2], 10));
+            });
+            if (ms.length < 2) return null;
+            var diff = ms[ms.length - 1] - ms[0];
+            if (diff <= 0) diff += 24 * 60;      // 자정 넘김
+            return diff * 60;
+        } catch (e) { return null; }
+    }
     function rad(x) { return x * Math.PI / 180; }
     function haversineM(a, b, c, d) {
         var R = 6371000, dLa = rad(c - a), dLo = rad(d - b);
@@ -174,7 +193,7 @@
                 var dist = tripDistKm(duty);
                 if (!dist) return;
                 var sd0 = todaySched();
-                rec = { k: duty.uniqueKey, t: duty.turnNum, rt: sd0 ? sd0.route : '', sq: sd0 ? sd0.seq : '', s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, d: 0, done: 0 };   // 처음 켠 시각·정류장
+                rec = { k: duty.uniqueKey, t: duty.turnNum, rt: sd0 ? sd0.route : '', sq: sd0 ? sd0.seq : '', s: nowMs, si: idx, e: nowMs, ei: idx, D: dist, T: tripSchedSec(duty) || 0, d: 0, done: 0 };   // 처음 켠 시각·정류장
                 list.push(rec);
             } else {
                 if (rec.done) return;                 // 종점에 이미 도착한 회차는 더 늘리지 않음
@@ -250,6 +269,7 @@
     function recSpeed(r) {
         var sec = (r.e - r.s) / 1000;
         if (!(sec >= MIN_TRIP_SEC) || sec > 8 * 3600 || !(r.D > 0) || !(r.d / r.D >= MIN_TRIP_FRAC)) return null;
+        if (r.T > 0 && sec < r.T / 2) return null;   // 잰 시간이 회차 총 운행 시간의 절반 미만이면 버림 (통계·서버 모두 제외)
         return r.d / (sec / 3600);
     }
     // 평균 속도(km/h) 모음: cur(이번 회차) / today / month. 없으면 null. measuring: 이번 회차가 재는 중(아직 계산 불가)
