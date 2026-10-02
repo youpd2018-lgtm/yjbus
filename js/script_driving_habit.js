@@ -96,6 +96,82 @@
         } catch (e) { return null; }
     }
 
+    // ================================================================
+    // ⏱️ [회차 평균 속도] 출발한 시각(첫 정류장에서 움직이기 시작)과 종점 도착 시각만 재서, 거리 ÷ 걸린 시간
+    // - 중간에 모달을 끄거나 다른 앱·전화를 써도 상관없음 (출발 때와 종점 도착 때만 모달이 열려 있으면 됨)
+    // - 출발이나 도착을 보지 못한 회차는 기록하지 않음 (평균에 안 넣음)
+    // ================================================================
+    var TRIP_KEY_PREFIX = 'yb_tripspd_';
+    var MOVE_KMH = 5;          // 이 속도 이상이면 '출발'
+    function tripStoreKey() { return TRIP_KEY_PREFIX + driver(); }
+    function loadTrips() { try { return JSON.parse(lsGet(tripStoreKey()) || '{}') || {}; } catch (e) { return {}; } }
+    function saveTrips(o) {
+        var keys = Object.keys(o).sort();
+        while (keys.length > 70) delete o[keys.shift()];   // 오래된 날짜는 정리
+        lsSet(tripStoreKey(), JSON.stringify(o));
+    }
+    // 지금 회차의 시간표 거리(km)
+    function tripDistKm(duty) {
+        try {
+            var sd = JSON.parse(lsGet((typeof getDriverKey === 'function' ? getDriverKey('sched_' + todayStr()) : 'sched_' + todayStr())) || 'null');
+            if (!sd || typeof customGetItem !== 'function') return null;
+            var list = customGetItem(sd.route, sd.seq);
+            var row = list && list[(duty.turnNum || 1) - 1];
+            var d = row ? parseFloat(row.dist) : NaN;
+            return d > 0 ? d : null;
+        } catch (e) { return null; }
+    }
+    function tripOnFix(speedKmh, duty) {
+        try {
+            if (!duty || !duty.uniqueKey) return;
+            var master = window.standardMasterCache || [];
+            var n = master.length, idx = window.lastPassedStopIndex;
+            if (!n || typeof idx !== 'number') return;
+            var date = todayStr(), nowMs = Date.now();
+            var all = loadTrips(), list = all[date] || [];
+            var last = list.length ? list[list.length - 1] : null;
+            var openSame = last && !last.e && last.k === duty.uniqueKey;
+            if (idx === 0 && speedKmh >= MOVE_KMH) {
+                // 첫 정류장에서 움직이기 시작 = 출발 (이미 이 회차로 출발 기록이 있으면 그대로 둠)
+                if (!openSame) {
+                    var dist = tripDistKm(duty);
+                    if (dist) { list.push({ k: duty.uniqueKey, t: duty.turnNum, s: nowMs, e: 0, d: dist }); all[date] = list; saveTrips(all); }
+                }
+            } else if (idx >= n - 1 && last && !last.e && last.k === duty.uniqueKey) {
+                // 종점 통과 = 도착
+                var sec = (nowMs - last.s) / 1000;
+                if (sec >= 300 && sec <= 6 * 3600) { last.e = nowMs; } else { list.pop(); }   // 비정상(너무 짧거나 긴) 기록은 버림
+                all[date] = list; saveTrips(all);
+                console.log('⏱️ [회차 평균 속도] ' + (last.e ? (last.d / (sec / 3600)).toFixed(1) + 'km/h (' + last.d + 'km, ' + Math.round(sec / 60) + '분)' : '버림'));
+            }
+        } catch (e) { }
+    }
+    // 평균 속도(km/h) 모음: cur(이번 회차) / today / month. 없으면 null. state: 'measuring' 이면 지금 재는 중
+    function getAvgSpeeds(year, month) {
+        var out = { cur: null, today: null, month: null, measuring: false };
+        try {
+            var all = loadTrips(), ts = todayStr();
+            var agg = function (trips) {
+                var dist = 0, sec = 0;
+                (trips || []).forEach(function (t) { if (t.e) { dist += t.d; sec += (t.e - t.s) / 1000; } });
+                return sec > 0 ? dist / (sec / 3600) : null;
+            };
+            out.today = agg(all[ts]);
+            var prefix = year + '-' + pad(month) + '-', md = 0, ms = 0;
+            Object.keys(all).forEach(function (date) {
+                if (date.indexOf(prefix) !== 0) return;
+                all[date].forEach(function (t) { if (t.e) { md += t.d; ms += (t.e - t.s) / 1000; } });
+            });
+            out.month = ms > 0 ? md / (ms / 3600) : null;
+            var list = all[ts] || [], last = list.length ? list[list.length - 1] : null;
+            if (last) {
+                if (!last.e) out.measuring = true;
+                else out.cur = last.d / (((last.e - last.s) / 1000) / 3600);
+            }
+        } catch (e) { }
+        return out;
+    }
+
     // GPS 한 번 들어올 때마다 호출
     function onFix(speedKmh, accuracy, heading, duty) {
         try {
@@ -103,6 +179,7 @@
             if (speedKmh === null || speedKmh === undefined) return;
             if (accuracy && accuracy > MAX_ACC_M) return;
             checkTrip(duty);
+            tripOnFix(speedKmh, duty);
 
             var now = Date.now() / 1000;
             var cur = { t: now, v: speedKmh, h: (typeof heading === 'number' && !isNaN(heading)) ? heading : null };
@@ -208,7 +285,7 @@
             .catch(function () { return null; });
     }
 
-    window.DrivingHabit = { onFix: onFix, upload: upload, getCounts: getCounts, fetchServer: fetchServer };
+    window.DrivingHabit = { onFix: onFix, upload: upload, getCounts: getCounts, fetchServer: fetchServer, getAvgSpeeds: getAvgSpeeds };
     setInterval(upload, 30000);
     window.addEventListener('load', function () { setTimeout(upload, 5000); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });

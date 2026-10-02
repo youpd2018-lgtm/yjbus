@@ -211,7 +211,7 @@
         // 2단: 나의 운행 습관 (이번 회차·오늘·이달)
         // 이번 회차·오늘은 이 폰 기준(바로 표시), 이달은 서버 합계(받아오는 동안은 0으로 표시)
         const hb = (window.DrivingHabit && window.DrivingHabit.getCounts()) || { cur: {}, today: {} };
-        const speeds = computeAvgSpeeds(totalDist, totalSecs);   // 평균 속도는 시간표 기준이라 서버 없이 바로 계산
+        const speeds = computeAvgSpeeds(year, month);   // 평균 속도: 폰에서 잰 값이라 서버 없이 바로 표시
         renderDrivingHabitRows({ cur: hb.cur, today: hb.today, month: {}, speed: speeds });
         if (window.DrivingHabit) {
             window.DrivingHabit.fetchServer(year, month).then(srv => {
@@ -226,36 +226,10 @@
     // 급출발·급정거·급회전 3개 항목 + 맨 아래 평균 속도 (이번 회차 / 오늘 / 이달 공통)
     const DRIVING_HABIT_ITEMS = ['급출발', '급정거', '급회전'];
 
-    // 평균 속도(km/h) = 거리 ÷ 시간표상 전체 시간 (정차 시간을 빼지 않고 한 회차·편도 전체 시간으로 계산)
-    function speedKmh(dist, secs) {
-        dist = Number(dist) || 0; secs = Number(secs) || 0;
-        return (dist > 0 && secs > 0) ? dist / (secs / 3600) : null;
-    }
-
-    function computeAvgSpeeds(monthDist, monthSecs) {
-        const out = { cur: null, today: null, month: speedKmh(monthDist, monthSecs) };
-        try {
-            if (typeof getDriverKey !== 'function' || typeof customGetItem !== 'function' || typeof calculateWorkSummary !== 'function') return out;
-            const n = new Date();
-            const ds = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-            const saved = localStorage.getItem(getDriverKey(`sched_${ds}`));
-            if (!saved) return out;
-            const data = JSON.parse(saved);
-            const wt = data.workType ? String(data.workType).trim() : '';
-            if (wt !== '정상' && wt !== '대타') return out;
-            const list = customGetItem(data.route, data.seq);
-            if (!list || list.length === 0) return out;
-            const day = calculateWorkSummary(list, data.time, data.route, data.seq);
-            if (day) out.today = speedKmh(day.distance, day.totalSecs);
-            // 이번 회차: 지금 달리는 회차 한 개
-            const duty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : null;
-            const turn = (duty && duty.turnNum) || window.currentTripRoundNumber || 0;
-            if (turn >= 1 && list[turn - 1]) {
-                const one = calculateWorkSummary([list[turn - 1]], '', data.route, data.seq);
-                if (one) out.cur = speedKmh(one.distance, one.totalSecs);
-            }
-        } catch (e) { }
-        return out;
+    // 평균 속도는 실제로 출발한 시각과 종점 도착 시각을 재서 (거리 ÷ 걸린 시간) 계산한 값 (script_driving_habit.js)
+    function computeAvgSpeeds(year, month) {
+        const r = (window.DrivingHabit && window.DrivingHabit.getAvgSpeeds) ? window.DrivingHabit.getAvgSpeeds(year, month) : null;
+        return r || { cur: null, today: null, month: null, measuring: false };
     }
 
     function renderDrivingHabitRows(values) {
@@ -270,7 +244,7 @@
                     `<span>${name}</span><span style="color:#e2e8f0; font-weight:900;">${cnt}회</span></div>`;
             }).join('');
             const sp = values && values.speed ? values.speed[scope] : null;
-            const spText = (sp === null || sp === undefined) ? '-' : `${sp.toFixed(1)}<span style="font-size:11px; font-weight:bold;"> km/h</span>`;
+            const spText = (sp === null || sp === undefined) ? ((scope === 'cur' && values.speed && values.speed.measuring) ? '측정 중' : '-') : `${sp.toFixed(1)}<span style="font-size:11px; font-weight:bold;"> km/h</span>`;
             const speedRow = `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 13 : 14}px; padding:${compact ? 4 : 5}px 0 0; margin-top:${compact ? 2 : 4}px; border-top:1px dashed #475569; font-weight:bold; color:#fb923c;">` +
                 `<span>평균 속도</span><span style="color:#fdba74; font-weight:900;">${spText}</span></div>`;
             el.innerHTML = rows + speedRow;
