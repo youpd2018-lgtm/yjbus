@@ -702,6 +702,10 @@
           <iconify-icon icon="mdi:bell-ring-outline" style="font-size: 20px; color: #fde047;"></iconify-icon>
           <span>알림받기</span>
         </button>
+        <button type="button" class="stats-action-btn" id="btnSetSfx" onclick="selectSettingsView('sfx')">
+          <iconify-icon icon="mdi:volume-high" style="font-size: 20px; color: #f472b6;"></iconify-icon>
+          <span>효과음</span>
+        </button>
         <button type="button" class="stats-action-btn" id="btnSetRefresh" onclick="hardRefreshApp()">
           <iconify-icon icon="mdi:refresh" style="font-size: 20px; color: #60a5fa;"></iconify-icon>
           <span>새로고침</span>
@@ -836,6 +840,21 @@
             <button type="button" class="seg-btn" id="pushOffBtn" onclick="setPushNotify(false)">알림 끄기</button>
           </div>
           <div id="pushStateText" style="font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center;"></div>
+        </div>
+      </div>
+
+      <!-- [뷰 3] 효과음 -->
+      <div id="settingsViewSfx" style="display: none;">
+        <div style="padding: 0 4px 8px;">
+          <div style="font-size: 16px; font-weight: 900; color: #f8fafc;">효과음</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">매 회차 출발 시각에 "띵동", 도착 시각에 차임 소리가 나요 (앱 화면이 켜져 있을 때)</div>
+        </div>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px 10px;">
+          <div class="seg-row" id="segSfx">
+            <button type="button" class="seg-btn" id="sfxOnBtn" onclick="setSfx(true)">효과음 켜기</button>
+            <button type="button" class="seg-btn" id="sfxOffBtn" onclick="setSfx(false)">효과음 끄기</button>
+          </div>
+          <div id="sfxStateText" style="font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center;"></div>
         </div>
       </div>
 
@@ -1229,6 +1248,7 @@
     <script src="js/script_difficulty.js"></script>
     <script src="js/push_fcm.js"></script>
     <script src="js/script_local_alarm.js"></script>
+    <script src="js/script_sfx.js"></script>
     <script src="js/script_timetable_data.js"></script>
     <script src="js/script_roster_data.js"></script>
     <script src="js/script_voice_call.js"></script>

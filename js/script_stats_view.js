@@ -268,8 +268,8 @@
     // ⚙️ [설정 화면] 근무설정 / 연락처수정 / 알림받기 / 새로고침 / 로그아웃
     // ================================================================
     function selectSettingsView(name) {
-        const views = { schedule: 'settingsViewSchedule', push: 'settingsViewPush' };
-        const btns = { schedule: 'btnSetSchedule', push: 'btnSetPush' };
+        const views = { schedule: 'settingsViewSchedule', push: 'settingsViewPush', sfx: 'settingsViewSfx' };
+        const btns = { schedule: 'btnSetSchedule', push: 'btnSetPush', sfx: 'btnSetSfx' };
         Object.keys(views).forEach(k => {
             const v = document.getElementById(views[k]);
             if (v) v.style.display = (k === name) ? 'block' : 'none';
@@ -289,6 +289,8 @@
             if (typeof loadScheduleForEdit === 'function') loadScheduleForEdit();
         } else if (name === 'push') {
             updatePushSettingsUI();
+        } else if (name === 'sfx') {
+            if (typeof window.updateSfxSettingsUI === 'function') window.updateSfxSettingsUI();
         }
     }
 

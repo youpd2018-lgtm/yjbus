@@ -54,7 +54,10 @@
         const v = list[i]['time' + c];
         if (v && String(v).trim() !== '') {
           const mins = toMinutes(v);
-          if (mins !== null) trips.push({ idx: i + 1, mins, text: String(v).trim(), place: headers[c - 1] || '' });
+          // 도착 시각 = 이 회차에서 값이 있는 마지막 칸 (효과음용)
+          let endMins = null;
+          for (let e = colCount; e >= 1; e--) { const ev = list[i]['time' + e]; if (ev && String(ev).trim() !== '') { endMins = toMinutes(ev); break; } }
+          if (mins !== null) trips.push({ idx: i + 1, mins, endMins, text: String(v).trim(), place: headers[c - 1] || '' });
           break;
         }
       }
@@ -229,6 +232,8 @@
     timerId = setInterval(check, CHECK_MS);
     check();
   }
+
+  window.ybGetTodayTrips = getTodayTrips;   // 효과음(script_sfx.js)이 같은 회차 목록을 쓰도록 공개
 
   window.testLocalStartAlarm = function () { // 점검용: 개발자 도구에서 호출 (오늘 회차 목록을 콘솔에 출력하고 첫 회차로 알림 예시)
     const info = getTodayTrips();
