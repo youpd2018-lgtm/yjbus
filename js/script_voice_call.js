@@ -1,7 +1,7 @@
 // ================================================================
 // 📞 [구차장 음성 전화] "유재필에게 전화해줘" → 비슷한 이름의 연락처를 찾아 [전화걸기] 버튼을 띄운다
 // - 서버·제미나이로 아무것도 보내지 않고 폰 안에서만 처리한다 (번호는 화면·음성으로 알려 주지 않음)
-// - 음성 인식 결과는 터치가 아니라서 전화가 자동으로 걸리지 않게 하고, 직접 한 번 눌러야 걸린다 (운전 중 오발신 방지)
+// - 음성 인식 결과는 터치가 아니라서 전화가 자동으로 걸리지 않게 하고, 이름 버튼 → '정말 전화할까요?' [전화하기]를 직접 두 번 눌러야 걸린다 (운전 중 오발신 방지)
 // - 연락처: 긴급전화 목록 + 등록된 기사님(번호가 있고 가족 아님, 내 이름 제외)
 // - 이름이 조금 달라도(유재핑→유재필, 공동국 부장→공동국 차장) 자모 단위 유사도로 찾는다
 // ================================================================
@@ -110,6 +110,7 @@
     return res;
   }
 
+  // 1단계: 이름 버튼(누르면 확인 단계로) → 2단계: "정말 전화할까요?" [전화하기] 를 한 번 더 눌러야 연결
   function showCallCard(items, headline) {
     var el = document.getElementById('voiceCallCard');
     if (!el) {
@@ -119,20 +120,35 @@
         'background:#0f172a;color:#fff;border:2px solid #16a34a;border-radius:16px;padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.5);font-family:inherit;';
       document.body.appendChild(el);
     }
-    var html = '<div style="font-size:15px;font-weight:900;margin-bottom:10px;">' + headline + '</div>';
-    items.forEach(function (it) {
-      html += '<a href="tel:' + it.phone + '" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#16a34a;color:#fff;text-decoration:none;' +
-        'font-size:20px;font-weight:900;padding:16px;border-radius:12px;margin-bottom:8px;" class="voiceCallBtn">' +
-        '<iconify-icon icon="mdi:phone" style="font-size:24px;"></iconify-icon> ' + it.name + ' 전화걸기</a>';
-    });
-    html += '<button type="button" id="voiceCallClose" style="width:100%;background:#334155;color:#e2e8f0;border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:700;">닫기</button>';
-    el.innerHTML = html;
-    el.style.display = 'block';
+    var BTN = 'display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;text-decoration:none;border:none;width:100%;box-sizing:border-box;' +
+      'font-size:20px;font-weight:900;padding:16px;border-radius:12px;margin-bottom:8px;font-family:inherit;';
     var close = function () { el.style.display = 'none'; clearTimeout(window._voiceCallTimer); };
-    el.querySelector('#voiceCallClose').addEventListener('click', close);
-    Array.prototype.forEach.call(el.querySelectorAll('.voiceCallBtn'), function (a) { a.addEventListener('click', function () { setTimeout(close, 500); }); });
-    clearTimeout(window._voiceCallTimer);
-    window._voiceCallTimer = setTimeout(close, 40000);
+    var arm = function () { clearTimeout(window._voiceCallTimer); window._voiceCallTimer = setTimeout(close, 40000); };
+
+    function stepPick() {
+      var html = '<div style="font-size:15px;font-weight:900;margin-bottom:10px;">' + headline + '</div>';
+      items.forEach(function (it, i) {
+        html += '<button type="button" class="voiceCallPick" data-i="' + i + '" style="' + BTN + 'background:#16a34a;">' +
+          '<iconify-icon icon="mdi:phone" style="font-size:24px;"></iconify-icon> ' + it.name + '</button>';
+      });
+      html += '<button type="button" id="voiceCallClose" style="width:100%;background:#334155;color:#e2e8f0;border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:700;">닫기</button>';
+      el.innerHTML = html; el.style.display = 'block';
+      el.querySelector('#voiceCallClose').addEventListener('click', close);
+      Array.prototype.forEach.call(el.querySelectorAll('.voiceCallPick'), function (b) {
+        b.addEventListener('click', function () { stepConfirm(items[Number(b.getAttribute('data-i'))]); });
+      });
+      arm();
+    }
+    function stepConfirm(it) {
+      var html = '<div style="font-size:17px;font-weight:900;margin-bottom:12px;text-align:center;">' + it.name + '님께 정말 전화할까요?</div>' +
+        '<a href="tel:' + it.phone + '" id="voiceCallGo" style="' + BTN + 'background:#16a34a;"><iconify-icon icon="mdi:phone" style="font-size:24px;"></iconify-icon> 전화하기</a>' +
+        '<button type="button" id="voiceCallBack" style="' + BTN + 'background:#334155;font-size:16px;padding:12px;">취소</button>';
+      el.innerHTML = html;
+      el.querySelector('#voiceCallBack').addEventListener('click', function () { items.length > 1 ? stepPick() : close(); });
+      el.querySelector('#voiceCallGo').addEventListener('click', function () { setTimeout(close, 500); });
+      arm();
+    }
+    stepPick();
   }
 
   // 구차장 음성 처리에서 먼저 불러 본다. 전화 요청이면 true (제미나이로 보내지 않음)
@@ -147,10 +163,10 @@
     for (var i = 1; i < found.length && items.length < 3; i++) if (top.score - found[i].score < 0.1) items.push(found[i].c);
     if (items.length === 1) {
       showCallCard(items, items[0].name + '님께 전화하시겠어요?');
-      speak(items[0].name + ' 님께 전화하려면 전화걸기 버튼을 누르세요.');
+      speak(items[0].name + ' 님께 전화하려면 이름 버튼을 누르고, 한 번 더 확인해 주세요.');
     } else {
       showCallCard(items, '누구에게 전화할까요?');
-      speak('비슷한 이름이 ' + items.length + '명 있어요. 전화할 분의 전화걸기 버튼을 누르세요.');
+      speak('비슷한 이름이 ' + items.length + '명 있어요. 전화할 분의 이름 버튼을 누르고, 한 번 더 확인해 주세요.');
     }
     return true;
   };
