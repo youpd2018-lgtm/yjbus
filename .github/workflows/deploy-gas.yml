@@ -25,7 +25,7 @@ jobs:
           node-version: 20
 
       - name: clasp 설치
-        run: npm install -g @google/clasp@2.4.2
+        run: npm install -g @google/clasp@3
 
       - name: Google 로그인 정보 준비
         env:
