@@ -885,49 +885,16 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
                 resolve(res || { success: false });
             };
 
-            const fallbackFetch = () => {
-                const gasUrl = window.GAS_WEB_APP_URL;
-                if (!gasUrl) { applyResult({ success: false }); return; }
-                fetch(gasUrl + '?action=get_standard_master&uniqueKey=' + encodeURIComponent(uniqueKey))
-                    .then(r => r.json())
-                    .then(res => applyResult(res))
-                    .catch(err => {
-                        console.warn("⚠️ standard_master HTTP fetch 실패:", err);
-                        applyResult({ success: false });
-                    });
-            };
-
-            // GAS 네이티브 환경 우선 호출, 실패 또는 부재 시 HTTP fetch 폴백
-            const runLegacy = () => {
-            if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getStandardMasterForLiveByKey === 'function') {
-                google.script.run
-                    .withSuccessHandler((res) => {
-                        if (res && res.success && res.data && res.data.length > 0) {
-                            applyResult(res);
-                        } else {
-                            fallbackFetch();
-                        }
-                    })
-                    .withFailureHandler((err) => {
-                        console.warn("⚠️ google.script.run 실패 -> HTTP fetch 폴백:", err);
-                        fallbackFetch();
-                    })
-                    .getStandardMasterForLiveByKey(uniqueKey);
-            } else {
-                fallbackFetch();
-            }
-            };
-
-            // 🧮 계산 모드: 노선 JSON + 근무표 앵커로 계산, 불가하면 기존 standard_master 방식으로 폴백
-            if (window.StdCalc && window.StdCalc.getMode() === 'calc' && duty.tripTimes) {
+            // 🧮 표준시간은 노선 JSON + 근무표 앵커로 계산한다 (옛 standard_master 시트 방식은 삭제됨)
+            if (window.StdCalc && duty.tripTimes) {
                 window.StdCalc.computeTripRows(duty.routeShort, duty.baseRoute, duty.tripTimes)
                     .then(rows => {
                         if (rows && rows.length > 0) applyResult({ success: true, data: rows, calculated: true });
-                        else runLegacy();
+                        else applyResult({ success: false });
                     })
-                    .catch(() => runLegacy());
+                    .catch(() => applyResult({ success: false }));
             } else {
-                runLegacy();
+                applyResult({ success: false });
             }
         });
     }

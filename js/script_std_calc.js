@@ -15,7 +15,7 @@
     let lastError = '';
 
     function getMode() {
-        try { return localStorage.getItem('yb_std_mode') || 'calc'; } catch (e) { return 'calc'; }
+        return 'calc'; // 옛 standard_master 방식은 삭제되어 계산 방식만 사용
     }
     function setMode(mode) {
         try { localStorage.setItem('yb_std_mode', mode); } catch (e) { }

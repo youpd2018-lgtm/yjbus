@@ -87,16 +87,6 @@ if (!google.script) google.script = {};
         if (successHandler) successHandler({ success: true });
         return bridgeProxy;
       },
-      getStandardMasterForLiveByKey: function(uniqueKey) {
-        const url = window.GAS_WEB_APP_URL + "?action=get_standard_master&uniqueKey=" + encodeURIComponent(uniqueKey || '');
-        fetch(url).then(res => res.json()).then(data => {
-            if (successHandler) successHandler(data || { success: false, data: [] });
-        }).catch(err => {
-            if (failureHandler) failureHandler(err);
-            else if (successHandler) successHandler({ success: false, data: [] });
-        });
-        return bridgeProxy;
-      },
       loadKeyFromServer: function(key) {
         const localVal = localStorage.getItem(key);
         const url = window.GAS_WEB_APP_URL + "?action=load_key_from_server&key=" + encodeURIComponent(key || '');

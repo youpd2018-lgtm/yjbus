@@ -4,7 +4,6 @@
 //   1) Config.js       : SHEET_ID 및 서비스키 설정
 //   2) BusApi.js       : TAGO 및 실시간 버스 위치 API
 //   3) DbService.js    : 스프레드시트 DB 입출력 및 마스터 데이터
-//   4) StandardTime.js : 고유키 기반 표준시간 정밀 대조 및 시간 포맷팅
 // ================================================================
 
 function doGet(e) {
@@ -57,20 +56,6 @@ function doGet(e) {
     let busXml = "";
     try { busXml = getIncheonBusLive('202'); } catch(err) { busXml = ""; }
     const result = { success: true, busXml: busXml };
-    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // 💡 [고유키 기반 표준시간 master 데이터 로드 엔드포인트]
-  if (e && e.parameter && e.parameter.action === 'get_standard_master') {
-    const key = e.parameter.key || e.parameter.uniqueKey || "";
-    let result = { success: false, data: [] };
-    try {
-      result = typeof getStandardMasterForLiveByKey === 'function'
-        ? getStandardMasterForLiveByKey(key)
-        : { success: false, error: "getStandardMasterForLiveByKey 함수 미정의" };
-    } catch(err) {
-      result = { success: false, error: err.toString() };
-    }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
 

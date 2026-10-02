@@ -9,7 +9,7 @@
 - 프론트엔드: `index.html`, `js/*.js`, `css/style.css`, `sw.js`(서비스 워커, 네트워크 우선), PWA.
 - 백엔드: Google Apps Script (`Code.js`, `RouteExport.js`, `StandardTime.js`, `Sheet_Master.js` 등). `.claspignore`가 프론트엔드 파일을 제외한다.
   - 백엔드 파일을 바꾸면 사용자가 Apps Script에 붙여 넣고 **웹 앱을 새 버전으로 배포**해야 적용된다.
-- GAS 배포가 두 개다: (1) git 연동 개발용, (2) 동료·가족이 쓰는 옛 버전. 옛 버전은 `standard_master` 시트를 직접 읽으므로 **그 시트는 지우거나 비우지 않는다.**
+- GAS 배포는 하나뿐이다(옛 버전 배포 종료, 2026-10-02). 옛 `standard_master` 방식과 `StandardTime.js`·`StopSync.js`는 삭제됨(표준시간은 계산 방식만). 시간표·근무표는 GitHub 데이터만 읽고 시트 `DBT`·`일일근무표`·`노선 배정표`는 더 쓰지 않는다.
 
 ## 표준시간 계산 방식 (기본 모드, 적용 완료)
 - 노선마스터 시트: L열 = 구간소요시간(누적이 시간 배분 비율), **배경색 연한 빨강 2(#ea9999)인 행 = 앵커 정류장**(왕복 노선 3개, 202A/203A 2개). 앵커 행은 삭제·이동 금지. L열은 앞으로 현실 시간에 맞게 수정 예정.
