@@ -10,8 +10,8 @@
     window.selectAdminMenu = function (which) {
         document.querySelectorAll('#segAdminMenu .seg-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.value === which); });
         var u = document.getElementById('subPageUser'), p = document.getElementById('subPagePush');
-        if (u) u.style.display = which === 'user' ? 'block' : 'none';
-        if (p) p.style.display = which === 'push' ? 'block' : 'none';
+        if (u) u.classList.toggle('active', which === 'user');   // 화면 규칙이 .active 로만 보이게 함
+        if (p) p.classList.toggle('active', which === 'push');
         if (which === 'push') renderPickList();
     };
 
