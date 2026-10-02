@@ -39,3 +39,29 @@ function loadKeyFromServer(key) {
   }
   return "";
 }
+
+// 🔎 [점검용] DB 시트의 키를 종류별로 세어 로그에 보여 준다 (값은 출력하지 않음). 편집기에서 실행.
+function auditDbKeys() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('DB');
+  if (!sheet) { console.log('DB 시트가 없습니다.'); return; }
+  const data = sheet.getDataRange().getValues();
+  const groups = {};
+  data.forEach(function (row) {
+    const k = String(row[0] || '');
+    if (!k) return;
+    const g = k
+      .replace(/\d{4}-\d{2}-\d{2}/g, '<날짜>')
+      .replace(/^(jpil_user_)[^_]+(_.*)$/, '$1<이름>$2')
+      .replace(/^(fcm_)[^_]+(_.*)$/, '$1<이름>$2')
+      .replace(/^(yeongjong_(?:first_header|seq_header|shared_tt)_).*$/, '$1<노선_순번>')
+      .replace(/^(yeongjong_header_).*$/, '$1<키>');
+    const len = String(row[1] === undefined ? '' : row[1]).length;
+    if (!groups[g]) groups[g] = { n: 0, chars: 0 };
+    groups[g].n++;
+    groups[g].chars += len;
+  });
+  Object.keys(groups).sort().forEach(function (g) {
+    console.log(groups[g].n + '개 | ' + groups[g].chars + '자 | ' + g);
+  });
+  console.log('총 ' + data.length + '행');
+}
