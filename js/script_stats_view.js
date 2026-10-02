@@ -724,7 +724,7 @@ function renderEditRouteOptions() {
             let nameDisplay = u.name;
 
             card.innerHTML = `
-                <div style="width: 85px; background: #1e293b; border-right: 1px solid #334155; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0; gap: 4px; cursor: pointer;" onclick="window.callUserByName('${u.name}')">
+                <div style="width: 85px; background: #1e293b; border-right: 1px solid #334155; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0; gap: 4px;">
                     <iconify-icon icon="${starIcon}" style="font-size: 20px; color: ${starColor};" onclick="event.stopPropagation(); window.toggleFavorite('${u.name}')"></iconify-icon>
                     <span style="font-size: 14.5px; font-weight: bold; color: ${nameColor};">${nameDisplay}</span>
                 </div>
