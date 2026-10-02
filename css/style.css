@@ -3085,13 +3085,19 @@ iconify-icon {
 #tabRouteConfig.active { color: #facc15; background: rgba(250, 204, 21, 0.14); }
 
 /* =========================================================================
-   📢 오늘의 한마디 박스(상단): 손글씨풍 글꼴(그리운 몽토리) 유지 + 글자 크기 1.5px 확대
+   📢 오늘의 한마디 박스(상단): 손글씨 글꼴(밑미체, 없으면 그리운 몽토리) 적용 + 글자 크기 1.5px 확대
    - 위쪽의 'G마켓 산스 통일' 규칙에서 한마디 박스만 예외로 둔다.
    - 박스에 zoom 0.8이 적용돼 있어서, 실제 화면에서 +1.5px이 되도록 계산한 값이다.
    ========================================================================= */
+@font-face {
+    font-family: 'MitmiFont';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_1@1.0/Ownglyph_meetme-Rg.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+}
 #mainAppHeader #liveColleagueMessage,
 #mainAppHeader #liveColleagueMessage * {
-    font-family: 'GmarketNum', 'NostalgicMongtori', -apple-system, sans-serif !important;
+    font-family: 'MitmiFont', 'NostalgicMongtori', -apple-system, sans-serif !important;
 }
 #mainAppHeader #liveColleagueMessage {
     font-size: 19.4px !important;
