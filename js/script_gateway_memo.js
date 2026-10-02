@@ -1173,6 +1173,10 @@
                         if (listDiv) listDiv.innerHTML = '<div style="color:#ef4444; font-weight:bold; padding:12px; text-align:center;">' + (res.message || '확인하지 못했습니다. 다시 시도해 주세요.') + '</div>';
                         return;
                     }
+                    if (res && res.pending && listDiv) {
+                        listDiv.innerHTML = '<div style="color:#fbbf24; font-weight:bold; padding:12px; text-align:center;">가입 신청은 되어 있어요.<br>관리자가 승인하면 로그인할 수 있어요.</div>';
+                        return;
+                    }
                     renderUserListFromDB(res && res.data, inputPin);
                 })
                 .withFailureHandler(function (err) {

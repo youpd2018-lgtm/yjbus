@@ -344,12 +344,10 @@
             let name = document.getElementById('gatewayFamilyName').value.trim();
             let pin = document.getElementById('gatewayFamilyPin').value.trim();
             let target = (document.getElementById('gatewayFamilyTargetDriver').value || '').trim();
-            let targetPin = ((document.getElementById('gatewayFamilyTargetPin') || {}).value || '').trim();
 
             if (!name) { alert("가족 이름을 입력해주세요."); return; }
             if (!/^\d{4}$/.test(pin)) { alert("4자리 비밀번호를 입력해주세요."); return; }
             if (!target) { alert("공유받을 기사님 이름을 입력해주세요."); return; }
-            if (!/^\d{6}$/.test(targetPin)) { alert("공유받을 기사님의 기사번호 6자리를 입력해주세요."); return; }
             if (typeof google === 'undefined' || !google.script || !google.script.run) { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); return; }
 
             // 서버가 기사님 이름과 기사번호를 확인하고 가족 사용자를 저장한다
@@ -359,13 +357,12 @@
                     document.getElementById('gatewayFamilyName').value = '';
                     document.getElementById('gatewayFamilyPin').value = '';
                     document.getElementById('gatewayFamilyTargetDriver').value = '';
-                    if (document.getElementById('gatewayFamilyTargetPin')) document.getElementById('gatewayFamilyTargetPin').value = '';
-                    alert(`'${name}' 가족 사용자가 추가되었습니다!\n(${target} 기사님의 근무표가 공유됩니다)`);
+                    alert(`'${name}' 가족 가입을 신청했어요.\n관리자가 승인하면 로그인할 수 있어요.`);
                     toggleAccordion('addFamilyAccordionContent', document.getElementById('addFamilyAccordionContent').previousElementSibling);
                     initGateway();
                 })
                 .withFailureHandler(function () { alert("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요."); })
-                .registerFamily(name, pin, target, targetPin);
+                .registerFamily(name, pin, target);
             return;
         }
         initGateway();
@@ -560,12 +557,20 @@
             div.style.border = '1px solid var(--border-color)';
 
             let userTypeBadge = u.userType === 'family' ? `<span style="color:#d97706; font-size:11px;">[가족: ${u.targetDriver}]</span>` : '<span style="color:var(--primary); font-size:11px;">[기사]</span>';
-            let infoText = `<div><strong>${u.name}</strong> <span style="font-size:12px; color:var(--sub-text);">(번호: ${u.pin}${u.phone ? ' · ' + u.phone : ''})</span> ${userTypeBadge}${(u.userType !== 'family' && !isDriverV2(u)) ? ' <span style="color:#ef4444; font-size:11px;">[재가입 필요]</span>' : ''}</div>`;
+            let infoText = `<div><strong>${u.name}</strong>${u.active === false ? ' <span style="color:#ef4444; font-size:11px;">[승인 대기]</span>' : ''} <span style="font-size:12px; color:var(--sub-text);">(번호: ${u.pin}${u.phone ? ' · ' + u.phone : ''})</span> ${userTypeBadge}${(u.userType !== 'family' && !isDriverV2(u)) ? ' <span style="color:#ef4444; font-size:11px;">[재가입 필요]</span>' : ''}</div>`;
 
             let btnArea = document.createElement('div');
             btnArea.style.display = 'flex';
             btnArea.style.gap = '4px';
 
+            if (u.active === false) {
+                let okBtn = document.createElement('button');
+                okBtn.type = 'button';
+                okBtn.className = 'mini-btn';
+                okBtn.innerText = '승인';
+                okBtn.onclick = function () { adminApproveUser(index); };
+                btnArea.appendChild(okBtn);
+            }
             if (u.name !== ADMIN_DRIVER) {
                 let delBtn = document.createElement('button');
                 delBtn.type = 'button';
@@ -579,6 +584,21 @@
             div.appendChild(btnArea);
             container.appendChild(div);
         });
+    }
+
+    function adminApproveUser(index) {
+        let users = getUsersList();
+        const target = users[index];
+        if (!target) return;
+        google.script.run
+            .withSuccessHandler(function (res) {
+                if (!res || !res.success) { alert((res && res.message) || "승인하지 못했습니다."); return; }
+                target.active = true;
+                saveUsersList(users);
+                renderAdminUserManageList();
+            })
+            .withFailureHandler(function () { alert("서버에 연결하지 못했습니다."); })
+            .adminApproveUser(target.name);
     }
 
     function adminDeleteUser(index) {

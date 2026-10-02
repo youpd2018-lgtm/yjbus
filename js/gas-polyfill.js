@@ -94,15 +94,21 @@ if (!google.script) google.script = {};
           .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' }); });
         return bridgeProxy;
       },
-      registerFamily: function(name, pin, target, targetPin) {
+      registerFamily: function(name, pin, target) {
         const url = window.GAS_WEB_APP_URL + "?action=register_family&name=" + encodeURIComponent(name || '') + "&pin=" + encodeURIComponent(pin || '')
-          + "&target=" + encodeURIComponent(target || '') + "&targetPin=" + encodeURIComponent(targetPin || '');
+          + "&target=" + encodeURIComponent(target || '');
         fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
           .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' }); });
         return bridgeProxy;
       },
       updateMyPhone: function(phone) {
         const url = window.GAS_WEB_APP_URL + "?action=update_my_phone&phone=" + encodeURIComponent(phone || '');
+        fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
+          .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
+        return bridgeProxy;
+      },
+      adminApproveUser: function(name) {
+        const url = window.GAS_WEB_APP_URL + "?action=admin_approve_user&name=" + encodeURIComponent(name || '');
         fetch(url).then(res => res.json()).then(res => { if (successHandler) successHandler(res || { success: false }); })
           .catch(err => { if (successHandler) successHandler({ success: false, message: '서버에 연결하지 못했습니다.' }); });
         return bridgeProxy;

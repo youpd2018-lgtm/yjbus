@@ -164,10 +164,12 @@ function authLoginByPin_(pin) {
     }
   });
   if (!any) authBump_('authfail_global');
+  // 가입은 했지만 관리자 승인 전인 사용자
+  const pending = !any && users.some(function (u) { return u && u.name && u.active === false && String(u.pin || '').trim() === pin; });
   const list = users.filter(function (u) { return u && u.name; }).map(function (u) { return authPublicUser_(u, !!matched[u.name]); });
   const data = {};
   data[AUTH_USERS_KEY] = JSON.stringify(list);
-  return { success: true, matched: any, data: data };
+  return { success: true, matched: any, pending: pending, data: data };
 }
 
 // ---------- 가입 ----------
@@ -213,13 +215,16 @@ function authRegisterFamily_(p) {
   const target = authCleanName_(p.target);
   if (!name || name.length > 20) return { success: false, message: '가족 이름을 확인해 주세요.' };
   if (!/^\d{4}$/.test(pin)) return { success: false, message: '가족 비밀번호는 숫자 4자리입니다.' };
-  // 공유받을 기사님 본인의 기사번호를 알아야 등록할 수 있다
-  const owner = authCheck_(target, p.targetPin);
-  if (!owner || owner.userType === 'family') return { success: false, message: '기사님 이름과 기사번호가 맞지 않습니다.' };
+  // 기사번호 없이 가입하고, 관리자가 승인해야 로그인된다
+  const driver = authReadUsers_().find(function (u) { return u && u.name === target && u.userType !== 'family' && u.active !== false; });
+  if (!driver) return { success: false, message: '그 이름의 기사님을 찾지 못했습니다. 이름을 다시 확인해 주세요.' };
   return authUpdateUsers_(function (list) {
     if (list.some(function (u) { return u && u.name === name; })) return { success: false, message: '이미 등록된 이름입니다.' };
-    list.push({ name: name, pin: pin, active: true, userType: 'family', targetDriver: target });
-    return { success: true, save: true };
+    if (list.filter(function (u) { return u && u.userType === 'family' && u.active === false; }).length >= 20) {
+      return { success: false, message: '승인 대기가 너무 많습니다. 관리자에게 먼저 승인을 요청해 주세요.' };
+    }
+    list.push({ name: name, pin: pin, active: false, userType: 'family', targetDriver: target, registeredAt: new Date().toISOString() });
+    return { success: true, save: true, pending: true };
   });
 }
 
@@ -248,6 +253,17 @@ function authAdminDeleteUser_(viewer, name) {
   });
 }
 
+function authAdminApproveUser_(viewer, name) {
+  if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
+  name = String(name || '').trim();
+  return authUpdateUsers_(function (list) {
+    const u = list.find(function (x) { return x && x.name === name; });
+    if (!u) return { success: false, message: '사용자를 찾지 못했습니다.' };
+    u.active = true;
+    return { success: true, save: true };
+  });
+}
+
 // 사용자 관련 요청 처리 (doGet/doPost 공통). 해당 없으면 null
 function authHandle_(p, viewer) {
   switch (String(p.action || '')) {
@@ -255,6 +271,7 @@ function authHandle_(p, viewer) {
     case 'register_driver': return authRegisterDriver_(p);
     case 'register_family': return authRegisterFamily_(p);
     case 'update_my_phone': return authUpdateMyPhone_(viewer, p.phone);
+    case 'admin_approve_user': return authAdminApproveUser_(viewer, p.name);
     case 'admin_delete_user': return authAdminDeleteUser_(viewer, p.name);
     default: return null;
   }
