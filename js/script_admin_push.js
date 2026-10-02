@@ -57,7 +57,7 @@
             if (!names.length) { result.textContent = '받을 기사를 한 명 이상 골라 주세요.'; return; }
             targets = names.join(','); label = names.length + '명(' + names.join(', ') + ')';
         }
-        if (!confirm(label + '에게 알림을 보낼까요?\n\n' + title + '\n' + body)) return;
+        if (!confirm(label + '에게 알림을 보낼까요?\n\n' + title + '\n' + body + (sender ? '\n- ' + sender : ''))) return;
         btn.disabled = true; result.textContent = '보내는 중...';
         google.script.run
             .withSuccessHandler(function (res) {
