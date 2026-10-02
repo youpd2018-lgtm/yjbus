@@ -20,8 +20,41 @@ function loadDailyRosterCache() {
 
 function refreshDailyRoster(force) {
   const cached = loadDailyRosterCache();
-  // 하루 한 번: 오늘 이미 받아 둔 게 있으면 다시 받지 않는다
-  if (!force && cached && cached.savedDate === localDateStr()) return;
+  // 30분 안에 받아 둔 게 있으면 다시 받지 않는다 (GitHub 근무표 수정·직접 고친 근무가 곧 반영되도록)
+  if (!force && cached && cached.savedDate === localDateStr() && Date.now() - (cached.fetchedAt || 0) < 30 * 60 * 1000) return;
+  // 1순위: GitHub 근무표 (폰에 저장된 개인 근무 = 직접 고친 근무가 있으면 그 값을 우선)
+  fetch('data/roster/all.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(j => {
+      if (!j || !j.days) throw new Error('형식 오류');
+      const today = localDateStr();
+      const end = new Date(); end.setDate(end.getDate() + 4);
+      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+      const rows = [];
+      Object.keys(j.days).sort().forEach(date => {
+        if (date < today || date > endStr) return;
+        Object.keys(j.days[date]).forEach(name => {
+          let rec = j.days[date][name];
+          try {
+            if (localStorage.getItem(`jpil_user_${name}_schededit_${date}`)) {
+              const mine = JSON.parse(localStorage.getItem(`jpil_user_${name}_sched_${date}`) || 'null');
+              if (mine) rec = mine;
+            }
+          } catch (e) { }
+          const off = rec.workType === '휴무';
+          const v = x => (off || x == null || x === '') ? '-' : String(x);
+          rows.push([date, name, rec.workType || '', v(rec.route), v(rec.busNo), v(rec.seq), v(rec.time)]);
+        });
+      });
+      localStorage.setItem(DAILY_ROSTER_KEY, JSON.stringify({ fetchedAt: Date.now(), savedDate: today, today: today, rows: rows }));
+    })
+    .catch(err => {
+      console.warn('GitHub 근무표 실패, 서버에서 받음:', err);
+      refreshDailyRosterFromServer();
+    });
+}
+
+function refreshDailyRosterFromServer() {
   if (!window.GAS_WEB_APP_URL) return;
   fetch(window.GAS_WEB_APP_URL + '?action=get_daily_roster&days=5')
     .then(r => r.json())
@@ -52,6 +85,9 @@ function loadRouteDataMapLocal() {
 // headers[0]=출발 장소, headers[1]=기점(회차) 장소, headers[2]=도착 장소 / time1=출발, time2=기점, time3=도착
 const TT_ROLE = ['출발', '기점(회차)', '도착'];
 function describeSeqTimetable(routeMap, route, seqLabel) {
+  // GitHub 시간표가 있으면 그것을 쓴다 (없는 노선·순번만 기존 routeDataMap 사용)
+  const gh = typeof window.ytTimetableRounds === 'function' ? window.ytTimetableRounds(route, seqLabel) : null;
+  if (gh) routeMap = { [route]: { headers: gh[gh.length - 1].places || [], data: { [seqLabel]: gh } } };
   const rt = routeMap && routeMap[route];
   const rounds = rt && rt.data && rt.data[seqLabel];
   if (!Array.isArray(rounds) || rounds.length === 0) return '';

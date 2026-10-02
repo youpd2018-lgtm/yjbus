@@ -548,6 +548,19 @@ function getDailyRoster(days) {
   const cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
+  // 1순위: GitHub 근무표 (직접 고친 근무 반영). 받지 못하면 아래 시트 방식으로 대신한다
+  try {
+    const ghRows = ghRosterRows_();
+    if (ghRows) {
+      const endGh = Utilities.formatDate(new Date(Date.now() + (days - 1) * 86400000), "Asia/Seoul", "yyyy-MM-dd");
+      const rowsGh = ghRows.filter(r => r.date >= today && r.date <= endGh)
+        .map(r => [r.date, r.name, r.type, r.route || '-', r.bus || '-', r.seq || '-', r.time || '-']);
+      const resGh = { success: true, today: today, days: days, rows: rowsGh };
+      try { cache.put(cacheKey, JSON.stringify(resGh), 300); } catch (e) {}
+      return resGh;
+    }
+  } catch (eGh) {}
+
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('일일근무표');
   if (!sheet) return { success: false, error: "일일근무표 시트를 찾을 수 없습니다." };
   const values = sheet.getDataRange().getDisplayValues();
@@ -644,6 +657,10 @@ function doPost(e) {
 
 // 📅 [공용] 일일근무표 전체 행을 객체 목록으로 읽기 (구차장 검색 도구용)
 function readDailyRosterRows() {
+  try {
+    const ghRows = ghRosterRows_();
+    if (ghRows) return ghRows;
+  } catch (eGh) {}
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('일일근무표');
   if (!sheet) return null;
   const values = sheet.getDataRange().getDisplayValues();
@@ -709,9 +726,17 @@ function searchShiftPartnerInSheet(routeNo, seqNo, targetWorkType, targetDate) {
 
 // 🔍 routeDataMap(DB 시트의 yeongjong_shared_routeDataMap)에서 노선·순번 시간표 찾기. 못 찾으면 null
 function searchRouteTimetableInRouteDataMap(routeNo, seqNo, dayType) {
-  const raw = loadKeyFromServer('yeongjong_shared_routeDataMap');
-  if (!raw) return null;
-  const map = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+  // 시트(DB)의 routeDataMap 위에 GitHub 시간표를 덮어쓴다 (GitHub에 없는 노선은 시트 값 사용)
+  let map = {};
+  try {
+    const raw = loadKeyFromServer('yeongjong_shared_routeDataMap');
+    if (raw) map = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+  } catch (e0) {}
+  try {
+    const gh = ghRouteDataMap_();
+    if (gh) Object.keys(gh).forEach(function (k) { map[k] = gh[k]; });
+  } catch (e1) {}
+  if (Object.keys(map).length === 0) return null;
   const rNum = String(routeNo).replace(/[^0-9A-Z]/ig, '');
   const sNum = String(seqNo).replace(/[^0-9]/g, '');
   let names = Object.keys(map).filter(k => k.indexOf(rNum) === 0);

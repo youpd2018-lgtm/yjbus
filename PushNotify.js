@@ -107,16 +107,29 @@ function checkFirstRunPush() {
     const props = PropertiesService.getScriptProperties();
     const schedRe = /^jpil_user_(.+)_sched_(\d{4}-\d{2}-\d{2})$/;
 
+    // 오늘 근무 목록: GitHub 근무표 + DB의 개인 근무(직접 고친 것은 DB 값이 우선, GitHub에 없는 기사는 DB 값 그대로)
+    const todayScheds = {};
     Object.keys(db).forEach(function (key) {
       const m = key.match(schedRe);
-      if (!m || m[2] !== today) return;
-      const driver = m[1];
+      if (m && m[2] === today) todayScheds[m[1]] = pushTryParse_(db[key]);
+    });
+    try {
+      const ghRows = ghRosterRows_(db);
+      if (ghRows) ghRows.forEach(function (r) {
+        if (r.date !== today) return;
+        if (db['jpil_user_' + r.name + '_schededit_' + today] && todayScheds[r.name]) return; // 직접 고친 근무 우선
+        todayScheds[r.name] = { workType: r.type, route: r.route, seq: r.seq, time: r.time, busNo: r.bus };
+      });
+    } catch (eGh) {}
 
-      const sched = pushTryParse_(db[key]);
+    Object.keys(todayScheds).forEach(function (driver) {
+      const sched = todayScheds[driver];
       if (!sched || PUSH_WORK_TYPES.indexOf(String(sched.workType || '').trim()) === -1) return;
       if (!sched.route || !sched.seq) return;
 
-      const list = pushTryParse_(db['yeongjong_shared_tt_' + sched.route + '_' + sched.seq]);
+      let list = null;
+      try { list = ghTimetableRounds_(sched.route, sched.seq); } catch (eTt) {}
+      if (!list) list = pushTryParse_(db['yeongjong_shared_tt_' + sched.route + '_' + sched.seq]);
       const firstRun = getFirstRunTime(list, sched.time);
       const firstRunMs = pushToEpochMs_(today, firstRun);
       if (!shouldSendFirstRunPush(nowMs, firstRunMs, PUSH_LEAD_MIN)) return;
