@@ -60,22 +60,6 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 💡 [TAGO 정류장 ID 일괄 동기화 웹 엔드포인트]
-  if (e && e.parameter && e.parameter.action === 'sync_stops') {
-    var result = typeof syncTagoStopIdsToAllSheets === 'function'
-      ? syncTagoStopIdsToAllSheets()
-      : { success: false, error: "syncTagoStopIdsToAllSheets 함수 미정의" };
-    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // 💡 [정류장 위도/경도(GPS) 일괄 동기화 웹 엔드포인트]
-  if (e && e.parameter && (e.parameter.action === 'sync_stop_coordinates' || e.parameter.action === 'sync_coords')) {
-    var result = typeof syncStopCoordinatesToStandardMaster === 'function'
-      ? syncStopCoordinatesToStandardMaster()
-      : { success: false, error: "syncStopCoordinatesToStandardMaster 함수 미정의" };
-    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  }
-
   // 💡 [고유키 기반 표준시간 master 데이터 로드 엔드포인트]
   if (e && e.parameter && e.parameter.action === 'get_standard_master') {
     const key = e.parameter.key || e.parameter.uniqueKey || "";
@@ -108,11 +92,6 @@ function doGet(e) {
     const res = typeof getDrivingHabit === 'function'
       ? getDrivingHabit(e.parameter.driver || "", e.parameter.year || "", e.parameter.month || "")
       : { success: false, error: "getDrivingHabit 함수 미정의" };
-    return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  if (e && e.parameter && e.parameter.action === 'get_sample_keys') {
-    const res = typeof getSampleStandardMasterKeys === 'function' ? getSampleStandardMasterKeys() : { success: false };
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
 

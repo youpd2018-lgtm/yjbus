@@ -291,7 +291,7 @@ function syncStopCoordinatesToStandardMaster() {
 }
 
 // 4. 📋 구글 스프레드시트 상단 메뉴 자동 등록 (열 때마다 표시)
-function onOpen() {
+function addStopSyncMenu_() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('🚌 영종운수 관리')

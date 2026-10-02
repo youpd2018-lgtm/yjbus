@@ -35,6 +35,7 @@ function onOpen() {
     .addSeparator()
     .addItem('⚠️ L/M열 전체 초기화 (J열 거리 비례 세팅)', 'resetRouteMasterLMColumns')
     .addToUi();
+  addStopSyncMenu_();
 }
 
 /**
