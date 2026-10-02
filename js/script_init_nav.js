@@ -168,15 +168,9 @@
     // 💡 구글 시트 데이터 기반으로 동작하므로 초기 더미 객체는 빈 값으로 유지
     const defaultRouteDataMap = {};
 
+    // 사용자 목록은 서버(DB)에서만 받는다. 코드에 기본 사용자·번호를 두지 않는다. (공개 저장소)
     function getDefaultUsers() {
-        return [
-            { name: "유재필", pin: "5289", active: true, userType: "driver" },
-            { name: "정윤하", pin: "0004", active: true, userType: "driver" },
-            { name: "위에", pin: "1127", active: true, userType: "family", targetDriver: "유재필" },
-            { name: "김대규", pin: "1111", active: true, userType: "driver" },
-            { name: "전지현", pin: "9999", active: true, userType: "driver" },
-            { name: "영심이", pin: "9999", active: true, userType: "family", targetDriver: "유재필" }
-        ];
+        return [];
     }
 
     function getUsersList() {
