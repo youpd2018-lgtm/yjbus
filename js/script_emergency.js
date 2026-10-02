@@ -1,7 +1,7 @@
 // ================================================================
 // 📞 [긴급전화] script_emergency.js
 // - 하단 [긴급전화] 메뉴: 이름과 전화걸기 버튼 목록 (누르면 전화 앱으로 연결)
-// - 모든사용자 화면에서 기사님 이름을 누르면 그 기사님께 전화 연결 (window.callUserByName)
+// - 사람 이름이 붙은 항목은 전화번호 글자를 숨기고 [전화걸기] 단추만 보여 줌
 // ================================================================
 (function () {
     var EMERGENCY_GROUPS = [
@@ -13,12 +13,12 @@
         },
         {
             title: '회사', color: '#38bdf8', items: [
-                { name: '이건호 전무', phone: '01059411358' },
-                { name: '강영걸 부장', phone: '01027924441' },
-                { name: '신용준 공장장', phone: '01023966397' },
-                { name: '공동국 차장', phone: '01052588200' },
-                { name: '최하늘 과장', phone: '01026808152' },
-                { name: '최승규 대리', phone: '01064495313' }
+                { name: '이건호 전무', phone: '01059411358', hidePhone: true },
+                { name: '강영걸 부장', phone: '01027924441', hidePhone: true },
+                { name: '신용준 공장장', phone: '01023966397', hidePhone: true },
+                { name: '공동국 차장', phone: '01052588200', hidePhone: true },
+                { name: '최하늘 과장', phone: '01026808152', hidePhone: true },
+                { name: '최승규 대리', phone: '01064495313', hidePhone: true }
             ]
         },
         {
@@ -46,7 +46,7 @@
                 html += '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:#1e293b; border:1px solid #334155; border-radius:12px; padding:10px 12px; margin-bottom:8px;">' +
                     '<div style="min-width:0;">' +
                     '<div style="font-size:16px; font-weight:900; color:#f8fafc;">' + it.name + '</div>' +
-                    '<div style="font-size:12px; color:#94a3b8; margin-top:2px;">' + fmt(it.phone) + '</div>' +
+                    (it.hidePhone ? '' : '<div style="font-size:12px; color:#94a3b8; margin-top:2px;">' + fmt(it.phone) + '</div>') +
                     '</div>' +
                     '<a href="tel:' + it.phone + '" style="flex-shrink:0; display:flex; align-items:center; gap:4px; background:#16a34a; color:#fff; text-decoration:none; font-size:14px; font-weight:900; padding:10px 14px; border-radius:10px;">' +
                     '<iconify-icon icon="mdi:phone" style="font-size:18px;"></iconify-icon> 전화걸기</a>' +
@@ -54,29 +54,5 @@
             });
         });
         box.innerHTML = html;
-    };
-
-    // 모든사용자 화면: 기사님 이름 칸을 누르면 전화 연결
-    window.callUserByName = function (name) {
-        var users = (typeof getUsersList === 'function') ? getUsersList() : [];
-        var u = users.find(function (x) { return x && x.name === name; });
-        var phone = u && u.phone ? String(u.phone).replace(/[^0-9]/g, '') : '';
-        if (!phone) {
-            if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', timer: 2200, showConfirmButton: false, icon: 'info', title: name + ' 기사님은 연락처가 아직 없어요', background: '#1e293b', color: '#fff' });
-            else alert(name + ' 기사님은 연락처가 아직 등록되지 않았어요.');
-            return;
-        }
-        if (name === window.currentDriver) return;   // 내 이름은 전화하지 않음
-        if (typeof Swal === 'undefined') { location.href = 'tel:' + phone; return; }
-        Swal.fire({
-            title: name + ' 기사님께 전화할까요?',
-            text: fmt(phone),
-            showCancelButton: true,
-            confirmButtonText: '전화걸기',
-            cancelButtonText: '취소',
-            confirmButtonColor: '#16a34a',
-            background: '#1e293b',
-            color: '#fff'
-        }).then(function (r) { if (r.isConfirmed) location.href = 'tel:' + phone; });
     };
 })();
