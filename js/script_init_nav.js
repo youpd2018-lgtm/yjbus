@@ -417,6 +417,8 @@
     // 📱 [메인 네비게이션] 페이지/탭 전환 제어 함수
     // ==========================================
     function switchPage(pageId) {
+        // 저장하지 않은 노선정보/교대정보/오늘의메모는 페이지를 벗어나면 마지막 저장 상태로 되돌림
+        if (typeof revertAllUnsavedMemos === 'function') revertAllUnsavedMemos();
         // 1. 모든 메인 페이지 숨기기
         const pages = document.querySelectorAll('.page');
         pages.forEach(p => p.style.display = 'none');
@@ -642,6 +644,8 @@
     // 📱 [메인 네비게이션] 4개 페이지 탭 전환 함수
     // ==========================================
     function switchPage(pageId) {
+        // 저장하지 않은 노선정보/교대정보/오늘의메모는 페이지를 벗어나면 마지막 저장 상태로 되돌림
+        if (typeof revertAllUnsavedMemos === 'function') revertAllUnsavedMemos();
         // 권한 예외 처리
         if (isFamilyUser && (pageId === 'settingsPage' || pageId === 'routeConfigPage' || pageId === 'emergencyPage')) {
             alert("가족 사용자는 해당 메뉴를 사용할 수 없습니다.");

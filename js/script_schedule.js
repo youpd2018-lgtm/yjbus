@@ -158,6 +158,11 @@ function switchScheduleTab(tabName) {
 
   const isClosed = (body.style.display === 'none');
 
+  // 저장하지 않고 다른 메뉴로 이동하거나 접으면 마지막 저장 상태로 되돌림
+  if (currentScheduleTab !== 'timetable' && (tabName !== currentScheduleTab || !isClosed)) {
+    revertUnsavedMemo(currentScheduleTab === 'route' ? 'ROUTE' : (currentScheduleTab === 'shift' ? 'SHIFT' : 'MEMO'));
+  }
+
   // 같은 탭을 다시 터치한 경우: 접기/펼치기 토글
   if (tabName === currentScheduleTab) {
     if (isClosed) {
@@ -316,16 +321,16 @@ function loadFolderMemoTab(tabName) {
       lbl.innerText = isHoliday ? '휴일 주의사항 (전체 공유)' : `노선 주의사항 (${targetKey}번 전체 공유)`;
     }
     textarea.placeholder = isHoliday 
-      ? '휴일에 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)'
-      : '해당 노선 기사님들과 공유할 주의사항 등을 입력하세요. (자동 저장)';
+      ? '휴일에 기사님들과 공유할 주의사항 등을 입력하세요. (저장 버튼을 눌러야 저장됩니다)'
+      : '해당 노선 기사님들과 공유할 주의사항 등을 입력하세요. (저장 버튼을 눌러야 저장됩니다)';
   } else if (tabName === 'shift') {
     const lbl = document.getElementById('shiftMemoHeaderLabel');
     if (lbl) {
       lbl.innerText = isHoliday ? '휴일 특이사항 (전체 공유)' : `교대 특이사항 (${targetKey}번 인계)`;
     }
     textarea.placeholder = isHoliday
-      ? '휴일 특이사항을 입력하세요. (자동 저장)'
-      : '다음 교대자에게 인계할 차량/운행 특이사항을 입력하세요. (자동 저장)';
+      ? '휴일 특이사항을 입력하세요. (저장 버튼을 눌러야 저장됩니다)'
+      : '다음 교대자에게 인계할 차량/운행 특이사항을 입력하세요. (저장 버튼을 눌러야 저장됩니다)';
   }
 
   // 1) 로컬 스토리지 캐시 우선 표시 (0ms 즉시 노출)
@@ -342,6 +347,7 @@ function loadFolderMemoTab(tabName) {
     textarea.value = '';
     autoResizeTextarea(textarea);
   }
+  savedMemoText[category] = textarea.value;
 
   // 2) 구글 시트 BOARD_DB 서버 최신 데이터 비동기 로드
   if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.loadBoardMemo === 'function') {
@@ -358,9 +364,14 @@ function loadFolderMemoTab(tabName) {
           if (serverContent.includes('---DIVIDER---')) {
             serverContent = serverContent.split(/\r?\n?---DIVIDER---\r?\n?/).filter(Boolean).join('\n──────────────────────────────\n');
           }
-          textarea.value = serverContent;
+          // 작성 중인(저장 전) 글이 있으면 서버 값으로 덮어쓰지 않음
+          const isDirty = (textarea.value !== (savedMemoText[category] || ''));
           localStorage.setItem(localCacheKey, serverContent);
-          autoResizeTextarea(textarea);
+          if (!isDirty) {
+            textarea.value = serverContent;
+            savedMemoText[category] = serverContent;
+            autoResizeTextarea(textarea);
+          }
           if (statusText) {
             statusText.innerText = "☁️ 구글시트 동기화됨";
             statusText.style.color = "#22c55e";
@@ -378,7 +389,46 @@ function loadFolderMemoTab(tabName) {
   }
 }
 
-// 7. 실시간 자동저장(Debounce 1.2초) 및 세션 구분선/서명 자동 바인딩
+// 7. 세션 구분선 바인딩 (자동 저장 없음)
+// 📝 노선정보 / 교대정보 / 오늘의메모는 '저장' 버튼을 눌렀을 때만 저장됨 (자동 저장 없음)
+//  - 저장 버튼 없이 다른 메뉴·페이지로 나가면 마지막 저장 상태로 되돌림
+const savedMemoText = {};   // { ROUTE: '...', SHIFT: '...', MEMO: '...' } 마지막으로 저장(불러온) 글
+const MEMO_UI = {
+  ROUTE: { id: 'routeMemo', statusId: 'routeMemoSaveStatus', sign: false },
+  SHIFT: { id: 'shiftMemo', statusId: 'shiftMemoSaveStatus', sign: false },
+  MEMO:  { id: 'todayMemo', statusId: 'todayMemoSaveStatus', sign: false }
+};
+
+function revertUnsavedMemo(category) {
+  const ui = MEMO_UI[category];
+  if (!ui) return;
+  const ta = document.getElementById(ui.id);
+  if (!ta) return;
+  const saved = savedMemoText[category];
+  if (saved !== undefined && ta.value !== saved) {
+    ta.value = saved;
+    autoResizeTextarea(ta);
+  }
+  const st = document.getElementById(ui.statusId);
+  if (st) st.style.opacity = '0';
+}
+function revertAllUnsavedMemos() {
+  ['ROUTE', 'SHIFT', 'MEMO'].forEach(revertUnsavedMemo);
+}
+
+// 저장 버튼
+function saveMemoByButton(category) {
+  const ui = MEMO_UI[category];
+  const ta = document.getElementById(ui.id);
+  const st = document.getElementById(ui.statusId);
+  if (!ta) return;
+  saveFolderCardMemoNow(category, ta, st, ui.sign);
+  logBoardMemoHistory(category, ta.value);   // 저장할 때마다 시트에 이력 한 줄 추가
+  savedMemoText[category] = ta.value;
+  const btn = document.getElementById(ui.id + 'SaveBtn');
+  if (btn) { btn.disabled = false; }
+}
+
 const folderMemoTimers = {};
 
 // 📜 [이력 기록] 노선정보 / 교대정보 / 오늘의메모를 수정하고 나갈 때마다 BOARD_DB에 새 줄로 쌓아 둠
@@ -444,29 +494,20 @@ function setupFolderCardMemos() {
       }
     };
 
-    // 입력 시 높이 자동 조절 및 디바운스 자동 저장
+    // 입력 시 높이 자동 조절만 수행 (저장은 '저장' 버튼으로)
     textarea.oninput = function() {
       autoResizeTextarea(textarea);
       sessionExitFlags[cfg.cat] = false;
-
       if (statusText) {
-        statusText.innerText = "⏳ 저장 중...";
+        statusText.innerText = "✏️ 저장 전";
         statusText.style.color = "#f59e0b";
         statusText.style.opacity = '1';
       }
-
-      if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
-      folderMemoTimers[cfg.cat] = setTimeout(() => {
-        saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
-      }, 1200);
     };
 
-    // 포커스 벗어날 때 (메뉴 나가기): 서명 확정 & 즉시 저장, 다음 진입 시 구분선 플래그 활성화
+    // 포커스가 벗어나도 저장하지 않음 (다음 진입 시 구분선 플래그만 활성화)
     textarea.onblur = function() {
-      if (folderMemoTimers[cfg.cat]) clearTimeout(folderMemoTimers[cfg.cat]);
       sessionExitFlags[cfg.cat] = true;
-      saveFolderCardMemoNow(cfg.cat, textarea, statusText, cfg.sign);
-      logBoardMemoHistory(cfg.cat, textarea.value);   // 수정을 마치고 나갈 때 시트에 이력 한 줄 추가
     };
   });
 
@@ -485,7 +526,7 @@ function setupFolderCardMemos() {
   });
 }
 
-// 8. 실제 구글 시트 BOARD_DB 저장 함수 (바로 수정하고 자동 저장)
+// 8. 실제 구글 시트 BOARD_DB 저장 함수 ('저장' 버튼에서 호출)
 function saveFolderCardMemoNow(category, textarea, statusText, requireSignature) {
   if (!textarea) return;
   const targetKey = getBoardTargetKey(category);
