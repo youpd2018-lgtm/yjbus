@@ -3169,3 +3169,16 @@ html.senior .bli-time-item:nth-of-type(n+2), html.senior .bli-busno-box { border
 html.senior .bli-time-lbl, html.senior .bli-busno-box::before { font-size: 14px; }
 html.senior .bli-time-val, html.senior .bli-busno-val { font-size: 29px; letter-spacing: -1.2px; }
 html.senior .bli-busno-box { border-radius: 0; }
+
+/* 노안모드 3차: 206과 순번 숫자 같은 크기, 구분선은 숫자 높이만, 시간 줄은 위아래 가운데 */
+html.senior .bus-hero-content { grid-template-rows: auto auto 1fr auto 1fr auto; }
+html.senior .bli-route-num, html.senior .bli-routesub-text, html.senior .bli-seq-group { grid-row: 2; align-self: end; }
+html.senior .bli-seq-num { font-size: 66px; line-height: 1; letter-spacing: -3px; }
+html.senior .bli-route-num { line-height: 1; }
+html.senior .bli-time-item, html.senior .bli-busno-box { grid-row: 4; }
+html.senior .bli-bottom-row { grid-row: 6; }
+html.senior .bli-time-item:nth-of-type(n+2), html.senior .bli-busno-box { border-left: none; }
+html.senior .bli-time-item:nth-of-type(n+2), html.senior .bli-busno-box { padding-left: 10px; }
+html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val, html.senior .bli-busno-val { position: relative; }
+html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val::before, html.senior .bli-busno-val::before { content: ""; position: absolute; left: -6px; top: 12%; bottom: 12%; width: 1px; background: rgba(255, 255, 255, 0.18); }
+html.senior .bli-route-num, html.senior .bli-routesub-text, html.senior .bli-seq-group { margin-top: 10px; }
