@@ -208,47 +208,48 @@
             totalInfoEl.innerHTML = `${h}시간 ${m}분<br>${totalDist.toFixed(1)}KM`;
         }
 
-        // 2단: 나의 운행 습관 (이번 회차·오늘·이달)
-        // 이번 회차·오늘은 이 폰 기준(바로 표시), 이달은 서버 합계(받아오는 동안은 0으로 표시)
-        const hb = (window.DrivingHabit && window.DrivingHabit.getCounts()) || { cur: {}, today: {} };
-        const speeds = computeAvgSpeeds(year, month);   // 평균 속도: 폰에서 잰 값이라 서버 없이 바로 표시
-        renderDrivingHabitRows({ cur: hb.cur, today: hb.today, month: {}, speed: speeds });
-        if (window.DrivingHabit) {
-            window.DrivingHabit.fetchServer(year, month).then(srv => {
-                if (!srv) return;
+        // 2단: 나의 정류장 습관 (이번 회차는 이 폰 값, 이달은 서버 합계 + 아직 못 올린 이 폰 값)
+        const dh = window.DrivingHabit;
+        renderStopHabit('cur', dh && dh.getCurrent ? dh.getCurrent() : null);
+        renderStopHabit('month', null, true);
+        if (dh && dh.fetchMonth) {
+            dh.fetchMonth(year, month).then(res => {
                 const cd = window.statSummaryCurrentDate;
                 if (cd.getFullYear() !== year || cd.getMonth() + 1 !== month) return;   // 그 사이 다른 달로 넘겼으면 무시
-                renderDrivingHabitRows({ cur: hb.cur, today: srv.today, month: srv.month, speed: speeds });
+                renderStopHabit('month', res);
             });
         }
     }
 
-    // 급출발·급정거·급회전 3개 항목 + 맨 아래 평균 속도 (이번 회차 / 오늘 / 이달 공통)
-    const DRIVING_HABIT_ITEMS = ['급출발', '급정거', '급회전'];
-
-    // 평균 속도는 실제로 출발한 시각과 종점 도착 시각을 재서 (거리 ÷ 걸린 시간) 계산한 값 (script_driving_habit.js)
-    function computeAvgSpeeds(year, month) {
-        const r = (window.DrivingHabit && window.DrivingHabit.getAvgSpeeds) ? window.DrivingHabit.getAvgSpeeds(year, month) : null;
-        return r || { cur: null, today: null, month: null, measuring: false };
-    }
-
-    function renderDrivingHabitRows(values) {
-        ['cur', 'today', 'month'].forEach(scope => {
-            const el = document.getElementById('habitList_' + scope);
-            if (!el) return;
-            const compact = scope === 'month';
-            const v = (values && values[scope]) || {};
-            const rows = DRIVING_HABIT_ITEMS.map(name => {
-                const cnt = String(v[name] || 0).padStart(2, '0');
-                return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 13 : 14}px; padding:${compact ? 0 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
-                    `<span>${name}</span><span style="color:#e2e8f0; font-weight:900;">${cnt}회</span></div>`;
-            }).join('');
-            const sp = values && values.speed ? values.speed[scope] : null;
-            const spText = (sp === null || sp === undefined) ? ((scope === 'cur' && values.speed && values.speed.measuring) ? '측정 중' : '-') : `${sp.toFixed(1)}<span style="font-size:11px; font-weight:bold;"> km/h</span>`;
-            const speedRow = `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${compact ? 13 : 14}px; padding:${compact ? 4 : 5}px 0 0; margin-top:${compact ? 2 : 4}px; border-top:1px dashed #475569; font-weight:bold; color:#fb923c;">` +
-                `<span>평균 속도</span><span style="color:#fdba74; font-weight:900;">${spText}</span></div>`;
-            el.innerHTML = rows + speedRow;
-        });
+    // 정류장 정차(급정거)·출발(급출발) 비율과 Top3 (이번 회차 / 이달 공통)
+    function renderStopHabit(scope, v, loading) {
+        const el = document.getElementById('habitList_' + scope);
+        if (!el) return;
+        const compact = scope === 'month';
+        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
+        const fs = compact ? 12 : 14;
+        const gray = 'font-weight:bold; color:#94a3b8;';
+        if (loading) { el.innerHTML = `<div style="font-size:${fs}px; ${gray}">불러오는 중...</div>`; return; }
+        if (!v || !v.n) {
+            el.innerHTML = `<div style="font-size:${fs}px; ${gray}">${scope === 'cur' ? '측정된 정류장 없음 (라이브 모달을 켜고 운행하면 쌓여요)' : '기록 없음'}</div>`;
+            return;
+        }
+        if (scope === 'cur' && !v.ok) {
+            el.innerHTML = `<div style="font-size:${fs}px; ${gray}">측정 중 · 정류장 ${v.n}/${min}개<br><span style="font-size:11px;">${min}개 이상 측정되면 통계로 보여요</span></div>`;
+            return;
+        }
+        const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
+        const row = (label, c, color) => `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${fs}px; padding:${compact ? 1 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
+            `<span>${label}</span><span style="color:${color}; font-weight:900;">${c}개 · ${pct(c)}%</span></div>`;
+        const top = (title, arr, color) => {
+            const names = (arr && arr.length) ? arr.map((nm, i) => `<div style="font-size:${compact ? 11 : 12.5}px; color:#e2e8f0; font-weight:700; line-height:1.45; word-break:keep-all;">${i + 1}. ${nm}</div>`).join('') : `<div style="font-size:${compact ? 11 : 12.5}px; color:#64748b; font-weight:700;">없음</div>`;
+            return `<div style="min-width:0;"><div style="font-size:${compact ? 11 : 12}px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>${names}</div>`;
+        };
+        el.innerHTML =
+            `<div style="font-size:${compact ? 11 : 12}px; ${gray} margin-bottom:${compact ? 2 : 4}px;">측정된 정류장 ${v.n}개 중</div>` +
+            row('급정거', v.hs, '#f87171') + row('급출발', v.hst, '#fb923c') +
+            `<div style="display:grid; grid-template-columns:${compact ? '1fr' : '1fr 1fr'}; gap:${compact ? 4 : 8}px; margin-top:${compact ? 4 : 6}px; padding-top:${compact ? 4 : 6}px; border-top:1px dashed #475569;">` +
+            top('급정거 정류장 Top3', v.topStop, '#f87171') + top('급출발 정류장 Top3', v.topStart, '#fb923c') + '</div>';
     }
 
     // ================================================================

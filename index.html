@@ -631,15 +631,9 @@
                 style="font-size: 24px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
               <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">나의 운행 습관</div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
-                <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 운행</div>
-                <div id="habitList_cur"></div>
-              </div>
-              <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
-                <div style="font-size: 14px; font-weight: 900; color: #22c55e; margin-bottom: 6px;">오늘의 운행</div>
-                <div id="habitList_today"></div>
-              </div>
+            <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
+              <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 정류장 정차·출발</div>
+              <div id="habitList_cur"></div>
             </div>
           </div>
 
@@ -670,7 +664,7 @@
               <!-- 우측 이달의 운행 (3박스 높이만큼) -->
               <div
                 style="grid-column: 2; grid-row: 1 / 4; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column;">
-                <div style="font-size: 15px; font-weight: 900; color: #fbbf24; margin-bottom: 6px;">이달의 운행</div>
+                <div style="font-size: 15px; font-weight: 900; color: #fbbf24; margin-bottom: 6px;">이달의 정류장 습관</div>
                 <div id="habitList_month" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;"></div>
               </div>
             </div>
@@ -1216,7 +1210,7 @@
     <script src="js/script_weather_msg.js"></script>
     <script src="js/script_gps_sim.js"></script>
     <script src="js/script_init_nav.js"></script>
-    <script src="js/script_driving_habit.js"></script>
+    <script src="js/script_stop_habit.js"></script>
     <script src="js/script_emergency.js"></script>
     <script src="js/script_admin_push.js"></script>
     <script src="js/script_stats_view.js"></script>

@@ -143,3 +143,78 @@ function saveTripSpeed(d) {
     return { success: false, error: String(err) };
   }
 }
+
+
+// ================================================================
+// 🚏 [정류장 운전 습관 저장] '정류장습관' 시트 (2026-10-03 신설)
+// - 라이브 모달을 켠 동안 앱이 잰 '정차·출발' 결과를 회차마다 한 줄로 저장합니다. (측정 정류장 10개 이상인 회차만 옴)
+// - 열: A 날짜 | B 기사 | C 노선 | D 순번 | E 회차 | F 측정횟수 | G 급정거횟수 | H 급출발횟수 | I 급정거 Top3 | J 급출발 Top3 | K 저장시각 | L 키
+//   (L 키 = 날짜|근무|회차|번호. 같은 키의 줄이 있으면 그 줄을 덮어써서 중복되지 않음)
+// - 앱에서 doPost(action = 'save_stop_habit'), doGet(action = 'get_stop_habit', driver, year, month)로 호출합니다.
+// - 옛 '운행습관' 시트는 더 쓰지 않습니다. (필요 없으면 지워도 됨)
+// ================================================================
+var STOP_HABIT_SHEET_NAME = '정류장습관';
+
+function saveStopHabit(d) {
+  try {
+    if (!d || !d.key || !d.date || !d.driver) return { success: false, error: '데이터 누락' };
+    var n = Number(d.n) || 0;
+    if (n < 10) return { success: false, error: '측정 정류장 부족' };
+    var lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var sheet = ss.getSheetByName(STOP_HABIT_SHEET_NAME);
+      if (!sheet) {
+        sheet = ss.insertSheet(STOP_HABIT_SHEET_NAME);
+        sheet.appendRow(['날짜', '기사', '노선', '순번', '회차', '측정횟수', '급정거횟수', '급출발횟수', '급정거 Top3', '급출발 Top3', '저장시각', '키']);
+        sheet.setFrozenRows(1);
+        sheet.getRange(2, 1, 2000, 5).setNumberFormat('@');
+        sheet.getRange(2, 12, 2000, 1).setNumberFormat('@');
+      }
+      var key = String(d.key), driver = String(d.driver);
+      var last = sheet.getLastRow(), target = -1;
+      if (last >= 2) {
+        var ids = sheet.getRange(2, 12, last - 1, 1).getDisplayValues();
+        var who = sheet.getRange(2, 2, last - 1, 1).getDisplayValues();
+        for (var i = ids.length - 1; i >= 0; i--) {
+          if (ids[i][0] === key && who[i][0] === driver) { target = i + 2; break; }
+        }
+      }
+      if (target === -1) target = last + 1;
+      var row = [String(d.date), driver, String(d.route || ''), String(d.seq || ''), String(d.turn || ''),
+        n, Number(d.hardStop) || 0, Number(d.hardStart) || 0,
+        String(d.topStop || ''), String(d.topStart || ''),
+        Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss'), key];
+      sheet.getRange(target, 1, 1, 5).setNumberFormat('@');
+      sheet.getRange(target, 12, 1, 1).setNumberFormat('@');
+      sheet.getRange(target, 1, 1, 12).setValues([row]);
+      return { success: true };
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+// 한 기사의 해당 월 회차들: { success, rows: [[키, 측정횟수, 급정거횟수, 급출발횟수, 급정거Top3, 급출발Top3], ...] }
+function getStopHabit(driver, year, month) {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(STOP_HABIT_SHEET_NAME);
+    var rows = [];
+    if (sheet && sheet.getLastRow() >= 2) {
+      var prefix = String(year) + '-' + ('0' + month).slice(-2) + '-';
+      var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, 12).getDisplayValues();
+      vals.forEach(function (r) {
+        if (r[1] === String(driver) && r[0].indexOf(prefix) === 0) {
+          rows.push([r[11], Number(r[5]) || 0, Number(r[6]) || 0, Number(r[7]) || 0, r[8], r[9]]);
+        }
+      });
+    }
+    return { success: true, rows: rows };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}

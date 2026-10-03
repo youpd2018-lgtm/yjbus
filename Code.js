@@ -88,6 +88,14 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // 💡 [정류장 운전 습관 이달 조회: 근무통계 화면에서 사용]
+  if (e && e.parameter && e.parameter.action === 'get_stop_habit') {
+    const res = typeof getStopHabit === 'function'
+      ? getStopHabit(authDriverFor_(viewer, e.parameter.driver), e.parameter.year || "", e.parameter.month || "")
+      : { success: false, error: "getStopHabit 함수 미정의" };
+    return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // 💡 [단일 키 조회 엔드포인트: 오늘의 메모, 동료 메시지 등]
   if (e && e.parameter && e.parameter.action === 'load_key_from_server') {
     const key = e.parameter.key || "";
@@ -592,6 +600,11 @@ function doPost(e) {
     if (postData && postData.action === 'save_driving_habit') {
       postData.driver = authDriverFor_(viewer, postData.driver);
       const res = typeof saveDrivingHabit === 'function' ? saveDrivingHabit(postData) : { success: false, error: "saveDrivingHabit 함수 미정의" };
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (postData && postData.action === 'save_stop_habit') {
+      postData.driver = authDriverFor_(viewer, postData.driver);
+      const res = typeof saveStopHabit === 'function' ? saveStopHabit(postData) : { success: false, error: "saveStopHabit 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
     if (postData && postData.action === 'save_trip_speed') {
