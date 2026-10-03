@@ -37,7 +37,7 @@ for n in users:
             d[r['근무일자'].strip()] = {'workType': r['근무형태'], 'busNo': r['차량번호'], 'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
     open(fp, 'w', encoding='utf-8').write(json.dumps({'name': n, 'from': HIST_FROM, 'through': through, 'reg': sorted(reg), 'days': d}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
 h = hashlib.md5(b''.join(open(os.path.join(DRVDIR, n + '.json'), 'rb').read() for n in sorted(users))).hexdigest()[:8]
-open(os.path.join(HIST, 'index.json'), 'w', encoding='utf-8').write(json.dumps({'from': HIST_FROM, 'through': through, 'rev': h}, separators=(',', ':')))
+open(os.path.join(HIST, 'index.json'), 'w', encoding='utf-8').write(json.dumps({'from': HIST_FROM, 'through': through, 'rev': h, 'users': users}, ensure_ascii=False, separators=(',', ':')))
 if old:
     rows = [r for r in rows if r['근무일자'].strip() >= keep_from]
     with open(CSV, 'w', encoding='utf-8-sig', newline='') as f:

@@ -65,29 +65,33 @@
   //    (index.json 의 rev 가 바뀌었을 때만 다시 받음. 기본은 GitHub 값이고, 직접 고친 근무(schededit 표시, 서버 DB에서 받아 온 것)만 그대로 둔다. from~through 사이에 내 근무가 없는 날짜는 휴무)
   const HIST_REV_KEY = 'yb_roster_hist_rev';
   function fillHistory() {
-    let driverName = null;
-    try { driverName = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver; } catch (e) { }
-    if (!driverName) return Promise.resolve(0);
+    let me = null;
+    try { me = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver; } catch (e) { }
+    if (!me) return Promise.resolve(0);
     let revs = {}; try { revs = JSON.parse(localStorage.getItem(HIST_REV_KEY) || '{}') || {}; } catch (e) { revs = {}; }
     return fetch('data/roster/history/index.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : null)
       .then(idx => {
         if (!idx || !idx.from) return 0;
-        if (revs[driverName] === idx.rev) return 0;
-        return fetch('data/roster/history/drivers/' + encodeURIComponent(driverName) + '.json', { cache: 'no-cache' })
-          .then(r => r.ok ? r.json() : null)
-          .then(j => {
-            if (!j || !j.days) return 0;
-            let n = 0;
-            // 근무표를 올린(등록된) 날짜만 채운다. 내 이름이 없으면 휴무, 등록 안 한 날짜는 건드리지 않는다(미등록)
-            (j.reg || []).forEach(date => {
-              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) return;
-              try { localStorage.setItem(`jpil_user_${driverName}_sched_${date}`, toSched(j.days[date] || OFF)); n++; } catch (e) { }
+        // '모든 사용자 근무 현황'에서 다른 앱 사용자의 지난 근무도 보이도록, 앱 사용자 전원의 파일을 채운다
+        const names = Array.from(new Set([me, ...(idx.users || [])]));
+        return Promise.all(names.filter(name => revs[name] !== idx.rev).map(name =>
+          fetch('data/roster/history/drivers/' + encodeURIComponent(name) + '.json', { cache: 'no-cache' })
+            .then(r => r.ok ? r.json() : null)
+            .then(j => {
+              if (!j || !j.days) return 0;
+              let n = 0;
+              // 근무표를 올린(등록된) 날짜만 채운다. 이름이 없으면 휴무, 등록 안 한 날짜는 건드리지 않는다(미등록)
+              (j.reg || []).forEach(date => {
+                if (localStorage.getItem(`jpil_user_${name}_schededit_${date}`)) return;
+                try { localStorage.setItem(`jpil_user_${name}_sched_${date}`, toSched(j.days[date] || OFF)); n++; } catch (e) { }
+              });
+              revs[name] = idx.rev;
+              return n;
+            }).catch(() => 0))).then(arr => {
+              try { localStorage.setItem(HIST_REV_KEY, JSON.stringify(revs)); } catch (e) { }
+              return arr.reduce((x, y) => x + y, 0);
             });
-            revs[driverName] = idx.rev;
-            try { localStorage.setItem(HIST_REV_KEY, JSON.stringify(revs)); } catch (e) { }
-            return n;
-          });
       })
       .catch(() => 0);
   }
