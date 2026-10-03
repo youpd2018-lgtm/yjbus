@@ -240,6 +240,8 @@ function renderMessages(msgsArray) {
   currentMsgRotationList = _buildUnifiedList(validMsgs);
   currentMsgRotationIndex = 0;
   _showUnifiedMsg(0);
+  // 메시지가 하나뿐이면 다시 그리지 않음(흐르는 글자가 5초마다 처음으로 돌아가지 않게)
+  if (currentMsgRotationList.length <= 1) return;
   msgRotationTimer = setInterval(function() {
     currentMsgRotationIndex = (currentMsgRotationIndex + 1) % currentMsgRotationList.length;
     _showUnifiedMsg(currentMsgRotationIndex);

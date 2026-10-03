@@ -1,4 +1,12 @@
 // ================================================================
+// 로그인 전에 불러서 비어 오는 경우를 위해 15초 뒤 최대 4번 다시 시도
+var _colleagueRetry = 0;
+function retryColleagueMessage_() {
+  if (_colleagueRetry >= 4) return;
+  _colleagueRetry++;
+  setTimeout(function () { loadLatestColleagueMessage(); }, 15000);
+}
+
 function loadLatestColleagueMessage() {
   let loaded = false;
 
@@ -32,12 +40,14 @@ function loadLatestColleagueMessage() {
         }
         if (!loaded) {
           renderMessages([]);
+          retryColleagueMessage_();
         }
       })
       .withFailureHandler(err => {
         console.warn("한마디 서버 수신 실패:", err);
         if (!loaded) {
           renderMessages([]);
+          retryColleagueMessage_();
         }
       })
       .loadKeyFromServer('latest_colleague_msg');
