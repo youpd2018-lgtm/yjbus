@@ -221,35 +221,28 @@
         }
     }
 
-    // 정류장 정차(급정거)·출발(급출발) 비율과 Top3 (이번 회차 / 이달 공통)
+    // 측정 N회 / 급정거 N회 / 급출발 N회, 급한 정류장이 생기면 Top3가 아래로 이어서 늘어남 (이번 회차 / 월별 누적 공통)
     function renderStopHabit(scope, v, loading) {
         const el = document.getElementById('habitList_' + scope);
         if (!el) return;
-        const compact = true;   // 두 카드가 나란히라 폭이 좁음
         const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
-        const fs = compact ? 12 : 14;
         const gray = 'font-weight:bold; color:#94a3b8;';
-        if (loading) { el.innerHTML = `<div style="font-size:${fs}px; ${gray}">불러오는 중...</div>`; return; }
+        if (loading) { el.innerHTML = `<div style="font-size:12px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
-            el.innerHTML = `<div style="font-size:${fs}px; ${gray}">${scope === 'cur' ? '측정된 정류장 없음 (라이브 모달을 켜고 운행하면 쌓여요)' : '기록 없음'}</div>`;
-            return;
-        }
-        if (scope === 'cur' && !v.ok) {
-            el.innerHTML = `<div style="font-size:${fs}px; ${gray}">측정 중 · 정류장 ${v.n}/${min}개<br><span style="font-size:11px;">${min}개 이상 측정되면 통계로 보여요</span></div>`;
+            el.innerHTML = `<div style="font-size:12px; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:11px;">라이브 모달을 켜고 운행하면 쌓여요</span>' : '기록 없음'}</div>`;
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-        const row = (label, c, color) => `<div style="display:flex; justify-content:space-between; align-items:center; font-size:${fs}px; padding:${compact ? 1 : 3}px 0; font-weight:bold; color:#94a3b8;">` +
-            `<span>${label}</span><span style="color:${color}; font-weight:900;">${c}개 · ${pct(c)}%</span></div>`;
-        const top = (title, arr, color) => {
-            const names = (arr && arr.length) ? arr.map((nm, i) => `<div style="font-size:${compact ? 11 : 12.5}px; color:#e2e8f0; font-weight:700; line-height:1.45; word-break:keep-all;">${i + 1}. ${nm}</div>`).join('') : `<div style="font-size:${compact ? 11 : 12.5}px; color:#64748b; font-weight:700;">없음</div>`;
-            return `<div style="min-width:0;"><div style="font-size:${compact ? 11 : 12}px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>${names}</div>`;
-        };
+        const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:13px; padding:2px 0; font-weight:bold; color:#94a3b8;">` +
+            `<span>${label}</span><span style="color:${color}; font-weight:900;">${c}회${showPct ? `<span style="font-size:10.5px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
+        const top = (title, arr, color) => (arr && arr.length)
+            ? `<div style="margin-top:6px;"><div style="font-size:11.5px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>` +
+              arr.map((nm, i) => `<div style="font-size:11.5px; color:#e2e8f0; font-weight:700; line-height:1.45; word-break:keep-all;">${i + 1}. ${nm}</div>`).join('') + '</div>'
+            : '';
+        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:10.5px; ${gray} margin-top:5px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
         el.innerHTML =
-            `<div style="font-size:${compact ? 11 : 12}px; ${gray} margin-bottom:${compact ? 2 : 4}px;">측정된 정류장 ${v.n}개 중</div>` +
-            row('급정거', v.hs, '#f87171') + row('급출발', v.hst, '#fb923c') +
-            `<div style="display:grid; grid-template-columns:${compact ? '1fr' : '1fr 1fr'}; gap:${compact ? 4 : 8}px; margin-top:${compact ? 4 : 6}px; padding-top:${compact ? 4 : 6}px; border-top:1px dashed #475569;">` +
-            top('급정거 정류장 Top3', v.topStop, '#f87171') + top('급출발 정류장 Top3', v.topStart, '#fb923c') + '</div>';
+            row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
+            top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
     }
 
     // ================================================================
