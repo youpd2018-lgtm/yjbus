@@ -62,7 +62,7 @@
   }
 
   // 📚 내 지난 근무: GitHub 월별 기록(data/roster/history/YYYY-MM.json)에서 '내 이름'만 읽어 jpil_user_<이름>_sched_<날짜> 를 채운다
-  //    (달 파일의 rev 가 바뀐 달만 다시 받음. 앱에서 직접 고친 근무는 덮어쓰지 않음. 그 날짜에 내 이름이 없으면 휴무)
+  //    (달 파일의 rev 가 바뀐 달만 다시 받음. 이미 있는 내 기록(DB·직접 고친 근무)은 덮어쓰지 않고, 빈 날짜만 채움. 그 날짜에 내 이름이 없으면 휴무)
   const HIST_REV_KEY = 'yb_roster_hist_rev';
   function fillHistory() {
     let driverName = null;
@@ -82,8 +82,10 @@
             Object.keys(j.days).forEach(date => {
               const key = `jpil_user_${driverName}_sched_${date}`;
               if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) return;
+              // 이미 내 기록(서버 DB·폰)이 있으면 절대 바꾸지 않는다. 비어 있을 때만 GitHub 기록으로 채운다
+              if (localStorage.getItem(key)) return;
               const gh = toSched(j.days[date][driverName] || OFF);
-              if (localStorage.getItem(key) !== gh) { try { localStorage.setItem(key, gh); n++; } catch (e) { } }
+              try { localStorage.setItem(key, gh); n++; } catch (e) { }
             });
             revs[driverName + '|' + m] = idx.months[m];
             return n;
