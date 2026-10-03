@@ -677,7 +677,13 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     // ================================================================
     // 🚀 [Live 모달 열기] 화면 표시 및 실시간 BIS/표준시간 동시 호출
     // ================================================================
+    // 📱 화면 회전: 평소엔 세로 고정, 라이브 모달이 열려 있는 동안만 가로 허용 (안드로이드 설치 앱용. 아이폰은 이 API가 없어 폰 설정대로 돌아감)
+    function ybLockOrientation(mode) {
+        try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock(mode).catch(function () { }); } catch (e) { }
+    }
+    ybLockOrientation('portrait');
     async function openLiveModal() {
+        ybLockOrientation('any');
         if (typeof navRefreshButtons === 'function') { try { navRefreshButtons(); } catch (e) { } }
         // 가족 사용자는 라이브 모달을 사용하지 않음 (기사님 전용)
         if (typeof isFamilyUser !== 'undefined' && isFamilyUser) return;
@@ -906,6 +912,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     }
 
     function closeLiveModal() {
+        ybLockOrientation('portrait');
         const modal = document.getElementById('liveModal');
         if (modal) {
             modal.style.display = 'none';
