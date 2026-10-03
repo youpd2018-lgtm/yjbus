@@ -61,6 +61,29 @@
     return changed;
   }
 
+  // 📚 내 근무 기록 쌓기: GitHub 근무표는 어제 이전을 지우므로, 오늘까지의 '내 근무'는 서버(시트 DB)에 저장해 계속 누적한다.
+  //    (이미 같은 값을 올렸으면 다시 올리지 않음. 앱에서 직접 고친 근무는 고칠 때 이미 서버에 저장됨)
+  function saveMine() {
+    try {
+      if (!data || !data.days || typeof getDriverKey !== 'function' || typeof saveToGAS !== 'function') return 0;
+      if (typeof currentDriver === 'undefined' || !currentDriver) return 0;
+      const upKey = 'yb_roster_up_' + currentDriver;
+      let done = {}; try { done = JSON.parse(localStorage.getItem(upKey) || '{}') || {}; } catch (e) { done = {}; }
+      const today = dayStr(0);
+      let n = 0;
+      Object.keys(data.days).forEach(date => {
+        if (date > today) return;                      // 앞으로의 근무는 GitHub에 있으니 날짜가 된 뒤에 저장
+        const key = getDriverKey('sched_' + date);
+        const val = localStorage.getItem(key);
+        if (!val || done[date] === val) return;
+        try { saveToGAS(key, val, true); done[date] = val; n++; } catch (e) { }
+      });
+      if (n) { try { localStorage.setItem(upKey, JSON.stringify(done)); } catch (e) { } }
+      return n;
+    } catch (e) { return 0; }
+  }
+  window.ytRosterSaveMine = saveMine;
+
   // 서버 데이터를 받은 직후에 채운다 (GitHub 근무표는 최대 3초만 기다린다)
   const origLoad = window.loadDataFromGAS;
   if (typeof origLoad === 'function') {
@@ -69,11 +92,12 @@
       try {
         await Promise.race([fetchRoster(), new Promise(r => setTimeout(r, 3000))]);
         fill();
+        saveMine();
       } catch (e) { console.warn('근무표 채우기 실패:', e); }
     };
   } else {
     // 서버 불러오기 함수가 없으면 따로 받아서 채운다
-    fetchRoster().then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); });
+    fetchRoster().then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); saveMine(); });
   }
   window.ytRosterFill = fill;
 })();

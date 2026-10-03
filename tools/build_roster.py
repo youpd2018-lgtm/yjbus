@@ -2,7 +2,7 @@
 """data/roster/roster.csv -> data/roster/all.json
 
 한 행 = 기사 1명의 하루 근무. 고친 뒤 python3 tools/build_roster.py 를 실행한다.
-보관 규칙: 어제·오늘·미래 근무만 보관(더 오래된 날짜는 실행할 때 지워짐).
+보관 규칙: roster.csv / all.json 에는 어제·오늘·미래 근무만 둔다. 더 오래된 날짜는 지우지 않고 data/roster/history/YYYY-MM.csv 로 옮겨 쌓는다(회사 전체 근무 기록 보존).
 규칙: 근무하는 사람만 적는다. 그 날짜에 이름이 없는 기사는 앱이 자동으로 휴무로 처리한다. (휴무 행은 무시된다)
 기사 전체 명단은 data/roster/drivers.txt (한 줄에 한 명). 새 기사가 근무표에 나오면 이 실행에서 자동으로 추가된다.
 칸: 근무일자(YYYY-MM-DD), 기사명, 근무형태(정상/대타 등), 노선명, 차량번호, 순번, 근무시간(오전/오후)
@@ -19,10 +19,24 @@ kst = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
 keep_from = (kst - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 old = [r for r in rows if r['근무일자'].strip() < keep_from]
 if old:
+    # 지우기 전에 월별 기록 파일에 쌓아 둔다 (같은 날짜+기사는 한 번만)
+    HIST = os.path.join(ROOT, 'history'); os.makedirs(HIST, exist_ok=True)
+    fields = list(rows[0].keys())
+    by_month = {}
+    for r in old: by_month.setdefault(r['근무일자'].strip()[:7], []).append(r)
+    for ym, rs in sorted(by_month.items()):
+        hp = os.path.join(HIST, ym + '.csv')
+        have = {}
+        if os.path.exists(hp):
+            for r in csv.DictReader(open(hp, encoding='utf-8-sig', newline='')): have[(r['근무일자'].strip(), r['기사명'].strip())] = r
+        for r in rs: have[(r['근무일자'].strip(), r['기사명'].strip())] = r
+        with open(hp, 'w', encoding='utf-8-sig', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=fields); w.writeheader()
+            w.writerows(have[k] for k in sorted(have))
     rows = [r for r in rows if r['근무일자'].strip() >= keep_from]
     with open(CSV, 'w', encoding='utf-8-sig', newline='') as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
-    print(f'{keep_from} 이전 {len(old)}행 삭제')
+    print(f'{keep_from} 이전 {len(old)}행을 history/ 로 옮김')
 days, bad, seen = {}, [], set()
 for i, r in enumerate(rows, 2):
     d, n = r['근무일자'].strip(), r['기사명'].strip()
