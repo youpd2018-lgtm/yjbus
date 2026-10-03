@@ -24,13 +24,18 @@ HIST = os.path.join(ROOT, 'history'); DRVDIR = os.path.join(HIST, 'drivers'); os
 HIST_FROM = '2026-10-01'
 users = [l.strip() for l in open(os.path.join(ROOT, 'app_users.txt'), encoding='utf-8') if l.strip() and not l.startswith('#')]
 through = max([r['근무일자'].strip() for r in rows] + [HIST_FROM])
+csv_dates = {r['근무일자'].strip() for r in rows if r['근무일자'].strip() >= HIST_FROM}
 for n in users:
     fp = os.path.join(DRVDIR, n + '.json')
-    d = json.load(open(fp, encoding='utf-8'))['days'] if os.path.exists(fp) else {}
+    old_f = json.load(open(fp, encoding='utf-8')) if os.path.exists(fp) else {}
+    d = old_f.get('days', {})
+    # reg = 근무표를 올린(등록한) 날짜. 등록된 날짜에 내 이름이 없으면 휴무, 등록 안 한 날짜는 미등록(아무것도 안 보임)
+    reg = set(old_f['reg']) if 'reg' in old_f else (set(d) | {HIST_FROM})
+    reg |= csv_dates
     for r in rows:
         if r['기사명'].strip() == n and r['근무형태'].strip() != '휴무' and r['근무일자'].strip() >= HIST_FROM:
             d[r['근무일자'].strip()] = {'workType': r['근무형태'], 'busNo': r['차량번호'], 'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
-    open(fp, 'w', encoding='utf-8').write(json.dumps({'name': n, 'from': HIST_FROM, 'through': through, 'days': d}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
+    open(fp, 'w', encoding='utf-8').write(json.dumps({'name': n, 'from': HIST_FROM, 'through': through, 'reg': sorted(reg), 'days': d}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
 h = hashlib.md5(b''.join(open(os.path.join(DRVDIR, n + '.json'), 'rb').read() for n in sorted(users))).hexdigest()[:8]
 open(os.path.join(HIST, 'index.json'), 'w', encoding='utf-8').write(json.dumps({'from': HIST_FROM, 'through': through, 'rev': h}, separators=(',', ':')))
 if old:

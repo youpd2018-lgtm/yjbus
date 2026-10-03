@@ -72,20 +72,18 @@
     return fetch('data/roster/history/index.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : null)
       .then(idx => {
-        if (!idx || !idx.from || !idx.through) return 0;
+        if (!idx || !idx.from) return 0;
         if (revs[driverName] === idx.rev) return 0;
         return fetch('data/roster/history/drivers/' + encodeURIComponent(driverName) + '.json', { cache: 'no-cache' })
           .then(r => r.ok ? r.json() : null)
           .then(j => {
             if (!j || !j.days) return 0;
             let n = 0;
-            const end = new Date(idx.through + 'T00:00:00');
-            for (let d = new Date(idx.from + 'T00:00:00'); d <= end; d.setDate(d.getDate() + 1)) {
-              const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              const key = `jpil_user_${driverName}_sched_${date}`;
-              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) continue;
-              try { localStorage.setItem(key, toSched(j.days[date] || OFF)); n++; } catch (e) { }
-            }
+            // 근무표를 올린(등록된) 날짜만 채운다. 내 이름이 없으면 휴무, 등록 안 한 날짜는 건드리지 않는다(미등록)
+            (j.reg || []).forEach(date => {
+              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) return;
+              try { localStorage.setItem(`jpil_user_${driverName}_sched_${date}`, toSched(j.days[date] || OFF)); n++; } catch (e) { }
+            });
             revs[driverName] = idx.rev;
             try { localStorage.setItem(HIST_REV_KEY, JSON.stringify(revs)); } catch (e) { }
             return n;
