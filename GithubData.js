@@ -2,7 +2,7 @@
 // 🐙 [GitHub 데이터 읽기] GithubData.js
 // - 시간표(data/timetable/all.json)와 전체 기사 근무표(data/roster/all.json)를 GitHub Pages에서 받아 온다
 // - 구차장(Code.js)과 푸시 알림(PushNotify.js)이 구글 시트 대신 이 데이터를 먼저 쓴다. 못 받으면 기존 시트 방식으로 대신한다
-// - 앱에서 직접 고친 근무(data/roster/edits.json, GithubWrite.js 가 기록)는 근무표 값보다 우선한다
+// - 앱에서 직접 고친 근무(DB 시트의 jpil_user_<이름>_schededit_<날짜> 표시)는 GitHub 값보다 우선한다
 // ================================================================
 const GH_PAGES_BASE = 'https://youpd2018-lgtm.github.io/yjbus/';
 const GH_CACHE_SEC = 300; // 5분
@@ -82,13 +82,11 @@ function ghParse_(v) {
   try { return JSON.parse(String(v)); } catch (e) { return null; }
 }
 
-// 전체 기사 근무표 → [{date,name,type,route,bus,seq,time}]. 직접 고친 근무는 edits.json 값을 쓴다. 못 받으면 null
+// 전체 기사 근무표 → [{date,name,type,route,bus,seq,time}]. 직접 고친 근무는 DB 값을 쓴다. 못 받으면 null
 function ghRosterRows_(db) {
   const j = ghFetchJson_('data/roster/all.json');
   if (!j || !j.days) return null;
-  // 사용자가 직접 고친 근무는 data/roster/edits.json (GitHub) 에 있다. 시트 DB는 보지 않는다
-  const ed = ghFetchJson_('data/roster/edits.json');
-  const edits = (ed && ed.days) ? ed.days : {};
+  if (!db) { try { db = ghReadDb_(); } catch (e) { db = {}; } }
   const rows = [];
   Object.keys(j.days).sort().forEach(function (date) {
     const people = j.days[date];
@@ -97,7 +95,10 @@ function ghRosterRows_(db) {
     (j.drivers || []).forEach(function (n) { if (!people[n]) everyone.push(n); });
     everyone.forEach(function (name) {
       let rec = people[name] || { workType: '휴무' };
-      if (edits[date] && edits[date][name]) rec = edits[date][name];
+      if (db['jpil_user_' + name + '_schededit_' + date]) {
+        const mine = ghParse_(db['jpil_user_' + name + '_sched_' + date]);
+        if (mine) rec = mine;
+      }
       const off = rec.workType === '휴무';
       const clean = function (v) { return (off || v === '-' || v == null) ? '' : String(v); };
       rows.push({ date: date, name: name, type: String(rec.workType || ''), route: clean(rec.route), bus: clean(rec.busNo), seq: clean(rec.seq), time: clean(rec.time) });

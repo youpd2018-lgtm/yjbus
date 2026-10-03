@@ -107,21 +107,20 @@ function checkFirstRunPush() {
     const props = PropertiesService.getScriptProperties();
     const schedRe = /^jpil_user_(.+)_sched_(\d{4}-\d{2}-\d{2})$/;
 
-    // 오늘 근무 목록: GitHub 근무표(+ 사용자가 고친 근무 edits.json). 못 받을 때만 옛 DB 값을 쓴다
+    // 오늘 근무 목록: GitHub 근무표 + DB의 개인 근무(직접 고친 것은 DB 값이 우선, GitHub에 없는 기사는 DB 값 그대로)
     const todayScheds = {};
-    let ghRows = null;
-    try { ghRows = ghRosterRows_(db); } catch (eGh) {}
-    if (ghRows) {
-      ghRows.forEach(function (r) {
+    Object.keys(db).forEach(function (key) {
+      const m = key.match(schedRe);
+      if (m && m[2] === today) todayScheds[m[1]] = pushTryParse_(db[key]);
+    });
+    try {
+      const ghRows = ghRosterRows_(db);
+      if (ghRows) ghRows.forEach(function (r) {
         if (r.date !== today) return;
+        if (db['jpil_user_' + r.name + '_schededit_' + today] && todayScheds[r.name]) return; // 직접 고친 근무 우선
         todayScheds[r.name] = { workType: r.type, route: r.route, seq: r.seq, time: r.time, busNo: r.bus };
       });
-    } else {
-      Object.keys(db).forEach(function (key) {
-        const m = key.match(schedRe);
-        if (m && m[2] === today) todayScheds[m[1]] = pushTryParse_(db[key]);
-      });
-    }
+    } catch (eGh) {}
 
     Object.keys(todayScheds).forEach(function (driver) {
       const sched = todayScheds[driver];
