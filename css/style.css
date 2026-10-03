@@ -3092,3 +3092,8 @@ iconify-icon {
 #mainAppHeader #liveColleagueMessage iconify-icon {
     font-size: 26px !important;
 }
+
+/* 한마디: 칸 높이 고정, 긴 글은 옆으로 흐름 */
+#liveColleagueMessage { overflow: hidden !important; flex-wrap: nowrap !important; }
+#liveColleagueMessage .yb-marq { display: inline-flex; align-items: center; white-space: nowrap !important; flex: 0 0 auto; }
+#liveColleagueMessage .yb-marq * { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; }

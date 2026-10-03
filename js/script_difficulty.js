@@ -166,3 +166,40 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
+
+/* ── 오늘의 한마디: 글이 길면 처음을 잠깐 보여 준 뒤 옆으로 흐름(칸 높이 고정) ── */
+(function () {
+  var busy = false;
+  function setup() {
+    var el = document.getElementById('liveColleagueMessage');
+    if (!el || busy) return;
+    if (el.firstElementChild && el.firstElementChild.classList.contains('yb-marq')) return;
+    busy = true;
+    try {
+      var inner = document.createElement('div');
+      inner.className = 'yb-marq';
+      while (el.firstChild) inner.appendChild(el.firstChild);
+      el.appendChild(inner);
+      var over = inner.scrollWidth - el.clientWidth;
+      if (over > 4 && inner.animate) {
+        var dur = Math.max(4000, over * 40);
+        inner.animate(
+          [{ transform: 'translateX(0)' },
+           { transform: 'translateX(0)', offset: 0.2 },
+           { transform: 'translateX(-' + over + 'px)', offset: 0.85 },
+           { transform: 'translateX(-' + over + 'px)' }],
+          { duration: dur * 1.5, iterations: Infinity, easing: 'linear' });
+      }
+    } catch (e) {}
+    busy = false;
+  }
+  function start() {
+    var el = document.getElementById('liveColleagueMessage');
+    if (!el) return;
+    new MutationObserver(function () { if (!busy) setTimeout(setup, 30); })
+      .observe(el, { childList: true });
+    setup();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
