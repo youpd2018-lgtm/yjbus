@@ -167,7 +167,7 @@
   else start();
 })();
 
-/* ── 오늘의 한마디: 글이 길면 처음을 잠깐 보여 준 뒤 옆으로 흐름(칸 높이 고정) ── */
+/* ── 오늘의 한마디: 글이 칸보다 길면 흐르지 않고 '앞부분 3초 → 뒷부분 2초' 순서로 끊어서 보여 줌 ── */
 (function () {
   var busy = false;
   function setup() {
@@ -180,15 +180,21 @@
       inner.className = 'yb-marq';
       while (el.firstChild) inner.appendChild(el.firstChild);
       el.appendChild(inner);
-      var over = inner.scrollWidth - el.clientWidth;
-      if (over > 4 && inner.animate) {
-        var dur = Math.max(4000, over * 40);
-        inner.animate(
-          [{ transform: 'translateX(0)' },
-           { transform: 'translateX(0)', offset: 0.2 },
-           { transform: 'translateX(-' + over + 'px)', offset: 0.85 },
-           { transform: 'translateX(-' + over + 'px)' }],
-          { duration: dur * 1.5, iterations: Infinity, easing: 'linear' });
+      var w = el.clientWidth, over = inner.scrollWidth - w;
+      if (over > 4 && w > 0) {
+        // 보여 줄 위치들: 0, -w, -2w ... 마지막은 글 끝이 딱 맞는 위치
+        var pos = [0], x = w;
+        while (x < over) { pos.push(x); x += w; }
+        pos.push(over);
+        var i = 0;
+        var step = function () {
+          if (!inner.isConnected) return;
+          inner.style.transform = 'translateX(-' + pos[i] + 'px)';
+          var wait = i === 0 ? 3000 : 2000;
+          i = (i + 1) % pos.length;
+          setTimeout(step, wait);
+        };
+        step();
       }
     } catch (e) {}
     busy = false;
