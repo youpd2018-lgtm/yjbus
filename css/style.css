@@ -3210,7 +3210,7 @@ html.senior .bli-bottom-row { min-height: 68px; }
     #liveModal #liveTopRow { grid-column: 1 / -1; grid-row: 2; margin: 0 !important; }
     #liveModal #liveGroupTop > .ios-primary-card { grid-column: 1; grid-row: 3; }
     #liveModal #liveGroupTop > div:not(#liveTopRow):not(.ios-primary-card) { grid-column: 1; grid-row: 4; margin: 0 !important; }
-    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 92px 0 0 !important; }   /* 오른쪽 92px은 구차장 마이크(원래 크기) 자리 */
+    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 92px 30px 0 !important; }   /* 오른쪽 92px은 구차장 마이크(원래 크기) 자리, 아래 30px은 여유 */
     #liveModal #iosSeqGridContainer { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; height: 100%; }
     #liveModal #iosSeqGridContainer .ios-seq-line { display: none !important; }
     #liveModal #iosSeqGridContainer .ios-seq-item { flex: 1; max-width: none !important; min-height: 0 !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 4px 14px !important; margin: 0 !important; }
