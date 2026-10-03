@@ -3081,7 +3081,7 @@ iconify-icon {
 }
 #mainAppHeader #liveColleagueMessage,
 #mainAppHeader #liveColleagueMessage * {
-    font-family: 'MitmiFont', 'NostalgicMongtori', -apple-system, sans-serif !important;
+    font-family: 'NostalgicMongtori', -apple-system, sans-serif !important;
 }
 #mainAppHeader #liveColleagueMessage {
     font-size: 24.4px !important;
