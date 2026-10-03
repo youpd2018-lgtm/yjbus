@@ -175,6 +175,7 @@
             return true;
         } catch (e) { return false; }
     }
+    var MAX_AVG_KMH = 100;   // 이보다 빠른 평균 속도는 오류로 보고 버림
     var MOVE_KMH = 5;   // 실제로 달리고 있다고 보는 속도
     function tripOnFix(speedKmh, duty) {
         try {
@@ -202,7 +203,11 @@
                 rec.e = nowMs; rec.ei = idx;           // 마지막으로 달리며 GPS가 잡힌 시각·정류장
                 if (idx >= n - 1) rec.done = 1;
             }
-            rec.d = rec.D * segFraction(master, rec.si, rec.ei);
+            var newD = rec.D * segFraction(master, rec.si, rec.ei);
+            // 버스가 낼 수 없는 속도(시작부터 지금까지 평균 100km/h 초과)면 정류장 위치 오판으로 보고 이번 갱신은 무시
+            var el = (rec.e - rec.s) / 3600000;
+            if (el > 0 && newD / el > MAX_AVG_KMH && (rec.e - rec.s) >= 60000) { return; }
+            rec.d = newD;
             all[date] = list; saveTrips(all);
         } catch (e) { }
     }
@@ -270,7 +275,8 @@
         var sec = (r.e - r.s) / 1000;
         if (!(sec >= MIN_TRIP_SEC) || sec > 8 * 3600 || !(r.D > 0) || !(r.d / r.D >= MIN_TRIP_FRAC)) return null;
         if (r.T > 0 && sec < r.T / 2) return null;   // 잰 시간이 회차 총 운행 시간의 절반 미만이면 버림 (통계·서버 모두 제외)
-        return r.d / (sec / 3600);
+        var v = r.d / (sec / 3600);
+        return v > MAX_AVG_KMH ? null : v;
     }
     // 평균 속도(km/h) 모음: cur(이번 회차) / today / month. 없으면 null. measuring: 이번 회차가 재는 중(아직 계산 불가)
     function getAvgSpeeds(year, month) {
