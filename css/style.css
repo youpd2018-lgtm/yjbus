@@ -3110,7 +3110,6 @@ iconify-icon {
 #schedHeadBtn[aria-expanded="true"] #schedArrow { transform: rotate(90deg); }
 
 /* 👓 노안모드: 화면 전체를 15% 키움 (설정 > 노안모드). 하단 메뉴는 따로 키움 */
-html.senior body { zoom: 1.15; }
 
 /* 👓 노안모드 · 메인화면 (칠판식): 버스 그림을 지우고, 박스 크기는 그대로 둔 채 글자를 칸 가득 크게 배치
    1줄: 노선번호 · 평일/휴일 대수 · 순번   2줄: 시작 · 종료 · 교대 · 차량번호   3줄: 카운트 박스(그대로) */
@@ -3153,3 +3152,20 @@ html.senior .bli-route-num { font-size: 60px; }
 html.senior .bli-seq-num { font-size: 58px; }
 html.senior .bli-time-lbl { font-size: 13px; }
 html.senior .bli-time-val, html.senior .bli-busno-val { font-size: 27px; }
+
+/* 노안모드 2차: 전체 확대(zoom) 없이 메인 글자만 크게, 12칸 격자 배치 */
+html.senior .bus-hero-container { min-height: 340px; }
+html.senior .bus-hero-content { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 0; }
+html.senior .bli-route-num { grid-column: 1 / 5; font-size: 66px; letter-spacing: -3px; }
+html.senior .bli-routesub-text { grid-column: 5 / 9; font-size: 28px; padding-left: 0; justify-self: start; }
+html.senior .bli-seq-group { grid-column: 9 / 13; justify-self: start; gap: 2px; }
+html.senior .bli-seq-num { font-size: 62px; }
+html.senior .bli-seq-label { font-size: 18px; }
+html.senior .bli-time-item:nth-of-type(1) { grid-column: 1 / 4; }
+html.senior .bli-time-item:nth-of-type(2) { grid-column: 4 / 7; }
+html.senior .bli-time-item:nth-of-type(3) { grid-column: 7 / 10; }
+html.senior .bli-busno-box { grid-column: 10 / 13; justify-self: stretch; }
+html.senior .bli-time-item:nth-of-type(n+2), html.senior .bli-busno-box { border-left: 1px solid rgba(255, 255, 255, 0.14); padding-left: 8px; }
+html.senior .bli-time-lbl, html.senior .bli-busno-box::before { font-size: 14px; }
+html.senior .bli-time-val, html.senior .bli-busno-val { font-size: 29px; letter-spacing: -1.2px; }
+html.senior .bli-busno-box { border-radius: 0; }
