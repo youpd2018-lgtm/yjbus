@@ -3112,21 +3112,35 @@ iconify-icon {
 /* 👓 노안모드: 화면 전체를 15% 키움 (설정 > 노안모드). 하단 메뉴는 따로 키움 */
 html.senior body { zoom: 1.15; }
 
-/* 👓 노안모드 · 메인화면: 중요한 글자만 아주 크게, 노선정보/교대정보/오늘의메모 탭은 숨김 */
-html.senior #mainBusHeroCard { height: auto !important; min-height: 330px; padding: 14px 14px 14px 14px; }
-html.senior .bli-route-num { font-size: 76px; letter-spacing: -2px; }
-html.senior .bli-main-route-row { gap: 14px; }
-html.senior .bli-seq-num { font-size: 54px; }
-html.senior .bli-seq-label { font-size: 26px; }
-html.senior .bli-sub-route-row { gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-html.senior .bli-routesub-text { font-size: 30px; }
-html.senior .bli-busno-box { padding: 3px 12px; border-radius: 10px; gap: 6px; }
-html.senior .bli-busno-icon { font-size: 28px; }
-html.senior .bli-busno-val { font-size: 32px; }
-html.senior .bli-timeline-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 12px 0 12px 0; }
-html.senior .bli-time-item { flex-direction: column; align-items: center; gap: 0; background: rgba(15, 23, 42, 0.62); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 6px 2px 4px; }
-html.senior .bli-time-icon, html.senior .bli-time-bar { display: none; }
-html.senior .bli-time-lbl { font-size: 19px; }
-html.senior .bli-time-val { font-size: 31px; }
+/* 👓 노안모드 · 메인화면 (칠판식): 버스 그림을 지우고, 박스 크기는 그대로 둔 채 글자를 칸 가득 크게 배치
+   1줄: 노선번호 · 평일/휴일 대수 · 순번   2줄: 시작 · 종료 · 교대 · 차량번호   3줄: 카운트 박스(그대로) */
+html.senior .bus-hero-container { background-image: none !important; background-color: #0b1329; }
+html.senior .bus-3d-wrap { display: none !important; }
+html.senior .bus-hero-content {
+    display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1.05fr) minmax(0,0.95fr) minmax(0,0.95fr); grid-template-rows: auto 1fr 1fr auto;
+    column-gap: 6px; align-items: center;
+}
+html.senior .bli-top-area, html.senior .bli-main-route-row, html.senior .bli-sub-route-row, html.senior .bli-timeline-row { display: contents; }
+html.senior #ybHeroTitle { grid-column: 1 / -1; grid-row: 1; }
+/* 1줄 */
+html.senior .bli-route-num { grid-column: 1; grid-row: 2; font-size: 54px; letter-spacing: -2px; }
+html.senior .bli-routesub-text { grid-column: 2; grid-row: 2; font-size: 23px; white-space: nowrap; padding-left: 4px; }
+html.senior .bli-seq-group { grid-column: 3 / 5; grid-row: 2; justify-self: end; display: flex; align-items: baseline; gap: 3px; }
+html.senior .bli-seq-num { font-size: 52px; }
+html.senior .bli-seq-label { font-size: 16px; }
+/* 2줄 */
+html.senior .bli-time-item { grid-row: 3; flex-direction: column; align-items: flex-start; gap: 0; }
+html.senior .bli-time-item:nth-of-type(1) { grid-column: 1; }
+html.senior .bli-time-item:nth-of-type(2) { grid-column: 2; }
+html.senior .bli-time-item:nth-of-type(3) { grid-column: 3; }
+html.senior .bli-time-icon, html.senior .bli-time-bar, html.senior .bli-busno-icon { display: none; }
+html.senior .bli-time-lbl { font-size: 12px; }
+html.senior .bli-time-val { font-size: 25px; letter-spacing: -0.5px; }
+html.senior .bli-busno-box { grid-column: 4; grid-row: 3; flex-direction: column; align-items: flex-start; gap: 0; padding: 0; background: none; border: none; box-shadow: none; backdrop-filter: none; justify-self: end; }
+html.senior .bli-busno-box::before { content: "차량"; font-size: 12px; font-weight: 800; color: #94a3b8; }
+html.senior .bli-busno-val { font-size: 25px; letter-spacing: -0.5px; }
+/* 3줄 */
+html.senior .bli-bottom-row { grid-column: 1 / -1; grid-row: 4; }
+/* 아래 탭: 오늘의 시간표만 */
 html.senior #tabBtnRoute, html.senior #tabBtnShift, html.senior #tabBtnMemo { display: none !important; }
 html.senior #panelRoute, html.senior #panelShift, html.senior #panelMemo { display: none !important; }
