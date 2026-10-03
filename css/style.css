@@ -3186,40 +3186,49 @@ html.senior .bli-bottom-row { min-height: 68px; }
 
 /* ================================================================ */
 /* 📱↔️ 라이브 모달 가로 모드 (폰을 눕혔을 때)                           */
-/*  윗줄: 날씨 / GPS · 왼쪽: 큰 시간카운트+차량번호 · 오른쪽: 거점 3칸 세로 */
-/*  아랫줄: 정류장 카드(신호등) / 현재속도 · 맨 아래: 좌우반전 / 닫기      */
+/*  왼쪽: 날씨 · 큰 시간카운트 · 차량번호 · 정류장 카드                    */
+/*  가운데: 거점 3칸 세로(정류장 카드 아래선에 맞춤)                       */
+/*  맨 오른쪽 한 줄: GPS · 좌우반전 · 닫기 · (아래) 구차장 마이크          */
 /* ================================================================ */
 .live-mirror-btn { display: none; }
 @media (orientation: landscape) and (max-height: 520px) {
     #liveModal.live-modal { align-items: stretch !important; justify-content: stretch !important; padding: 0 !important; }
     #liveModal .live-modal-content.ios-widget-modal {
         display: grid !important;
-        grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-        grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
+        grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.85fr) 92px;
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
         align-content: stretch; align-items: stretch;
-        column-gap: 14px; row-gap: 8px;
+        gap: 8px 20px !important;
         width: 100% !important; max-width: 100% !important; min-height: 0 !important;
         height: 100dvh !important; max-height: 100dvh !important;
         border-radius: 0 !important; border: none !important;
         overflow-y: auto;
-        padding: calc(6px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px)) !important;
+        padding: calc(6px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px)) !important;
     }
     #liveModal .ios-widget-modal.mirrored { transform: scaleX(-1); }
     #liveModal #gpsPermissionBanner { grid-column: 1 / -1; grid-row: 1; margin: 0 !important; }
     #liveModal #liveGroupTop { display: contents; }
-    #liveModal #liveTopRow { grid-column: 1 / -1; grid-row: 2; margin: 0 !important; }
+    #liveModal #liveTopRow { display: contents !important; }
+    #liveModal #liveTopRow > .ios-weather-title { grid-column: 1; grid-row: 2; align-self: center; margin: 0 !important; }
+    #liveModal #gpsAdminTrigger { grid-column: 3; grid-row: 2; align-self: center; justify-content: center; font-size: 12px !important; padding: 3px 4px !important; margin: 0 !important; white-space: nowrap; }
+    #liveModal #gpsAdminTrigger iconify-icon { display: none; }
     #liveModal #liveGroupTop > .ios-primary-card { grid-column: 1; grid-row: 3; }
     #liveModal #liveGroupTop > div:not(#liveTopRow):not(.ios-primary-card) { grid-column: 1; grid-row: 4; margin: 0 !important; }
-    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 92px 30px 0 !important; }   /* 오른쪽 92px은 구차장 마이크(원래 크기) 자리, 아래 30px은 여유 */
+    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 !important; }
     #liveModal #iosSeqGridContainer { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; height: 100%; }
     #liveModal #iosSeqGridContainer .ios-seq-line { display: none !important; }
-    #liveModal #iosSeqGridContainer .ios-seq-item { flex: 1; max-width: none !important; min-height: 0 !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 4px 14px !important; margin: 0 !important; }
+    #liveModal #iosSeqGridContainer .ios-seq-item { flex: 1; max-width: none !important; min-height: 0 !important; min-width: 0; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; gap: 8px; padding: 4px 12px !important; margin: 0 !important; }
+    #liveModal #iosSeqGridContainer .ios-seq-name { flex: 1 1 auto; min-width: 0; margin: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+    #liveModal #iosSeqGridContainer .ios-seq-time { flex: 0 0 auto; white-space: nowrap; }
     #liveModal #liveGroupStop { grid-column: 1; grid-row: 5; }
     #liveModal .tf-card { margin-top: 0; padding: 10px 10px; height: 100%; }
     #liveModal .ios-primary-card { min-height: 0; height: 100%; }
     #liveModal #liveCardTimeLeft { font-size: min(18vh, 7.8vw) !important; }
-    #liveModal .ios-footer { grid-column: 1 / -1; grid-row: 6; margin: 0 !important; padding: 0 !important; min-height: 50px; display: flex !important; justify-content: space-between !important; align-items: center; }
-    #liveModal .ios-footer .ios-close-btn { height: 38px !important; width: auto !important; min-width: 120px !important; padding: 0 18px; order: 3; }
-    #liveModal .live-mirror-btn { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 12px; border: none; background: #334155; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; order: 1; }
-    #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 7; margin-top: 4px !important; }
+    #liveModal .ios-footer { grid-column: 3; grid-row: 3 / span 3; margin: 0 !important; padding: 0 !important; display: flex !important; flex-direction: column; justify-content: flex-start !important; align-items: stretch; gap: 8px; }
+    #liveModal .ios-footer .ios-close-btn { height: 44px !important; width: 100% !important; min-width: 0 !important; padding: 0 !important; order: 2; }
+    #liveModal .live-mirror-btn { display: flex; align-items: center; justify-content: center; height: 44px; padding: 0; border-radius: 12px; border: none; background: #334155; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; order: 1; }
+    /* 🎙️ 구차장 마이크(원래 크기): 맨 오른쪽 줄 맨 아래로 (좌우반전하면 왼쪽 줄) */
+    body:has(#liveModal.active) .floating-voice-widget { right: calc(22px + env(safe-area-inset-right, 0px)) !important; left: auto !important; top: auto !important; bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important; }
+    body:has(#liveModal.active .mirrored) .floating-voice-widget { left: calc(22px + env(safe-area-inset-left, 0px)) !important; right: auto !important; }
+    #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 6; margin-top: 4px !important; }
 }
