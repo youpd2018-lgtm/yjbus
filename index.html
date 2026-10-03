@@ -1059,6 +1059,12 @@
         </div>
         </div>
 
+        <!-- 🏎️ 현재속도 (가로 모드에서만 보임) -->
+        <div id="liveSpeedBox" class="live-speed-box">
+          <span class="live-speed-label">현재속도</span>
+          <span class="live-speed-line"><span id="liveSpeedVal" class="live-speed-val">--</span><span class="live-speed-unit">km/h</span></span>
+        </div>
+
         <!-- 💡 JS 호환용 숨김 컨테이너 -->
         <div id="newFeatureContainer" style="display: none !important;">
           <span id="bisNextStop"></span>
@@ -1144,6 +1150,8 @@
 
         <!-- 6. 하단: 슬림 닫기 버튼 (독립적으로 분리) -->
         <div class="ios-footer" style="margin-top: 14px; padding-top: 2px; display: flex; justify-content: center;">
+          <!-- 좌우반전 (가로 모드에서만 보임: 앞유리 반사용) -->
+          <button type="button" id="liveMirrorBtn" class="live-mirror-btn" onclick="toggleLiveMirror()">좌우반전</button>
           <button type="button" class="ios-close-btn" onclick="closeLiveModal()"
             style="width: 52%; min-width: 150px; height: 44px; font-size: 15px; font-weight: 900; border-radius: 12px; background: #334155; color: #ffffff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <iconify-icon icon="mdi:close" style="font-size: 18px;"></iconify-icon> 닫기

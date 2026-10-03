@@ -682,7 +682,21 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock(mode).catch(function () { }); } catch (e) { }
     }
     ybLockOrientation('portrait');
+    // 🪞 좌우반전 (가로 모드, 앞유리 반사용). 선택은 폰에 기억
+    function applyLiveMirror() {
+        try {
+            var on = localStorage.getItem('yb_live_mirror') === '1';
+            var el = document.querySelector('#liveModal .ios-widget-modal');
+            if (el) el.classList.toggle('mirrored', on);
+        } catch (e) { }
+    }
+    function toggleLiveMirror() {
+        try { localStorage.setItem('yb_live_mirror', localStorage.getItem('yb_live_mirror') === '1' ? '0' : '1'); } catch (e) { }
+        applyLiveMirror();
+    }
+    window.toggleLiveMirror = toggleLiveMirror;
     async function openLiveModal() {
+        applyLiveMirror();
         ybLockOrientation('any');
         if (typeof navRefreshButtons === 'function') { try { navRefreshButtons(); } catch (e) { } }
         // 가족 사용자는 라이브 모달을 사용하지 않음 (기사님 전용)

@@ -134,6 +134,7 @@ function loadLatestColleagueMessage() {
                 window.curBusGpsLat = lat;
                 window.curBusGpsLon = lon;
                 window.curBusSpeed = speedKmh;
+                try { var sv = document.getElementById('liveSpeedVal'); if (sv) sv.textContent = (speedKmh === null ? '--' : speedKmh); } catch (e) { }
                 window.lastGpsPosition = { lat, lon, speedKmh, accuracy, heading: pos.coords.heading, time: new Date() };
                 window._gpsLastFixAt = Date.now();
 
