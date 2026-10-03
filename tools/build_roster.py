@@ -76,3 +76,24 @@ body = json.dumps(days, ensure_ascii=False, sort_keys=True, separators=(',', ':'
 rev = hashlib.md5(body.encode()).hexdigest()[:8]
 open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","drivers":%s,"days":%s}' % (rev, json.dumps(drivers, ensure_ascii=False, separators=(',', ':')), body))
 print('ok', len(days), '일', len(rows), '행', 'rev', rev)
+
+# 지난 근무 기록(history/*.csv) -> history/YYYY-MM.json + index.json (앱이 내 지난 근무를 읽어 가는 용도)
+HIST = os.path.join(ROOT, 'history')
+if os.path.isdir(HIST):
+    months = {}
+    for fn in sorted(os.listdir(HIST)):
+        m = re.fullmatch(r'(\d{4}-\d{2})\.csv', fn)
+        if not m: continue
+        hd = {}
+        for r in csv.DictReader(open(os.path.join(HIST, fn), encoding='utf-8-sig', newline='')):
+            d, n = r['근무일자'].strip(), r['기사명'].strip()
+            if not d or not n: continue
+            hd.setdefault(d, {})
+            if r['근무형태'].strip() == '휴무': continue
+            hd[d][n] = {'workType': r['근무형태'], 'busNo': r['차량번호'], 'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
+        hb = json.dumps(hd, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+        hrev = hashlib.md5(hb.encode()).hexdigest()[:8]
+        open(os.path.join(HIST, m.group(1) + '.json'), 'w', encoding='utf-8').write('{"rev":"%s","days":%s}' % (hrev, hb))
+        months[m.group(1)] = hrev
+    open(os.path.join(HIST, 'index.json'), 'w', encoding='utf-8').write(json.dumps({'months': months}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
+    print('history', len(months), '개월')
