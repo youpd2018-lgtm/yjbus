@@ -106,3 +106,25 @@ function ghRosterRows_(db) {
   });
   return rows;
 }
+
+// 앱 사용자 1명의 개인 근무(10/1부터 전부, data/roster/history/drivers/<이름>.json) → [{date,name,type,route,bus,seq,time}]. 파일이 없으면(앱 사용자가 아니면) []
+// - from~through 사이에 없는 날짜는 휴무. 직접 고친 근무(DB schededit 표시)는 DB 값을 쓴다
+function ghPersonalRows_(name, db) {
+  const j = ghFetchJson_('data/roster/history/drivers/' + encodeURIComponent(name) + '.json');
+  if (!j || !j.days || !j.from || !j.through) return [];
+  if (!db) { try { db = ghReadDb_(); } catch (e) { db = {}; } }
+  const rows = [];
+  const end = new Date(j.through + 'T00:00:00+09:00');
+  for (let d = new Date(j.from + 'T00:00:00+09:00'); d <= end; d = new Date(d.getTime() + 86400000)) {
+    const date = Utilities.formatDate(d, 'Asia/Seoul', 'yyyy-MM-dd');
+    let rec = j.days[date] || { workType: '휴무' };
+    if (db['jpil_user_' + name + '_schededit_' + date]) {
+      const mine = ghParse_(db['jpil_user_' + name + '_sched_' + date]);
+      if (mine) rec = mine;
+    }
+    const off = rec.workType === '휴무';
+    const clean = function (v) { return (off || v === '-' || v == null) ? '' : String(v); };
+    rows.push({ date: date, name: name, type: String(rec.workType || ''), route: clean(rec.route), bus: clean(rec.busNo), seq: clean(rec.seq), time: clean(rec.time) });
+  }
+  return rows;
+}

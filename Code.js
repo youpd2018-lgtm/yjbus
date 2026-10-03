@@ -652,10 +652,15 @@ function searchDriverScheduleInSheet(driverName) {
     if (rows === null) return "GitHub 근무표를 받지 못했습니다.";
     const kw = String(driverName || "").trim();
     if (!kw) return "검색어(기사님 이름 또는 차량 번호)가 필요합니다.";
-    const hit = rows.filter(r => r.name.includes(kw) || (r.bus && r.bus === kw))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    let hit = rows.filter(r => r.name.includes(kw) || (r.bus && r.bus === kw));
+    // 앱 사용자의 개인 근무(10/1부터)는 전체 근무표에 없는 지난 날짜도 GitHub 개인 파일에서 보탠다
+    try {
+      const have = {}; hit.forEach(r => { have[r.date + '|' + r.name] = true; });
+      ghPersonalRows_(kw).forEach(r => { if (!have[r.date + '|' + r.name]) hit.push(r); });
+    } catch (ePersonal) {}
+    hit = hit.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
     if (hit.length === 0) return `${kw} 기사님/차량의 일정을 일일근무표에서 찾을 수 없습니다.`;
-    return `[${kw} 일일근무표 검색 결과]\n` + hit.slice(0, 20).map(r => "- " + rosterRowText(r)).join("\n");
+    return `[${kw} 일일근무표 검색 결과]\n` + hit.slice(-30).map(r => "- " + rosterRowText(r)).join("\n");
   } catch (e) {
     return "검색 중 오류 발생: " + e.toString();
   }
