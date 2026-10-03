@@ -61,35 +61,39 @@
     return changed;
   }
 
-  // 📚 내 근무 기록 쌓기: GitHub 근무표는 어제 이전을 지우므로, 오늘까지의 '내 근무'는 서버(시트 DB)에 저장해 계속 누적한다.
-  //    (이미 같은 값을 올렸으면 다시 올리지 않음. 앱에서 직접 고친 근무는 고칠 때 이미 서버에 저장됨)
-  function saveMine() {
-    try {
-      if (!data || !data.days || typeof getDriverKey !== 'function' || typeof saveToGAS !== 'function') return 0;
-      if (typeof currentDriver === 'undefined' || !currentDriver) return 0;
-      const upKey = 'yb_roster_up_' + currentDriver;
-      let done = {}; try { done = JSON.parse(localStorage.getItem(upKey) || '{}') || {}; } catch (e) { done = {}; }
-      const today = dayStr(0);
-      let n = 0;
-      // 오늘까지 폰에 있는 내 근무 전부(10/1부터). GitHub는 어제 이전을 지우므로 data.days 에 없는 날짜도 폰 값으로 올린다
-      const dates = new Set(Object.keys(data.days));
-      const pre = getDriverKey('sched_');
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.indexOf(pre) === 0) { const d = k.slice(pre.length); if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= '2026-10-01') dates.add(d); }
-      }
-      dates.forEach(date => {
-        if (date > today) return;                      // 앞으로의 근무는 GitHub에 있으니 날짜가 된 뒤에 저장
-        const key = getDriverKey('sched_' + date);
-        const val = localStorage.getItem(key);
-        if (!val || done[date] === val) return;
-        try { saveToGAS(key, val, true); done[date] = val; n++; } catch (e) { }
-      });
-      if (n) { try { localStorage.setItem(upKey, JSON.stringify(done)); } catch (e) { } }
-      return n;
-    } catch (e) { return 0; }
+  // 📚 내 지난 근무: GitHub 기사별 기록(data/roster/history/drivers/<이름>.json)에서 '내 파일'만 읽어 jpil_user_<이름>_sched_<날짜> 를 채운다
+  //    (index.json 의 rev 가 바뀌었을 때만 다시 받음. 기본은 GitHub 값이고, 직접 고친 근무(schededit 표시, 서버 DB에서 받아 온 것)만 그대로 둔다. from~through 사이에 내 근무가 없는 날짜는 휴무)
+  const HIST_REV_KEY = 'yb_roster_hist_rev';
+  function fillHistory() {
+    let driverName = null;
+    try { driverName = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver; } catch (e) { }
+    if (!driverName) return Promise.resolve(0);
+    let revs = {}; try { revs = JSON.parse(localStorage.getItem(HIST_REV_KEY) || '{}') || {}; } catch (e) { revs = {}; }
+    return fetch('data/roster/history/index.json', { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : null)
+      .then(idx => {
+        if (!idx || !idx.from || !idx.through) return 0;
+        if (revs[driverName] === idx.rev) return 0;
+        return fetch('data/roster/history/drivers/' + encodeURIComponent(driverName) + '.json', { cache: 'no-cache' })
+          .then(r => r.ok ? r.json() : null)
+          .then(j => {
+            if (!j || !j.days) return 0;
+            let n = 0;
+            const end = new Date(idx.through + 'T00:00:00');
+            for (let d = new Date(idx.from + 'T00:00:00'); d <= end; d.setDate(d.getDate() + 1)) {
+              const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const key = `jpil_user_${driverName}_sched_${date}`;
+              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) continue;
+              try { localStorage.setItem(key, toSched(j.days[date] || OFF)); n++; } catch (e) { }
+            }
+            revs[driverName] = idx.rev;
+            try { localStorage.setItem(HIST_REV_KEY, JSON.stringify(revs)); } catch (e) { }
+            return n;
+          });
+      })
+      .catch(() => 0);
   }
-  window.ytRosterSaveMine = saveMine;
+  window.ytRosterFillHistory = fillHistory;
 
   // 서버 데이터를 받은 직후에 채운다 (GitHub 근무표는 최대 3초만 기다린다)
   const origLoad = window.loadDataFromGAS;
@@ -99,12 +103,12 @@
       try {
         await Promise.race([fetchRoster(), new Promise(r => setTimeout(r, 3000))]);
         fill();
-        saveMine();
+        await fillHistory();
       } catch (e) { console.warn('근무표 채우기 실패:', e); }
     };
   } else {
     // 서버 불러오기 함수가 없으면 따로 받아서 채운다
-    fetchRoster().then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); saveMine(); });
+    fetchRoster().then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); fillHistory(); });
   }
   window.ytRosterFill = fill;
 })();
