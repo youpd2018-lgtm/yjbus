@@ -113,7 +113,11 @@
       if (p && p.then) p.then(done).catch(() => { try { au.src = ALARM_SOUND_URL; } catch (e) { } }); else done();
     } catch (e) { }
   }
-  document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
+  // 🎵 다른 앱(음악·팟캐스트)을 끊지 않도록: 평소엔 '섞어 듣기'(ambient), 알림음이 울릴 때만 '재생'(playback)
+  function setAudioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) { } }
+  setAudioSession('ambient');
+  // 아이폰만 무음 파일로 미리 열어 둔다(안드로이드는 첫 터치 이후 자동 허용이라 불필요, 오히려 음악을 끊음)
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
 
   // 대비책: 위 방법이 막히면 WebAudio 로 알림음을 낸다 (터치할 때마다 열어 둔다)
   let actx = null, alarmBuf = null, alarmSrc = null;
@@ -147,6 +151,8 @@
     } catch (e) { return false; }
   }
   function playAlarmSound() {
+    setAudioSession('playback');
+    setTimeout(() => setAudioSession('ambient'), 20000);
     const au = getAlarmAudio();
     if (!au) { playViaWebAudio(); return; }
     try {
