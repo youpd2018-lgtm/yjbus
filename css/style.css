@@ -3111,3 +3111,22 @@ iconify-icon {
 
 /* 👓 노안모드: 화면 전체를 15% 키움 (설정 > 노안모드). 하단 메뉴는 따로 키움 */
 html.senior body { zoom: 1.15; }
+
+/* 👓 노안모드 · 메인화면: 중요한 글자만 아주 크게, 노선정보/교대정보/오늘의메모 탭은 숨김 */
+html.senior #mainBusHeroCard { height: auto !important; min-height: 330px; padding: 14px 14px 14px 14px; }
+html.senior .bli-route-num { font-size: 76px; letter-spacing: -2px; }
+html.senior .bli-main-route-row { gap: 14px; }
+html.senior .bli-seq-num { font-size: 54px; }
+html.senior .bli-seq-label { font-size: 26px; }
+html.senior .bli-sub-route-row { gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+html.senior .bli-routesub-text { font-size: 30px; }
+html.senior .bli-busno-box { padding: 3px 12px; border-radius: 10px; gap: 6px; }
+html.senior .bli-busno-icon { font-size: 28px; }
+html.senior .bli-busno-val { font-size: 32px; }
+html.senior .bli-timeline-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 12px 0 12px 0; }
+html.senior .bli-time-item { flex-direction: column; align-items: center; gap: 0; background: rgba(15, 23, 42, 0.62); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 12px; padding: 6px 2px 4px; }
+html.senior .bli-time-icon, html.senior .bli-time-bar { display: none; }
+html.senior .bli-time-lbl { font-size: 19px; }
+html.senior .bli-time-val { font-size: 31px; }
+html.senior #tabBtnRoute, html.senior #tabBtnShift, html.senior #tabBtnMemo { display: none !important; }
+html.senior #panelRoute, html.senior #panelShift, html.senior #panelMemo { display: none !important; }
