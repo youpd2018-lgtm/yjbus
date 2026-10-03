@@ -3210,7 +3210,7 @@ html.senior .bli-bottom-row { min-height: 68px; }
     #liveModal #liveTopRow { grid-column: 1 / -1; grid-row: 2; margin: 0 !important; }
     #liveModal #liveGroupTop > .ios-primary-card { grid-column: 1; grid-row: 3; }
     #liveModal #liveGroupTop > div:not(#liveTopRow):not(.ios-primary-card) { grid-column: 1; grid-row: 4; margin: 0 !important; }
-    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 !important; }
+    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 92px 0 0 !important; }   /* 오른쪽 92px은 구차장 마이크(원래 크기) 자리 */
     #liveModal #iosSeqGridContainer { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; height: 100%; }
     #liveModal #iosSeqGridContainer .ios-seq-line { display: none !important; }
     #liveModal #iosSeqGridContainer .ios-seq-item { flex: 1; max-width: none !important; min-height: 0 !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 4px 14px !important; margin: 0 !important; }
@@ -3221,8 +3221,5 @@ html.senior .bli-bottom-row { min-height: 68px; }
     #liveModal .ios-footer { grid-column: 1 / -1; grid-row: 6; margin: 0 !important; padding: 0 !important; min-height: 50px; display: flex !important; justify-content: space-between !important; align-items: center; }
     #liveModal .ios-footer .ios-close-btn { height: 38px !important; width: auto !important; min-width: 120px !important; padding: 0 18px; order: 3; }
     #liveModal .live-mirror-btn { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 12px; border: none; background: #334155; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; order: 1; }
-    /* 🎙️ 구차장 마이크 버튼: 칸과 겹치지 않게 맨 아래 가운데(좌우반전·닫기 사이)로 작게 */
-    body:has(#liveModal.active) .floating-voice-widget { left: 50% !important; right: auto !important; top: auto !important; bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important; transform: translateX(-50%) !important; }
-    body:has(#liveModal.active) .voice-mic-btn { width: 46px; height: 46px; font-size: 24px; }
     #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 7; margin-top: 4px !important; }
 }
