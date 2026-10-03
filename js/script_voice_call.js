@@ -147,8 +147,9 @@
     // 비슷한 점수의 다른 사람이 있으면 최대 3명까지 보여 줌
     for (var i = 1; i < found.length && items.length < 3; i++) if (top.score - found[i].score < 0.1) items.push(found[i].c);
     if (items.length === 1) {
-      showCallCard(items, items[0].name + '님께 전화하시겠어요?');
-      speak(items[0].name + ' 님께 전화하려면 전화걸기 버튼을 누르세요.');
+      // 한 명이 확실하면 곧바로 전화 연결 (확인은 폰 시스템 창이 함). 폰이 막아서 화면에 남으면 카드의 버튼으로 걸 수 있음
+      showCallCard(items, items[0].name + '님께 전화 연결 중… 연결이 안 되면 아래 버튼을 누르세요.');
+      try { window.location.href = 'tel:' + items[0].phone; } catch (e) {}
     } else {
       showCallCard(items, '누구에게 전화할까요?');
       speak('비슷한 이름이 ' + items.length + '명 있어요. 전화할 분의 전화걸기 버튼을 누르세요.');
