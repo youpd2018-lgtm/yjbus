@@ -3189,7 +3189,7 @@ html.senior .bli-bottom-row { min-height: 68px; }
 /*  윗줄: 날씨 / GPS · 왼쪽: 큰 시간카운트+차량번호 · 오른쪽: 거점 3칸 세로 */
 /*  아랫줄: 정류장 카드(신호등) / 현재속도 · 맨 아래: 좌우반전 / 닫기      */
 /* ================================================================ */
-.live-speed-box, .live-mirror-btn { display: none; }
+.live-mirror-btn { display: none; }
 @media (orientation: landscape) and (max-height: 520px) {
     #liveModal.live-modal { align-items: stretch !important; justify-content: stretch !important; padding: 0 !important; }
     #liveModal .live-modal-content.ios-widget-modal {
@@ -3197,7 +3197,7 @@ html.senior .bli-bottom-row { min-height: 68px; }
         grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
         grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
         align-content: stretch; align-items: stretch;
-        column-gap: 14px; row-gap: 6px;
+        column-gap: 14px; row-gap: 8px;
         width: 100% !important; max-width: 100% !important; min-height: 0 !important;
         height: 100dvh !important; max-height: 100dvh !important;
         border-radius: 0 !important; border: none !important;
@@ -3210,26 +3210,19 @@ html.senior .bli-bottom-row { min-height: 68px; }
     #liveModal #liveTopRow { grid-column: 1 / -1; grid-row: 2; margin: 0 !important; }
     #liveModal #liveGroupTop > .ios-primary-card { grid-column: 1; grid-row: 3; }
     #liveModal #liveGroupTop > div:not(#liveTopRow):not(.ios-primary-card) { grid-column: 1; grid-row: 4; margin: 0 !important; }
-    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 2; padding: 0 !important; margin: 0 !important; }
+    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 3 / span 3; padding: 0 !important; margin: 0 !important; }
     #liveModal #iosSeqGridContainer { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; height: 100%; }
     #liveModal #iosSeqGridContainer .ios-seq-line { display: none !important; }
     #liveModal #iosSeqGridContainer .ios-seq-item { flex: 1; max-width: none !important; min-height: 0 !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 4px 14px !important; margin: 0 !important; }
     #liveModal #liveGroupStop { grid-column: 1; grid-row: 5; }
     #liveModal .tf-card { margin-top: 0; padding: 10px 10px; height: 100%; }
-    #liveModal .live-speed-box {
-        display: flex; flex-direction: column; justify-content: center; align-items: center; grid-column: 2; grid-row: 5;
-        border-radius: 22px; box-sizing: border-box; padding: 6px 10px;
-        background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.04));
-        border: 1px solid rgba(255,255,255,.22); border-top-color: rgba(255,255,255,.4);
-        box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25);
-    }
-    .live-speed-label { font-size: 12px; font-weight: 700; color: #93a3bd; letter-spacing: .08em; }
-    .live-speed-val { font-family: 'GmarketSans', -apple-system, sans-serif; font-size: 40px; font-weight: 900; color: #fb923c; font-variant-numeric: tabular-nums; line-height: 1.05; }
-    .live-speed-unit { font-size: 14px; font-weight: 700; color: #fdba74; margin-left: 4px; }
     #liveModal .ios-primary-card { min-height: 0; height: 100%; }
-    #liveModal #liveCardTimeLeft { font-size: min(20vh, 9.5vw) !important; }
-    #liveModal .ios-footer { grid-column: 1 / -1; grid-row: 6; margin: 0 !important; padding: 0 !important; display: flex !important; justify-content: space-between !important; align-items: center; }
+    #liveModal #liveCardTimeLeft { font-size: min(18vh, 7.8vw) !important; }
+    #liveModal .ios-footer { grid-column: 1 / -1; grid-row: 6; margin: 0 !important; padding: 0 !important; min-height: 50px; display: flex !important; justify-content: space-between !important; align-items: center; }
     #liveModal .ios-footer .ios-close-btn { height: 38px !important; width: auto !important; min-width: 120px !important; padding: 0 18px; order: 3; }
     #liveModal .live-mirror-btn { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 12px; border: none; background: #334155; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; order: 1; }
+    /* 🎙️ 구차장 마이크 버튼: 칸과 겹치지 않게 맨 아래 가운데(좌우반전·닫기 사이)로 작게 */
+    body:has(#liveModal.active) .floating-voice-widget { left: 50% !important; right: auto !important; top: auto !important; bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important; transform: translateX(-50%) !important; }
+    body:has(#liveModal.active) .voice-mic-btn { width: 46px; height: 46px; font-size: 24px; }
     #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 7; margin-top: 4px !important; }
 }
