@@ -3097,3 +3097,8 @@ iconify-icon {
 #liveColleagueMessage { overflow: hidden !important; flex-wrap: nowrap !important; }
 #liveColleagueMessage .yb-marq { display: inline-flex; align-items: center; white-space: nowrap !important; flex: 0 0 auto; }
 #liveColleagueMessage .yb-marq * { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; }
+
+/* 한마디 칸 높이 완전 고정: 메시지가 바뀌어도(짧은 글·긴 글·돌발 알림) 아래 화면이 흔들리지 않게 */
+#liveColleagueMessage { height: 34px !important; min-height: 34px !important; max-height: 34px !important; }
+#liveColleagueMessage * { white-space: nowrap !important; }
+#mainAppHeader .message-ticker-wrap { height: 34px !important; min-height: 34px !important; overflow: hidden; }
