@@ -3183,3 +3183,31 @@ html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val, html.senior .bli-busn
 html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val::before, html.senior .bli-busno-val::before { content: ""; position: absolute; left: -6px; top: 12%; bottom: 12%; width: 1px; background: rgba(255, 255, 255, 0.18); }
 html.senior .bli-route-num, html.senior .bli-routesub-text, html.senior .bli-seq-group { margin-top: 10px; }
 html.senior .bli-bottom-row { min-height: 68px; }
+
+/* ================================================================ */
+/* 📱↔️ 라이브 모달 가로 모드 (폰을 눕혔을 때): 왼쪽 시간카운트·오차 / 오른쪽 거점·정류장 카드 */
+/* ================================================================ */
+@media (orientation: landscape) and (max-height: 520px) {
+    #liveModal.live-modal { align-items: stretch !important; justify-content: stretch !important; padding: 0 !important; }
+    #liveModal .live-modal-content.ios-widget-modal {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        grid-template-rows: auto auto auto auto auto;
+        align-content: center; align-items: center;
+        column-gap: 16px; row-gap: 8px;
+        width: 100% !important; max-width: 100% !important; min-height: 0 !important;
+        height: 100dvh !important; max-height: 100dvh !important;
+        border-radius: 0 !important; border: none !important;
+        overflow-y: auto;
+        padding: calc(8px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px)) !important;
+    }
+    #liveModal #gpsPermissionBanner { grid-column: 1 / -1; grid-row: 1; margin: 0 !important; }
+    #liveModal #liveGroupTop { grid-column: 1; grid-row: 2 / span 2; }
+    #liveModal .ios-seq-card-wrapper { grid-column: 2; grid-row: 2; padding: 0 !important; }
+    #liveModal #liveGroupStop { grid-column: 2; grid-row: 3; }
+    #liveModal .ios-footer { grid-column: 1 / -1; grid-row: 4; margin-top: 2px !important; }
+    #liveModal .ios-footer .ios-close-btn { height: 38px !important; width: 40% !important; }
+    #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 5; margin-top: 4px !important; }
+    #liveModal #liveTopRow { margin-bottom: 8px !important; }
+    #liveModal .tf-card { margin-top: 0; padding: 12px 10px; }
+}
