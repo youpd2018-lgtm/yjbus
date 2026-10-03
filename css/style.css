@@ -3182,3 +3182,4 @@ html.senior .bli-time-item:nth-of-type(n+2), html.senior .bli-busno-box { paddin
 html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val, html.senior .bli-busno-val { position: relative; }
 html.senior .bli-time-item:nth-of-type(n+2) .bli-time-val::before, html.senior .bli-busno-val::before { content: ""; position: absolute; left: -6px; top: 12%; bottom: 12%; width: 1px; background: rgba(255, 255, 255, 0.18); }
 html.senior .bli-route-num, html.senior .bli-routesub-text, html.senior .bli-seq-group { margin-top: 10px; }
+html.senior .bli-bottom-row { min-height: 68px; }
