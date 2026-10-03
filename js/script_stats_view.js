@@ -225,7 +225,7 @@
     function renderStopHabit(scope, v, loading) {
         const el = document.getElementById('habitList_' + scope);
         if (!el) return;
-        const compact = scope === 'month';
+        const compact = true;   // 두 카드가 나란히라 폭이 좁음
         const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
         const fs = compact ? 12 : 14;
         const gray = 'font-weight:bold; color:#94a3b8;';

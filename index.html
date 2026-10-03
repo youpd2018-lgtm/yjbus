@@ -624,49 +624,31 @@
             </button>
           </div>
 
-          <!-- 1단: 나의 운행 습관 -->
-          <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 10px; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-              <iconify-icon icon="mdi:steering"
-                style="font-size: 24px; color: #fbbf24; filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));"></iconify-icon>
-              <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">나의 운행 습관</div>
+          <!-- 1단: 나의 발자취 (작은 3박스를 한 줄로) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 5px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 42px;">
+              <div style="font-size: 10px; color: #94a3b8; font-weight: bold;">근무 / 휴일</div>
+              <div id="statMyDaysSummary" style="font-size: 12.5px; font-weight: 900; color: #22c55e; margin-top: 1px;">-</div>
             </div>
-            <div style="background: #1e293b; border-radius: 8px; padding: 8px 10px;">
-              <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px;">이번 회차 정류장 정차·출발</div>
-              <div id="habitList_cur"></div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 5px 4px; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 42px;">
+              <div id="statMyAmPm" style="font-size: 11px; font-weight: 900; color: #38bdf8; line-height: 1.35;">-</div>
+            </div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 5px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 42px;">
+              <div id="statMyTotalInfo" style="font-size: 11.5px; font-weight: 900; color: #f97316; line-height: 1.3;">-</div>
             </div>
           </div>
 
-          <!-- 2단: 나의 발자취 -->
-          <div
-            style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px;">
-            <div
-              style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <iconify-icon icon="solar:history-bold" style="font-size: 16px;"></iconify-icon> 나의 발자취
+          <!-- 2단: 나의 정류장 운행 / 이달의 정류장 운행 (나란히) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch;">
+            <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 10px 8px; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                <iconify-icon icon="mdi:steering" style="font-size: 17px; color: #fbbf24;"></iconify-icon> 나의 정류장 운행
+              </div>
+              <div id="habitList_cur"></div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 8px;">
-              <!-- 좌측 3박스 (같은 크기) -->
-              <div
-                style="grid-column: 1; grid-row: 1; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="font-size: 11px; color: #94a3b8; font-weight: bold;">근무 / 휴일</div>
-                <div id="statMyDaysSummary" style="font-size: 14px; font-weight: 900; color: #22c55e; margin-top: 2px;">
-                  -</div>
-              </div>
-              <div
-                style="grid-column: 1; grid-row: 2; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px; text-align: center; display: flex; align-items: center; justify-content: center;">
-                <div id="statMyAmPm" style="font-size: 13px; font-weight: 900; color: #38bdf8;">-</div>
-              </div>
-              <div
-                style="grid-column: 1; grid-row: 3; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div id="statMyTotalInfo" style="font-size: 13px; font-weight: 900; color: #f97316; line-height: 1.4;">-
-                </div>
-              </div>
-              <!-- 우측 이달의 운행 (3박스 높이만큼) -->
-              <div
-                style="grid-column: 2; grid-row: 1 / 4; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column;">
-                <div style="font-size: 15px; font-weight: 900; color: #fbbf24; margin-bottom: 6px;">이달의 정류장 습관</div>
-                <div id="habitList_month" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;"></div>
-              </div>
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 8px; min-width: 0;">
+              <div style="font-size: 14px; font-weight: 900; color: #fbbf24; margin-bottom: 6px;">이달의 정류장 운행</div>
+              <div id="habitList_month"></div>
             </div>
           </div>
 
