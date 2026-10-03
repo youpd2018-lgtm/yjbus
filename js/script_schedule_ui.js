@@ -310,13 +310,11 @@
             lastEditedWorkRoute = selectedRoute;
         }
 
-        // 구글 시트 및 브라우저에 저장
+        // 브라우저에 저장
         let driverKey = typeof getDriverKey === 'function' ? getDriverKey(`sched_${date}`) : `sched_${date}`;
         localStorage.setItem(driverKey, JSON.stringify(data));
-        if (typeof saveToGAS === 'function') {
-            saveToGAS(`sched_${date}`, data);
-            saveToGAS(`schededit_${date}`, '1'); // 직접 고친 근무 표시: GitHub 근무표가 덮어쓰지 않는다
-        }
+        // 내가 고친 근무는 시트 DB 가 아니라 GitHub(data/roster/edits.json)에 기록한다 (회사 근무표가 새로 올라와도 덮어쓰지 않음)
+        if (typeof window.ytSaveMyDuty === 'function') window.ytSaveMyDuty(date, data);
 
         alert(`✅ [${date}] 근무 일정이 성공적으로 저장되었습니다!`);
 

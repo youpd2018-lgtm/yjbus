@@ -23,9 +23,12 @@ function refreshDailyRoster(force) {
   // 30분 안에 받아 둔 게 있으면 다시 받지 않는다 (GitHub 근무표 수정·직접 고친 근무가 곧 반영되도록)
   if (!force && cached && cached.savedDate === localDateStr() && Date.now() - (cached.fetchedAt || 0) < 30 * 60 * 1000) return;
   // 1순위: GitHub 근무표 (폰에 저장된 개인 근무 = 직접 고친 근무가 있으면 그 값을 우선)
-  fetch('data/roster/all.json', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
-    .then(j => {
+  Promise.all([
+    fetch('data/roster/all.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))),
+    fetch('data/roster/edits.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null)   // 사용자가 고친 근무
+  ])
+    .then(pair => {
+      const j = pair[0], editsDays = (pair[1] && pair[1].days) || {};
       if (!j || !j.days) throw new Error('형식 오류');
       const today = localDateStr();
       const end = new Date(); end.setDate(end.getDate() + 4);
@@ -37,9 +40,9 @@ function refreshDailyRoster(force) {
         // 근무표에는 근무하는 사람만 있다: 명단에 있는데 그 날짜에 없으면 휴무
         const everyone = Array.from(new Set([...(j.drivers || []), ...Object.keys(people)]));
         everyone.forEach(name => {
-          let rec = people[name] || { workType: '휴무' };
+          let rec = (editsDays[date] && editsDays[date][name]) || people[name] || { workType: '휴무' };
           try {
-            if (localStorage.getItem(`jpil_user_${name}_schededit_${date}`)) {
+            if (!(editsDays[date] && editsDays[date][name]) && localStorage.getItem(`jpil_user_${name}_schededit_${date}`)) {
               const mine = JSON.parse(localStorage.getItem(`jpil_user_${name}_sched_${date}`) || 'null');
               if (mine) rec = mine;
             }

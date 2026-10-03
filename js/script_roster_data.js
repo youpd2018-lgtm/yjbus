@@ -9,8 +9,13 @@
   const LS_KEY = 'yb_roster_v1';
   const MIGRATE_KEY = 'yb_roster_migrated';
   const URL = 'data/roster/all.json';
+  const EDITS_URL = 'data/roster/edits.json';   // 사용자가 앱에서 고친 근무 (GithubWrite.js 가 기록)
+  const EDITS_KEY = 'yb_edits_v1';
+  const RECENT_MS = 15 * 60 * 1000;           // 방금 내가 고친 값은 15분 동안 내 폰 값을 지킨다(GitHub 반영 지연 대비)
   let data = null; // { rev, days: { '2026-10-04': { '이름': {workType,busNo,route,seq,time} } } }
+  let edits = null; // { days: { '2026-10-04': { '이름': {workType,...} } } }
   try { data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { data = null; }
+  try { edits = JSON.parse(localStorage.getItem(EDITS_KEY) || 'null'); } catch (e) { edits = null; }
 
   const OFF = { workType: '휴무', busNo: '', route: '', seq: '', time: '' };
   function dash(v) { return v === '' || v == null ? '-' : v; }
@@ -24,6 +29,20 @@
   function dayStr(offset) {
     const d = new Date(); d.setDate(d.getDate() + offset);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function fetchEdits() {
+    return fetch(EDITS_URL, { cache: 'no-cache' })
+      .then(res => res.ok ? res.json() : (res.status === 404 ? { days: {} } : Promise.reject(new Error('HTTP ' + res.status))))
+      .then(json => { if (json && json.days) { edits = json; try { localStorage.setItem(EDITS_KEY, JSON.stringify(json)); } catch (e) { } } })
+      .catch(err => console.warn('고친 근무 받기 실패(저장된 것 사용):', err));
+  }
+  function editOf(date, name) { return (edits && edits.days && edits.days[date] && edits.days[date][name]) || null; }
+  // 방금 이 폰에서 고친 값이면 true (GitHub 반영 전까지 폰 값을 지킴). GitHub 에 같은 날 고친 기록이 없으면 계속 지킴
+  function keepLocal(markKey, ed) {
+    const mark = localStorage.getItem(markKey);
+    if (!mark) return false;
+    return !ed || (Date.now() - (parseInt(mark, 10) || 0) < RECENT_MS);
   }
 
   function fetchRoster() {
@@ -48,9 +67,10 @@
       for (const name of everyone) {
         const key = `jpil_user_${name}_sched_${date}`;
         const markKey = `jpil_user_${name}_schededit_${date}`;
-        const gh = toSched(people[name] || OFF);
+        const ed = editOf(date, name);
+        const gh = toSched(ed || people[name] || OFF);
         const cur = localStorage.getItem(key);
-        if (localStorage.getItem(markKey)) continue; // 직접 고친 근무: 최우선
+        if (keepLocal(markKey, ed)) continue; // 직접 고친 근무: 최우선
         if (cur === gh) continue;
         // 처음 한 번: 이미 있던 값이 GitHub 값과 다르면 직접 고친 것일 수 있으니 지키고 표시해 둔다
         if (first && cur) { try { localStorage.setItem(markKey, '1'); } catch (e) { } continue; }
@@ -58,6 +78,20 @@
       }
     }
     if (first) { try { localStorage.setItem(MIGRATE_KEY, '1'); } catch (e) { } }
+    // 내가 고친 지난 근무(어제 이전)도 GitHub 고친 기록에서 채움
+    try {
+      const me = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver;
+      if (me && edits && edits.days) {
+        Object.keys(edits.days).forEach(date => {
+          const ed = edits.days[date][me];
+          if (!ed || (date >= from && data.days[date])) return;
+          const key = `jpil_user_${me}_sched_${date}`, markKey = `jpil_user_${me}_schededit_${date}`;
+          if (keepLocal(markKey, ed)) return;
+          const v = toSched(ed);
+          if (localStorage.getItem(key) !== v) { try { localStorage.setItem(key, v); changed++; } catch (e) { } }
+        });
+      }
+    } catch (e) { }
     return changed;
   }
 
@@ -81,8 +115,9 @@
             let n = 0;
             Object.keys(j.days).forEach(date => {
               const key = `jpil_user_${driverName}_sched_${date}`;
-              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) return;
-              const gh = toSched(j.days[date][driverName] || OFF);
+              const ed = editOf(date, driverName);
+              if (keepLocal(`jpil_user_${driverName}_schededit_${date}`, ed)) return;
+              const gh = toSched(ed || j.days[date][driverName] || OFF);
               if (localStorage.getItem(key) !== gh) { try { localStorage.setItem(key, gh); n++; } catch (e) { } }
             });
             revs[driverName + '|' + m] = idx.months[m];
@@ -102,14 +137,45 @@
     window.loadDataFromGAS = async function () {
       try { await origLoad.apply(this, arguments); } catch (e) { }
       try {
-        await Promise.race([fetchRoster(), new Promise(r => setTimeout(r, 3000))]);
+        await Promise.race([Promise.all([fetchRoster(), fetchEdits()]), new Promise(r => setTimeout(r, 3000))]);
         fill();
         await fillHistory();
       } catch (e) { console.warn('근무표 채우기 실패:', e); }
     };
   } else {
     // 서버 불러오기 함수가 없으면 따로 받아서 채운다
-    fetchRoster().then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); fillHistory(); });
+    Promise.all([fetchRoster(), fetchEdits()]).then(() => { if (fill() && typeof window.searchSchedule === 'function') window.searchSchedule(); fillHistory(); });
   }
   window.ytRosterFill = fill;
+
+  // ✍️ 내가 고친 근무를 서버(Apps Script)를 거쳐 GitHub(data/roster/edits.json)에 기록한다. 실패하면 대기열에 두고 다음에 다시 보낸다
+  const PENDING_KEY = 'yb_duty_pending';
+  let flushing = false;
+  function loadPending() { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') || []; } catch (e) { return []; } }
+  function savePending(a) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(a)); } catch (e) { } }
+  function flushPending() {
+    if (flushing || !window.GAS_WEB_APP_URL) return;
+    const q = loadPending();
+    if (!q.length) return;
+    flushing = true;
+    const it = q[0];
+    fetch(window.GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'save_my_duty', driver: it.name, date: it.date, entry: it.entry }) })
+      .then(r => r.json())
+      .then(res => {
+        flushing = false;
+        if (res && res.success) { savePending(loadPending().filter(x => !(x.name === it.name && x.date === it.date && JSON.stringify(x.entry) === JSON.stringify(it.entry)))); flushPending(); }
+        else console.warn('내 근무 GitHub 저장 실패(나중에 다시 보냄):', res && res.error);
+      })
+      .catch(() => { flushing = false; });
+  }
+  window.ytSaveMyDuty = function (date, entry) {
+    const name = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver;
+    if (!name) return;
+    try { localStorage.setItem(`jpil_user_${name}_schededit_${date}`, String(Date.now())); } catch (e) { }
+    const q = loadPending().filter(x => !(x.name === name && x.date === date)); // 같은 날짜의 이전 대기는 최신 값으로 교체
+    q.push({ name: name, date: date, entry: entry });
+    savePending(q);
+    flushPending();
+  };
+  setTimeout(flushPending, 4000);
 })();

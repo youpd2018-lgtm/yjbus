@@ -612,6 +612,11 @@ function doPost(e) {
       const res = typeof saveTripSpeed === 'function' ? saveTripSpeed(postData) : { success: false, error: "saveTripSpeed 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
+    if (postData && postData.action === 'save_my_duty') {
+      postData.driver = authDriverFor_(viewer, postData.driver);
+      const res = typeof saveMyDuty === 'function' ? saveMyDuty(postData) : { success: false, error: "saveMyDuty 함수 미정의" };
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
     if (postData && postData.action === 'save_to_server') {
       if (!authCanWrite_(viewer, postData.key, postData.value)) return authJson_({ success: false, error: 'forbidden' });
       saveToServer(postData.key, postData.value);
