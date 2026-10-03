@@ -690,17 +690,21 @@
 
       <!-- [뷰 1] 근무일정등록 -->
       <div id="settingsViewSchedule">
-        <div style="padding: 0 4px 8px;">
-          <div style="font-size: 16px; font-weight: 900; color: #f8fafc;">근무일정등록</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">자동등록된 근무일정을 수정합니다</div>
+        <!-- 누르면 펼쳐지는 메뉴 박스 (처음에는 접힘) -->
+        <div class="set-card" style="margin-top: 0;">
+          <button type="button" class="set-row set-link" id="schedHeadBtn" onclick="toggleScheduleBox()" aria-expanded="false">
+            <div class="set-label" style="font-size: 16px; font-weight: 900;">근무일정등록<div class="set-sub">자동등록된 근무일정을 수정합니다</div></div>
+            <span class="set-arrow" id="schedArrow" style="transition: transform .2s;">›</span>
+          </button>
         </div>
+        <div id="scheduleBody" style="display: none;">
 
         <div id="scheduleFormFields"
           style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px 10px;">
           <!-- 1. 등록 날짜 (좌우 이동 화살표 포함) -->
           <div style="margin-bottom: 10px;">
             <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-              <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 등록 날짜
+              <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 등록 날짜
             </label>
             <div style="display: flex; align-items: center; gap: 6px;">
               <button type="button" class="date-nav-btn" onclick="moveSettingsDate(-1)"
@@ -719,7 +723,7 @@
           <!-- 2. 근무 형태 (정상근무 / 휴무) -->
           <div style="margin-bottom: 10px;">
             <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-              <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 근무 형태
+              <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 근무 형태
             </label>
             <input type="hidden" id="workType" value="정상">
             <div class="seg-row" id="segWorkType">
@@ -731,7 +735,7 @@
           <!-- 3. 차량 번호 (숫자만 입력 제한) -->
           <div id="busNoSection" style="margin-bottom: 10px;">
             <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-              <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 차량 번호 (숫자 4자리)
+              <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 차량 번호 (숫자 4자리)
             </label>
             <input type="tel" inputmode="numeric" pattern="[0-9]*" id="regBusNo" placeholder="예: 1234 (숫자만 입력)"
               maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
@@ -742,7 +746,7 @@
           <div id="schedRouteSection">
             <div style="margin-bottom: 10px;">
               <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-                <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 노선 선택
+                <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 노선 선택
               </label>
               <div class="route-dropdown-box" style="position: relative; width: 100%;">
                 <!-- 노선 선택 버튼 (터치 시 드롭다운 팝업) -->
@@ -763,7 +767,7 @@
             <!-- 5. 순번 선택 (대수에 맞춰 자동 생성) -->
             <div style="margin-bottom: 10px;">
               <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-                <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 순번 선택
+                <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 순번 선택
               </label>
               <select id="regSeq"
                 style="width: 100%; height: 44px; padding: 0 10px; border-radius: 8px; border: 1.5px solid #475569; background: #0f172a; color: white; font-size: 15px; font-weight: bold; box-sizing: border-box; cursor: pointer;">
@@ -774,7 +778,7 @@
             <!-- 6. 근무 타임 (오전 / 오후) -->
             <div style="margin-bottom: 4px;">
               <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-weight: bold; width: 100%;">
-                <iconify-icon icon="mdi:check-circle" style="color: #22c55e; font-size: 16px;"></iconify-icon> 근무 타임
+                <iconify-icon icon="mdi:check-circle" style="color: #94a3b8; font-size: 16px;"></iconify-icon> 근무 타임
               </label>
               <input type="hidden" id="workTimeType" value="오전">
               <div class="seg-row" id="segWorkTimeType">
@@ -796,6 +800,7 @@
           <button type="button" id="btnEditScheduleMode" style="display: none;"
             onclick="enableScheduleEditMode()"></button>
         </div>
+      </div> <!-- scheduleBody 닫기 -->
       </div>
 
       <!-- 기타 설정: 알림 · 효과음 · 연락처 · 새로고침 · 로그아웃 -->
@@ -810,14 +815,19 @@
           <div class="set-label">효과음<div id="sfxStateText" class="set-sub"></div></div>
           <label class="switch"><input type="checkbox" id="sfxSwitch" onchange="setSfx(this.checked)"><span class="slider"></span></label>
         </div>
-        <button type="button" class="set-row set-link" id="btnSetContact" onclick="openContactEdit()">
-          <iconify-icon icon="mdi:phone-outline" style="font-size: 20px; color: #22c55e;"></iconify-icon>
-          <div class="set-label">연락처 수정</div><span class="set-arrow">›</span>
-        </button>
-        <button type="button" class="set-row set-link" id="btnSetRefresh" onclick="hardRefreshApp()">
-          <iconify-icon icon="mdi:refresh" style="font-size: 20px; color: #60a5fa;"></iconify-icon>
-          <div class="set-label">새로고침</div><span class="set-arrow">›</span>
-        </button>
+        <div class="set-row set-row-senior">
+          <iconify-icon icon="mdi:eye-outline" style="font-size: 20px; color: #a78bfa;"></iconify-icon>
+          <div class="set-label">노안모드<div id="seniorStateText" class="set-sub"></div></div>
+          <label class="switch"><input type="checkbox" id="seniorSwitch" onchange="setSeniorMode(this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="set-mini-row">
+          <button type="button" class="set-mini" id="btnSetContact" onclick="openContactEdit()">
+            <iconify-icon icon="mdi:phone-outline" style="font-size: 16px; color: #94a3b8;"></iconify-icon> 연락처 수정
+          </button>
+          <button type="button" class="set-mini" id="btnSetRefresh" onclick="hardRefreshApp()">
+            <iconify-icon icon="mdi:refresh" style="font-size: 16px; color: #94a3b8;"></iconify-icon> 새로고침
+          </button>
+        </div>
       </div>
 
     </div> <!-- 👈 3번 설정 페이지(id="settingsPage")를 닫아주는 </div> 태그 -->
@@ -1219,6 +1229,7 @@
     <script src="js/push_fcm.js"></script>
     <script src="js/script_local_alarm.js"></script>
     <script src="js/script_sfx.js"></script>
+    <script src="js/script_senior.js"></script>
     <script src="js/script_timetable_data.js"></script>
     <script src="js/script_roster_data.js"></script>
     <script src="js/script_voice_call.js"></script>

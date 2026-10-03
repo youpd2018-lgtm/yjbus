@@ -279,6 +279,17 @@
     // ================================================================
     // ⚙️ [설정 화면] 근무설정 / 연락처수정 / 알림받기 / 새로고침 / 로그아웃
     // ================================================================
+    // 근무일정등록 박스: 누르면 펼쳐지고 다시 누르면 접힘
+    function toggleScheduleBox() {
+        const body = document.getElementById('scheduleBody');
+        const head = document.getElementById('schedHeadBtn');
+        if (!body || !head) return;
+        const open = body.style.display === 'none';
+        body.style.display = open ? 'block' : 'none';
+        head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    window.toggleScheduleBox = toggleScheduleBox;
+
     function selectSettingsView(name) {
         // 설정 화면은 근무일정등록이 맨 위에 항상 보이고, 아래에 기타 설정(알림·효과음·연락처·새로고침)이 이어진다
         // 등록 날짜에 맞는 저장된 근무기록을 자동으로 불러옴 (날짜가 비어 있으면 오늘)
@@ -287,6 +298,7 @@
         if (typeof loadScheduleForEdit === 'function') loadScheduleForEdit();
         updatePushSettingsUI();
         if (typeof window.updateSfxSettingsUI === 'function') window.updateSfxSettingsUI();
+        if (typeof window.updateSeniorSettingsUI === 'function') window.updateSeniorSettingsUI();
     }
 
     // 알림받기 화면: 현재 상태 표시

@@ -3102,3 +3102,12 @@ iconify-icon {
 #liveColleagueMessage { height: 34px !important; min-height: 34px !important; max-height: 34px !important; }
 #liveColleagueMessage * { white-space: nowrap !important; }
 #mainAppHeader .message-ticker-wrap { height: 34px !important; min-height: 34px !important; overflow: hidden; }
+
+/* ⚙️ 설정: 연락처 수정 · 새로고침 (작은 단추 나란히) */
+.set-mini-row { display: flex; gap: 8px; padding: 10px 12px; }
+.set-mini { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; height: 34px; padding: 0 8px; border: 1px solid #475569; border-radius: 8px; background: #0f172a; color: #cbd5e1; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.set-row-senior { border-bottom: 1px solid #334155; }
+#schedHeadBtn[aria-expanded="true"] #schedArrow { transform: rotate(90deg); }
+
+/* 👓 노안모드: 화면 전체를 15% 키움 (설정 > 노안모드). 하단 메뉴는 따로 키움 */
+html.senior body { zoom: 1.15; }
