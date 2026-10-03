@@ -62,17 +62,6 @@ function formatMessageDisplay(rawText) {
     `;
   }
 
-  // 🚨 [실시간 돌발 속보]: 노란색 굵은 글씨 + 뱃지
-  if (text.startsWith('__INCIDENT__') || text.startsWith('🚨') || text.includes('[돌발]') || text.includes('[사고]') || text.includes('[공사]') || text.includes('[통제]')) {
-    let cleanText = text.replace('__INCIDENT__', '').trim();
-    return `
-      <span style="display: inline-flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
-        <iconify-icon icon="solar:danger-triangle-bold" style="font-size: 18px; color: #facc15 !important; vertical-align: -2px; margin-right: 5px; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(250,204,21,0.5));"></iconify-icon>
-        <span style="color: #facc15 !important; font-weight: 800 !important; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.2px;">${cleanText}</span>
-      </span>
-    `;
-  }
-
   // HTML 태그 잔여물 세척
   if (text.includes('<')) {
     let tempDiv = document.createElement('div');
@@ -127,7 +116,6 @@ let currentMsgRotationList = [];
 let currentMsgRotationIndex = 0;
 let msgRotationTimer = null;
 window._trafficAlertMeta = window._trafficAlertMeta || []; // {text, receivedAt}
-window._priorityQueue   = window._priorityQueue   || []; // 우선 재생 대기 큐
 
 // ── 라벨 동적 업데이트 ──────────────────────────────────────────
 function _updateTickerLabel(isAlert) {
@@ -180,63 +168,14 @@ function _showUnifiedMsg(idx) {
   var list = currentMsgRotationList;
   if (!list || list.length === 0) return;
   var msg = list[idx % list.length] || '';
-  var isAlert = msg.startsWith('🚨') || msg.includes('[돌발]') || msg.includes('[사고]') || msg.includes('[공사]') || msg.includes('[통제]');
-  if (isAlert && msg !== window.lastPlayedAlertText) {
-    window.lastPlayedAlertText = msg;
-    if (typeof playChimeDingDong === 'function') playChimeDingDong();
-  }
-  var html = isAlert ? _formatAlert(msg) : formatMessageDisplay(msg);
-  _setLiveTicker(html, isAlert);
-}
-
-// ── 알림 전용 포맷터 (노란색 굵은 텍스트) ────────────────────────
-function _formatAlert(msg) {
-  return '<span style="display:flex;align-items:flex-start;max-width:100%;">'
-    + '<iconify-icon icon="solar:danger-triangle-bold" style="font-size:19px;color:#facc15!important;vertical-align:-3px;margin-right:5px;flex-shrink:0;"></iconify-icon>'
-    + '<span style="color:#facc15!important;font-weight:800!important;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-0.2px;">' + msg + '</span>'
-    + '</span>';
-}
-
-// ── 우선 큐 처리: 새 알림 5초 × 3회 우선 출력 후 정상 순환 복귀 ─
-function _runPriorityQueue(baseMsgs) {
-  if (msgRotationTimer) { clearTimeout(msgRotationTimer); clearInterval(msgRotationTimer); msgRotationTimer = null; }
-  var queue = (window._priorityQueue || []).slice();
-  window._priorityQueue = [];
-  var steps = [];
-  queue.forEach(function(item) {
-    for (var i = 0; i < 3; i++) steps.push(item.text);
-  });
-  var stepIdx = 0;
-  function showNext() {
-    if (stepIdx >= steps.length) {
-      currentMsgRotationList = _buildUnifiedList(baseMsgs);
-      currentMsgRotationIndex = 0;
-      _showUnifiedMsg(0);
-      msgRotationTimer = setInterval(function() {
-        currentMsgRotationIndex = (currentMsgRotationIndex + 1) % currentMsgRotationList.length;
-        _showUnifiedMsg(currentMsgRotationIndex);
-      }, 5000);
-      return;
-    }
-    var msg = steps[stepIdx++];
-    if (msg !== window.lastPlayedAlertText) {
-      window.lastPlayedAlertText = msg;
-      if (typeof playChimeDingDong === 'function') playChimeDingDong();
-    }
-    _setLiveTicker(_formatAlert(msg), true);
-    msgRotationTimer = setTimeout(showNext, 5000);
-  }
-  showNext();
+  var html = formatMessageDisplay(msg);
+  _setLiveTicker(html, false);
 }
 
 // ── 메인 렌더러 ──────────────────────────────────────────────────
 function renderMessages(msgsArray) {
   if (msgRotationTimer) { clearTimeout(msgRotationTimer); clearInterval(msgRotationTimer); msgRotationTimer = null; }
   var validMsgs = Array.isArray(msgsArray) ? msgsArray.filter(function(m) { return m && String(m).trim(); }) : [];
-  if (window._priorityQueue && window._priorityQueue.length > 0) {
-    _runPriorityQueue(validMsgs);
-    return;
-  }
   currentMsgRotationList = _buildUnifiedList(validMsgs);
   currentMsgRotationIndex = 0;
   _showUnifiedMsg(0);
