@@ -3144,3 +3144,12 @@ html.senior .bli-bottom-row { grid-column: 1 / -1; grid-row: 4; }
 /* 아래 탭: 오늘의 시간표만 */
 html.senior #tabBtnRoute, html.senior #tabBtnShift, html.senior #tabBtnMemo { display: none !important; }
 html.senior #panelRoute, html.senior #panelShift, html.senior #panelMemo { display: none !important; }
+
+/* 노안모드: 시간표 헤더 박스 제거, 시간표 바로 이어 붙이고 그 높이만큼 메인 박스 확장 */
+html.senior #hudTabBar { display: none !important; }
+html.senior #todayTimetableBody { margin-top: 0 !important; }
+html.senior .bus-hero-container { min-height: 332px; }
+html.senior .bli-route-num { font-size: 60px; }
+html.senior .bli-seq-num { font-size: 58px; }
+html.senior .bli-time-lbl { font-size: 13px; }
+html.senior .bli-time-val, html.senior .bli-busno-val { font-size: 27px; }
