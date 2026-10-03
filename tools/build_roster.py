@@ -2,7 +2,7 @@
 """data/roster/roster.csv -> data/roster/all.json
 
 한 행 = 기사 1명의 하루 근무. 고친 뒤 python3 tools/build_roster.py 를 실행한다.
-보관 규칙: roster.csv / all.json 에는 어제·오늘·미래 근무만 둔다. 더 오래된 날짜는 지우지 않고 data/roster/history/YYYY-MM.csv 로 옮겨 쌓는다(회사 전체 근무 기록 보존).
+보관 규칙: roster.csv / all.json 에는 어제·오늘·미래 근무만 둔다. 더 오래된 날짜의 회사 전체 표는 지우고, 기사 1명당 data/roster/history/drivers/<이름>.json 에 그 기사의 근무만 2026-10-01부터 계속 쌓는다(index.json = from/through/rev).
 규칙: 근무하는 사람만 적는다. 그 날짜에 이름이 없는 기사는 앱이 자동으로 휴무로 처리한다. (휴무 행은 무시된다)
 기사 전체 명단은 data/roster/drivers.txt (한 줄에 한 명). 새 기사가 근무표에 나오면 이 실행에서 자동으로 추가된다.
 칸: 근무일자(YYYY-MM-DD), 기사명, 근무형태(정상/대타 등), 노선명, 차량번호, 순번, 근무시간(오전/오후)
@@ -18,25 +18,37 @@ rows = list(csv.DictReader(open(CSV, encoding='utf-8-sig', newline='')))
 kst = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
 keep_from = (kst - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 old = [r for r in rows if r['근무일자'].strip() < keep_from]
-if old:
-    # 지우기 전에 월별 기록 파일에 쌓아 둔다 (같은 날짜+기사는 한 번만)
-    HIST = os.path.join(ROOT, 'history'); os.makedirs(HIST, exist_ok=True)
-    fields = list(rows[0].keys())
-    by_month = {}
-    for r in old: by_month.setdefault(r['근무일자'].strip()[:7], []).append(r)
-    for ym, rs in sorted(by_month.items()):
-        hp = os.path.join(HIST, ym + '.csv')
-        have = {}
-        if os.path.exists(hp):
-            for r in csv.DictReader(open(hp, encoding='utf-8-sig', newline='')): have[(r['근무일자'].strip(), r['기사명'].strip())] = r
-        for r in rs: have[(r['근무일자'].strip(), r['기사명'].strip())] = r
-        with open(hp, 'w', encoding='utf-8-sig', newline='') as f:
-            w = csv.DictWriter(f, fieldnames=fields); w.writeheader()
-            w.writerows(have[k] for k in sorted(have))
-    rows = [r for r in rows if r['근무일자'].strip() >= keep_from]
-    with open(CSV, 'w', encoding='utf-8-sig', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
-    print(f'{keep_from} 이전 {len(old)}행을 history/ 로 옮김')
+# 지난 근무 보관: 회사 전체 표는 지우고, 기사 1명당 파일 하나(history/drivers/<이름>.json)에 그 기사의 근무만 10/1부터 계속 쌓는다
+HIST = os.path.join(ROOT, 'history'); DRVDIR = os.path.join(HIST, 'drivers')
+HIST_FROM = '2026-10-01'
+legacy = [f for f in (os.listdir(HIST) if os.path.isdir(HIST) else []) if re.fullmatch(r'\d{4}-\d{2}\.(csv|json)', f)]
+arch = list(old)
+for f in legacy:  # 예전 월별 전체 기록이 있으면 기사별 파일로 옮기고 지운다
+    if f.endswith('.csv'): arch += list(csv.DictReader(open(os.path.join(HIST, f), encoding='utf-8-sig', newline='')))
+if arch or legacy:
+    os.makedirs(DRVDIR, exist_ok=True)
+    names = {l.strip() for l in open(os.path.join(ROOT, 'drivers.txt'), encoding='utf-8') if l.strip()}
+    names |= {r['기사명'].strip() for r in arch}
+    through = (datetime.datetime.strptime(keep_from, '%Y-%m-%d') - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+    prev = {}
+    ip = os.path.join(HIST, 'index.json')
+    if os.path.exists(ip): prev = json.load(open(ip, encoding='utf-8'))
+    through = max(through, prev.get('through', ''))
+    for n in sorted(names):
+        fp = os.path.join(DRVDIR, n + '.json')
+        d = json.load(open(fp, encoding='utf-8'))['days'] if os.path.exists(fp) else {}
+        for r in arch:
+            if r['기사명'].strip() == n and r['근무형태'].strip() != '휴무' and r['근무일자'].strip() >= HIST_FROM:
+                d[r['근무일자'].strip()] = {'workType': r['근무형태'], 'busNo': r['차량번호'], 'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
+        open(fp, 'w', encoding='utf-8').write(json.dumps({'name': n, 'from': HIST_FROM, 'through': through, 'days': d}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
+    h = hashlib.md5(b''.join(open(os.path.join(DRVDIR, f), 'rb').read() for f in sorted(os.listdir(DRVDIR)))).hexdigest()[:8]
+    open(ip, 'w', encoding='utf-8').write(json.dumps({'from': HIST_FROM, 'through': through, 'rev': h}, separators=(',', ':')))
+    for f in legacy: os.remove(os.path.join(HIST, f))
+    if old:
+        rows = [r for r in rows if r['근무일자'].strip() >= keep_from]
+        with open(CSV, 'w', encoding='utf-8-sig', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+    print(f'{keep_from} 이전 {len(arch)}행을 기사별 history/drivers/ 로 옮김 (회사 전체 지난 표는 삭제)')
 days, bad, seen = {}, [], set()
 for i, r in enumerate(rows, 2):
     d, n = r['근무일자'].strip(), r['기사명'].strip()
@@ -77,23 +89,3 @@ rev = hashlib.md5(body.encode()).hexdigest()[:8]
 open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","drivers":%s,"days":%s}' % (rev, json.dumps(drivers, ensure_ascii=False, separators=(',', ':')), body))
 print('ok', len(days), '일', len(rows), '행', 'rev', rev)
 
-# 지난 근무 기록(history/*.csv) -> history/YYYY-MM.json + index.json (앱이 내 지난 근무를 읽어 가는 용도)
-HIST = os.path.join(ROOT, 'history')
-if os.path.isdir(HIST):
-    months = {}
-    for fn in sorted(os.listdir(HIST)):
-        m = re.fullmatch(r'(\d{4}-\d{2})\.csv', fn)
-        if not m: continue
-        hd = {}
-        for r in csv.DictReader(open(os.path.join(HIST, fn), encoding='utf-8-sig', newline='')):
-            d, n = r['근무일자'].strip(), r['기사명'].strip()
-            if not d or not n: continue
-            hd.setdefault(d, {})
-            if r['근무형태'].strip() == '휴무': continue
-            hd[d][n] = {'workType': r['근무형태'], 'busNo': r['차량번호'], 'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
-        hb = json.dumps(hd, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
-        hrev = hashlib.md5(hb.encode()).hexdigest()[:8]
-        open(os.path.join(HIST, m.group(1) + '.json'), 'w', encoding='utf-8').write('{"rev":"%s","days":%s}' % (hrev, hb))
-        months[m.group(1)] = hrev
-    open(os.path.join(HIST, 'index.json'), 'w', encoding='utf-8').write(json.dumps({'months': months}, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
-    print('history', len(months), '개월')

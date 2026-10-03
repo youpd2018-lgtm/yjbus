@@ -61,8 +61,8 @@
     return changed;
   }
 
-  // 📚 내 지난 근무: GitHub 월별 기록(data/roster/history/YYYY-MM.json)에서 '내 이름'만 읽어 jpil_user_<이름>_sched_<날짜> 를 채운다
-  //    (달 파일의 rev 가 바뀐 달만 다시 받음. 이미 있는 내 기록(DB·직접 고친 근무)은 덮어쓰지 않고, 빈 날짜만 채움. 그 날짜에 내 이름이 없으면 휴무)
+  // 📚 내 지난 근무: GitHub 기사별 기록(data/roster/history/drivers/<이름>.json)에서 '내 파일'만 읽어 jpil_user_<이름>_sched_<날짜> 를 채운다
+  //    (index.json 의 rev 가 바뀌었을 때만 다시 받음. 이미 있는 내 기록(DB·직접 고친 근무)은 덮어쓰지 않고, 빈 날짜만 채움. from~through 사이에 내 근무가 없는 날짜는 휴무)
   const HIST_REV_KEY = 'yb_roster_hist_rev';
   function fillHistory() {
     let driverName = null;
@@ -72,26 +72,25 @@
     return fetch('data/roster/history/index.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : null)
       .then(idx => {
-        if (!idx || !idx.months) return 0;
-        const todo = Object.keys(idx.months).filter(m => revs[driverName + '|' + m] !== idx.months[m]);
-        return Promise.all(todo.map(m => fetch('data/roster/history/' + m + '.json', { cache: 'no-cache' })
+        if (!idx || !idx.from || !idx.through) return 0;
+        if (revs[driverName] === idx.rev) return 0;
+        return fetch('data/roster/history/drivers/' + encodeURIComponent(driverName) + '.json', { cache: 'no-cache' })
           .then(r => r.ok ? r.json() : null)
           .then(j => {
             if (!j || !j.days) return 0;
             let n = 0;
-            Object.keys(j.days).forEach(date => {
+            const end = new Date(idx.through + 'T00:00:00');
+            for (let d = new Date(idx.from + 'T00:00:00'); d <= end; d.setDate(d.getDate() + 1)) {
+              const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
               const key = `jpil_user_${driverName}_sched_${date}`;
-              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) return;
+              if (localStorage.getItem(`jpil_user_${driverName}_schededit_${date}`)) continue;
               // 이미 내 기록(서버 DB·폰)이 있으면 절대 바꾸지 않는다. 비어 있을 때만 GitHub 기록으로 채운다
-              if (localStorage.getItem(key)) return;
-              const gh = toSched(j.days[date][driverName] || OFF);
-              try { localStorage.setItem(key, gh); n++; } catch (e) { }
-            });
-            revs[driverName + '|' + m] = idx.months[m];
-            return n;
-          }).catch(() => 0))).then(arr => {
+              if (localStorage.getItem(key)) continue;
+              try { localStorage.setItem(key, toSched(j.days[date] || OFF)); n++; } catch (e) { }
+            }
+            revs[driverName] = idx.rev;
             try { localStorage.setItem(HIST_REV_KEY, JSON.stringify(revs)); } catch (e) { }
-            return arr.reduce((x, y) => x + y, 0);
+            return n;
           });
       })
       .catch(() => 0);
