@@ -118,7 +118,25 @@
   window.disablePushNotifications = disablePushNotifications;
   window.isPushOn = isPushOn;
 
+  // 처음 쓰는 기기: 로그인 후 첫 터치 때 알림 허용창을 한 번 띄움(브라우저 규칙상 터치가 있어야 띄울 수 있음)
+  const ASKED_KEY = 'yb_push_first_asked';
+  function autoAskOnFirstTouch() {
+    const handler = function () {
+      try {
+        if (!isPushSupported() || Notification.permission !== 'default') { cleanup(); return; }
+        if (localStorage.getItem(ASKED_KEY)) { cleanup(); return; }
+        if (!localStorage.getItem('yeongjong_logged_user') || isFamilyLogin()) return; // 로그인 전이면 다음 터치에 다시 확인
+        localStorage.setItem(ASKED_KEY, '1');
+        cleanup();
+        Notification.requestPermission().then(function (p) { if (p === 'granted') refreshPushToken(); }).catch(function () {});
+      } catch (e) { cleanup(); }
+    };
+    function cleanup() { document.removeEventListener('pointerup', handler, true); }
+    document.addEventListener('pointerup', handler, true);
+  }
+
   window.addEventListener('load', function () {
+    autoAskOnFirstTouch();
     updatePushButton();
     // 이미 허용된 기기는 조용히 토큰 갱신 (로그인 정보가 준비된 뒤)
     setTimeout(refreshPushToken, 3000);
