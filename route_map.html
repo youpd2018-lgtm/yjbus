@@ -55,7 +55,7 @@
 <div id="top">
   <button id="btnBack" onclick="location.href='index.html'">← 앱</button>
   <select id="route"></select>
-  <button id="btnPan">🖐 지도 이동</button>
+  <button id="btnPan"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>지도 이동</button>
 </div>
 <div id="sim">
   <button id="btnSim">▶ 모의주행</button>
@@ -551,11 +551,12 @@
 
   // 평소에는 내 위치·진행 방향에 고정(끌기 잠금, 확대/축소만 가능). [지도 이동]을 누르면 잠시 자유롭게 끌어 볼 수 있고,
   // 다시 누르거나 손을 뗀 지 10초가 지나면 자동으로 내 위치로 돌아온다
+  const PAN_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>';
   let panTimer = null;
   function setNav(on) {
     follow = on; headUp = on;
     if (panTimer) { clearTimeout(panTimer); panTimer = null; }
-    $('btnPan').textContent = on ? '🖐 지도 이동' : '📍 내 위치로';
+    $('btnPan').innerHTML = PAN_ICON + (on ? '지도 이동' : '내 위치로');
     $('btnPan').classList.toggle('on', !on);
     if (map) map.setDraggable(!(on && me));
     applyRotate();
