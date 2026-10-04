@@ -74,7 +74,7 @@
       <button id="eUndo">↩ 되돌리기</button><button id="eDel">🗑 지우기: 꺼짐</button><button id="eReset">원래대로</button>
     </div>
     <div id="eRow3">
-      <button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
+      <button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eSave">📥 노선 저장 파일 받기</button><button id="eCopy">📋 수정내용 복사</button>
     </div>
   </div>
 </div>
@@ -222,10 +222,10 @@
   }
 
   function readEdits(r) {
-    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].anc && o.edits[k].geo) r.edits[k] = o.edits[k]; }); r.ok = o.ok || {}; return; } } catch (e) { }
+    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; r.ok = o.ok || {}; if (o.t && r.ghSavedAt && r.ghSavedAt > o.t) return;   /* 이미 GitHub 파일에 반영된 수정 */ Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].anc && o.edits[k].geo) r.edits[k] = o.edits[k]; }); return; } } catch (e) { }
     r.edits = {}; r.ok = {};
   }
-  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, edits: r.edits, ok: r.ok })); } catch (e) { } }
+  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, t: Date.now(), edits: r.edits, ok: r.ok })); } catch (e) { } }
 
   async function applyEdit(r, i) {   // 구간 i: 직접 고친 것이 있으면 그 모양, 없으면 자동 결과
     r.segs[i] = hasEdit2(r, i) ? joinGeo(r.edits[i].geo) : r.base[i];
@@ -234,9 +234,13 @@
   function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].anc && r.edits[i].geo); }
 
   async function loadRoad(r) {
-    readEdits(r);
     let base = null;
-    try {
+    try {   // 1순위: GitHub에 저장된 확정 도로선 (data/route/노선.json)
+      const res = await fetch('data/route/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
+      if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; } }
+    } catch (e) { }
+    readEdits(r);
+    if (!base) try {
       const o = JSON.parse(localStorage.getItem(ROAD_KEY + r.name));
       if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) base = o.segs;
     } catch (e) { }
@@ -329,8 +333,8 @@
   }
   function initModel(i) {   // 아직 안 고친 구간: 자동 선을 솎아 점(anc)과 점 사이 모양(geo)으로 나눔
     const seg = route.segs[i];
-    let idx, tol = 6;
-    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 40 && tol < 200);
+    let idx, tol = 10;
+    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 25 && tol < 300);
     const anc = idx.map(j => seg[j].slice()), geo = [];
     for (let h = 0; h < idx.length - 1; h++) geo.push(seg.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
     return { anc, geo };
@@ -413,6 +417,15 @@
   $('eUndo').onclick = () => { const st = undoStack[editSel]; if (!st || !st.length) { $('msg').textContent = '되돌릴 것이 없습니다.'; return; } const prev = st.pop(); if (prev) route.edits[editSel] = prev; else delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = prev ? joinGeo(prev.geo) : route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); };
   $('eReset').onclick = () => { if (editSel != null && route.edits[editSel]) { (undoStack[editSel] = undoStack[editSel] || []).push(route.edits[editSel]); delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); } };
   $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
+  $('eSave').onclick = () => {   // 이 노선의 현재 도로선 전체를 파일로 내려받기 → 채팅에 첨부하면 GitHub에 영구 저장
+    if (!route || !route.segs) return;
+    const out = JSON.stringify({ v: 1, route: route.name, n: route.stops.length, savedAt: Date.now(), segs: route.segs.map(sg => sg.map(r5)) });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
+    a.download = 'route_' + route.name + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    $('msg').textContent = `route_${route.name}.json 파일을 내려받았습니다. 채팅에 이 파일을 첨부해 주세요. (${Math.round(out.length / 1024)}KB)`;
+  };
   $('eCopy').onclick = async () => {
     const out = JSON.stringify({ route: route.name, n: route.stops.length, edits: route.edits });
     try { await navigator.clipboard.writeText(out); $('msg').textContent = '수정 내용을 복사했습니다. 채팅에 붙여 넣어 주세요.'; }
