@@ -145,7 +145,7 @@
     $('msg').textContent = '';
     try { localStorage.setItem('yb_map_route', name); } catch (e) { }
     route = { name, stops: res.stops.filter(s => s[2] && s[3]), anchors: res.anchors || [] };
-    route.prog = 0;
+    route.prog = 0; route.leg = legOf(1);
     editSel = null; pendingVia = false;
     segLines.forEach(l => l.setMap(null)); segLines = [];
     dots.forEach(d => d.setMap(null)); dots = [];
@@ -157,7 +157,8 @@
       const ov = new kakao.maps.CustomOverlay({ map, position: path[i], content: el, yAnchor: .5, xAnchor: .5 });
       ov._el = el; dots.push(ov);
     });
-    const b = new kakao.maps.LatLngBounds(); path.forEach(p => b.extend(p)); map.setBounds(b);
+    applyLegDots();
+    const b = new kakao.maps.LatLngBounds(); path.forEach((p, i) => { if (!route.leg || (i >= route.leg[0] && i <= route.leg[1])) b.extend(p); }); map.setBounds(b);
     update();
     loadRoad(route);
   }
@@ -188,7 +189,7 @@
     viaMarks.forEach(m => m.setMap(null)); viaMarks = [];
     endMarks.forEach(m => m.setMap(null)); endMarks = [];
     if (!editMode) {   // 평소 보기: 전체를 선 한 줄로 그려서 겹친 곳(상·하행)도 투명도가 똑같게
-      const all = []; route.segs.forEach(sg => sg.forEach(q => all.push(new kakao.maps.LatLng(q[0], q[1]))));
+      const all = [], lg = route.leg; route.segs.forEach((sg, i) => { if (!lg || (i >= lg[0] && i < lg[1])) sg.forEach(q => all.push(new kakao.maps.LatLng(q[0], q[1]))); });
       segLines.push(new kakao.maps.Polyline({ map, path: all, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .5, zIndex: 1 }));
       return;
     }
@@ -440,7 +441,7 @@
     $('editBox').style.display = editMode ? 'block' : 'none';
     if (editMode) { setNav(false); } else { editSel = null; pendingVia = false; setNav(true); }
     if (route && route.segs) {
-      renderSegs(); updateEditInfo();
+      renderSegs(); applyLegDots(); updateEditInfo();
       if (editMode) {   // 켜자마자 출발 정류장 쪽(아직 확인 안 한 첫 구간)부터 시작
         let k = 0; while (k < route.segs.length - 1 && route.ok && route.ok[k]) k++;
         selectSeg(k);
@@ -471,6 +472,18 @@
     catch (e) { prompt('아래를 전체 복사해 채팅에 붙여 넣어 주세요', out); }
   };
 
+  // 편도만 보기: 앵커(출발·기점·도착) 사이 한 방향 구간만 그린다. 지금 가는 구간이 바뀌면 자동 전환
+  function legOf(idx) {
+    const an = (route.anchors || []).slice().sort((x, y) => x - y);
+    if (an.length < 3) return null;                       // 왕복 구분이 없으면 전체
+    for (let k = 0; k < an.length - 1; k++) if (idx > an[k] && idx <= an[k + 1]) return [an[k], an[k + 1]];
+    return [an[0], an[1]];
+  }
+  function applyLegDots() {
+    const lg = !editMode && route.leg;
+    dots.forEach((ov, i) => ov.setMap(!lg || (i >= lg[0] && i <= lg[1]) ? map : null));
+  }
+
   // 내 위치로 다음 정류장 찾기
   function update() {
     if (!route || !me) return;
@@ -490,6 +503,8 @@
     }
     route.prog = Math.max(0, next - 1);
     nextIdx = next;
+    const lg = legOf(next);
+    if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); }
     const s = st[next];
     const d = distM(me.lat, me.lon, s[2], s[3]);
     $('nextName').textContent = s[1];
