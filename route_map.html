@@ -99,12 +99,13 @@
   let follow = true, headUp = false, traffic = false;
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
+  let isAdmin = false;
   // 모의주행·수정은 관리자(유재필)에게만 보인다 (수정 내용은 어차피 그 폰에만 저장됨)
   (function () {
     var nm = '';
     try { var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null'); if (u && u.name) nm = u.name; } catch (e) { }
     if (!nm) { try { nm = localStorage.getItem('loggedInUser') || ''; } catch (e) { } }
-    if (String(nm).indexOf('유재필') === -1) document.body.classList.add('nonadmin');
+    if (String(nm).indexOf('유재필') === -1) document.body.classList.add('nonadmin'); else isAdmin = true;
   })();
 
   ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
@@ -182,6 +183,11 @@
     segLines.forEach(l => l.setMap(null)); segLines = [];
     viaMarks.forEach(m => m.setMap(null)); viaMarks = [];
     endMarks.forEach(m => m.setMap(null)); endMarks = [];
+    if (!editMode) {   // 평소 보기: 전체를 선 한 줄로 그려서 겹친 곳(상·하행)도 투명도가 똑같게
+      const all = []; route.segs.forEach(sg => sg.forEach(q => all.push(new kakao.maps.LatLng(q[0], q[1]))));
+      segLines.push(new kakao.maps.Polyline({ map, path: all, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .5, zIndex: 1 }));
+      return;
+    }
     route.segs.forEach((seg, i) => {
       const sel = editMode && editSel === i;
       const path = seg.map(q => new kakao.maps.LatLng(q[0], q[1]));
@@ -251,7 +257,7 @@
     let base = null;
     try {   // 1순위: GitHub에 저장된 확정 도로선 (data/route/노선.json)
       const res = await fetch('data/route/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
-      if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; } }
+      if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; r.src = 'github'; } else if (o) r.src = '불일치:파일 ' + o.n + '개, 지금 ' + r.stops.length + '개'; }
     } catch (e) { }
     readEdits(r);
     if (!base) try {
@@ -274,6 +280,10 @@
     r.base = base; r.segs = base.slice();
     for (const k of Object.keys(r.edits)) { await applyEdit(r, +k); if (r !== route) return; }
     joinPts(r); renderSegs(); updateEditInfo();
+    if (isAdmin) {   // 관리자만: 어느 선을 쓰는지 한 줄 표시
+      const ne = Object.keys(r.edits || {}).filter(k => hasEdit2(r, k)).length;
+      $('msg').textContent = r.src === 'github' ? '선: GitHub 확정본' + (ne ? ' + 이 폰 수정 ' + ne + '구간' : '') : '선: 자동생성(GitHub 파일 안 맞음 ' + (r.src || '없음') + ')';
+    }
   }
 
   // ---- 수정 화면: 정류장 구간을 하나씩 따라가며 확인 ----
