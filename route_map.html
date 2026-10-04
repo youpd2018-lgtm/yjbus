@@ -430,7 +430,7 @@
   $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
   $('eSave').onclick = () => {   // 이 노선의 현재 도로선 전체를 파일로 내려받기 → 채팅에 첨부하면 GitHub에 영구 저장
     if (!route || !route.segs) return;
-    const out = JSON.stringify({ v: 1, route: route.name, n: route.stops.length, savedAt: Date.now(), segs: route.segs.map(sg => sg.map(r5)) });
+    const out = JSON.stringify({ v: 1, route: route.name, n: route.stops.length, savedAt: Date.now(), segs: route.segs.map(sg => simplifyIdx(sg, 3).map(j => r5(sg[j]))) });   // 3m 이내 차이는 솎아 파일을 작게
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
     a.download = 'route_' + route.name + '.json';
