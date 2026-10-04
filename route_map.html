@@ -74,7 +74,7 @@
       <button id="eUndo">↩ 되돌리기</button><button id="eDel">🗑 지우기: 꺼짐</button><button id="eReset">원래대로</button>
     </div>
     <div id="eRow3">
-      <button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eSave">📥 노선 저장 파일 받기</button><button id="eCopy">📋 수정내용 복사</button>
+      <button id="eThin">✨ 점 줄이기</button><button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eSave">📥 노선 저장 파일 받기</button><button id="eCopy">📋 수정내용 복사</button>
     </div>
   </div>
 </div>
@@ -334,7 +334,7 @@
   function initModel(i) {   // 아직 안 고친 구간: 자동 선을 솎아 점(anc)과 점 사이 모양(geo)으로 나눔
     const seg = route.segs[i];
     let idx, tol = 10;
-    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 25 && tol < 300);
+    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 15 && tol < 400);
     const anc = idx.map(j => seg[j].slice()), geo = [];
     for (let h = 0; h < idx.length - 1; h++) geo.push(seg.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
     return { anc, geo };
@@ -382,6 +382,16 @@
       commitModel(i, m);
     } finally { busy = false; $('msg').textContent = ''; }
   }
+  function thinAnchors(i) {   // 점을 절반쯤으로 줄임 (선 모양은 그대로, 남은 점 사이는 원래 선을 그대로 사용)
+    const m = model(i), line = joinGeo(m.geo);
+    if (m.anc.length <= 3) { $('msg').textContent = '더 줄일 점이 없습니다.'; return; }
+    const target = Math.max(2, Math.ceil(m.anc.length / 2));
+    let idx, tol = 5;
+    do { idx = simplifyIdx(line, tol); tol *= 1.5; } while (idx.length > target && tol < 500);
+    const anc = idx.map(j => line[j].slice()), geo = [];
+    for (let h = 0; h < idx.length - 1; h++) geo.push(line.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
+    commitModel(i, { anc, geo });
+  }
   function clearAnchors(i) {   // 이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 연결 (그 위 선을 눌러 점을 다시 만들며 고침)
     const m = model(i), a = m.anc[0], b = m.anc[m.anc.length - 1];
     commitModel(i, { anc: [a, b], geo: [[a, b]] });
@@ -410,6 +420,7 @@
     }
   };
   $('eDel').onclick = () => { delMode = !delMode; delFirst = null; $('eDel').classList.toggle('act', delMode); $('eDel').textContent = '🗑 지우기: ' + (delMode ? '켜짐' : '꺼짐'); if (route && route.segs) { renderSegs(); updateEditInfo(); } };
+  $('eThin').onclick = () => { if (editSel != null) thinAnchors(editSel); };
   $('eClear').onclick = () => { if (editSel == null) return; if (confirm('이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 이을까요? (되돌리기 가능)')) clearAnchors(editSel); };
   $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
   $('ePrev').onclick = () => stepSeg(-1);
