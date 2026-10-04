@@ -22,7 +22,7 @@
   body.nonadmin #view { top: calc(52px + var(--sat)); }
   body.nonadmin #msg { top: calc(62px + var(--sat)); }
   #view { position: absolute; top: calc(96px + var(--sat)); bottom: 0; left: 0; right: 0; overflow: hidden; }
-  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; }
+  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .8s linear; will-change: transform; }
   #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.94); border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
   #card .lb { font-size: 12px; color: #94a3b8; }
   #card .nm { font-size: 24px; font-weight: 800; margin: 2px 0; }
@@ -511,16 +511,33 @@
     if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
     else if (prev && distM(prev.lat, prev.lon, lat, lon) > 5) heading = bearing(prev.lat, prev.lon, lat, lon);
     const ll = new kakao.maps.LatLng(lat, lon);
-    if (!meOv) { const el = document.createElement('div'); el.className = 'mebus'; el.innerHTML = BUS_SVG; meOv = new kakao.maps.CustomOverlay({ map, position: ll, content: el, zIndex: 9 }); }
-    meOv.setPosition(ll);
-    const bel = meOv.getContent(); if (bel && bel.style) bel.style.transform = `rotate(${heading}deg)`;
-    if (follow) { map.setCenter(ll); map.setDraggable(false); }   // 내 위치가 잡히면 끌기 잠금(확대/축소는 가능)
+    const firstFix = !meOv;
+    if (!meOv) { const el = document.createElement('div'); el.className = 'mebus'; el.innerHTML = BUS_SVG; meOv = new kakao.maps.CustomOverlay({ map, position: ll, content: el, zIndex: 9 }); disp = { lat, lon }; }
+    else glideTo(lat, lon);                     // 1초마다 뚝뚝 옮기지 않고 부드럽게 미끄러지듯 이동
+    const dd = ((heading - curAng + 540) % 360) - 180; curAng += dd;   // 359°→1° 처럼 넘어가도 짧은 쪽으로만 회전
+    const bel = meOv.getContent(); if (bel && bel.style) bel.style.transform = `rotate(${curAng}deg)`;
+    if (follow) { if (firstFix) map.setCenter(ll); map.setDraggable(false); }   // 내 위치가 잡히면 끌기 잠금(확대/축소는 가능)
     applyRotate();
     update();
   }
 
   function applyRotate() {
-    $('map').style.transform = headUp ? `rotate(${-heading}deg)` : '';
+    $('map').style.transform = headUp ? `rotate(${-curAng}deg)` : '';
+  }
+  let curAng = 0, disp = null, glideRaf = null;
+  function glideTo(lat, lon) {   // 표시 위치를 새 GPS 값까지 0.9초 동안 이동
+    if (!disp) { disp = { lat, lon }; return; }
+    if (glideRaf) cancelAnimationFrame(glideRaf);
+    const from = { lat: disp.lat, lon: disp.lon }, t0 = performance.now();
+    const step = (t) => {
+      const f = Math.min(1, (t - t0) / 900);
+      disp = { lat: from.lat + (lat - from.lat) * f, lon: from.lon + (lon - from.lon) * f };
+      const ll = new kakao.maps.LatLng(disp.lat, disp.lon);
+      if (meOv) meOv.setPosition(ll);
+      if (follow && map) map.setCenter(ll);
+      glideRaf = f < 1 ? requestAnimationFrame(step) : null;
+    };
+    glideRaf = requestAnimationFrame(step);
   }
 
   function startGps() {
