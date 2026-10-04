@@ -25,7 +25,13 @@
   #msg { position: absolute; top: 106px; left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
   #eRow button, #eRow2 button { flex: 1; font-size: 14px; font-weight: 700; padding: 10px 2px; border-radius: 10px; border: 0; background: #334155; color: #fff; }
-  #eRow2 button#eLine { background: #dc2626; } #eRow2 button#eVia { background: #2563eb; }
+  #eRow3 { display: flex; gap: 6px; margin-top: 8px; }
+  #eRow3 button { flex: 1; font-size: 13px; font-weight: 700; padding: 9px 2px; border-radius: 10px; border: 0; background: #1e293b; color: #cbd5e1; }
+  #eRow button, #eRow2 button { font-size: 15px; padding: 13px 2px; }
+  #eVia { background: #2563eb !important; } #eVia.act, #eOnly.act { background: #f59e0b !important; color: #111 !important; }
+  .tag { padding: 3px 8px; border-radius: 8px; font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; border: 2px solid #fff; }
+  .tag.ta { background: #16a34a; } .tag.tb { background: #dc2626; }
+  .via { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #f59e0b; color: #111; font-size: 12px; font-weight: 800; text-align: center; line-height: 22px; border: 2px solid #fff; }
   #card { max-height: 55%; overflow-y: auto; }
   .me { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.35); }
   .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2px solid #475569; }
@@ -54,12 +60,19 @@
   <div class="ds" id="nextDist">GPS 대기 중</div>
   <div class="sub" id="sub"></div>
   <div id="editBox" style="display:none;margin-top:10px;">
-    <div id="editInfo" class="sub" style="white-space:pre-wrap;color:#e2e8f0;"></div>
+    <div id="eHead" style="font-size:20px;font-weight:800;"></div>
+    <div id="eName" style="font-size:17px;font-weight:700;margin-top:2px;"></div>
+    <div id="eDir" class="sub" style="color:#38bdf8;font-weight:700;"></div>
+    <div id="eStat" class="sub" style="white-space:pre-wrap;color:#e2e8f0;"></div>
+    <div id="eSaved" class="sub" style="color:#4ade80;"></div>
     <div id="eRow">
-      <button id="ePrev">◀ 이전 의심</button><button id="eNext">다음 의심 ▶</button>
+      <button id="ePrev">◀ 이전</button><button id="eNext" style="background:#16a34a;">✔ 맞아요, 다음 ▶</button>
     </div>
     <div id="eRow2">
-      <button id="eLine">직선으로</button><button id="eVia">지나갈 곳 찍기</button><button id="eReset">원래대로</button>
+      <button id="eVia">📍 길 고치기</button><button id="eUndo">↩ 점 취소</button><button id="eReset">원래대로</button>
+    </div>
+    <div id="eRow3">
+      <button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
     </div>
   </div>
 </div>
@@ -133,16 +146,14 @@
   // 정류장 좌표를 OSRM(무료 도로 길찾기)에 넣어 정류장 사이(구간)마다 도로 모양을 받아 이 폰에 저장.
   // 정류장에 "도로 오른쪽 가장자리로 접근"(curb)하게 해서 골목으로 돌아 들어가는 현상을 줄임.
   // 그래도 이상한 구간은 [수정] 버튼으로 직선으로 바꾸거나 지나갈 곳을 직접 찍어 고침.
-  const ROAD_KEY = 'yb_road_v2_', EDIT_KEY = 'yb_roadedit_v1_';
+  const ROAD_KEY = 'yb_road_v2_', EDIT_KEY = 'yb_roadedit_v2_';
   const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
   const r5 = (q) => [+q[0].toFixed(5), +q[1].toFixed(5)];
+  let onlySus = false, viaMarks = [], endMarks = [];
   function segLen(seg) { let d = 0; for (let i = 1; i < seg.length; i++) d += distM(seg[i - 1][0], seg[i - 1][1], seg[i][0], seg[i][1]); return d; }
-  function segSuspect(i) {
-    const st = route.stops, a = st[i], b = st[i + 1];
-    const straight = distM(a[2], a[3], b[2], b[3]), len = segLen(route.segs[i]);
-    return len > straight * 1.8 && len - straight > 150;
-  }
-  function suspects() { return route.segs.map((x, i) => i).filter(i => segSuspect(i) && !(route.edits && route.edits[i])); }
+  function segStraight(i) { const a = route.stops[i], b = route.stops[i + 1]; return distM(a[2], a[3], b[2], b[3]); }
+  function segSuspect(i) { const st = segStraight(i), len = segLen(route.segs[i]); return len > st * 1.8 && len - st > 150; }
+  function hasEdit(i) { return !!(route.edits && route.edits[i] && route.edits[i].vias && route.edits[i].vias.length); }
 
   function joinPts(r) {
     const pts = [], at = [];
@@ -154,19 +165,33 @@
 
   function renderSegs() {
     segLines.forEach(l => l.setMap(null)); segLines = [];
+    viaMarks.forEach(m => m.setMap(null)); viaMarks = [];
+    endMarks.forEach(m => m.setMap(null)); endMarks = [];
     route.segs.forEach((seg, i) => {
-      const edited = route.edits && route.edits[i];
-      const sus = editMode && segSuspect(i) && !edited;
       const sel = editMode && editSel === i;
+      const path = seg.map(q => new kakao.maps.LatLng(q[0], q[1]));
       const line = new kakao.maps.Polyline({
-        map, path: seg.map(q => new kakao.maps.LatLng(q[0], q[1])),
-        strokeWeight: sel ? 9 : (editMode ? 7 : 5),
-        strokeColor: sel ? '#f59e0b' : sus ? '#ef4444' : edited && editMode ? '#16a34a' : '#2563eb',
-        strokeOpacity: sel ? .9 : sus ? .75 : .4
+        map, path,
+        strokeWeight: sel ? 10 : 5,
+        strokeColor: sel ? '#f59e0b' : (editMode && route.ok && route.ok[i]) ? '#16a34a' : '#2563eb',
+        strokeOpacity: sel ? .95 : editMode ? .3 : .4,
+        endArrow: sel, zIndex: sel ? 5 : 1
       });
       kakao.maps.event.addListener(line, 'click', () => { if (editMode) selectSeg(i); });
       segLines.push(line);
     });
+    if (editMode && editSel != null) {
+      const a = route.stops[editSel], b = route.stops[editSel + 1];
+      const tag = (txt, cls, la, lo) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; endMarks.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(la, lo), content: el, yAnchor: 1.3, zIndex: 8 })); };
+      tag('출발 ' + a[1], 'ta', a[2], a[3]);
+      tag('도착 ' + b[1], 'tb', b[2], b[3]);
+      const e = route.edits && route.edits[editSel];
+      (e && e.vias || []).forEach((v, k) => {   // 점은 손가락으로 끌어서 옮길 수 있음
+        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: true, zIndex: 9 });
+        kakao.maps.event.addListener(mk, 'dragend', () => { const q = mk.getPosition(); route.edits[editSel].vias[k] = [+q.getLat().toFixed(5), +q.getLng().toFixed(5)]; recalcSel(); });
+        viaMarks.push(mk);
+      });
+    }
   }
 
   async function osrmLegs(coords) {   // coords: [[lat,lng],...] → 구간별 점 목록(실패 시 null)
@@ -187,19 +212,24 @@
     return null;
   }
 
-  function readEdits(r) { try { return JSON.parse(localStorage.getItem(EDIT_KEY + r.name)) || {}; } catch (e) { return {}; } }
-  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify(r.edits)); } catch (e) { } }
-
-  async function applyEdit(r, i) {   // 한 구간에 수정 내용 적용 (원래대로면 base 사용)
-    const e = r.edits[i], a = [r.stops[i][2], r.stops[i][3]], b = [r.stops[i + 1][2], r.stops[i + 1][3]];
-    if (!e) { r.segs[i] = r.base[i]; return; }
-    if (e === 'line') { r.segs[i] = [a, b]; return; }
-    const legs = await osrmLegs([a, e.via, b]);
-    r.segs[i] = legs ? legs[0].concat(legs[1].slice(1)) : [a, e.via, b];
+  function readEdits(r) {
+    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = o.edits || {}; r.ok = o.ok || {}; return; } } catch (e) { }
+    r.edits = {}; r.ok = {};
   }
+  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, edits: r.edits, ok: r.ok })); } catch (e) { } }
+
+  async function applyEdit(r, i) {   // 구간 i 를 수정 내용(경유점들)대로 다시 만듦. 수정이 없으면 자동 결과
+    const a = [r.stops[i][2], r.stops[i][3]], b = [r.stops[i + 1][2], r.stops[i + 1][3]];
+    if (!hasEdit2(r, i)) { r.segs[i] = r.base[i]; return; }
+    const vias = r.edits[i].vias, pts = [a, ...vias, b];
+    const legs = await osrmLegs(pts);
+    if (legs) { const out = []; legs.forEach((l, k) => out.push(...(k ? l.slice(1) : l))); r.segs[i] = out; }
+    else r.segs[i] = pts;   // 길찾기 실패 시 찍은 점들을 직선으로 연결
+  }
+  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].vias && r.edits[i].vias.length); }
 
   async function loadRoad(r) {
-    r.edits = readEdits(r);
+    readEdits(r);
     let base = null;
     try {
       const o = JSON.parse(localStorage.getItem(ROAD_KEY + r.name));
@@ -223,45 +253,52 @@
     joinPts(r); renderSegs(); updateEditInfo();
   }
 
-  // ---- 수정 화면 ----
+  // ---- 수정 화면: 정류장 구간을 하나씩 따라가며 확인 ----
+  function dirLabel(i) {
+    const an = route.anchors || [];
+    for (let k = 0; k < an.length - 1; k++) if (i >= an[k] && i < an[k + 1]) return `${route.stops[an[k]][1]} → ${route.stops[an[k + 1]][1]} 방향`;
+    return '';
+  }
   function updateEditInfo() {
     if (!editMode || !route || !route.segs) return;
-    const sus = suspects();
-    const ed = Object.keys(route.edits || {}).length;
-    let t = `의심 구간(빨강) ${sus.length}개 · 수정함(초록) ${ed}개`;
-    if (editSel != null) {
-      const a = route.stops[editSel], b = route.stops[editSel + 1];
-      const len = segLen(route.segs[editSel]), straight = distM(a[2], a[3], b[2], b[3]);
-      t = `${a[1]} → ${b[1]}\\n도로선 ${Math.round(len)}m / 직선 ${Math.round(straight)}m (${(len / Math.max(straight, 1)).toFixed(1)}배)` + (pendingVia ? '\\n▶ 지도에서 지나갈 곳을 한 번 누르세요' : '');
-    } else t += '\\n선(구간)을 눌러 고르세요';
-    $('editInfo').textContent = t.replace(/\\n/g, '\n');
+    const total = route.segs.length, ok = Object.keys(route.ok || {}).length, ed = Object.keys(route.edits || {}).filter(k => hasEdit2(route, k)).length;
+    $('eSaved').textContent = `✔ 자동 저장됨 (이 폰) · 확인 ${ok}/${total} · 고친 구간 ${ed}`;
+    $('eOnly').textContent = onlySus ? '의심 구간만: 켜짐' : '의심 구간만: 꺼짐';
+    $('eOnly').classList.toggle('act', onlySus);
+    $('eVia').classList.toggle('act', pendingVia);
+    if (editSel == null) { $('eHead').textContent = '시작하려면 [다음 ▶] 을 누르세요'; $('eName').textContent = ''; $('eDir').textContent = ''; $('eStat').textContent = ''; return; }
+    const a = route.stops[editSel], b = route.stops[editSel + 1];
+    const len = segLen(route.segs[editSel]), st = segStraight(editSel);
+    $('eHead').textContent = `구간 ${editSel + 1} / ${total}` + (route.ok && route.ok[editSel] ? '  ✔확인함' : '');
+    $('eName').textContent = `${a[1]}  →  ${b[1]}`;
+    $('eDir').textContent = dirLabel(editSel);
+    $('eStat').textContent = `도로선 ${Math.round(len)}m / 직선 ${Math.round(st)}m (${(len / Math.max(st, 1)).toFixed(1)}배)` + (segSuspect(editSel) ? '  ⚠ 많이 돌아감' : '') + (hasEdit2(route, editSel) ? '  ✎ 고침' : '')
+      + (pendingVia ? '\n📍 지도에서 선이 지나가야 할 길을 출발 쪽부터 차례로 눌러 주세요 (누를 때마다 바로 저장). 찍힌 점은 끌어서 옮길 수 있어요' : '');
   }
   function selectSeg(i) {
+    i = Math.max(0, Math.min(route.segs.length - 1, i));
     editSel = i; pendingVia = false; renderSegs(); updateEditInfo();
-    const a = route.stops[i], b = route.stops[i + 1];
-    map.setCenter(new kakao.maps.LatLng((a[2] + b[2]) / 2, (a[3] + b[3]) / 2));
+    const a = route.stops[i], b = route.stops[i + 1], bd = new kakao.maps.LatLngBounds();
+    route.segs[i].forEach(q => bd.extend(new kakao.maps.LatLng(q[0], q[1])));
+    map.setBounds(bd, 90, 40, 260, 40);
   }
-  async function editAction(kind) {
-    if (editSel == null) { $('msg').textContent = '먼저 고칠 구간(선)을 누르세요.'; return; }
-    $('msg').textContent = '';
-    const i = editSel;
-    if (kind === 'line') route.edits[i] = 'line';
-    else if (kind === 'reset') delete route.edits[i];
-    else if (kind === 'via') { pendingVia = true; updateEditInfo(); return; }
-    saveEdits(route); await applyEdit(route, i); joinPts(route); renderSegs(); updateEditInfo();
+  function stepSeg(dir) {
+    let i = editSel == null ? (dir > 0 ? -1 : route.segs.length) : editSel;
+    for (let k = 0; k < route.segs.length; k++) {
+      i += dir; if (i < 0 || i >= route.segs.length) break;
+      if (!onlySus || (segSuspect(i) && !(route.ok && route.ok[i])) || hasEdit2(route, i)) { selectSeg(i); return; }
+    }
+    $('msg').textContent = dir > 0 ? '마지막 구간입니다.' : '첫 구간입니다.';
   }
-  async function placeVia(latlng) {
-    pendingVia = false;
-    route.edits[editSel] = { via: [+latlng.getLat().toFixed(5), +latlng.getLng().toFixed(5)] };
+  function placeVia(latlng) {
+    const e = route.edits[editSel] = route.edits[editSel] || { vias: [] };
+    e.vias.push([+latlng.getLat().toFixed(5), +latlng.getLng().toFixed(5)]);
+    return recalcSel();
+  }
+  async function recalcSel() {
     $('msg').textContent = '다시 계산 중...';
     saveEdits(route); await applyEdit(route, editSel); joinPts(route); renderSegs(); updateEditInfo();
     $('msg').textContent = '';
-  }
-  function jumpSuspect(dir) {
-    const sus = suspects(); if (!sus.length) { $('msg').textContent = '의심 구간이 없습니다.'; return; }
-    let k = dir > 0 ? sus.find(x => x > (editSel == null ? -1 : editSel)) : [...sus].reverse().find(x => x < (editSel == null ? 1e9 : editSel));
-    if (k == null) k = dir > 0 ? sus[0] : sus[sus.length - 1];
-    selectSeg(k);
   }
   $('btnEdit').onclick = () => {
     editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
@@ -269,11 +306,17 @@
     if (editMode) { follow = false; $('btnFollow').classList.remove('on'); } else { editSel = null; pendingVia = false; }
     if (route && route.segs) { renderSegs(); updateEditInfo(); }
   };
-  $('eLine').onclick = () => editAction('line');
-  $('eVia').onclick = () => editAction('via');
-  $('eReset').onclick = () => editAction('reset');
-  $('ePrev').onclick = () => jumpSuspect(-1);
-  $('eNext').onclick = () => jumpSuspect(1);
+  $('ePrev').onclick = () => stepSeg(-1);
+  $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
+  $('eVia').onclick = () => { if (editSel == null) { $('msg').textContent = '먼저 [다음 ▶] 으로 구간을 고르세요.'; return; } pendingVia = !pendingVia; updateEditInfo(); };
+  $('eUndo').onclick = async () => { const e = route.edits[editSel]; if (e && e.vias.length) { e.vias.pop(); if (!e.vias.length) delete route.edits[editSel]; await recalcSel(); } };
+  $('eReset').onclick = async () => { if (editSel != null && route.edits[editSel]) { delete route.edits[editSel]; pendingVia = false; await recalcSel(); } };
+  $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
+  $('eCopy').onclick = async () => {
+    const out = JSON.stringify({ route: route.name, n: route.stops.length, edits: route.edits });
+    try { await navigator.clipboard.writeText(out); $('msg').textContent = '수정 내용을 복사했습니다. 채팅에 붙여 넣어 주세요.'; }
+    catch (e) { prompt('아래를 전체 복사해 채팅에 붙여 넣어 주세요', out); }
+  };
 
   // 내 위치로 다음 정류장 찾기
   function update() {
