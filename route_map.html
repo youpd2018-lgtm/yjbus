@@ -16,6 +16,8 @@
   #sim select, #sim button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
   #sim button.on { background: #dc2626; border-color: #dc2626; }
   #sim select { flex: 1; min-width: 0; }
+  #rot { display: none; position: fixed; inset: 0; z-index: 99; background: #0f172a; color: #fff; font-size: 20px; font-weight: 800; align-items: center; justify-content: center; }
+  @media (orientation: landscape) and (max-height: 520px) { #rot { display: flex; } }
   body.nonadmin #sim { display: none; }
   body.nonadmin #view { top: calc(52px + var(--sat)); }
   body.nonadmin #msg { top: calc(62px + var(--sat)); }
@@ -49,11 +51,11 @@
 </style>
 </head>
 <body>
+<div id="rot">폰을 세로로 돌려 주세요</div>
 <div id="top">
   <button id="btnBack" onclick="location.href='index.html'">← 앱</button>
   <select id="route"></select>
-  <button id="btnFollow" class="on">따라가기</button>
-  <button id="btnHead" class="on">방향</button>
+  <button id="btnPan">🖐 지도 이동</button>
 </div>
 <div id="sim">
   <button id="btnSim">▶ 모의주행</button>
@@ -100,6 +102,7 @@
   let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
+  try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
   let isAdmin = false;
   // 모의주행·수정은 관리자(유재필)에게만 보인다 (수정 내용은 어차피 그 폰에만 저장됨)
   (function () {
@@ -435,7 +438,7 @@
   $('btnEdit').onclick = () => {
     editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
     $('editBox').style.display = editMode ? 'block' : 'none';
-    if (editMode) { setNav(false); } else { editSel = null; pendingVia = false; }
+    if (editMode) { setNav(false); } else { editSel = null; pendingVia = false; setNav(true); }
     if (route && route.segs) {
       renderSegs(); updateEditInfo();
       if (editMode) {   // 켜자마자 출발 정류장 쪽(아직 확인 안 한 첫 구간)부터 시작
@@ -529,16 +532,20 @@
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
   }
 
-  // 따라가기+방향은 한 묶음: 켜져 있으면 지도가 내 위치에 고정(끌기 잠김, 확대/축소는 계속 가능). 끄면 자유롭게 끌어서 볼 수 있음
+  // 평소에는 내 위치·진행 방향에 고정(끌기 잠금, 확대/축소만 가능). [지도 이동]을 누르면 잠시 자유롭게 끌어 볼 수 있고,
+  // 다시 누르거나 손을 뗀 지 10초가 지나면 자동으로 내 위치로 돌아온다
+  let panTimer = null;
   function setNav(on) {
     follow = on; headUp = on;
-    $('btnFollow').classList.toggle('on', on); $('btnHead').classList.toggle('on', on);
+    if (panTimer) { clearTimeout(panTimer); panTimer = null; }
+    $('btnPan').textContent = on ? '🖐 지도 이동' : '📍 내 위치로';
+    $('btnPan').classList.toggle('on', !on);
     if (map) map.setDraggable(!(on && me));
     applyRotate();
     if (on && me && map) map.setCenter(new kakao.maps.LatLng(me.lat, me.lon));
   }
-  $('btnFollow').onclick = () => setNav(!follow);
-  $('btnHead').onclick = () => { if (!follow) { setNav(true); return; } headUp = !headUp; $('btnHead').classList.toggle('on', headUp); applyRotate(); };
+  function panLater() { if (follow || editMode) return; if (panTimer) clearTimeout(panTimer); panTimer = setTimeout(() => setNav(true), 10000); }
+  $('btnPan').onclick = () => { if (follow) { setNav(false); panLater(); } else setNav(true); };
   // ---- 모의주행: 노선선을 따라 가짜 GPS가 움직임 (책상에서 시험용) ----
   let simTimer = null, simDist = 0, simCum = null;
   function simBuild() {
@@ -570,6 +577,8 @@
 
   loadKakao().then(() => {
     map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
+    kakao.maps.event.addListener(map, 'dragend', panLater);
+    kakao.maps.event.addListener(map, 'zoom_changed', panLater);
     kakao.maps.event.addListener(map, 'click', (ev) => {
       const l = ev.latLng;
       if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
