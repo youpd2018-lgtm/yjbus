@@ -523,7 +523,7 @@
     $('nextName').textContent = s[1];
     $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
-    $('anchorName').textContent = '→ ' + st[anc != null ? anc : st.length - 1][1];
+    $('anchorName').textContent = st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
