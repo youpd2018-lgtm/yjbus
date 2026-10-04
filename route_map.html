@@ -69,7 +69,7 @@
       <button id="ePrev">◀ 이전</button><button id="eNext" style="background:#16a34a;">✔ 맞아요, 다음 ▶</button>
     </div>
     <div id="eRow2">
-      <button id="eVia">📍 길 고치기</button><button id="eUndo">↩ 점 취소</button><button id="eReset">원래대로</button>
+      <button id="eUndo">↩ 되돌리기</button><button id="eReset">원래대로</button>
     </div>
     <div id="eRow3">
       <button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
@@ -153,8 +153,7 @@
   function segLen(seg) { let d = 0; for (let i = 1; i < seg.length; i++) d += distM(seg[i - 1][0], seg[i - 1][1], seg[i][0], seg[i][1]); return d; }
   function segStraight(i) { const a = route.stops[i], b = route.stops[i + 1]; return distM(a[2], a[3], b[2], b[3]); }
   function segSuspect(i) { const st = segStraight(i), len = segLen(route.segs[i]); return len > st * 1.8 && len - st > 150; }
-  function hasEdit(i) { return !!(route.edits && route.edits[i] && route.edits[i].vias && route.edits[i].vias.length); }
-
+  
   function joinPts(r) {
     const pts = [], at = [];
     r.segs.forEach((seg, i) => { at.push(pts.length); pts.push(...(i ? seg.slice(1) : seg)); });
@@ -177,7 +176,7 @@
         strokeOpacity: sel ? .95 : editMode ? .3 : .4,
         endArrow: sel, zIndex: sel ? 5 : 1
       });
-      kakao.maps.event.addListener(line, 'click', () => { if (editMode) selectSeg(i); });
+      kakao.maps.event.addListener(line, 'click', (ev) => { if (!editMode) return; if (i === editSel && ev && ev.latLng) insertPoint(i, ev.latLng); else selectSeg(i); });
       segLines.push(line);
     });
     if (editMode && editSel != null) {
@@ -185,10 +184,12 @@
       const tag = (txt, cls, la, lo) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; endMarks.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(la, lo), content: el, yAnchor: 1.3, zIndex: 8 })); };
       tag('출발 ' + a[1], 'ta', a[2], a[3]);
       tag('도착 ' + b[1], 'tb', b[2], b[3]);
-      const e = route.edits && route.edits[editSel];
-      (e && e.vias || []).forEach((v, k) => {   // 점은 손가락으로 끌어서 옮길 수 있음
-        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: true, zIndex: 9 });
-        kakao.maps.event.addListener(mk, 'dragend', () => { const q = mk.getPosition(); route.edits[editSel].vias[k] = [+q.getLat().toFixed(5), +q.getLng().toFixed(5)]; recalcSel(); });
+      const P = handlePts(editSel), img = handleImg();
+      P.forEach((v, k) => {
+        if (k === 0 || k === P.length - 1) return;   // 정류장 두 곳은 고정
+        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: true, image: img, zIndex: 9 });
+        kakao.maps.event.addListener(mk, 'dragend', () => { lastDrag = Date.now(); const q = mk.getPosition(); const np = P.map(x => x.slice()); np[k] = r5([q.getLat(), q.getLng()]); commitPts(editSel, np); });
+        kakao.maps.event.addListener(mk, 'click', () => { if (Date.now() - lastDrag < 400) return; const np = P.map(x => x.slice()); np.splice(k, 1); commitPts(editSel, np); });
         viaMarks.push(mk);
       });
     }
@@ -213,29 +214,15 @@
   }
 
   function readEdits(r) {
-    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = o.edits || {}; r.ok = o.ok || {}; return; } } catch (e) { }
+    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].pts) r.edits[k] = o.edits[k]; }); r.ok = o.ok || {}; return; } } catch (e) { }
     r.edits = {}; r.ok = {};
   }
   function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, edits: r.edits, ok: r.ok })); } catch (e) { } }
 
-  async function applyEdit(r, i) {   // 구간 i 를 수정 내용(경유점들)대로 다시 만듦. 수정이 없으면 자동 결과
-    const a = [r.stops[i][2], r.stops[i][3]], b = [r.stops[i + 1][2], r.stops[i + 1][3]];
-    if (!hasEdit2(r, i)) { r.segs[i] = r.base[i]; return; }
-    // 찍은 점들을 차례로 도로를 따라 잇는다. 단, 정류장과 이어지는 첫/마지막 구간이 빙 돌아가면(정류장이 골목 쪽에 붙은 경우)
-    // 그 부분만 곧게 이어서 정류장 쪽으로 돌아오는 현상을 막는다.
-    const vias = r.edits[i].vias, pts = [a, ...vias, b];
-    const legs = await osrmLegs(pts, true);
-    if (!legs) { r.segs[i] = pts; return; }
-    const out = [];
-    legs.forEach((l, k) => {
-      const straight = distM(pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]), edge = (k === 0 || k === legs.length - 1);
-      let leg = l;
-      if (edge && (straight < 60 || (segLen(l) > straight * 1.6 && segLen(l) - straight > 40))) leg = [pts[k], pts[k + 1]];
-      out.push(...(k ? leg.slice(1) : leg));
-    });
-    r.segs[i] = out;
+  async function applyEdit(r, i) {   // 구간 i: 직접 고친 점들이 있으면 그대로, 없으면 자동 결과
+    r.segs[i] = hasEdit2(r, i) ? r.edits[i].pts : r.base[i];
   }
-  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].vias && r.edits[i].vias.length); }
+  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].pts && r.edits[i].pts.length > 1); }
 
   async function loadRoad(r) {
     readEdits(r);
@@ -274,15 +261,14 @@
     $('eSaved').textContent = `✔ 자동 저장됨 (이 폰) · 확인 ${ok}/${total} · 고친 구간 ${ed}`;
     $('eOnly').textContent = onlySus ? '의심 구간만: 켜짐' : '의심 구간만: 꺼짐';
     $('eOnly').classList.toggle('act', onlySus);
-    $('eVia').classList.toggle('act', pendingVia);
-    if (editSel == null) { $('eHead').textContent = '시작하려면 [다음 ▶] 을 누르세요'; $('eName').textContent = ''; $('eDir').textContent = ''; $('eStat').textContent = ''; return; }
+        if (editSel == null) { $('eHead').textContent = '시작하려면 [다음 ▶] 을 누르세요'; $('eName').textContent = ''; $('eDir').textContent = ''; $('eStat').textContent = ''; return; }
     const a = route.stops[editSel], b = route.stops[editSel + 1];
     const len = segLen(route.segs[editSel]), st = segStraight(editSel);
     $('eHead').textContent = `구간 ${editSel + 1} / ${total}` + (route.ok && route.ok[editSel] ? '  ✔확인함' : '');
     $('eName').textContent = `${a[1]}  →  ${b[1]}`;
     $('eDir').textContent = dirLabel(editSel);
     $('eStat').textContent = `도로선 ${Math.round(len)}m / 직선 ${Math.round(st)}m (${(len / Math.max(st, 1)).toFixed(1)}배)` + (segSuspect(editSel) ? '  ⚠ 많이 돌아감' : '') + (hasEdit2(route, editSel) ? '  ✎ 고침' : '')
-      + (pendingVia ? '\n📍 지도에서 선이 지나가야 할 길을 출발 쪽부터 차례로 눌러 주세요. (누를 때마다 바로 저장). 찍힌 점은 끌어서 옮길 수 있어요' : '');
+      + '\n🟠 점: 끌면 이동 · 누르면 삭제 · 선을 누르면 새 점';
   }
   function selectSeg(i) {
     i = Math.max(0, Math.min(route.segs.length - 1, i));
@@ -299,15 +285,56 @@
     }
     $('msg').textContent = dir > 0 ? '마지막 구간입니다.' : '첫 구간입니다.';
   }
-  function placeVia(latlng) {
-    const e = route.edits[editSel] = route.edits[editSel] || { vias: [] };
-    e.vias.push([+latlng.getLat().toFixed(5), +latlng.getLng().toFixed(5)]);
-    return recalcSel();
+  // ---- 점 편집: 원래 선 위의 점(주황 동그라미)을 끌어 옮기고, 누르면 지우고, 선을 누르면 새 점을 만든다 ----
+  let lastDrag = 0, handleImgObj = null;
+  const undoStack = {};
+  function handleImg() {
+    if (!handleImgObj) {
+      const svg = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='10' fill='#f59e0b' stroke='#fff' stroke-width='3'/></svg>");
+      handleImgObj = new kakao.maps.MarkerImage(svg, new kakao.maps.Size(28, 28), { offset: new kakao.maps.Point(14, 14) });
+    }
+    return handleImgObj;
   }
-  async function recalcSel() {
-    $('msg').textContent = '다시 계산 중...';
-    saveEdits(route); await applyEdit(route, editSel); joinPts(route); renderSegs(); updateEditInfo();
-    $('msg').textContent = '';
+  function simplifyPts(pts, tol) {   // 점이 너무 많으면 모양을 유지하며 솎아냄 (Douglas-Peucker)
+    const la0 = pts[0][0], k = Math.cos(la0 * Math.PI / 180);
+    const xy = pts.map(q => [(q[1]) * 111320 * k, q[0] * 110540]);
+    const keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length) {
+      const [a, b] = stack.pop(); let md = 0, mi = -1;
+      const [ax, ay] = xy[a], [bx, by] = xy[b], dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1;
+      for (let i = a + 1; i < b; i++) {
+        let t = ((xy[i][0] - ax) * dx + (xy[i][1] - ay) * dy) / L; t = Math.max(0, Math.min(1, t));
+        const d = Math.hypot(xy[i][0] - (ax + t * dx), xy[i][1] - (ay + t * dy));
+        if (d > md) { md = d; mi = i; }
+      }
+      if (mi >= 0 && md > tol) { keep[mi] = true; stack.push([a, mi], [mi, b]); }
+    }
+    return pts.filter((q, i) => keep[i]);
+  }
+  function handlePts(i) {   // 화면에 보여 줄 점들: 고친 적이 있으면 그 점들, 없으면 자동 선을 솎은 것 (양 끝은 실제 정류장 위치)
+    let P;
+    if (hasEdit2(route, i)) P = route.edits[i].pts.map(x => x.slice());
+    else { let tol = 6; do { P = simplifyPts(route.segs[i], tol); tol *= 1.6; } while (P.length > 40 && tol < 200); P = P.map(x => x.slice()); }
+    const a = route.stops[i], b = route.stops[i + 1];
+    P[0] = [a[2], a[3]]; P[P.length - 1] = [b[2], b[3]];
+    return P;
+  }
+  function commitPts(i, pts) {
+    (undoStack[i] = undoStack[i] || []).push(hasEdit2(route, i) ? route.edits[i].pts.map(x => x.slice()) : null);
+    route.edits[i] = { pts };
+    saveEdits(route); route.segs[i] = pts; joinPts(route); renderSegs(); updateEditInfo();
+  }
+  function insertPoint(i, latlng) {
+    const P = handlePts(i).map(x => x.slice()), q = [latlng.getLat(), latlng.getLng()];
+    let bm = 0, bd = 1e12;
+    for (let m = 0; m < P.length - 1; m++) {   // 누른 곳에서 가장 가까운 선분 찾기
+      const mid = [(P[m][0] + P[m + 1][0]) / 2, (P[m][1] + P[m + 1][1]) / 2];
+      const d = Math.min(distM(q[0], q[1], P[m][0], P[m][1]), distM(q[0], q[1], P[m + 1][0], P[m + 1][1]), distM(q[0], q[1], mid[0], mid[1]));
+      if (d < bd) { bd = d; bm = m; }
+    }
+    P.splice(bm + 1, 0, r5(q));
+    commitPts(i, P);
   }
   $('btnEdit').onclick = () => {
     editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
@@ -324,9 +351,8 @@
   $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
   $('ePrev').onclick = () => stepSeg(-1);
   $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
-  $('eVia').onclick = () => { if (editSel == null) { $('msg').textContent = '먼저 [다음 ▶] 으로 구간을 고르세요.'; return; } pendingVia = !pendingVia; updateEditInfo(); };
-  $('eUndo').onclick = async () => { const e = route.edits[editSel]; if (e && e.vias.length) { e.vias.pop(); if (!e.vias.length) delete route.edits[editSel]; await recalcSel(); } };
-  $('eReset').onclick = async () => { if (editSel != null && route.edits[editSel]) { delete route.edits[editSel]; pendingVia = false; await recalcSel(); } };
+  $('eUndo').onclick = () => { const st = undoStack[editSel]; if (!st || !st.length) { $('msg').textContent = '되돌릴 것이 없습니다.'; return; } const prev = st.pop(); if (prev) route.edits[editSel] = { pts: prev }; else delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = prev || route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); };
+  $('eReset').onclick = () => { if (editSel != null && route.edits[editSel]) { (undoStack[editSel] = undoStack[editSel] || []).push(route.edits[editSel].pts.map(x => x.slice())); delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); } };
   $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
   $('eCopy').onclick = async () => {
     const out = JSON.stringify({ route: route.name, n: route.stops.length, edits: route.edits });
@@ -428,7 +454,6 @@
     kakao.maps.event.addListener(map, 'dragstart', () => { if (follow) { follow = false; $('btnFollow').classList.remove('on'); } });
     kakao.maps.event.addListener(map, 'click', (ev) => {
       const l = ev.latLng;
-      if (editMode && pendingVia && editSel != null) { placeVia(l); return; }
       if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
         let bi = 0, bd = 1e12;
         route.stops.forEach((x, i) => { const d = distM(l.getLat(), l.getLng(), x[2], x[3]); if (d < bd) { bd = d; bi = i; } });
