@@ -410,7 +410,7 @@ window.switchAdminSubTab = function(subTab) {
   });
 
   if (subTab === 'user') {
-    if (typeof renderAdminUserManageList === 'function') renderAdminUserManageList();
+    if (typeof renderAdminUserManageList === 'function') { renderAdminUserManageList(); refreshAdminUsersFromServer(); }
   }
 };
 
@@ -458,6 +458,7 @@ function renderEditRouteOptions() {
             if (typeof cancelTimeEditMode === 'function') cancelTimeEditMode();
         } else if (pageId === 'userAdminPage') {
             renderAdminUserManageList();
+            refreshAdminUsersFromServer();
         } else if (pageId === 'routeAdminPage') {
             if (typeof populateRouteActionSelect === 'function') {
                 populateRouteActionSelect();
@@ -953,3 +954,14 @@ function renderEditRouteOptions() {
             routeSection.style.display = 'block';
         }
     }
+
+
+// 👤 사용자 관리 화면을 열 때 서버에서 최신 사용자 목록(승인 대기 포함)을 다시 받아 자동으로 갱신한다
+function refreshAdminUsersFromServer() {
+  try {
+    if (typeof window.loadDataFromGAS !== 'function') return;
+    Promise.resolve(window.loadDataFromGAS()).then(function () {
+      if (typeof renderAdminUserManageList === 'function') renderAdminUserManageList();
+    }).catch(function () { });
+  } catch (e) { }
+}
