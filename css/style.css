@@ -2037,6 +2037,19 @@ iconify-icon {
         0 0 12px rgba(239, 68, 68, 0.8);
 }
 
+/* LIVE click 두 줄: 위(LIVE)·아래(click)가 살짝 엇갈리게, 높이는 노선지도 버튼(58px)과 같게 */
+.live-action-guide { height: 58px; padding: 0; }
+.live-badge-title.live-two {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 58px;
+    line-height: 1;
+    font-size: 24px;
+}
+.live-two .lt-a { display: block; align-self: flex-start; }
+.live-two .lt-b { display: block; align-self: flex-end; margin-top: 2px; margin-right: -6px; font-size: 22px; }
+
 /* 🧭 노선지도(네비) 버튼 - LIVE click 줄 오른쪽 끝 */
 .nav-map-btn {
     margin-left: auto;
