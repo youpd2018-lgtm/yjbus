@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>노선 지도</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: -apple-system, 'Malgun Gothic', sans-serif; overflow: hidden; }
+  #top { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 8px; display: flex; gap: 6px; background: rgba(15,23,42,.92); }
+  #top select, #top button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  #top button.on { background: #2563eb; border-color: #2563eb; }
+  #top select { flex: 1; min-width: 0; }
+  #view { position: absolute; top: 52px; bottom: 0; left: 0; right: 0; overflow: hidden; }
+  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; }
+  #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.94); border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
+  #card .lb { font-size: 12px; color: #94a3b8; }
+  #card .nm { font-size: 24px; font-weight: 800; margin: 2px 0; }
+  #card .ds { font-size: 18px; color: #38bdf8; font-weight: 700; }
+  #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  #msg { position: absolute; top: 60px; left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  .me { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.35); }
+  .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2px solid #475569; }
+  .dot.past { background: #94a3b8; border-color: #64748b; }
+  .dot.next { width: 16px; height: 16px; margin: -8px 0 0 -8px; background: #f59e0b; border-color: #fff; }
+  .dot.anchor { background: #ef4444; border-color: #fff; }
+</style>
+</head>
+<body>
+<div id="top">
+  <select id="route"></select>
+  <button id="btnFollow" class="on">따라가기</button>
+  <button id="btnHead">방향</button>
+  <button id="btnTraffic">교통</button>
+</div>
+<div id="msg"></div>
+<div id="view"><div id="map"></div></div>
+<div id="card">
+  <div class="lb">다음 정류장</div>
+  <div class="nm" id="nextName">-</div>
+  <div class="ds" id="nextDist">GPS 대기 중</div>
+  <div class="sub" id="sub"></div>
+</div>
+
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script src="js/script_std_calc.js"></script>
+<script>
+  // 카카오 JavaScript 키 (사이트 주소 제한이 걸려 있어 코드에 있어도 안전)
+  const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
+  const ROUTES = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
+  const $ = (id) => document.getElementById(id);
+  const SIM = /[?&]sim=1/.test(location.search);   // 책상에서 시험: 지도를 누르면 그 곳이 내 위치
+
+  let map, route = null, poly = null, dots = [], meOv = null;
+  let follow = true, headUp = false, traffic = false;
+  let me = null, heading = 0, lastMe = null;
+
+  ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
+  try { const s = localStorage.getItem('yb_map_route'); if (s && ROUTES.includes(s)) $('route').value = s; } catch (e) { }
+
+  function loadKakao() {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&autoload=false';
+      s.onload = () => kakao.maps.load(resolve);
+      s.onerror = () => reject(new Error('카카오 지도 스크립트를 불러오지 못했습니다 (키 또는 사이트 도메인 등록 확인)'));
+      document.head.appendChild(s);
+    });
+  }
+
+  function distM(la1, lo1, la2, lo2) {
+    const R = 6371000, d2r = Math.PI / 180;
+    const dla = (la2 - la1) * d2r, dlo = (lo2 - lo1) * d2r;
+    const a = Math.sin(dla / 2) ** 2 + Math.cos(la1 * d2r) * Math.cos(la2 * d2r) * Math.sin(dlo / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function bearing(la1, lo1, la2, lo2) {
+    const d2r = Math.PI / 180, y = Math.sin((lo2 - lo1) * d2r) * Math.cos(la2 * d2r);
+    const x = Math.cos(la1 * d2r) * Math.sin(la2 * d2r) - Math.sin(la1 * d2r) * Math.cos(la2 * d2r) * Math.cos((lo2 - lo1) * d2r);
+    return (Math.atan2(y, x) / d2r + 360) % 360;
+  }
+
+  async function showRoute(name) {
+    $('msg').textContent = name + ' 노선 불러오는 중...';
+    const res = await StdCalc.loadRoute(name);
+    if (!res) { $('msg').textContent = '노선을 못 불러왔습니다: ' + (StdCalc.getLastError() || '로그인/네트워크 확인'); return; }
+    $('msg').textContent = '';
+    try { localStorage.setItem('yb_map_route', name); } catch (e) { }
+    route = { name, stops: res.stops.filter(s => s[2] && s[3]), anchors: res.anchors || [] };
+    route.prog = 0;
+    if (poly) poly.setMap(null);
+    dots.forEach(d => d.setMap(null)); dots = [];
+    const path = route.stops.map(s => new kakao.maps.LatLng(s[2], s[3]));
+    poly = new kakao.maps.Polyline({ map, path, strokeWeight: 6, strokeColor: '#2563eb', strokeOpacity: .85 });
+    route.stops.forEach((s, i) => {
+      const el = document.createElement('div'); el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '');
+      const ov = new kakao.maps.CustomOverlay({ map, position: path[i], content: el, yAnchor: .5, xAnchor: .5 });
+      ov._el = el; dots.push(ov);
+    });
+    const b = new kakao.maps.LatLngBounds(); path.forEach(p => b.extend(p)); map.setBounds(b);
+    update();
+  }
+
+  // 내 위치로 다음 정류장 찾기
+  function update() {
+    if (!route || !me) return;
+    const st = route.stops;
+    let best = 0, bd = 1e12;
+    // 지나온 곳보다 뒤로 크게 돌아가지 않게, 현재 진행 지점 근처부터 우선 탐색
+    const from = Math.max(0, route.prog - 2), to = Math.min(st.length - 1, route.prog + 12);
+    for (let i = from; i <= to; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
+    if (bd > 400) { // 근처에 없으면 전체에서 다시 찾음 (노선 이탈 후 복귀 등)
+      for (let i = 0; i < st.length; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
+    }
+    let next = best;
+    if (best < st.length - 1) {
+      const a = st[best], b = st[best + 1];
+      const ux = b[3] - a[3], uy = b[2] - a[2], vx = me.lon - a[3], vy = me.lat - a[2];
+      if (ux * vx + uy * vy > 0 || bd < 25) next = best + 1;   // 이미 지났거나 25m 이내면 다음 정류장
+    }
+    route.prog = Math.max(0, next - 1);
+    const s = st[next];
+    const d = distM(me.lat, me.lon, s[2], s[3]);
+    $('nextName').textContent = s[1];
+    $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+    $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
+    dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
+  }
+
+  function onPos(lat, lon, speedKmh, hd) {
+    const prev = me;
+    me = { lat, lon, speed: speedKmh };
+    if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
+    else if (prev && distM(prev.lat, prev.lon, lat, lon) > 5) heading = bearing(prev.lat, prev.lon, lat, lon);
+    const ll = new kakao.maps.LatLng(lat, lon);
+    if (!meOv) { const el = document.createElement('div'); el.className = 'me'; meOv = new kakao.maps.CustomOverlay({ map, position: ll, content: el, zIndex: 9 }); }
+    meOv.setPosition(ll);
+    if (follow) { map.setCenter(ll); }
+    applyRotate();
+    update();
+  }
+
+  function applyRotate() {
+    $('map').style.transform = headUp ? `rotate(${-heading}deg)` : '';
+  }
+
+  function startGps() {
+    if (SIM) { $('msg').textContent = '시험 모드: 지도를 누르면 그 곳이 내 위치가 됩니다.'; return; }
+    if (!navigator.geolocation) { $('msg').textContent = '이 기기는 GPS를 지원하지 않습니다.'; return; }
+    navigator.geolocation.watchPosition(
+      p => onPos(p.coords.latitude, p.coords.longitude, p.coords.speed != null && p.coords.speed >= 0 ? Math.round(p.coords.speed * 3.6) : null, p.coords.heading),
+      e => { $('nextDist').textContent = e.code === 1 ? '위치 권한을 허용해 주세요' : 'GPS 신호 찾는 중...'; },
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+  }
+
+  $('btnFollow').onclick = () => { follow = !follow; $('btnFollow').classList.toggle('on', follow); if (follow && me) map.setCenter(new kakao.maps.LatLng(me.lat, me.lon)); };
+  $('btnHead').onclick = () => { headUp = !headUp; $('btnHead').classList.toggle('on', headUp); applyRotate(); };
+  $('btnTraffic').onclick = () => {
+    traffic = !traffic; $('btnTraffic').classList.toggle('on', traffic);
+    if (traffic) map.addOverlayMapTypeId(kakao.maps.MapTypeId.TRAFFIC); else map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TRAFFIC);
+  };
+  $('route').onchange = () => showRoute($('route').value);
+
+  loadKakao().then(() => {
+    map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
+    kakao.maps.event.addListener(map, 'dragstart', () => { if (follow) { follow = false; $('btnFollow').classList.remove('on'); } });
+    if (SIM) kakao.maps.event.addListener(map, 'click', (ev) => { const l = ev.latLng; onPos(l.getLat(), l.getLng(), 30, null); });
+    showRoute($('route').value);
+    startGps();
+  }).catch(e => { $('msg').textContent = String(e.message || e); });
+</script>
+</body>
+</html>
