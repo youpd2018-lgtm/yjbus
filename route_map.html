@@ -22,7 +22,7 @@
   body.nonadmin #view { top: calc(52px + var(--sat)); }
   body.nonadmin #msg { top: calc(62px + var(--sat)); }
   #view { position: absolute; top: calc(96px + var(--sat)); bottom: 0; left: 0; right: 0; overflow: hidden; }
-  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .8s linear; will-change: transform; }
+  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .9s linear; will-change: transform; transform-origin: 50% 50%; }
   #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.47); border-radius: 14px; padding: 10px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
   #card .lb { font-size: 12px; color: #94a3b8; }
   #rowA { display: flex; align-items: baseline; gap: 10px; }
@@ -563,14 +563,52 @@
     else glideTo(lat, lon);                     // 1초마다 뚝뚝 옮기지 않고 부드럽게 미끄러지듯 이동
     const dd = ((heading - curAng + 540) % 360) - 180; curAng += dd;   // 359°→1° 처럼 넘어가도 짧은 쪽으로만 회전
     const bel = meOv.getContent(); if (bel && bel.style) bel.style.transform = `rotate(${curAng}deg)`;
-    if (follow) { if (firstFix) map.setCenter(ll); map.setDraggable(false); }   // 내 위치가 잡히면 끌기 잠금(확대/축소는 가능)
-    applyRotate();
+    if (follow) { map.setDraggable(false); followView(firstFix); }   // 내 위치가 잡히면 끌기 잠금(확대/축소는 가능)
+    else applyRotate();
     update();
   }
 
+  // 지도 전체를 CSS로 돌리고 밀어서(회전+이동) 움직임을 부드럽게 한다. 카카오 지도 중심은 많이 벗어날 때만 다시 잡는다.
+  const LIMIT = 70;                       // 이만큼(px) 밀리면 지도 중심을 다시 잡음
+  let panX = 0, panY = 0;
   function applyRotate() {
-    $('map').style.transform = headUp ? `rotate(${-curAng}deg)` : '';
+    $('map').style.transform = headUp ? `rotate(${-curAng}deg) translate(${-panX}px, ${-panY}px)` : '';
   }
+  // 내 위치가 화면 가운데보다 아래(약 70% 지점)에 오도록, 가는 방향 앞쪽을 화면 중심으로 삼는다
+  function followView(force) {
+    if (!map || !me) return;
+    const proj = map.getProjection(), m = $('map');
+    const W = m.clientWidth, H = m.clientHeight;
+    const bus = proj.containerPointFromCoords(new kakao.maps.LatLng(me.lat, me.lon));
+    const off = $('view').clientHeight * 0.2, a = (headUp ? curAng : 0) * Math.PI / 180;
+    const tx = bus.x + off * Math.sin(a), ty = bus.y - off * Math.cos(a);
+    let dx = tx - W / 2, dy = ty - H / 2;
+    if (force || Math.hypot(dx, dy) > LIMIT) {
+      m.style.transition = 'none';
+      map.setCenter(proj.coordsFromContainerPoint(new kakao.maps.Point(tx, ty)));
+      panX = 0; panY = 0; applyRotate();
+      void m.offsetWidth; m.style.transition = '';
+      return;
+    }
+    panX = dx; panY = dy; applyRotate();
+  }
+  // 지도를 손으로 옮겨 보기 전에, 지금 화면에 보이는 자리를 카카오 지도 중심으로 확정
+  function bakePan() {
+    if (!map || (!panX && !panY)) return;
+    const proj = map.getProjection(), m = $('map');
+    m.style.transition = 'none';
+    map.setCenter(proj.coordsFromContainerPoint(new kakao.maps.Point(m.clientWidth / 2 + panX, m.clientHeight / 2 + panY)));
+    panX = 0; panY = 0;
+  }
+  // 지도 조각 크기: 어느 방향으로 돌려도 화면이 비지 않을 만큼만(정사각형) 만든다
+  function sizeMap() {
+    const v = $('view'), vw = v.clientWidth, vh = v.clientHeight;
+    const S = Math.ceil(Math.hypot(vw, vh)) + 2 * LIMIT, m = $('map');
+    m.style.width = S + 'px'; m.style.height = S + 'px';
+    m.style.left = ((vw - S) / 2) + 'px'; m.style.top = ((vh - S) / 2) + 'px';
+    if (map) { map.relayout(); if (follow && me) followView(true); }
+  }
+  window.addEventListener('resize', sizeMap);
   let curAng = 0, disp = null, glideRaf = null;
   function glideTo(lat, lon) {   // 표시 위치를 새 GPS 값까지 0.9초 동안 이동
     if (!disp) { disp = { lat, lon }; return; }
@@ -581,7 +619,6 @@
       disp = { lat: from.lat + (lat - from.lat) * f, lon: from.lon + (lon - from.lon) * f };
       const ll = new kakao.maps.LatLng(disp.lat, disp.lon);
       if (meOv) meOv.setPosition(ll);
-      if (follow && map) map.setCenter(ll);
       glideRaf = f < 1 ? requestAnimationFrame(step) : null;
     };
     glideRaf = requestAnimationFrame(step);
@@ -606,8 +643,9 @@
     $('btnPan').innerHTML = PAN_ICON + (on ? '지도 이동' : '내 위치로');
     $('btnPan').classList.toggle('on', !on);
     if (map) map.setDraggable(!(on && me));
-    applyRotate();
-    if (on && me && map) map.setCenter(new kakao.maps.LatLng(me.lat, me.lon));
+    if (!on) { bakePan(); applyRotate(); void $('map').offsetWidth; $('map').style.transition = ''; }
+    else if (me && map) followView(true);
+    else applyRotate();
   }
   function panLater() { if (follow || editMode) return; if (panTimer) clearTimeout(panTimer); panTimer = setTimeout(() => setNav(true), 10000); }
   $('btnPan').onclick = () => { if (follow) { setNav(false); panLater(); } else setNav(true); };
@@ -643,7 +681,8 @@
   loadKakao().then(() => {
     map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
     kakao.maps.event.addListener(map, 'dragend', panLater);
-    kakao.maps.event.addListener(map, 'zoom_changed', panLater);
+    kakao.maps.event.addListener(map, 'zoom_changed', () => { panLater(); if (follow && me) followView(true); });
+    sizeMap();
     kakao.maps.event.addListener(map, 'click', (ev) => {
       const l = ev.latLng;
       if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
