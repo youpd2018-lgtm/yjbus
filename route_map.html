@@ -26,6 +26,8 @@
   #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
   #eRow button, #eRow2 button { flex: 1; font-size: 14px; font-weight: 700; padding: 10px 2px; border-radius: 10px; border: 0; background: #334155; color: #fff; }
   #eRow3 { display: flex; gap: 6px; margin-top: 8px; }
+  #eDel.act { background: #dc2626 !important; }
+  #eRow3 { flex-wrap: wrap; }
   #eRow3 button { flex: 1; font-size: 13px; font-weight: 700; padding: 9px 2px; border-radius: 10px; border: 0; background: #1e293b; color: #cbd5e1; }
   #eRow button, #eRow2 button { font-size: 15px; padding: 13px 2px; }
   #eVia { background: #2563eb !important; } #eVia.act, #eOnly.act { background: #f59e0b !important; color: #111 !important; }
@@ -69,10 +71,10 @@
       <button id="ePrev">◀ 이전</button><button id="eNext" style="background:#16a34a;">✔ 맞아요, 다음 ▶</button>
     </div>
     <div id="eRow2">
-      <button id="eUndo">↩ 되돌리기</button><button id="eReset">원래대로</button>
+      <button id="eUndo">↩ 되돌리기</button><button id="eDel">🗑 지우기: 꺼짐</button><button id="eReset">원래대로</button>
     </div>
     <div id="eRow3">
-      <button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
+      <button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
     </div>
   </div>
 </div>
@@ -184,12 +186,18 @@
       const tag = (txt, cls, la, lo) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; endMarks.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(la, lo), content: el, yAnchor: 1.3, zIndex: 8 })); };
       tag('출발 ' + a[1], 'ta', a[2], a[3]);
       tag('도착 ' + b[1], 'tb', b[2], b[3]);
-      const P = handlePts(editSel), img = handleImg(), si = editSel;
+      const P = handlePts(editSel), si = editSel;
+      if (!delImgObj) { delImgObj = circleImg('#dc2626', 34); delSelImgObj = circleImg('#7f1d1d', 40); }
       P.forEach((v, k) => {
         if (k === 0 || k === P.length - 1) return;   // 정류장 두 곳은 고정
-        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: true, image: img, zIndex: 9 });
+        const img = delMode ? (delFirst === k ? delSelImgObj : delImgObj) : handleImg();
+        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: !delMode, image: img, zIndex: delFirst === k ? 11 : 9 });
         kakao.maps.event.addListener(mk, 'dragend', () => { lastDrag = Date.now(); const q = mk.getPosition(); moveAnchor(si, k, [q.getLat(), q.getLng()]); });
-        kakao.maps.event.addListener(mk, 'click', () => { if (Date.now() - lastDrag < 400) return; deleteAnchor(si, k); });
+        kakao.maps.event.addListener(mk, 'click', () => {
+          if (!delMode || Date.now() - lastDrag < 400) return;
+          if (delFirst == null) { delFirst = k; renderSegs(); updateEditInfo(); }          // 첫 번째 점 선택(진한 빨강)
+          else { const f = delFirst; delFirst = null; deleteRange(si, f, k); }               // 두 번째 점: 둘 사이 전부 삭제 (같은 점이면 그 점만)
+        });
         viaMarks.push(mk);
       });
     }
@@ -269,11 +277,11 @@
     $('eName').textContent = `${a[1]}  →  ${b[1]}`;
     $('eDir').textContent = dirLabel(editSel);
     $('eStat').textContent = `도로선 ${Math.round(len)}m / 직선 ${Math.round(st)}m (${(len / Math.max(st, 1)).toFixed(1)}배)` + (segSuspect(editSel) ? '  ⚠ 많이 돌아감' : '') + (hasEdit2(route, editSel) ? '  ✎ 고침' : '')
-      + '\n🟠 점: 끌면 길을 따라 이동 · 누르면 삭제 · 선을 누르면 새 점';
+      + (delMode ? (delFirst == null ? '\n🗑 지우기 켜짐: 지울 점을 누르세요. 점 하나만 지우려면 같은 점을 한 번 더, 여러 개는 끝 점을 누르면 둘 사이가 모두 지워집니다' : '\n🗑 이제 마지막 점을 누르세요 (같은 점이면 그 점만 지워짐)') : '\n🟠 점: 끌면 길을 따라 이동 · 선을 누르면 새 점 · 지우려면 🗑 지우기 켜기');
   }
   function selectSeg(i) {
     i = Math.max(0, Math.min(route.segs.length - 1, i));
-    editSel = i; pendingVia = false; renderSegs(); updateEditInfo();
+    editSel = i; pendingVia = false; delFirst = null; renderSegs(); updateEditInfo();
     const a = route.stops[i], b = route.stops[i + 1], bd = new kakao.maps.LatLngBounds();
     route.segs[i].forEach(q => bd.extend(new kakao.maps.LatLng(q[0], q[1])));
     map.setBounds(bd, 90, 40, 260, 40);
@@ -288,7 +296,7 @@
   }
   // ---- 점 편집: 원래 선 위의 점(주황 동그라미)을 끌면 점이 도로를 따라 붙고 앞뒤 선이 따라온다 ----
   // 한 구간 = 점(anc)들과, 점 사이 도로 모양(geo[h] = anc[h]→anc[h+1])
-  let lastDrag = 0, handleImgObj = null, busy = false;
+  let lastDrag = 0, handleImgObj = null, delImgObj = null, delSelImgObj = null, busy = false, delMode = false, delFirst = null;
   const undoStack = {};
   function handleImg() {
     if (!handleImgObj) {
@@ -296,6 +304,10 @@
       handleImgObj = new kakao.maps.MarkerImage(svg, new kakao.maps.Size(28, 28), { offset: new kakao.maps.Point(14, 14) });
     }
     return handleImgObj;
+  }
+  function circleImg(color, size) {
+    const svg = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 3}' fill='${color}' stroke='#fff' stroke-width='3'/></svg>`);
+    return new kakao.maps.MarkerImage(svg, new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(size / 2, size / 2) });
   }
   function simplifyIdx(pts, tol) {   // 모양을 유지하며 점을 솎아 남길 번호 목록을 돌려줌 (Douglas-Peucker)
     const k = Math.cos(pts[0][0] * Math.PI / 180);
@@ -356,14 +368,19 @@
       commitModel(i, m);
     } finally { busy = false; $('msg').textContent = ''; }
   }
-  async function deleteAnchor(i, k) {
+  async function deleteRange(i, k1, k2) {   // 점 k1~k2(번호 순서 상관없음)를 모두 지우고 앞뒤 점을 도로로 잇기
     if (busy) return; busy = true; $('msg').textContent = '길에 맞추는 중...';
     try {
-      const m = model(i); m.anc.splice(k, 1);
-      const nh = await hopRoute(m.anc[k - 1], m.anc[k], k - 1 === 0 || k === m.anc.length - 1);
-      m.geo.splice(k - 1, 2, nh);
+      const lo = Math.min(k1, k2), hi = Math.max(k1, k2), m = model(i);
+      m.anc.splice(lo, hi - lo + 1);
+      const nh = await hopRoute(m.anc[lo - 1], m.anc[lo], lo - 1 === 0 || lo === m.anc.length - 1);
+      m.geo.splice(lo - 1, hi - lo + 2, nh);
       commitModel(i, m);
     } finally { busy = false; $('msg').textContent = ''; }
+  }
+  function clearAnchors(i) {   // 이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 연결 (그 위 선을 눌러 점을 다시 만들며 고침)
+    const m = model(i), a = m.anc[0], b = m.anc[m.anc.length - 1];
+    commitModel(i, { anc: [a, b], geo: [[a, b]] });
   }
   function insertPoint(i, latlng) {   // 선을 누르면 누른 곳에서 가장 가까운 선 위 지점에 새 점 (선 모양은 그대로)
     if (busy) return;
@@ -388,6 +405,8 @@
       }
     }
   };
+  $('eDel').onclick = () => { delMode = !delMode; delFirst = null; $('eDel').classList.toggle('act', delMode); $('eDel').textContent = '🗑 지우기: ' + (delMode ? '켜짐' : '꺼짐'); if (route && route.segs) { renderSegs(); updateEditInfo(); } };
+  $('eClear').onclick = () => { if (editSel == null) return; if (confirm('이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 이을까요? (되돌리기 가능)')) clearAnchors(editSel); };
   $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
   $('ePrev').onclick = () => stepSeg(-1);
   $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
