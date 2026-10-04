@@ -72,7 +72,7 @@
       <button id="eVia">📍 길 고치기</button><button id="eUndo">↩ 점 취소</button><button id="eReset">원래대로</button>
     </div>
     <div id="eRow3">
-      <button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
+      <button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eCopy">📋 수정내용 복사</button>
     </div>
   </div>
 </div>
@@ -313,8 +313,15 @@
     editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
     $('editBox').style.display = editMode ? 'block' : 'none';
     if (editMode) { follow = false; $('btnFollow').classList.remove('on'); } else { editSel = null; pendingVia = false; }
-    if (route && route.segs) { renderSegs(); updateEditInfo(); }
+    if (route && route.segs) {
+      renderSegs(); updateEditInfo();
+      if (editMode) {   // 켜자마자 출발 정류장 쪽(아직 확인 안 한 첫 구간)부터 시작
+        let k = 0; while (k < route.segs.length - 1 && route.ok && route.ok[k]) k++;
+        selectSeg(k);
+      }
+    }
   };
+  $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
   $('ePrev').onclick = () => stepSeg(-1);
   $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
   $('eVia').onclick = () => { if (editSel == null) { $('msg').textContent = '먼저 [다음 ▶] 으로 구간을 고르세요.'; return; } pendingVia = !pendingVia; updateEditInfo(); };
