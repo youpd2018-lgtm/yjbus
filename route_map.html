@@ -53,7 +53,7 @@
   <button id="btnBack" onclick="location.href='index.html'">← 앱</button>
   <select id="route"></select>
   <button id="btnFollow" class="on">따라가기</button>
-  <button id="btnHead">방향</button>
+  <button id="btnHead" class="on">방향</button>
 </div>
 <div id="sim">
   <button id="btnSim">▶ 모의주행</button>
@@ -97,7 +97,7 @@
 
   let map, route = null, segLines = [], dots = [], meOv = null;
   let editMode = false, editSel = null, pendingVia = false;
-  let follow = true, headUp = false, traffic = false;
+  let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
   let isAdmin = false;
