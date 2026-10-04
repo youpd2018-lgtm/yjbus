@@ -97,10 +97,12 @@
     try { localStorage.setItem('yb_map_route', name); } catch (e) { }
     route = { name, stops: res.stops.filter(s => s[2] && s[3]), anchors: res.anchors || [] };
     route.prog = 0;
+    route.pts = route.stops.map(x => [x[2], x[3]]);
+    route.stopAt = route.stops.map((x, i) => i);
     if (poly) poly.setMap(null);
     dots.forEach(d => d.setMap(null)); dots = [];
     const path = route.stops.map(s => new kakao.maps.LatLng(s[2], s[3]));
-    poly = new kakao.maps.Polyline({ map, path, strokeWeight: 6, strokeColor: '#2563eb', strokeOpacity: .85 });
+    poly = new kakao.maps.Polyline({ map, path, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .4 });
     route.stops.forEach((s, i) => {
       const el = document.createElement('div'); el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '');
       const ov = new kakao.maps.CustomOverlay({ map, position: path[i], content: el, yAnchor: .5, xAnchor: .5 });
@@ -108,6 +110,50 @@
     });
     const b = new kakao.maps.LatLngBounds(); path.forEach(p => b.extend(p)); map.setBounds(b);
     update();
+    loadRoad(route);
+  }
+
+
+  // ---- 도로를 따라가는 노선선: 정류장 좌표를 OSRM(무료 도로 길찾기)에 넣어 도로 모양을 받아 이 폰에 저장 ----
+  const ROAD_KEY = 'yb_road_v1_';
+  function nearestFrom(pts, from, la, lo) {
+    let bi = from, bd = 1e12;
+    for (let i = from; i < pts.length; i++) { const d = distM(la, lo, pts[i][0], pts[i][1]); if (d < bd) { bd = d; bi = i; } }
+    return bi;
+  }
+  function setRoad(r, pts) {
+    r.pts = pts;
+    let from = 0;
+    r.stopAt = r.stops.map(s => { from = nearestFrom(pts, from, s[2], s[3]); return from; });
+    if (r === route && simTimer) simBuild();
+    if (r === route && poly) poly.setPath(pts.map(q => new kakao.maps.LatLng(q[0], q[1])));
+  }
+  async function loadRoad(r) {
+    try {
+      const raw = localStorage.getItem(ROAD_KEY + r.name);
+      if (raw) { const o = JSON.parse(raw); if (o && o.n === r.stops.length && o.pts) { setRoad(r, o.pts); return; } }
+    } catch (e) { }
+    const st = r.stops, CH = 20, all = [];
+    let fail = 0;
+    for (let a = 0; a < st.length - 1; a += CH - 1) {
+      if (r !== route) return;                       // 노선을 바꿨으면 중단
+      $('msg').textContent = `${r.name} 도로선 만드는 중... ${Math.min(100, Math.round(a / st.length * 100))}%`;
+      const seg = st.slice(a, Math.min(st.length, a + CH));
+      const url = 'https://router.project-osrm.org/route/v1/driving/' + seg.map(x => x[3] + ',' + x[2]).join(';') + '?overview=full&geometries=geojson&continue_straight=true';
+      let got = null;
+      for (let t = 0; t < 2 && !got; t++) {
+        try {
+          const res = await (await fetch(url)).json();
+          if (res.routes && res.routes[0]) got = res.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        } catch (e) { }
+      }
+      if (!got) { fail++; got = seg.map(x => [x[2], x[3]]); }   // 실패한 구간은 직선
+      all.push(...(all.length ? got.slice(1) : got));
+    }
+    if (r !== route) return;
+    $('msg').textContent = fail ? `도로선 일부(${fail}구간)는 직선으로 표시됩니다.` : '';
+    setRoad(r, all);
+    if (!fail) { try { localStorage.setItem(ROAD_KEY + r.name, JSON.stringify({ n: st.length, pts: all.map(q => [+q[0].toFixed(5), +q[1].toFixed(5)]) })); } catch (e) { } }
   }
 
   // 내 위치로 다음 정류장 찾기
@@ -173,15 +219,14 @@
   // ---- 모의주행: 노선선을 따라 가짜 GPS가 움직임 (책상에서 시험용) ----
   let simTimer = null, simDist = 0, simCum = null;
   function simBuild() {
-    simCum = [0];
-    for (let i = 1; i < route.stops.length; i++) { const a = route.stops[i - 1], b = route.stops[i]; simCum.push(simCum[i - 1] + distM(a[2], a[3], b[2], b[3])); }
+    const P = route.pts; simCum = [0];
+    for (let i = 1; i < P.length; i++) simCum.push(simCum[i - 1] + distM(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1]));
   }
   function simPoint(d) {
-    const st = route.stops; let i = 1;
-    while (i < st.length - 1 && simCum[i] < d) i++;
+    const P = route.pts; let i = 1;
+    while (i < P.length - 1 && simCum[i] < d) i++;
     const seg = simCum[i] - simCum[i - 1] || 1, f = Math.min(1, Math.max(0, (d - simCum[i - 1]) / seg));
-    const a = st[i - 1], b = st[i];
-    return [a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
+    return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * f, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * f];
   }
   function simStop() { if (simTimer) clearInterval(simTimer); simTimer = null; $('btnSim').classList.remove('on'); $('btnSim').textContent = '▶ 모의주행'; }
   $('btnSim').onclick = () => {
@@ -208,7 +253,7 @@
       if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
         let bi = 0, bd = 1e12;
         route.stops.forEach((x, i) => { const d = distM(l.getLat(), l.getLng(), x[2], x[3]); if (d < bd) { bd = d; bi = i; } });
-        simDist = simCum[bi]; route.prog = Math.max(0, bi - 1);
+        simDist = simCum[route.stopAt[bi]]; route.prog = Math.max(0, bi - 1);
       } else if (SIM) onPos(l.getLat(), l.getLng(), 30, null);
     });
     showRoute($('route').value);
