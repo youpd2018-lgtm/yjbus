@@ -54,7 +54,7 @@
   .me { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.35); }
   .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2px solid #475569; }
   .dot.past { background: #94a3b8; border-color: #64748b; }
-  .dot.next { width: 24px; height: 24px; margin: -12px 0 0 -12px; background: transparent; border: 3px solid rgba(239,68,68,.7); box-sizing: border-box; box-shadow: 0 0 0 1px rgba(255,255,255,.35); }   /* 다음 정류장: 속이 빈 빨간 테두리 원(정류장 점이 보이게) */
+  .ring { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(239,68,68,.8); box-sizing: border-box; pointer-events: none; }   /* 다음 정류장: 속이 빈 빨간 테두리 원 */
   .dot.anchor { background: #ef4444; border-color: #fff; }
 </style>
 </head>
@@ -111,7 +111,7 @@
   if (!EMBED) document.body.classList.add('standalone');
   const SIM = /[?&]sim=1/.test(location.search);   // 책상에서 시험: 지도를 누르면 그 곳이 내 위치
 
-  let map, route = null, segLines = [], dots = [], meOv = null;
+  let map, route = null, segLines = [], dots = [], meOv = null, ringOv = null;
   let editMode = false, editSel = null, pendingVia = false;
   let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
@@ -163,6 +163,7 @@
     editSel = null; pendingVia = false;
     segLines.forEach(l => l.setMap(null)); segLines = [];
     dots.forEach(d => d.setMap(null)); dots = [];
+    if (ringOv) { ringOv.setMap(null); ringOv = null; }
     const path = route.stops.map(s => new kakao.maps.LatLng(s[2], s[3]));
     route.segs = route.stops.slice(1).map((x, i) => [[route.stops[i][2], route.stops[i][3]], [x[2], x[3]]]);
     joinPts(route); renderSegs();
@@ -526,6 +527,9 @@
     const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
     $('anchorName').textContent = st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
+    const rl = new kakao.maps.LatLng(s[2], s[3]);
+    if (!ringOv) { const el = document.createElement('div'); el.className = 'ring'; ringOv = new kakao.maps.CustomOverlay({ map, position: rl, content: el, xAnchor: .5, yAnchor: .5, zIndex: 8 }); }
+    else ringOv.setPosition(rl);
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
 
