@@ -184,12 +184,12 @@
       const tag = (txt, cls, la, lo) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; endMarks.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(la, lo), content: el, yAnchor: 1.3, zIndex: 8 })); };
       tag('출발 ' + a[1], 'ta', a[2], a[3]);
       tag('도착 ' + b[1], 'tb', b[2], b[3]);
-      const P = handlePts(editSel), img = handleImg();
+      const P = handlePts(editSel), img = handleImg(), si = editSel;
       P.forEach((v, k) => {
         if (k === 0 || k === P.length - 1) return;   // 정류장 두 곳은 고정
         const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: true, image: img, zIndex: 9 });
-        kakao.maps.event.addListener(mk, 'dragend', () => { lastDrag = Date.now(); const q = mk.getPosition(); const np = P.map(x => x.slice()); np[k] = r5([q.getLat(), q.getLng()]); commitPts(editSel, np); });
-        kakao.maps.event.addListener(mk, 'click', () => { if (Date.now() - lastDrag < 400) return; const np = P.map(x => x.slice()); np.splice(k, 1); commitPts(editSel, np); });
+        kakao.maps.event.addListener(mk, 'dragend', () => { lastDrag = Date.now(); const q = mk.getPosition(); moveAnchor(si, k, [q.getLat(), q.getLng()]); });
+        kakao.maps.event.addListener(mk, 'click', () => { if (Date.now() - lastDrag < 400) return; deleteAnchor(si, k); });
         viaMarks.push(mk);
       });
     }
@@ -214,15 +214,16 @@
   }
 
   function readEdits(r) {
-    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].pts) r.edits[k] = o.edits[k]; }); r.ok = o.ok || {}; return; } } catch (e) { }
+    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].anc && o.edits[k].geo) r.edits[k] = o.edits[k]; }); r.ok = o.ok || {}; return; } } catch (e) { }
     r.edits = {}; r.ok = {};
   }
   function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, edits: r.edits, ok: r.ok })); } catch (e) { } }
 
-  async function applyEdit(r, i) {   // 구간 i: 직접 고친 점들이 있으면 그대로, 없으면 자동 결과
-    r.segs[i] = hasEdit2(r, i) ? r.edits[i].pts : r.base[i];
+  async function applyEdit(r, i) {   // 구간 i: 직접 고친 것이 있으면 그 모양, 없으면 자동 결과
+    r.segs[i] = hasEdit2(r, i) ? joinGeo(r.edits[i].geo) : r.base[i];
   }
-  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].pts && r.edits[i].pts.length > 1); }
+  function joinGeo(geo) { const out = []; geo.forEach((g, h) => out.push(...(h ? g.slice(1) : g))); return out; }
+  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].anc && r.edits[i].geo); }
 
   async function loadRoad(r) {
     readEdits(r);
@@ -268,7 +269,7 @@
     $('eName').textContent = `${a[1]}  →  ${b[1]}`;
     $('eDir').textContent = dirLabel(editSel);
     $('eStat').textContent = `도로선 ${Math.round(len)}m / 직선 ${Math.round(st)}m (${(len / Math.max(st, 1)).toFixed(1)}배)` + (segSuspect(editSel) ? '  ⚠ 많이 돌아감' : '') + (hasEdit2(route, editSel) ? '  ✎ 고침' : '')
-      + '\n🟠 점: 끌면 이동 · 누르면 삭제 · 선을 누르면 새 점';
+      + '\n🟠 점: 끌면 길을 따라 이동 · 누르면 삭제 · 선을 누르면 새 점';
   }
   function selectSeg(i) {
     i = Math.max(0, Math.min(route.segs.length - 1, i));
@@ -285,8 +286,9 @@
     }
     $('msg').textContent = dir > 0 ? '마지막 구간입니다.' : '첫 구간입니다.';
   }
-  // ---- 점 편집: 원래 선 위의 점(주황 동그라미)을 끌어 옮기고, 누르면 지우고, 선을 누르면 새 점을 만든다 ----
-  let lastDrag = 0, handleImgObj = null;
+  // ---- 점 편집: 원래 선 위의 점(주황 동그라미)을 끌면 점이 도로를 따라 붙고 앞뒤 선이 따라온다 ----
+  // 한 구간 = 점(anc)들과, 점 사이 도로 모양(geo[h] = anc[h]→anc[h+1])
+  let lastDrag = 0, handleImgObj = null, busy = false;
   const undoStack = {};
   function handleImg() {
     if (!handleImgObj) {
@@ -295,9 +297,9 @@
     }
     return handleImgObj;
   }
-  function simplifyPts(pts, tol) {   // 점이 너무 많으면 모양을 유지하며 솎아냄 (Douglas-Peucker)
-    const la0 = pts[0][0], k = Math.cos(la0 * Math.PI / 180);
-    const xy = pts.map(q => [(q[1]) * 111320 * k, q[0] * 110540]);
+  function simplifyIdx(pts, tol) {   // 모양을 유지하며 점을 솎아 남길 번호 목록을 돌려줌 (Douglas-Peucker)
+    const k = Math.cos(pts[0][0] * Math.PI / 180);
+    const xy = pts.map(q => [q[1] * 111320 * k, q[0] * 110540]);
     const keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
     const stack = [[0, pts.length - 1]];
     while (stack.length) {
@@ -310,31 +312,69 @@
       }
       if (mi >= 0 && md > tol) { keep[mi] = true; stack.push([a, mi], [mi, b]); }
     }
-    return pts.filter((q, i) => keep[i]);
+    const idx = []; keep.forEach((v, i) => { if (v) idx.push(i); });
+    return idx;
   }
-  function handlePts(i) {   // 화면에 보여 줄 점들: 고친 적이 있으면 그 점들, 없으면 자동 선을 솎은 것 (양 끝은 실제 정류장 위치)
-    let P;
-    if (hasEdit2(route, i)) P = route.edits[i].pts.map(x => x.slice());
-    else { let tol = 6; do { P = simplifyPts(route.segs[i], tol); tol *= 1.6; } while (P.length > 40 && tol < 200); P = P.map(x => x.slice()); }
+  function initModel(i) {   // 아직 안 고친 구간: 자동 선을 솎아 점(anc)과 점 사이 모양(geo)으로 나눔
+    const seg = route.segs[i];
+    let idx, tol = 6;
+    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 40 && tol < 200);
+    const anc = idx.map(j => seg[j].slice()), geo = [];
+    for (let h = 0; h < idx.length - 1; h++) geo.push(seg.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
+    return { anc, geo };
+  }
+  function model(i) {
+    const m = hasEdit2(route, i) ? { anc: route.edits[i].anc.map(x => x.slice()), geo: route.edits[i].geo.map(g => g.map(x => x.slice())) } : initModel(i);
     const a = route.stops[i], b = route.stops[i + 1];
-    P[0] = [a[2], a[3]]; P[P.length - 1] = [b[2], b[3]];
-    return P;
+    m.anc[0] = [a[2], a[3]]; m.anc[m.anc.length - 1] = [b[2], b[3]];
+    return m;
   }
-  function commitPts(i, pts) {
-    (undoStack[i] = undoStack[i] || []).push(hasEdit2(route, i) ? route.edits[i].pts.map(x => x.slice()) : null);
-    route.edits[i] = { pts };
-    saveEdits(route); route.segs[i] = pts; joinPts(route); renderSegs(); updateEditInfo();
+  function handlePts(i) { return model(i).anc; }
+
+  async function hopRoute(p, q, edge) {   // 두 점 사이를 도로를 따라 잇기. 정류장 쪽 끝이 빙 돌면 곧게
+    const straight = distM(p[0], p[1], q[0], q[1]);
+    if (straight < 8) return [p, q];
+    const legs = await osrmLegs([p, q], true);
+    if (!legs) return [p, q];
+    const l = legs[0], len = segLen(l);
+    if (edge && (straight < 60 || (len > straight * 1.6 && len - straight > 40))) return [p, q];
+    return l;
   }
-  function insertPoint(i, latlng) {
-    const P = handlePts(i).map(x => x.slice()), q = [latlng.getLat(), latlng.getLng()];
-    let bm = 0, bd = 1e12;
-    for (let m = 0; m < P.length - 1; m++) {   // 누른 곳에서 가장 가까운 선분 찾기
-      const mid = [(P[m][0] + P[m + 1][0]) / 2, (P[m][1] + P[m + 1][1]) / 2];
-      const d = Math.min(distM(q[0], q[1], P[m][0], P[m][1]), distM(q[0], q[1], P[m + 1][0], P[m + 1][1]), distM(q[0], q[1], mid[0], mid[1]));
-      if (d < bd) { bd = d; bm = m; }
-    }
-    P.splice(bm + 1, 0, r5(q));
-    commitPts(i, P);
+  function commitModel(i, m) {
+    (undoStack[i] = undoStack[i] || []).push(hasEdit2(route, i) ? { anc: route.edits[i].anc, geo: route.edits[i].geo } : null);
+    route.edits[i] = { anc: m.anc, geo: m.geo };
+    saveEdits(route); route.segs[i] = joinGeo(m.geo); joinPts(route); renderSegs(); updateEditInfo();
+  }
+  async function moveAnchor(i, k, pos) {
+    if (busy) return; busy = true; $('msg').textContent = '길에 맞추는 중...';
+    try {
+      const m = model(i), last = m.anc.length - 1;
+      m.anc[k] = r5(pos);
+      m.geo[k - 1] = await hopRoute(m.anc[k - 1], m.anc[k], k - 1 === 0 || k - 1 === last - 1);
+      m.geo[k] = await hopRoute(m.anc[k], m.anc[k + 1], k === 0 || k === last - 1);
+      const g = m.geo[k]; if (g.length > 2 || distM(g[0][0], g[0][1], m.anc[k][0], m.anc[k][1]) < 60) m.anc[k] = g[0].slice();   // 점을 도로 위로
+      commitModel(i, m);
+    } finally { busy = false; $('msg').textContent = ''; }
+  }
+  async function deleteAnchor(i, k) {
+    if (busy) return; busy = true; $('msg').textContent = '길에 맞추는 중...';
+    try {
+      const m = model(i); m.anc.splice(k, 1);
+      const nh = await hopRoute(m.anc[k - 1], m.anc[k], k - 1 === 0 || k === m.anc.length - 1);
+      m.geo.splice(k - 1, 2, nh);
+      commitModel(i, m);
+    } finally { busy = false; $('msg').textContent = ''; }
+  }
+  function insertPoint(i, latlng) {   // 선을 누르면 누른 곳에서 가장 가까운 선 위 지점에 새 점 (선 모양은 그대로)
+    if (busy) return;
+    const m = model(i), q = [latlng.getLat(), latlng.getLng()];
+    let bh = 0, bj = 0, bd = 1e12;
+    m.geo.forEach((g, h) => g.forEach((x, j) => { const d = distM(q[0], q[1], x[0], x[1]); if (d < bd) { bd = d; bh = h; bj = j; } }));
+    const g = m.geo[bh];
+    if (bj === 0 || bj === g.length - 1) { $('msg').textContent = '이미 점이 있는 곳입니다. 다른 곳을 눌러 보세요.'; return; }
+    m.anc.splice(bh + 1, 0, g[bj].slice());
+    m.geo.splice(bh, 1, g.slice(0, bj + 1), g.slice(bj));
+    commitModel(i, m);
   }
   $('btnEdit').onclick = () => {
     editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
@@ -351,8 +391,8 @@
   $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
   $('ePrev').onclick = () => stepSeg(-1);
   $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
-  $('eUndo').onclick = () => { const st = undoStack[editSel]; if (!st || !st.length) { $('msg').textContent = '되돌릴 것이 없습니다.'; return; } const prev = st.pop(); if (prev) route.edits[editSel] = { pts: prev }; else delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = prev || route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); };
-  $('eReset').onclick = () => { if (editSel != null && route.edits[editSel]) { (undoStack[editSel] = undoStack[editSel] || []).push(route.edits[editSel].pts.map(x => x.slice())); delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); } };
+  $('eUndo').onclick = () => { const st = undoStack[editSel]; if (!st || !st.length) { $('msg').textContent = '되돌릴 것이 없습니다.'; return; } const prev = st.pop(); if (prev) route.edits[editSel] = prev; else delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = prev ? joinGeo(prev.geo) : route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); };
+  $('eReset').onclick = () => { if (editSel != null && route.edits[editSel]) { (undoStack[editSel] = undoStack[editSel] || []).push(route.edits[editSel]); delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); } };
   $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
   $('eCopy').onclick = async () => {
     const out = JSON.stringify({ route: route.name, n: route.stops.length, edits: route.edits });
