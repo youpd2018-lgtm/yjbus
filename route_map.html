@@ -15,6 +15,9 @@
   #sim select, #sim button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
   #sim button.on { background: #dc2626; border-color: #dc2626; }
   #sim select { flex: 1; min-width: 0; }
+  body.nonadmin #sim { display: none; }
+  body.nonadmin #view { top: 52px; }
+  body.nonadmin #msg { top: 62px; }
   #view { position: absolute; top: 96px; bottom: 0; left: 0; right: 0; overflow: hidden; }
   #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; }
   #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.94); border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
@@ -94,6 +97,14 @@
   let editMode = false, editSel = null, pendingVia = false;
   let follow = true, headUp = false, traffic = false;
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
+
+  // 모의주행·수정은 관리자(유재필)에게만 보인다 (수정 내용은 어차피 그 폰에만 저장됨)
+  (function () {
+    var nm = '';
+    try { var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null'); if (u && u.name) nm = u.name; } catch (e) { }
+    if (!nm) { try { nm = localStorage.getItem('loggedInUser') || ''; } catch (e) { } }
+    if (String(nm).indexOf('유재필') === -1) document.body.classList.add('nonadmin');
+  })();
 
   ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
   try { const s = localStorage.getItem('yb_map_route'); if (s && ROUTES.includes(s)) $('route').value = s; } catch (e) { }
