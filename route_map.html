@@ -23,6 +23,10 @@
   #card .ds { font-size: 18px; color: #38bdf8; font-weight: 700; }
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   #msg { position: absolute; top: 106px; left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
+  #eRow button, #eRow2 button { flex: 1; font-size: 14px; font-weight: 700; padding: 10px 2px; border-radius: 10px; border: 0; background: #334155; color: #fff; }
+  #eRow2 button#eLine { background: #dc2626; } #eRow2 button#eVia { background: #2563eb; }
+  #card { max-height: 55%; overflow-y: auto; }
   .me { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.35); }
   .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2px solid #475569; }
   .dot.past { background: #94a3b8; border-color: #64748b; }
@@ -39,6 +43,7 @@
 </div>
 <div id="sim">
   <button id="btnSim">▶ 모의주행</button>
+  <button id="btnEdit">✏ 수정</button>
   <select id="simSpeed"><option value="1">실제 속도(40km/h)</option><option value="3">3배</option><option value="8" selected>8배</option><option value="20">20배</option></select>
 </div>
 <div id="msg"></div>
@@ -48,6 +53,15 @@
   <div class="nm" id="nextName">-</div>
   <div class="ds" id="nextDist">GPS 대기 중</div>
   <div class="sub" id="sub"></div>
+  <div id="editBox" style="display:none;margin-top:10px;">
+    <div id="editInfo" class="sub" style="white-space:pre-wrap;color:#e2e8f0;"></div>
+    <div id="eRow">
+      <button id="ePrev">◀ 이전 의심</button><button id="eNext">다음 의심 ▶</button>
+    </div>
+    <div id="eRow2">
+      <button id="eLine">직선으로</button><button id="eVia">지나갈 곳 찍기</button><button id="eReset">원래대로</button>
+    </div>
+  </div>
 </div>
 
 <script src="js/app-config.js"></script>
@@ -60,7 +74,8 @@
   const $ = (id) => document.getElementById(id);
   const SIM = /[?&]sim=1/.test(location.search);   // 책상에서 시험: 지도를 누르면 그 곳이 내 위치
 
-  let map, route = null, poly = null, dots = [], meOv = null;
+  let map, route = null, segLines = [], dots = [], meOv = null;
+  let editMode = false, editSel = null, pendingVia = false;
   let follow = true, headUp = false, traffic = false;
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
@@ -97,12 +112,12 @@
     try { localStorage.setItem('yb_map_route', name); } catch (e) { }
     route = { name, stops: res.stops.filter(s => s[2] && s[3]), anchors: res.anchors || [] };
     route.prog = 0;
-    route.pts = route.stops.map(x => [x[2], x[3]]);
-    route.stopAt = route.stops.map((x, i) => i);
-    if (poly) poly.setMap(null);
+    editSel = null; pendingVia = false;
+    segLines.forEach(l => l.setMap(null)); segLines = [];
     dots.forEach(d => d.setMap(null)); dots = [];
     const path = route.stops.map(s => new kakao.maps.LatLng(s[2], s[3]));
-    poly = new kakao.maps.Polyline({ map, path, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .4 });
+    route.segs = route.stops.slice(1).map((x, i) => [[route.stops[i][2], route.stops[i][3]], [x[2], x[3]]]);
+    joinPts(route); renderSegs();
     route.stops.forEach((s, i) => {
       const el = document.createElement('div'); el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '');
       const ov = new kakao.maps.CustomOverlay({ map, position: path[i], content: el, yAnchor: .5, xAnchor: .5 });
@@ -114,47 +129,151 @@
   }
 
 
-  // ---- 도로를 따라가는 노선선: 정류장 좌표를 OSRM(무료 도로 길찾기)에 넣어 도로 모양을 받아 이 폰에 저장 ----
-  const ROAD_KEY = 'yb_road_v1_';
-  function nearestFrom(pts, from, la, lo) {
-    let bi = from, bd = 1e12;
-    for (let i = from; i < pts.length; i++) { const d = distM(la, lo, pts[i][0], pts[i][1]); if (d < bd) { bd = d; bi = i; } }
-    return bi;
+  // ---- 도로를 따라가는 노선선 ----
+  // 정류장 좌표를 OSRM(무료 도로 길찾기)에 넣어 정류장 사이(구간)마다 도로 모양을 받아 이 폰에 저장.
+  // 정류장에 "도로 오른쪽 가장자리로 접근"(curb)하게 해서 골목으로 돌아 들어가는 현상을 줄임.
+  // 그래도 이상한 구간은 [수정] 버튼으로 직선으로 바꾸거나 지나갈 곳을 직접 찍어 고침.
+  const ROAD_KEY = 'yb_road_v2_', EDIT_KEY = 'yb_roadedit_v1_';
+  const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
+  const r5 = (q) => [+q[0].toFixed(5), +q[1].toFixed(5)];
+  function segLen(seg) { let d = 0; for (let i = 1; i < seg.length; i++) d += distM(seg[i - 1][0], seg[i - 1][1], seg[i][0], seg[i][1]); return d; }
+  function segSuspect(i) {
+    const st = route.stops, a = st[i], b = st[i + 1];
+    const straight = distM(a[2], a[3], b[2], b[3]), len = segLen(route.segs[i]);
+    return len > straight * 1.8 && len - straight > 150;
   }
-  function setRoad(r, pts) {
-    r.pts = pts;
-    let from = 0;
-    r.stopAt = r.stops.map(s => { from = nearestFrom(pts, from, s[2], s[3]); return from; });
+  function suspects() { return route.segs.map((x, i) => i).filter(i => segSuspect(i) && !(route.edits && route.edits[i])); }
+
+  function joinPts(r) {
+    const pts = [], at = [];
+    r.segs.forEach((seg, i) => { at.push(pts.length); pts.push(...(i ? seg.slice(1) : seg)); });
+    at.push(pts.length - 1);
+    r.pts = pts; r.stopAt = at;
     if (r === route && simTimer) simBuild();
-    if (r === route && poly) poly.setPath(pts.map(q => new kakao.maps.LatLng(q[0], q[1])));
   }
-  async function loadRoad(r) {
-    try {
-      const raw = localStorage.getItem(ROAD_KEY + r.name);
-      if (raw) { const o = JSON.parse(raw); if (o && o.n === r.stops.length && o.pts) { setRoad(r, o.pts); return; } }
-    } catch (e) { }
-    const st = r.stops, CH = 20, all = [];
-    let fail = 0;
-    for (let a = 0; a < st.length - 1; a += CH - 1) {
-      if (r !== route) return;                       // 노선을 바꿨으면 중단
-      $('msg').textContent = `${r.name} 도로선 만드는 중... ${Math.min(100, Math.round(a / st.length * 100))}%`;
-      const seg = st.slice(a, Math.min(st.length, a + CH));
-      const url = 'https://router.project-osrm.org/route/v1/driving/' + seg.map(x => x[3] + ',' + x[2]).join(';') + '?overview=full&geometries=geojson&continue_straight=true';
-      let got = null;
-      for (let t = 0; t < 2 && !got; t++) {
-        try {
-          const res = await (await fetch(url)).json();
-          if (res.routes && res.routes[0]) got = res.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-        } catch (e) { }
-      }
-      if (!got) { fail++; got = seg.map(x => [x[2], x[3]]); }   // 실패한 구간은 직선
-      all.push(...(all.length ? got.slice(1) : got));
+
+  function renderSegs() {
+    segLines.forEach(l => l.setMap(null)); segLines = [];
+    route.segs.forEach((seg, i) => {
+      const edited = route.edits && route.edits[i];
+      const sus = editMode && segSuspect(i) && !edited;
+      const sel = editMode && editSel === i;
+      const line = new kakao.maps.Polyline({
+        map, path: seg.map(q => new kakao.maps.LatLng(q[0], q[1])),
+        strokeWeight: sel ? 9 : (editMode ? 7 : 5),
+        strokeColor: sel ? '#f59e0b' : sus ? '#ef4444' : edited && editMode ? '#16a34a' : '#2563eb',
+        strokeOpacity: sel ? .9 : sus ? .75 : .4
+      });
+      kakao.maps.event.addListener(line, 'click', () => { if (editMode) selectSeg(i); });
+      segLines.push(line);
+    });
+  }
+
+  async function osrmLegs(coords) {   // coords: [[lat,lng],...] → 구간별 점 목록(실패 시 null)
+    const pathStr = coords.map(c => c[1] + ',' + c[0]).join(';');
+    const tails = ['&approaches=' + coords.map(() => 'curb').join(';'), ''];   // curb 실패 시 일반 방식 재시도
+    for (const tail of tails) {
+      try {
+        const res = await (await fetch(OSRM + pathStr + '?overview=false&geometries=geojson&steps=true&continue_straight=true' + tail)).json();
+        if (res.routes && res.routes[0] && res.routes[0].legs.length === coords.length - 1) {
+          return res.routes[0].legs.map(leg => {
+            const out = [];
+            leg.steps.forEach(stp => stp.geometry.coordinates.forEach(c => { const q = [c[1], c[0]]; const l = out[out.length - 1]; if (!l || l[0] !== q[0] || l[1] !== q[1]) out.push(q); }));
+            return out.map(r5);
+          });
+        }
+      } catch (e) { }
     }
-    if (r !== route) return;
-    $('msg').textContent = fail ? `도로선 일부(${fail}구간)는 직선으로 표시됩니다.` : '';
-    setRoad(r, all);
-    if (!fail) { try { localStorage.setItem(ROAD_KEY + r.name, JSON.stringify({ n: st.length, pts: all.map(q => [+q[0].toFixed(5), +q[1].toFixed(5)]) })); } catch (e) { } }
+    return null;
   }
+
+  function readEdits(r) { try { return JSON.parse(localStorage.getItem(EDIT_KEY + r.name)) || {}; } catch (e) { return {}; } }
+  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify(r.edits)); } catch (e) { } }
+
+  async function applyEdit(r, i) {   // 한 구간에 수정 내용 적용 (원래대로면 base 사용)
+    const e = r.edits[i], a = [r.stops[i][2], r.stops[i][3]], b = [r.stops[i + 1][2], r.stops[i + 1][3]];
+    if (!e) { r.segs[i] = r.base[i]; return; }
+    if (e === 'line') { r.segs[i] = [a, b]; return; }
+    const legs = await osrmLegs([a, e.via, b]);
+    r.segs[i] = legs ? legs[0].concat(legs[1].slice(1)) : [a, e.via, b];
+  }
+
+  async function loadRoad(r) {
+    r.edits = readEdits(r);
+    let base = null;
+    try {
+      const o = JSON.parse(localStorage.getItem(ROAD_KEY + r.name));
+      if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) base = o.segs;
+    } catch (e) { }
+    if (!base) {
+      const st = r.stops, CH = 20; base = []; let fail = 0;
+      for (let a = 0; a < st.length - 1; a += CH - 1) {
+        if (r !== route) return;                       // 노선을 바꿨으면 중단
+        $('msg').textContent = `${r.name} 도로선 만드는 중... ${Math.min(100, Math.round(a / st.length * 100))}%`;
+        const part = st.slice(a, Math.min(st.length, a + CH)).map(x => [x[2], x[3]]);
+        const legs = await osrmLegs(part);
+        if (legs) base.push(...legs); else { fail++; for (let k = 1; k < part.length; k++) base.push([part[k - 1], part[k]]); }
+      }
+      if (r !== route) return;
+      $('msg').textContent = fail ? `도로선 일부(${fail}덩어리)는 직선으로 표시됩니다.` : '';
+      if (!fail) { try { localStorage.setItem(ROAD_KEY + r.name, JSON.stringify({ n: st.length, segs: base })); } catch (e) { } }
+    }
+    r.base = base; r.segs = base.slice();
+    for (const k of Object.keys(r.edits)) { await applyEdit(r, +k); if (r !== route) return; }
+    joinPts(r); renderSegs(); updateEditInfo();
+  }
+
+  // ---- 수정 화면 ----
+  function updateEditInfo() {
+    if (!editMode || !route || !route.segs) return;
+    const sus = suspects();
+    const ed = Object.keys(route.edits || {}).length;
+    let t = `의심 구간(빨강) ${sus.length}개 · 수정함(초록) ${ed}개`;
+    if (editSel != null) {
+      const a = route.stops[editSel], b = route.stops[editSel + 1];
+      const len = segLen(route.segs[editSel]), straight = distM(a[2], a[3], b[2], b[3]);
+      t = `${a[1]} → ${b[1]}\\n도로선 ${Math.round(len)}m / 직선 ${Math.round(straight)}m (${(len / Math.max(straight, 1)).toFixed(1)}배)` + (pendingVia ? '\\n▶ 지도에서 지나갈 곳을 한 번 누르세요' : '');
+    } else t += '\\n선(구간)을 눌러 고르세요';
+    $('editInfo').textContent = t.replace(/\\n/g, '\n');
+  }
+  function selectSeg(i) {
+    editSel = i; pendingVia = false; renderSegs(); updateEditInfo();
+    const a = route.stops[i], b = route.stops[i + 1];
+    map.setCenter(new kakao.maps.LatLng((a[2] + b[2]) / 2, (a[3] + b[3]) / 2));
+  }
+  async function editAction(kind) {
+    if (editSel == null) { $('msg').textContent = '먼저 고칠 구간(선)을 누르세요.'; return; }
+    $('msg').textContent = '';
+    const i = editSel;
+    if (kind === 'line') route.edits[i] = 'line';
+    else if (kind === 'reset') delete route.edits[i];
+    else if (kind === 'via') { pendingVia = true; updateEditInfo(); return; }
+    saveEdits(route); await applyEdit(route, i); joinPts(route); renderSegs(); updateEditInfo();
+  }
+  async function placeVia(latlng) {
+    pendingVia = false;
+    route.edits[editSel] = { via: [+latlng.getLat().toFixed(5), +latlng.getLng().toFixed(5)] };
+    $('msg').textContent = '다시 계산 중...';
+    saveEdits(route); await applyEdit(route, editSel); joinPts(route); renderSegs(); updateEditInfo();
+    $('msg').textContent = '';
+  }
+  function jumpSuspect(dir) {
+    const sus = suspects(); if (!sus.length) { $('msg').textContent = '의심 구간이 없습니다.'; return; }
+    let k = dir > 0 ? sus.find(x => x > (editSel == null ? -1 : editSel)) : [...sus].reverse().find(x => x < (editSel == null ? 1e9 : editSel));
+    if (k == null) k = dir > 0 ? sus[0] : sus[sus.length - 1];
+    selectSeg(k);
+  }
+  $('btnEdit').onclick = () => {
+    editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
+    $('editBox').style.display = editMode ? 'block' : 'none';
+    if (editMode) { follow = false; $('btnFollow').classList.remove('on'); } else { editSel = null; pendingVia = false; }
+    if (route && route.segs) { renderSegs(); updateEditInfo(); }
+  };
+  $('eLine').onclick = () => editAction('line');
+  $('eVia').onclick = () => editAction('via');
+  $('eReset').onclick = () => editAction('reset');
+  $('ePrev').onclick = () => jumpSuspect(-1);
+  $('eNext').onclick = () => jumpSuspect(1);
 
   // 내 위치로 다음 정류장 찾기
   function update() {
@@ -250,6 +369,7 @@
     kakao.maps.event.addListener(map, 'dragstart', () => { if (follow) { follow = false; $('btnFollow').classList.remove('on'); } });
     kakao.maps.event.addListener(map, 'click', (ev) => {
       const l = ev.latLng;
+      if (editMode && pendingVia && editSel != null) { placeVia(l); return; }
       if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
         let bi = 0, bd = 1e12;
         route.stops.forEach((x, i) => { const d = distM(l.getLat(), l.getLng(), x[2], x[3]); if (d < bd) { bd = d; bi = i; } });
