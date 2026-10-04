@@ -592,3 +592,27 @@ function loadTodayMemo() { loadFolderMemoTab('memo'); }
 function setupTodayMemoAutoSave() { setupFolderCardMemos(); }
 function updateBoardWriterLabels() { /* 통일된 단일창 모듈에서 자동 처리 */ }
 function loadBoardItems(cat) { loadFolderMemoTab(cat === 'ROUTE' ? 'route' : (cat === 'SHIFT' ? 'shift' : 'memo')); }
+
+
+// ================================================================
+// 🧭 [노선지도 버튼] 오늘 내 근무 노선으로 route_map.html 을 바로 연다 (근무 없음/모르면 지난번 노선)
+// ================================================================
+function openRouteMap() {
+  var url = 'route_map.html';
+  try {
+    var name = getLoggedInDriverName();
+    var d = new Date();
+    var today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    var route = '';
+    var sched = JSON.parse(localStorage.getItem('jpil_user_' + name + '_sched_' + today) || 'null');
+    if (sched && sched.route && sched.route !== '-' && sched.workType !== '휴무') route = String(sched.route);
+    if (!route) {
+      var el = document.getElementById('bliRouteNum');
+      if (el && el.innerText) route = el.innerText;
+    }
+    var m = route.match(/(\d{3})\s*([Aa]?)/);
+    if (m) url += '?route=' + m[1] + m[2].toUpperCase();
+  } catch (e) { }
+  location.href = url;
+  return false;
+}

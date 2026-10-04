@@ -97,6 +97,7 @@
 
   ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
   try { const s = localStorage.getItem('yb_map_route'); if (s && ROUTES.includes(s)) $('route').value = s; } catch (e) { }
+  try { const q = new URLSearchParams(location.search).get('route'); if (q && ROUTES.includes(q)) $('route').value = q; } catch (e) { }   // 앱의 [노선지도] 버튼: 오늘 근무 노선
 
   function loadKakao() {
     return new Promise((resolve, reject) => {
