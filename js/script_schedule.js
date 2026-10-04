@@ -595,10 +595,15 @@ function loadBoardItems(cat) { loadFolderMemoTab(cat === 'ROUTE' ? 'route' : (ca
 
 
 // ================================================================
-// 🧭 [노선지도 버튼] 오늘 내 근무 노선으로 route_map.html 을 바로 연다 (근무 없음/모르면 지난번 노선)
+// 🧭 [노선지도 버튼] 오늘 내 근무 노선의 지도(route_map.html)를 앱 위에 덮어 연다
+// - 아래에 라이브 모달을 같이 켜 둔다 → GPS·오차·운행습관 측정이 지도를 보는 동안에도 계속 돌아간다
+// - 지도 화면에는 1초마다 시간카운트·오차배지를 넘겨 주고, 구차장 마이크 위치를 지도 카드 안에 맞춰 준다
 // ================================================================
+var _rm = null;   // { frame, timer, micStyle }
+
 function openRouteMap() {
-  var url = 'route_map.html';
+  if (_rm) return false;
+  var url = 'route_map.html?embed=1';
   try {
     var name = getLoggedInDriverName();
     var d = new Date();
@@ -611,8 +616,58 @@ function openRouteMap() {
       if (el && el.innerText) route = el.innerText;
     }
     var m = route.match(/(\d{3})\s*([Aa]?)/);
-    if (m) url += '?route=' + m[1] + m[2].toUpperCase();
+    if (m) url += '&route=' + m[1] + m[2].toUpperCase();
   } catch (e) { }
-  location.href = url;
+
+  // 라이브 모달을 밑에 켜 둔다(운행습관·오차 측정용). 실패해도 지도는 연다
+  try { if (typeof openLiveModal === 'function') openLiveModal(); } catch (e) { }
+
+  var frame = document.createElement('iframe');
+  frame.id = 'routeMapFrame';
+  frame.src = url;
+  frame.setAttribute('allow', 'geolocation');
+  frame.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100%;height:100dvh;border:0;z-index:10001;background:#0f172a;';
+  document.body.appendChild(frame);
+
+  var widget = document.getElementById('floatingVoiceWidget');
+  _rm = { frame: frame, timer: null, widget: widget, micStyle: widget ? widget.getAttribute('style') : null };
+  _rm.timer = setInterval(pushRouteMapLive, 1000);
+  window.addEventListener('message', routeMapMessage);
   return false;
+}
+
+function closeRouteMap() {
+  if (!_rm) return;
+  clearInterval(_rm.timer);
+  window.removeEventListener('message', routeMapMessage);
+  try { _rm.frame.remove(); } catch (e) { }
+  if (_rm.widget) { if (_rm.micStyle == null) _rm.widget.removeAttribute('style'); else _rm.widget.setAttribute('style', _rm.micStyle); }
+  _rm = null;
+  try { if (typeof closeLiveModal === 'function') closeLiveModal(); } catch (e) { }
+}
+
+function pushRouteMapLive() {
+  if (!_rm || !_rm.frame.contentWindow) return;
+  var t = document.getElementById('liveCardTimeLeft'), b = document.getElementById('bisDelayBadge');
+  var msg = { type: 'rm-live', time: t ? t.innerText.trim() : '', delay: '', dc: '', db: '', dbd: '' };
+  if (b) {
+    var cs = getComputedStyle(b);
+    msg.delay = b.innerText.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
+  }
+  try { _rm.frame.contentWindow.postMessage(msg, location.origin); } catch (e) { }
+}
+
+function routeMapMessage(ev) {
+  if (!_rm || ev.origin !== location.origin || !ev.data) return;
+  var d = ev.data;
+  if (d.type === 'rm-close') closeRouteMap();
+  else if (d.type === 'rm-mic' && _rm.widget && d.rect) {
+    // 구차장 마이크를 지도 카드 안의 빈 자리로 옮긴다
+    var w = _rm.widget, sc = Math.max(0.4, Math.min(1, d.rect.h / 76));
+    w.style.right = Math.round(window.innerWidth - d.rect.right) + 'px';
+    w.style.bottom = Math.round(window.innerHeight - d.rect.bottom) + 'px';
+    w.style.left = 'auto'; w.style.top = 'auto';
+    w.style.transformOrigin = 'bottom right'; w.style.transform = 'scale(' + sc + ')';
+    w.style.display = 'flex';
+  }
 }

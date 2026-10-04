@@ -23,10 +23,17 @@
   body.nonadmin #msg { top: calc(62px + var(--sat)); }
   #view { position: absolute; top: calc(96px + var(--sat)); bottom: 0; left: 0; right: 0; overflow: hidden; }
   #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .8s linear; will-change: transform; }
-  #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.94); border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
+  #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.47); border-radius: 14px; padding: 10px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
   #card .lb { font-size: 12px; color: #94a3b8; }
-  #card .nm { font-size: 24px; font-weight: 800; margin: 2px 0; }
-  #card .ds { font-size: 18px; color: #38bdf8; font-weight: 700; }
+  #rowA { display: flex; align-items: baseline; gap: 10px; }
+  #card .nm { font-size: 24px; font-weight: 800; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #card .ds { font-size: 22px; color: #38bdf8; font-weight: 700; white-space: nowrap; }
+  #rowB { display: flex; align-items: center; gap: 10px; margin-top: 6px; min-height: 56px; }
+  #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #cdBadge { min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
+  #anchorName { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #micSlot { flex: 0 0 56px; width: 56px; height: 56px; }
+  body.standalone #cdTime, body.standalone #cdBadge, body.standalone #micSlot { display: none; }
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   #msg { position: absolute; top: calc(106px + var(--sat)); left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
@@ -53,7 +60,7 @@
 <body>
 <div id="rot">폰을 세로로 돌려 주세요</div>
 <div id="top">
-  <button id="btnBack" onclick="location.href='index.html'">← 앱</button>
+  <button id="btnBack" onclick="if (window.parent !== window) parent.postMessage({ type: 'rm-close' }, location.origin); else location.href = 'index.html';">← 앱</button>
   <select id="route"></select>
   <button id="btnPan"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>지도 이동</button>
 </div>
@@ -65,10 +72,14 @@
 <div id="msg"></div>
 <div id="view"><div id="map"></div></div>
 <div id="card">
-  <div class="lb">다음 정류장</div>
-  <div class="nm" id="nextName">-</div>
-  <div class="ds" id="nextDist">GPS 대기 중</div>
-  <div class="sub" id="sub"></div>
+  <div id="rowA"><span class="nm" id="nextName">-</span><span class="ds" id="nextDist">GPS 대기 중</span></div>
+  <div id="rowB">
+    <span id="cdTime" class="big">--:--:--</span>
+    <span id="cdBadge" class="big badge">0</span>
+    <span id="anchorName"></span>
+    <div id="micSlot"></div>
+  </div>
+  <div class="sub" id="sub" style="display:none"></div>
   <div id="editBox" style="display:none;margin-top:10px;">
     <div id="eHead" style="font-size:20px;font-weight:800;"></div>
     <div id="eName" style="font-size:17px;font-weight:700;margin-top:2px;"></div>
@@ -95,6 +106,8 @@
   const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
   const ROUTES = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
   const $ = (id) => document.getElementById(id);
+  const EMBED = /[?&]embed=1/.test(location.search);
+  if (!EMBED) document.body.classList.add('standalone');
   const SIM = /[?&]sim=1/.test(location.search);   // 책상에서 시험: 지도를 누르면 그 곳이 내 위치
 
   let map, route = null, segLines = [], dots = [], meOv = null;
@@ -509,6 +522,8 @@
     const d = distM(me.lat, me.lon, s[2], s[3]);
     $('nextName').textContent = s[1];
     $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+    const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
+    $('anchorName').textContent = '→ ' + st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
@@ -518,6 +533,23 @@
     + '<circle cx="22" cy="22" r="19" fill="#2563eb" fill-opacity=".25"/>'
     + '<path d="M22 -6 L33 10 L11 10 Z" fill="#2563eb" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>'
     + '<circle cx="22" cy="22" r="11" fill="#2563eb" stroke="#fff" stroke-width="3.4"/></svg>';
+
+  // 앱(부모 화면)이 1초마다 보내 주는 시간카운트·오차배지를 표시
+  window.addEventListener('message', (ev) => {
+    if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
+    const d = ev.data;
+    if (d.time) $('cdTime').textContent = d.time;
+    const bd = $('cdBadge'); bd.textContent = d.delay || '0';
+    if (d.dc) { bd.style.color = d.dc; bd.style.background = d.db; bd.style.borderColor = d.dbd; }
+  });
+  // 구차장 마이크: 앱 쪽 마이크를 이 카드의 빈 자리로 옮기도록 위치를 알려 준다
+  function sendMicRect() {
+    if (!EMBED || window.parent === window) return;
+    const r = $('micSlot').getBoundingClientRect();
+    if (!r.width) return;
+    parent.postMessage({ type: 'rm-mic', rect: { right: r.right, bottom: r.bottom, h: r.height } }, location.origin);
+  }
+  setInterval(sendMicRect, 1000); window.addEventListener('resize', sendMicRect);
 
   function onPos(lat, lon, speedKmh, hd, fromSim) {
     if (simTimer && !fromSim) return;
