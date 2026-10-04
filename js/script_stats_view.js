@@ -222,9 +222,20 @@
     }
 
     // 측정 N회 / 급정거 N회 / 급출발 N회, 급한 정류장이 생기면 Top3가 아래로 이어서 늘어남 (이번 회차 / 월별 누적 공통)
+    function stopHabitDiag() {
+        const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
+        if (!d || !d.fix) return '<div style="font-size:10px; color:#64748b; margin-top:6px;">점검: GPS 수신 기록 없음</div>';
+        return `<div style="font-size:10px; color:#64748b; margin-top:6px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
+    }
+
     function renderStopHabit(scope, v, loading) {
         const el = document.getElementById('habitList_' + scope);
         if (!el) return;
+        renderStopHabitInner(el, scope, v, loading);
+        if (scope === 'cur') el.insertAdjacentHTML('beforeend', stopHabitDiag());
+    }
+
+    function renderStopHabitInner(el, scope, v, loading) {
         const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:12px; ${gray}">불러오는 중...</div>`; return; }

@@ -18,13 +18,18 @@
     var DEPART_M = 100;
     var DEPART_SEC = 12;
     var MAX_ACC_M = 40;
-    var MAX_GAP_S = 3;
+    var MAX_GAP_S = 6;           // GPS가 이 시간 넘게 끊기면 그 구간은 판정 안 함 (폰이 2~3초 간격으로 줄 때도 이어지게)
 
     var buf = [];                // 최근 위치 [{t, v, lat, lon}]
     var phase = 'run';           // run | stopped | depart
     var curIdx = -1, curLat = 0, curLon = 0, departT0 = 0, departMax = 0;
     var bufDriver = null, lastIdx = null, uploading = false;
     var state = null;            // { trips: {key: trip}, serial: {}, cur: key }
+    var rawPrev = null;          // 속도값이 안 올 때 위치 차이로 속도를 구하기 위한 직전 위치
+    var diag = { fix: 0, noSpeed: 0, derived: 0, off: 0, noMaster: 0, lowAcc: 0, stops: 0, why: '' };   // 점검용 (화면 맨 아래에 작게 표시)
+    function saveDiag() { lsSet(KEY_PREFIX + 'diag', JSON.stringify(diag)); }
+    function loadDiag() { try { var o = JSON.parse(lsGet(KEY_PREFIX + 'diag') || 'null'); if (o) diag = Object.assign(diag, o); } catch (e) { } }
+    loadDiag();
 
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
@@ -61,14 +66,16 @@
     function todaySched() {
         try { return JSON.parse(lsGet(typeof getDriverKey === 'function' ? getDriverKey('sched_' + todayStr()) : 'sched_' + todayStr()) || 'null'); } catch (e) { return null; }
     }
+    var offWhy = '';
     function onDutyNow() {
         try {
             var sd = todaySched();
             var wt = sd && sd.workType ? String(sd.workType).trim() : '';
-            if (wt !== '정상' && wt !== '대타') return false;
-            if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) return false;
+            if (wt !== '정상' && wt !== '대타') { offWhy = '오늘 근무가 정상·대타가 아님 (' + (wt || '근무 정보 없음') + ')'; return false; }
+            if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) { offWhy = '지금이 운행 시간이 아님'; return false; }
+            offWhy = '';
             return true;
-        } catch (e) { return false; }
+        } catch (e) { offWhy = '근무 정보 확인 오류'; return false; }
     }
 
     // 지금 회차 기록을 찾거나 새로 만든다. 같은 근무·회차라도 정류장 번호가 크게 되돌아가면 새 회차로 본다.
@@ -135,13 +142,30 @@
             if (bufDriver !== driver()) { state = null; resetPhase(); lastIdx = null; bufDriver = driver(); }
             if (!driver()) return;
             if (window.simState && window.simState.active) return;
-            if (speedKmh === null || speedKmh === undefined) return;
-            if (accuracy && accuracy > MAX_ACC_M) return;
             var pos = window.lastGpsPosition;
             if (!pos || !pos.lat) return;
-            if (!onDutyNow()) return;
+            diag.fix++;
+            // 속도값이 안 오는 폰(서 있을 때 등)은 직전 위치와의 거리로 속도를 구함
+            var nowMs = Date.now();
+            if (speedKmh === null || speedKmh === undefined) {
+                diag.noSpeed++;
+                var kmh = null;
+                if (rawPrev && nowMs - rawPrev.ms >= 500 && nowMs - rawPrev.ms <= 6000) {
+                    kmh = Math.round(haversineM(rawPrev.lat, rawPrev.lon, pos.lat, pos.lon) / ((nowMs - rawPrev.ms) / 1000) * 3.6);
+                    if (kmh <= 2) kmh = 0;
+                    if (kmh > 120) kmh = null;
+                }
+                if (kmh !== null) diag.derived++;
+                speedKmh = kmh;
+            }
+            rawPrev = { ms: nowMs, lat: pos.lat, lon: pos.lon };
+            if (speedKmh === null || speedKmh === undefined) return;
+            if (accuracy && accuracy > MAX_ACC_M) { diag.lowAcc++; return; }
+            if (!onDutyNow()) { diag.off++; diag.why = offWhy; return; }
             var master = window.standardMasterCache || window.currentTripMasterCache || [];
-            if (!master.length) return;
+            if (!master.length) { diag.noMaster++; diag.why = '노선 정류장 정보 없음'; return; }
+            diag.why = '';
+            if (diag.fix % 10 === 0) saveDiag();
 
             var trip = currentTrip(duty);
             var now = Date.now() / 1000;
@@ -149,7 +173,7 @@
             var prev = buf.length ? buf[buf.length - 1] : null;
             if (prev && now - prev.t > MAX_GAP_S) { if (phase === 'depart') phase = 'run'; buf = []; prev = null; }
             buf.push(cur);
-            while (buf.length && now - buf[0].t > 12) buf.shift();
+            while (buf.length && now - buf[0].t > 20) buf.shift();
             if (!prev) return;
             var dt = Math.max(0.5, now - prev.t);
 
@@ -164,7 +188,7 @@
                     }
                     var idx = ran ? nearestStop(cur.lat, cur.lon, master) : -1;
                     if (idx !== -1) {
-                        markStop(trip, idx, stopName(master[idx]), maxDecel);
+                        markStop(trip, idx, stopName(master[idx]), maxDecel); diag.stops++; saveDiag();
                         phase = 'stopped'; curIdx = idx; curLat = stopLat(master[idx]); curLon = stopLng(master[idx]);
                     }
                 }
@@ -289,7 +313,7 @@
             .catch(function () { return finish(); });
     }
 
-    window.DrivingHabit = { onFix: onFix, upload: upload, getCurrent: getCurrent, fetchMonth: fetchMonth, MIN_STOPS: MIN_STOPS };
+    window.DrivingHabit = { onFix: onFix, upload: upload, getCurrent: getCurrent, fetchMonth: fetchMonth, getDiag: function () { return diag; }, MIN_STOPS: MIN_STOPS };
     setInterval(upload, 30000);
     window.addEventListener('load', function () { setTimeout(upload, 5000); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });
