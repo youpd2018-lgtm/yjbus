@@ -494,9 +494,9 @@
     for (let k = 0; k < an.length - 1; k++) if (idx > an[k] && idx <= an[k + 1]) return [an[k], an[k + 1]];
     return [an[0], an[1]];
   }
-  function applyLegDots() {
-    const lg = !editMode && route.leg;
-    dots.forEach((ov, i) => ov.setMap(!lg || (i >= lg[0] && i <= lg[1]) ? map : null));
+  function applyLegDots() {   // 정류장 점: 평소에는 숨김(깔끔하게), 수정 화면에서만 표시
+    dots.forEach(ov => ov.setMap(editMode ? map : null));
+    if (ringOv) { ringOv.setMap(null); ringOv = null; }
   }
 
   // 내 위치로 다음 정류장 찾기
@@ -527,9 +527,6 @@
     const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
     $('anchorName').textContent = st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
-    const rl = new kakao.maps.LatLng(s[2], s[3]);
-    if (!ringOv) { const el = document.createElement('div'); el.className = 'ring'; ringOv = new kakao.maps.CustomOverlay({ map, position: rl, content: el, xAnchor: .5, yAnchor: .5, zIndex: 8 }); }
-    else ringOv.setPosition(rl);
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
 
