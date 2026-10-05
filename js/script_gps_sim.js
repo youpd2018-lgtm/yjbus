@@ -397,7 +397,17 @@ function loadLatestColleagueMessage() {
                 const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
                 if (!la || !lo) continue;
                 const d = calculateGpsDistanceMeters(lat, lon, la, lo);
-                if (d < farD) { farD = d; farIdx = i; }
+                if (d >= farD) continue;
+                // 이미 지나온 정류장과 같은 자리(기점·종점이 같은 노선, 왕복 같은 위치 정류장)는 '건너뜀'으로 보지 않는다
+                let sameAsPassed = false;
+                for (let k = 0; k <= window.lastPassedStopIndex && !sameAsPassed; k++) {
+                    const q = masterCache[k];
+                    const qa = parseFloat(q.lat !== undefined ? q.lat : (Array.isArray(q) ? q[8] : null));
+                    const qo = parseFloat(q.lng !== undefined ? q.lng : (Array.isArray(q) ? q[9] : null));
+                    if (qa && qo && calculateGpsDistanceMeters(la, lo, qa, qo) < 120) sameAsPassed = true;
+                }
+                if (sameAsPassed) continue;
+                farD = d; farIdx = i;
             }
             if (farIdx !== -1 && farD <= 55) { closestIdx = farIdx; minDistance = farD; }
         }
