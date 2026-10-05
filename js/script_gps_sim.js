@@ -419,7 +419,8 @@ function loadLatestColleagueMessage() {
             dists.forEach((d, i) => { if (d !== Infinity && !dirOk(masterCache, i)) dists[i] = Infinity; });
             let best = -1, bestD = Infinity;
             dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
-            if (best !== -1 && bestD <= 1500) {
+            // 다리 위·정류장이 멀리 남은 곳에서도 최대한 찾는다(반경 6km). 그래도 못 찾으면 임의로 정류장을 넣지 않고 그대로 둔다
+            if (best !== -1 && bestD <= 6000) {
                 // 기점·종점이 같은 장소인 순환 노선: 비슷한 거리(30m 차이 이내)면 시각상 가까운 정류장을 택함
                 let pick = best;
                 dists.forEach((d, i) => { if (d <= bestD + 30 && Math.abs(i - anchorIdx) < Math.abs(pick - anchorIdx)) pick = i; });
