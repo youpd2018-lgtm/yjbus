@@ -336,11 +336,51 @@ function loadLatestColleagueMessage() {
         }
     }
 
+    // 🧭 [진행 방향 판정] 마주 오는 반대편 차선 정류장(같은 도로, 반대 방향)을 내 정류장으로 착각하지 않도록
+    //    내 이동 방향(최근 위치 변화·GPS 방향)과 정류장 순서의 진행 방향이 크게 다르면 후보에서 뺀다
+    function bearingDeg(la1, lo1, la2, lo2) {
+        const r = Math.PI / 180;
+        const y = Math.sin((lo2 - lo1) * r) * Math.cos(la2 * r);
+        const x = Math.cos(la1 * r) * Math.sin(la2 * r) - Math.sin(la1 * r) * Math.cos(la2 * r) * Math.cos((lo2 - lo1) * r);
+        return (Math.atan2(y, x) / r + 360) % 360;
+    }
+    function rowLL(r) {
+        if (!r) return null;
+        const la = parseFloat(r.lat !== undefined ? r.lat : (Array.isArray(r) ? r[8] : null));
+        const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
+        return (la && lo) ? [la, lo] : null;
+    }
+    function updateTravelHeading(lat, lon, speedKmh) {
+        const ref = window._ybHdRef;
+        if (!ref) { window._ybHdRef = { lat: lat, lon: lon }; return; }
+        const d = calculateGpsDistanceMeters(ref.lat, ref.lon, lat, lon);
+        if (d >= 25 && (speedKmh === undefined || speedKmh === null || speedKmh >= 4)) {
+            window._ybHeading = bearingDeg(ref.lat, ref.lon, lat, lon);
+            window._ybHdRef = { lat: lat, lon: lon };
+        } else if (d >= 25) {
+            window._ybHdRef = { lat: lat, lon: lon };
+        }
+    }
+    // 정류장 i 가 내 진행 방향과 맞는가 (방향을 모르면 true)
+    function dirOk(masterList, i) {
+        const h = window._ybHeading;
+        if (h === undefined || h === null || isNaN(h)) return true;
+        const a = rowLL(masterList[Math.max(0, i - 1)]);
+        const b = rowLL(masterList[Math.min(masterList.length - 1, i + 1)]);
+        if (!a || !b) return true;
+        if (calculateGpsDistanceMeters(a[0], a[1], b[0], b[1]) < 30) return true;
+        const rb = bearingDeg(a[0], a[1], b[0], b[1]);
+        let diff = Math.abs(rb - h) % 360;
+        if (diff > 180) diff = 360 - diff;
+        return diff <= 100;
+    }
+
     // 🎯 [핵심] GPS 위치 수신 시 정류장 통과 판정 및 오차시간 확정 잠금(Lock)
     function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
         if (window.DrivingHabit && window.lastGpsPosition) window.DrivingHabit.onFix(speedKmh, window.lastGpsPosition.accuracy, window.lastGpsPosition.heading, duty);
         const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
         if (!masterCache || masterCache.length === 0) return;
+        updateTravelHeading(lat, lon, speedKmh);
 
         // 출발 시각 전에는 정류장 판정을 하지 않고 출발 정류장·다음 정류장만 고정 표시
         if (isBeforeDeparture(masterCache)) { renderBeforeDeparture(masterCache); return; }
@@ -374,6 +414,8 @@ function loadLatestColleagueMessage() {
                 const lo = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : null));
                 return (la && lo) ? calculateGpsDistanceMeters(lat, lon, la, lo) : Infinity;
             });
+            // 내 진행 방향과 반대인(마주 오는 차선) 정류장은 후보에서 제외
+            dists.forEach((d, i) => { if (d !== Infinity && !dirOk(masterCache, i)) dists[i] = Infinity; });
             let best = -1, bestD = Infinity;
             dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
             if (best !== -1 && bestD <= 1500) {
@@ -408,7 +450,7 @@ function loadLatestColleagueMessage() {
             let stopLat = parseFloat(row.lat !== undefined ? row.lat : (Array.isArray(row) ? row[8] : null));
             let stopLng = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : null));
 
-            if (stopLat && stopLng) {
+            if (stopLat && stopLng && dirOk(masterCache, i)) {
                 let dist = calculateGpsDistanceMeters(lat, lon, stopLat, stopLng);
                 if (dist < minDistance) {
                     minDistance = dist;
@@ -425,7 +467,7 @@ function loadLatestColleagueMessage() {
                 const r = masterCache[i];
                 const la = parseFloat(r.lat !== undefined ? r.lat : (Array.isArray(r) ? r[8] : null));
                 const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
-                if (!la || !lo) continue;
+                if (!la || !lo || !dirOk(masterCache, i)) continue;
                 const d = calculateGpsDistanceMeters(lat, lon, la, lo);
                 if (d >= farD) continue;
                 // 이미 지나온 정류장과 같은 자리(기점·종점이 같은 노선, 왕복 같은 위치 정류장)는 '건너뜀'으로 보지 않는다
