@@ -213,6 +213,7 @@
             busNo: cleanBusNo,
             seq: seqNumText,
             turnNum: turnInt,
+            nextSwitchAt: tripEndMs[turnInt] ? tripEndMs[turnInt] + 15 * 60000 : 0,   // 이 시각(내 회차 종료+15분)이 지나야 다음 회차로 바꾼다
             uniqueKey: assembledUniqueKey, // 조립된 고유키 백엔드로 전달
             tripMasterId: assembledUniqueKey
         };

@@ -907,6 +907,9 @@ function loadLatestColleagueMessage() {
             if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
                 syncSequenceBoxesFromMainSchedule();
             }
+            // 회차는 한 번 맞추면 바뀔 시각(내 회차 종료+15분)이 올 때까지 다시 확인하지 않는다
+            const haveMaster = window.standardMasterCache && window.standardMasterCache.length > 0;
+            if (haveMaster && duty && duty.nextSwitchAt && Date.now() < duty.nextSwitchAt) return;
             const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
             if (curDuty && curDuty.uniqueKey) {
                 const simRunning = window.simState && window.simState.active;   // 모의주행 중에는 시험용 시간표를 덮어쓰지 않음
