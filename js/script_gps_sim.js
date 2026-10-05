@@ -365,7 +365,9 @@ function loadLatestColleagueMessage() {
         }
 
         // 2. 전방 및 주변 정류장 탐색 (앞뒤 5개 정류장 슬라이딩 윈도우)
-        let winStart = Math.max(0, anchorIdx - 1);
+        // 한 번 통과한 정류장보다 뒤(이전 정류장)로는 되돌아가지 않는다 (GPS 흔들림·인접 정류장 때문에 현재 정류장이 왔다 갔다 하는 것 방지)
+        const hasPassed = (typeof window.lastPassedStopIndex === 'number' && window.lastPassedStopIndex >= 0);
+        let winStart = hasPassed ? anchorIdx + 1 : Math.max(0, anchorIdx - 1);   // 이미 통과한 정류장은 제외하고 앞쪽만 본다
         let winEnd = Math.min(masterCache.length - 1, anchorIdx + 4);
 
         let closestIdx = -1;
@@ -386,7 +388,35 @@ function loadLatestColleagueMessage() {
         }
 
         // 3. 정류장 통과 판정 (반경 50m 이내 진입 시)
-        if (closestIdx !== -1 && minDistance <= 55) {
+        // 멀리 앞(창 밖)으로 건너뛴 경우(터널·GPS 끊김 후 복귀)도 3번 연속 같은 정류장이 잡히면 인정
+        if (hasPassed && !(closestIdx !== -1 && minDistance <= 55)) {
+            let farIdx = -1, farD = Infinity;
+            for (let i = winEnd + 1; i < masterCache.length; i++) {
+                const r = masterCache[i];
+                const la = parseFloat(r.lat !== undefined ? r.lat : (Array.isArray(r) ? r[8] : null));
+                const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
+                if (!la || !lo) continue;
+                const d = calculateGpsDistanceMeters(lat, lon, la, lo);
+                if (d < farD) { farD = d; farIdx = i; }
+            }
+            if (farIdx !== -1 && farD <= 55) { closestIdx = farIdx; minDistance = farD; }
+        }
+        let acceptPass = closestIdx !== -1 && minDistance <= 55;
+        if (acceptPass && hasPassed) {
+            const last = window.lastPassedStopIndex;
+            if (closestIdx <= last) {
+                acceptPass = false;                                   // 같은 정류장·뒤쪽 정류장은 무시 (되돌아가지 않음)
+            } else {
+                const need = (closestIdx - last) <= 1 ? 1 : ((closestIdx - last) <= 4 ? 2 : 3);   // 한 칸=바로, 건너뛰면 연속 확인
+                const pj = window._stopPendingJump || {};
+                const cnt = (pj.idx === closestIdx) ? pj.n + 1 : 1;
+                window._stopPendingJump = { idx: closestIdx, n: cnt };
+                if (cnt < need) acceptPass = false; else window._stopPendingJump = null;
+            }
+        } else if (!acceptPass) {
+            // 정류장 근처가 아니면 '연속 확인' 횟수는 유지 (한 번 못 잡았다고 처음부터 다시 세지 않음)
+        }
+        if (acceptPass) {
             if (window.lastPassedStopIndex !== closestIdx) {
                 window.lastPassedStopIndex = closestIdx;
                 window.lastMatchedMasterIndex = closestIdx;
@@ -436,7 +466,7 @@ function loadLatestColleagueMessage() {
             }
         } catch (e) { }
 
-        // 4. 3번째 카드(소통정보 카드) 다음 정류장 / 다음다음 정류장 자동 표출
+        // 4. 3번째 카드(소통정보 카드) 현재 / 다음 정류장 표출 (GPS 통과 기준. GPS가 끊겨도 마지막 값을 그대로 유지)
         let displayTargetIdx = (window.lastPassedStopIndex !== null) ? window.lastPassedStopIndex + 1 : anchorIdx;
         displayTargetIdx = Math.min(masterCache.length - 1, Math.max(0, displayTargetIdx));
 
@@ -985,6 +1015,20 @@ function loadLatestColleagueMessage() {
         if (!masterList || !Array.isArray(masterList) || masterList.length === 0) return;
         // 모의주행 중에는 현재 시각 기준 자동 표출이 시뮬레이터의 정류장 표시를 덮어쓰지 않도록 건너뜀
         if (window.simState && window.simState.active) return;
+        // 이미 GPS로 정류장을 통과했다면 시각 기준으로 다시 계산하지 않고 그 정류장 기준으로만 표시한다
+        // (15초마다 도는 시각 기준 갱신이 현재 정류장·표준시간을 과거/미래로 흔드는 원인이었음)
+        try {
+            const gi = window.lastPassedStopIndex;
+            if (typeof gi === 'number' && gi >= 0 && gi < masterList.length) {
+                const gName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
+                const gTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
+                const ti = Math.min(masterList.length - 1, Math.max(0, gi + 1));
+                const nr = masterList[ti] || masterList[0], ar = masterList[ti + 1] || null, cr = ti > 0 ? masterList[ti - 1] : null;
+                updateTrafficStopSequence(nr ? (gName(nr) || '다음 정류장') : '다음 정류장', nr ? (gTime(nr) || '--:--:--') : '--:--:--',
+                    ar ? (gName(ar) || '(종점 도착)') : '(종점 도착)', ar ? (gTime(ar) || '-') : '-', undefined, cr ? gName(cr) : '', cr ? gTime(cr) : '');
+                return;
+            }
+        } catch (eG) { }
         try {
             const now = new Date();
             let curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
