@@ -545,11 +545,15 @@
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
+    // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
+    if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, false, true); }
     if (d.dc) { bd.style.color = d.dc; bd.style.background = d.db; bd.style.borderColor = d.dbd; }
   });
 
-  function onPos(lat, lon, speedKmh, hd, fromSim) {
+  let lastOwnFix = 0, lastParentFix = 0, gpsWatchId = null;
+  function onPos(lat, lon, speedKmh, hd, fromSim, fromParent) {
     if (simTimer && !fromSim) return;
+    if (!fromParent && !fromSim) lastOwnFix = Date.now();
     const prev = me;
     me = { lat, lon, speed: speedKmh };
     if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
@@ -624,10 +628,21 @@
   function startGps() {
     if (SIM) { $('msg').textContent = '시험 모드: 지도를 누르면 그 곳이 내 위치가 됩니다.'; return; }
     if (!navigator.geolocation) { $('msg').textContent = '이 기기는 GPS를 지원하지 않습니다.'; return; }
-    navigator.geolocation.watchPosition(
-      p => onPos(p.coords.latitude, p.coords.longitude, p.coords.speed != null && p.coords.speed >= 0 ? Math.round(p.coords.speed * 3.6) : null, p.coords.heading),
-      e => { $('nextDist').textContent = e.code === 1 ? '위치 권한을 허용해 주세요' : 'GPS 신호 찾는 중...'; },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+    const begin = () => {
+      if (gpsWatchId != null) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch (e) { } }
+      gpsWatchId = navigator.geolocation.watchPosition(
+        p => onPos(p.coords.latitude, p.coords.longitude, p.coords.speed != null && p.coords.speed >= 0 ? Math.round(p.coords.speed * 3.6) : null, p.coords.heading),
+        e => { if (e.code === 1) $('nextDist').textContent = '위치 권한을 허용해 주세요'; else if (!me) $('nextDist').textContent = 'GPS 신호 찾는 중...'; },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+    };
+    begin();
+    // 위치가 8초 넘게 안 들어오면 GPS 받기를 새로 시작(휴대폰이 조용히 끊는 경우 대비)
+    let restartAt = 0;
+    setInterval(() => {
+      if (simTimer || document.hidden) return;
+      const base = Math.max(lastOwnFix, restartAt);
+      if (Date.now() - base > 8000) { restartAt = Date.now(); begin(); }
+    }, 3000);
   }
 
   // 평소에는 내 위치·진행 방향에 고정(끌기 잠금, 확대/축소만 가능). [지도 이동]을 누르면 잠시 자유롭게 끌어 볼 수 있고,

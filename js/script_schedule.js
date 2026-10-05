@@ -653,6 +653,9 @@ function pushRouteMapLive() {
     var cs = getComputedStyle(b);
     msg.delay = b.innerText.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
   }
+  // 앱(라이브 모달)이 받은 GPS도 같이 보내 준다: 지도 쪽 GPS가 멈춰도 내 위치가 멈추지 않게 하는 예비 경로
+  var g = window.lastGpsPosition;
+  if (g && window._gpsLastFixAt && Date.now() - window._gpsLastFixAt < 5000) msg.gps = { lat: g.lat, lon: g.lon, spd: g.speedKmh, hd: g.heading, at: window._gpsLastFixAt };
   try { _rm.frame.contentWindow.postMessage(msg, location.origin); } catch (e) { }
 }
 
