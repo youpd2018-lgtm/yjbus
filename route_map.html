@@ -69,7 +69,7 @@
 <div id="sim">
   <button id="btnSim">▶ 모의주행</button>
   <button id="btnEdit">✏ 수정</button>
-  <button id="btnRec">● 기록</button><button id="btnRecView">비교</button><button id="btnRecSave">📥</button>
+  <button id="btnRec">● 기록</button><button id="btnRecSec" style="display:none">✎ 구간</button><button id="btnRecView">비교</button><button id="btnRecSave">📥</button>
   <select id="simSpeed"><option value="1">실제 속도(40km/h)</option><option value="3">3배</option><option value="8" selected>8배</option><option value="20">20배</option></select>
 </div>
 <div id="msg"></div>
@@ -553,59 +553,103 @@
   });
 
   let lastOwnFix = 0, lastParentFix = 0, gpsWatchId = null;
-  // ---- 운행 기록(관리자): 달리는 동안 GPS 자취를 폰에 저장 → 지금 선과 같은 점 개수로 줄여 빨간 점으로 비교 ----
-  const REC_KEY = 'yb_rec_v1_';
-  let recOn = false, recPts = [], recMarks = [], recLine = null, recShow = false;
-  function recLoad(name) { try { return JSON.parse(localStorage.getItem(REC_KEY + name) || '[]'); } catch (e) { return []; } }
-  function recSave() { try { if (route) localStorage.setItem(REC_KEY + route.name, JSON.stringify(recPts)); } catch (e) { } }
+  // ---- 운행 기록(관리자): 첫 출발지에서 [기록] 시작 → 바꿀 곳에서 [구간] 시작/끝 → 도착지에서 [종료]. 구간 안만 새 선, 나머지는 기존 선 ----
+  const REC_KEY = 'yb_recs_v2_';
+  let recOn = false, recPts = [], recSecs = [], recMarks = [], recLines = [], recShow = false, recDot = null;
+  function recLoad(name) {
+    recPts = []; recSecs = [];
+    try { const o = JSON.parse(localStorage.getItem(REC_KEY + name) || 'null'); if (o) { recPts = o.pts || []; recSecs = o.secs || []; } } catch (e) { }
+  }
+  function recSave() { try { if (route) localStorage.setItem(REC_KEY + route.name, JSON.stringify({ pts: recPts, secs: recSecs })); } catch (e) { } }
+  function recLabels() {
+    const open = recSecs.length && recSecs[recSecs.length - 1].b == null;
+    $('btnRec').textContent = recOn ? '■ 종료' : '● 기록';
+    $('btnRec').classList.toggle('on', recOn);
+    $('btnRecSec').textContent = open ? '구간 끝' : '✎ 구간';
+    $('btnRecSec').classList.toggle('on', !!open);
+    $('btnRecSec').style.display = recOn ? '' : 'none';
+  }
   function recAdd(lat, lon) {
     const q = recPts[recPts.length - 1];
     if (q && distM(q[0], q[1], lat, lon) < 3) return;   // 제자리 점은 건너뜀
     recPts.push([+lat.toFixed(6), +lon.toFixed(6), Math.round(Date.now() / 1000)]);
     if (recPts.length % 5 === 0) recSave();
-    $('btnRec').textContent = '■ ' + recPts.length;
   }
-  function recTarget() {   // 지금 저장된 선의 점 개수(파일로 저장할 때와 같은 방식)
-    if (!route || !route.segs) return 200;
-    return Math.max(20, route.segs.reduce((n, sg) => n + simplifyIdx(sg, 3).length, 0) - (route.segs.length - 1));
+  function recClear() { recMarks.forEach(m => m.setMap(null)); recMarks = []; recLines.forEach(l => l.setMap(null)); recLines = []; }
+  function nearStopIdx(p) { let bi = 0, bd = 1e12; route.stops.forEach((x, i) => { const d = distM(p[0], p[1], x[2], x[3]); if (d < bd) { bd = d; bi = i; } }); return bi; }
+  // 기존 선 + 구간 기록 합치기: 구간 시작·끝은 누른 곳에서 가장 가까운 정류장, 그 사이 정류장 구간만 새 기록으로 바꾼다
+  function recBuild() {
+    const segs = route.segs.map(sg => sg.slice()), changed = [], notes = [];
+    recSecs.forEach((sc, n) => {
+      const a = sc.a, b = sc.b == null ? recPts.length - 1 : sc.b;
+      if (b - a < 2) { notes.push((n + 1) + '번 구간: 기록이 너무 짧아 건너뜀'); return; }
+      const sa = nearStopIdx(recPts[a]), sb = nearStopIdx(recPts[b]);
+      if (sb <= sa) { notes.push((n + 1) + '번 구간: 시작·끝 정류장이 같아 건너뜀'); return; }
+      let prev = Math.max(0, a - 30); const idx = [];
+      for (let k = sa; k <= sb; k++) {
+        const st = route.stops[k]; let found = null, best = -1, j = prev;
+        while (j <= b && j < recPts.length) {
+          if (distM(recPts[j][0], recPts[j][1], st[2], st[3]) < 40) {
+            let bj = j; while (j <= b && distM(recPts[j][0], recPts[j][1], st[2], st[3]) < 40) { if (distM(recPts[j][0], recPts[j][1], st[2], st[3]) < distM(recPts[bj][0], recPts[bj][1], st[2], st[3])) bj = j; j++; }
+            found = bj; break;
+          }
+          j++;
+        }
+        if (found != null) { idx.push(found); prev = found; } else idx.push(null);
+      }
+      for (let k = sa; k < sb; k++) {
+        const i0 = idx[k - sa], i1 = idx[k - sa + 1];
+        if (i0 == null || i1 == null || i1 <= i0) { notes.push(`${k + 1}번째 정류장 구간은 기록이 안 잡혀 기존 선 유지`); continue; }
+        const P = recPts.slice(i0, i1 + 1).map(q => [q[0], q[1]]);
+        P[0] = [route.stops[k][2], route.stops[k][3]]; P[P.length - 1] = [route.stops[k + 1][2], route.stops[k + 1][3]];
+        segs[k] = simplifyIdx(P, 5).map(q => r5(P[q])); changed.push(k);
+      }
+    });
+    return { segs, changed, notes };
   }
-  function recReduce() {
-    const P = recPts.map(q => [q[0], q[1]]), N = recTarget();
-    if (P.length <= N) return P;
-    let tol = 1, idx = simplifyIdx(P, tol);
-    while (idx.length > N && tol < 500) { tol *= 1.12; idx = simplifyIdx(P, tol); }
-    return idx.map(i => P[i]);
-  }
-  function recClear() { recMarks.forEach(m => m.setMap(null)); recMarks = []; if (recLine) { recLine.setMap(null); recLine = null; } }
   function recDraw() {
     recClear();
-    if (!recShow || !map || recPts.length < 2) return;
-    const R = recReduce();
-    recLine = new kakao.maps.Polyline({ map, path: R.map(q => new kakao.maps.LatLng(q[0], q[1])), strokeWeight: 3, strokeColor: '#dc2626', strokeOpacity: .8, zIndex: 3 });
+    if (!recShow || !map || !route || !route.segs) return;
+    if (!recSecs.length) { $('msg').textContent = '구간 기록을 누른 곳이 없습니다(기존 선 그대로).'; return; }
+    const r = recBuild();
     if (!recDot) recDot = circleImg('#dc2626', 16);
-    R.forEach(q => recMarks.push(new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(q[0], q[1]), image: recDot, zIndex: 4 })));
-    $('msg').textContent = `기록 ${recPts.length}점 → 빨간 점 ${R.length}개 (지금 선 ${recTarget()}점)`;
+    r.changed.forEach(k => {
+      const sg = r.segs[k];
+      recLines.push(new kakao.maps.Polyline({ map, path: sg.map(q => new kakao.maps.LatLng(q[0], q[1])), strokeWeight: 4, strokeColor: '#dc2626', strokeOpacity: .85, zIndex: 3 }));
+      sg.forEach(q => recMarks.push(new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(q[0], q[1]), image: recDot, zIndex: 4 })));
+    });
+    $('msg').textContent = `바뀐 정류장 구간 ${r.changed.length}개` + (r.notes.length ? ' · ' + r.notes.join(' / ') : '');
   }
-  let recDot = null;
-  function recStart2() { recOn = true; $('btnRec').classList.add('on'); $('btnRec').textContent = '■ ' + recPts.length; }
-  function recStop() { recOn = false; recSave(); try { localStorage.removeItem('yb_rec_on'); } catch (e) { } $('btnRec').classList.remove('on'); $('btnRec').textContent = '● 기록'; }
+  function recStop() {
+    recOn = false;
+    const last = recSecs[recSecs.length - 1]; if (last && last.b == null) last.b = recPts.length - 1;   // 열린 구간은 종료 때 닫음
+    recSave(); try { localStorage.removeItem('yb_rec_on'); } catch (e) { } recLabels();
+  }
   function recStart() {
     if (!route) return;
-    if (recPts.length && !confirm('저장된 기록 ' + recPts.length + '점이 있습니다. [확인]=이어서 기록, [취소]=새로 시작')) { recPts = []; recSave(); recClear(); }
-    recOn = true; try { localStorage.setItem('yb_rec_on', route.name); } catch (e) { }
-    $('btnRec').classList.add('on'); $('btnRec').textContent = '■ ' + recPts.length;
-    $('msg').textContent = route.name + ' 운행 기록 중입니다. 지도를 닫으면 기록이 멈춥니다.';
+    if ((recPts.length || recSecs.length) && !confirm('저장된 기록 ' + recPts.length + '점이 있습니다. [확인]=이어서 기록, [취소]=새로 시작')) { recPts = []; recSecs = []; recSave(); recClear(); }
+    recOn = true; recSave(); try { localStorage.setItem('yb_rec_on', route.name); } catch (e) { }
+    recLabels();
+    $('msg').textContent = route.name + ' 기록 중: 바꿀 곳에서 [구간]을 누르세요. 첫 출발지에서 시작해 도착지에서 [종료]. 지도를 닫으면 멈춥니다.';
   }
+  function recStart2() { recOn = true; recLabels(); }
   $('btnRec').onclick = () => { if (recOn) { recStop(); recDraw(); } else recStart(); };
+  $('btnRecSec').onclick = () => {
+    const last = recSecs[recSecs.length - 1];
+    if (last && last.b == null) { last.b = Math.max(0, recPts.length - 1); $('msg').textContent = '구간 끝을 저장했습니다.'; }
+    else { recSecs.push({ a: Math.max(0, recPts.length - 1), b: null }); $('msg').textContent = '구간 기록 시작: 여기서부터 새 선으로 저장합니다.'; }
+    recSave(); recLabels();
+  };
   $('btnRecView').onclick = () => { recShow = !recShow; $('btnRecView').classList.toggle('on', recShow); if (recShow) recDraw(); else recClear(); };
   $('btnRecSave').onclick = () => {
-    if (!route || recPts.length < 2) { $('msg').textContent = '저장된 기록이 없습니다.'; return; }
-    const out = JSON.stringify({ v: 1, kind: 'rec', route: route.name, n: route.stops.length, recAt: Date.now(), target: recTarget(), pts: recReduce().map(r5), raw: recPts });
+    if (!route || !route.segs || !recSecs.length) { $('msg').textContent = '저장할 구간 기록이 없습니다.'; return; }
+    const r = recBuild();
+    const out = JSON.stringify({ v: 1, kind: 'partial', route: route.name, n: route.stops.length, recAt: Date.now(), changed: r.changed, notes: r.notes, secs: recSecs, segs: r.segs, raw: recPts });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
     a.download = 'rec_' + route.name + '_' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
-    $('msg').textContent = a.download + ' 파일을 내려받았습니다. 채팅에 첨부해 주세요. (' + Math.round(out.length / 1024) + 'KB)';
+    $('msg').textContent = a.download + ' 파일을 내려받았습니다(바뀐 구간 ' + r.changed.length + '개). 채팅에 첨부해 주세요. (' + Math.round(out.length / 1024) + 'KB)';
   };
   function onPos(lat, lon, speedKmh, hd, fromSim, fromParent) {
     if (simTimer && !fromSim) return;
@@ -745,7 +789,7 @@
       onPos(p[0], p[1], 40, null, true);
     }, 1000);
   };
-  $('route').onchange = () => { simStop(); simDist = 0; me = null; if (recOn) recStop(); recClear(); showRoute($('route').value).then(() => { if (route) recPts = recLoad(route.name); }); };
+  $('route').onchange = () => { simStop(); simDist = 0; me = null; if (recOn) recStop(); recClear(); showRoute($('route').value).then(() => { if (route) recLoad(route.name); }); };
 
   loadKakao().then(() => {
     map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
@@ -760,7 +804,7 @@
         simDist = simCum[route.stopAt[bi]]; route.prog = Math.max(0, bi - 1);
       } else if (SIM) onPos(l.getLat(), l.getLng(), 30, null);
     });
-    showRoute($('route').value).then(() => { if (route) { recPts = recLoad(route.name); try { if (isAdmin && localStorage.getItem('yb_rec_on') === route.name) recStart2(); } catch (e) { } } });
+    showRoute($('route').value).then(() => { if (route) { recLoad(route.name); try { if (isAdmin && localStorage.getItem('yb_rec_on') === route.name) recStart2(); } catch (e) { } } });
     startGps();
   }).catch(e => { $('msg').textContent = String(e.message || e); });
 </script>
