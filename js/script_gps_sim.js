@@ -406,6 +406,7 @@ function loadLatestColleagueMessage() {
             }
         }
 
+        let anchorGpsHit = false;
         // 1-1. 통과 기록이 없을 때(라이브 모달을 껐다 켠 직후 등)는 시각이 아니라 'GPS 위치'로 현재 구간을 먼저 찾는다
         //      (지연·조기 운행으로 표준시간과 실제 위치가 많이 다르면 시각 기준 앵커가 엉뚱한 정류장이 되기 때문)
         if (window.lastPassedStopIndex === null || window.lastPassedStopIndex === undefined || window.lastPassedStopIndex < 0) {
@@ -423,6 +424,7 @@ function loadLatestColleagueMessage() {
                 let pick = best;
                 dists.forEach((d, i) => { if (d <= bestD + 30 && Math.abs(i - anchorIdx) < Math.abs(pick - anchorIdx)) pick = i; });
                 if (bestD <= 55) {
+                    anchorGpsHit = true;
                     anchorIdx = pick; // 아래 통과 판정에서 이 정류장을 통과한 것으로 확정
                 } else {
                     // 정류장 사이에 있는 경우: 앞·뒤 이웃 중 가까운 쪽으로 어느 구간인지 판단 (이미 지난 정류장 = 구간의 앞쪽)
@@ -434,6 +436,11 @@ function loadLatestColleagueMessage() {
                     anchorIdx = passed;
                 }
             }
+        }
+
+        // 📡 GPS가 아직 어느 정류장 근처인지 못 잡았으면(통과 기록 없음 + 55m 안에 정류장 없음) 표준시간으로 정류장을 추측하지 않고 그대로 둔다
+        if ((window.lastPassedStopIndex === null || window.lastPassedStopIndex === undefined || window.lastPassedStopIndex < 0) && !(typeof anchorGpsHit !== 'undefined' && anchorGpsHit)) {
+            return;
         }
 
         // 2. 전방 및 주변 정류장 탐색 (앞뒤 5개 정류장 슬라이딩 윈도우)
@@ -907,8 +914,29 @@ function loadLatestColleagueMessage() {
             if (typeof syncSequenceBoxesFromMainSchedule === 'function') {
                 syncSequenceBoxesFromMainSchedule();
             }
-            // 회차는 한 번 맞추면 바뀔 시각(내 회차 종료+15분)이 올 때까지 다시 확인하지 않는다
+            // 🚌 회차 전환은 GPS 기준: GPS가 이 회차의 종점 정류장을 통과하기 전까지는 (거점 시퀀스·카운트와 상관없이) 이번 회차가 끝나지 않은 것이다.
+            //    GPS가 안 들어오는 경우에만 근무표 시각(종료+15분)으로 넘어간다.
             const haveMaster = window.standardMasterCache && window.standardMasterCache.length > 0;
+            const gp0 = window.lastGpsPosition;
+            const gpsAlive = !!(gp0 && gp0.time && (Date.now() - new Date(gp0.time).getTime()) < 120000);
+            if (haveMaster && gpsAlive && !(window.simState && window.simState.active)) {
+                const lp = window.lastPassedStopIndex;
+                if (!(typeof lp === 'number' && lp >= window.standardMasterCache.length - 1)) return;   // 종점 전: 유지
+                const nextTurn = ((duty && duty.turnNum) || 1) + 1;
+                const prevR = window.currentTripRoundNumber;
+                window.currentTripRoundNumber = nextTurn + '회차';
+                let nd = null;
+                try { nd = getTodayDutyInfo(); } finally { window.currentTripRoundNumber = prevR; }
+                if (nd && nd.uniqueKey && nd.tripTimes && nd.turnNum === nextTurn) {
+                    duty = nd;
+                    window.lastMatchedMasterIndex = null;
+                    window.lastPassedStopIndex = null;
+                    window._stopPendingJump = null;
+                    if (window.bisStopLockState) window.bisStopLockState.lockedStopKey = null;
+                    loadStandardMasterCache(nd);
+                }
+                return;
+            }
             if (haveMaster && duty && duty.nextSwitchAt && Date.now() < duty.nextSwitchAt) return;
             const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
             if (curDuty && curDuty.uniqueKey) {
