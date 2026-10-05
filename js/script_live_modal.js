@@ -66,42 +66,55 @@
         // 🎯 [실시간 현재 운행 회차 자동 판별 엔진]
         let currentTripRound = 1;
         try {
-            if (window.currentTripRoundNumber) {
+            // 📏 [회차 판정 규칙] 오늘 내 회차들의 시간표 시각과 현재 시각을 비교한다.
+            //   - 어떤 회차의 첫 시각 ~ 마지막 시각(+지연 여유 15분) 사이면 그 회차 운행 중
+            //   - 회차 사이(앞 회차 종료 후)면 곧 출발할 다음 회차 (출발 전)
+            //   - 마지막 회차가 끝났으면 마지막 회차 유지
+            let clockTrip = 0;
+            try {
+                let dk = typeof getDriverKey === 'function' ? getDriverKey(`sched_${searchDateStr}`) : `sched_${searchDateStr}`;
+                let sv = localStorage.getItem(dk);
+                if (sv && typeof customGetItem === 'function' && typeof parseTimeToDate === 'function') {
+                    let sd = JSON.parse(sv);
+                    let list = customGetItem(sd.route, sd.seq);
+                    if (list && list.length > 0) {
+                        const nowMs = Date.now();
+                        // 내 근무 구간(오전/오후 교대 기준)만 본다
+                        let yi = -1;
+                        for (let i = 0; i < list.length && yi < 0; i++) {
+                            for (let c = 1; c <= 5; c++) { if (list[i]['c' + c] === 'yellow') { yi = i; break; } }
+                        }
+                        let from = 0, to = list.length - 1;
+                        if (sd.time === '오전') { to = (yi !== -1) ? yi : Math.min(2, list.length - 1); }
+                        else if (sd.time === '오후') { from = (yi !== -1) ? yi + 1 : Math.min(3, list.length - 1); }
+                        for (let i = from; i <= to; i++) {
+                            let ts = [];
+                            for (let c = 1; c <= 5; c++) {
+                                const v = list[i]['time' + c];
+                                if (!v) continue;
+                                const d = parseTimeToDate(v, searchDateStr);
+                                if (!d) continue;
+                                let ms = d.getTime();
+                                if (ts.length && ms < ts[ts.length - 1] - 2 * 3600000) ms += 86400000;   // 자정 넘김
+                                ts.push(ms);
+                            }
+                            if (!ts.length) continue;
+                            const endMs = ts[ts.length - 1] + 15 * 60000;
+                            clockTrip = i + 1;
+                            if (nowMs <= endMs) break;   // 지금 운행 중이거나 출발 전인 첫 회차
+                        }
+                    }
+                }
+            } catch (e) { clockTrip = 0; }
+
+            if (clockTrip > 0) {
+                currentTripRound = clockTrip;
+            } else if (window.currentTripRoundNumber) {
                 let match = String(window.currentTripRoundNumber).match(/(\d+)\s*회차/);
                 if (match) {
                     currentTripRound = parseInt(match[1], 10) || 1;
                 } else {
                     currentTripRound = parseInt(String(window.currentTripRoundNumber).replace(/[^0-9]/g, ''), 10) || 1;
-                }
-            } else {
-                let driverKey = typeof getDriverKey === 'function' ? getDriverKey(`sched_${searchDateStr}`) : `sched_${searchDateStr}`;
-                let saved = localStorage.getItem(driverKey);
-                if (saved && typeof customGetItem === 'function') {
-                    let schedData = JSON.parse(saved);
-                    let list = customGetItem(schedData.route, schedData.seq);
-                    if (list && list.length > 0) {
-                        const now = new Date();
-                        let foundTrip = 1;
-                        for (let i = 0; i < list.length; i++) {
-                            let r = list[i];
-                            let startT = r.time1;
-                            let endT = r.time3 || r.time4 || r.time5 || r.time2;
-                            if (startT) {
-                                let sDate = typeof parseTimeToDate === 'function' ? parseTimeToDate(startT, searchDateStr) : null;
-                                let eDate = typeof parseTimeToDate === 'function' ? parseTimeToDate(endT, searchDateStr) : null;
-                                if (sDate && eDate) {
-                                    if (now >= new Date(sDate.getTime() - 25 * 60000) && now <= new Date(eDate.getTime() + 15 * 60000)) {
-                                        foundTrip = i + 1;
-                                        break;
-                                    } else if (now < sDate) {
-                                        foundTrip = i + 1;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        currentTripRound = foundTrip;
-                    }
                 }
             }
         } catch (e) {
