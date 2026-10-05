@@ -856,6 +856,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 
         // 💡 [표준시간 마스터 로드] 운행시간 외여도 시간표 대조를 위해 반드시 로드
         loadStandardMasterCache(duty);
+        prewarmTodayTrips();
 
         // 🛰️ [신규 GPS 엔진 가동] 실시간 기사님 스마트폰 GPS 추적 및 정류장 자동 감지 시작!
         if (typeof startLiveGpsTracking === 'function') {
@@ -867,6 +868,34 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
         if (typeof startBisTimer === 'function') {
             startBisTimer(duty);
         }
+    }
+
+    // 📦 [오늘 내 회차 미리 준비] 앱(라이브 모달)을 열 때 오늘 내 모든 회차의 표준시간을 한꺼번에 계산해 메모리에 둔다.
+    //    회차가 바뀌는 시각이 되면 계산 없이 바로 꺼내 쓴다 (정류장 위치 맞추기는 GPS가 담당)
+    function prewarmTodayTrips() {
+        try {
+            if (!window.StdCalc || typeof getTodayDutyInfo !== 'function' || typeof customGetItem !== 'function') return;
+            const dStr = (document.getElementById('searchDate') || {}).value || new Date().toISOString().split('T')[0];
+            const dk = typeof getDriverKey === 'function' ? getDriverKey(`sched_${dStr}`) : `sched_${dStr}`;
+            const sv = localStorage.getItem(dk);
+            if (!sv) return;
+            const sd = JSON.parse(sv);
+            const list = customGetItem(sd.route, sd.seq);
+            if (!list || !list.length) return;
+            window.masterKeyMemoryCache = window.masterKeyMemoryCache || {};
+            const prev = window.currentTripRoundNumber;
+            for (let t = 1; t <= list.length; t++) {
+                let d;
+                window.currentTripRoundNumber = `${t}회차`;
+                try { d = getTodayDutyInfo(); } finally { window.currentTripRoundNumber = prev; }
+                if (!d || !d.tripTimes || !d.uniqueKey) continue;
+                const key = String(d.uniqueKey).trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
+                if (window.masterKeyMemoryCache[key] && window.masterKeyMemoryCache[key].length) continue;
+                window.StdCalc.computeTripRows(d.routeShort, d.baseRoute, d.tripTimes).then(rows => {
+                    if (rows && rows.length) window.masterKeyMemoryCache[key] = rows;
+                }).catch(() => { });
+            }
+        } catch (e) { }
     }
 
     // ================================================================
