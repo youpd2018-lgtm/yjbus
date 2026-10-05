@@ -65,6 +65,7 @@
 
         // 🎯 [실시간 현재 운행 회차 자동 판별 엔진]
         let currentTripRound = 1;
+        const tripEndMs = {};   // 회차번호 → 그 회차 마지막 시각(ms)
         try {
             // 📏 [회차 판정 규칙] 오늘 내 회차들의 시간표 시각과 현재 시각을 비교한다.
             //   - 어떤 회차의 첫 시각 ~ 마지막 시각(+지연 여유 15분) 사이면 그 회차 운행 중
@@ -100,6 +101,7 @@
                             }
                             if (!ts.length) continue;
                             const endMs = ts[ts.length - 1] + 15 * 60000;
+                            tripEndMs[i + 1] = ts[ts.length - 1];
                             clockTrip = i + 1;
                             if (nowMs <= endMs) break;   // 지금 운행 중이거나 출발 전인 첫 회차
                         }
@@ -122,12 +124,12 @@
             currentTripRound = 1;
         }
 
-        // 🛡️ [회차 유지] 시간표상 다음 회차로 넘어갈 시각이어도, 지연으로 아직 이번 회차 종점에 도착하지 못했으면
-        //    (직전에 GPS로 이 회차를 운행 중이었고 종점 미도착) 다음 회차로 바꾸지 않는다 → 오차시간이 다음 회차 기준으로 어긋나는 문제 방지
+        // 🛡️ [회차 유지] 앞 회차가 지연으로 아직 끝나지 않았어도, 앞 회차 종료 시각(근무표)에서 15분이 지나면 버리고 지금 회차로 넘어간다
         try {
             const st = JSON.parse(localStorage.getItem('yb_live_turn') || 'null');
             if (st && st.date === searchDateStr && st.turn >= 1 && !st.reachedEnd &&
-                currentTripRound > st.turn && currentTripRound <= st.turn + 2 && (Date.now() - (st.at || 0)) < 30 * 60000) {
+                currentTripRound > st.turn && currentTripRound <= st.turn + 2 &&
+                tripEndMs[st.turn] && Date.now() <= tripEndMs[st.turn] + 15 * 60000) {
                 currentTripRound = st.turn;
             }
         } catch (e) { }
