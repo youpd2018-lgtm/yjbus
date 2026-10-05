@@ -937,7 +937,7 @@ function loadLatestColleagueMessage() {
                 }
                 return;
             }
-            if (haveMaster && duty && duty.nextSwitchAt && Date.now() < duty.nextSwitchAt) return;
+            if (haveMaster) return;   // GPS가 끊겨 있어도 회차를 시각으로 바꾸지 않는다 (표시를 그대로 유지, 배지가 GPS 끊김을 알림)
             const curDuty = typeof getTodayDutyInfo === 'function' ? getTodayDutyInfo() : duty;
             if (curDuty && curDuty.uniqueKey) {
                 const simRunning = window.simState && window.simState.active;   // 모의주행 중에는 시험용 시간표를 덮어쓰지 않음
@@ -1159,8 +1159,8 @@ function loadLatestColleagueMessage() {
         // 📡 GPS 신호가 살아 있으면(최근 2분 이내 수신) 정류장은 GPS 위치로만 정한다. 표준시간만 보고 정류장을 추측해 표시하지 않는다
         //    (GPS가 정류장을 아직 못 잡았으면 현재 표시를 그대로 둔다)
         try {
-            const gp = window.lastGpsPosition;
-            if (gp && gp.time && (Date.now() - new Date(gp.time).getTime()) < 120000) return;
+            // GPS가 끊겨도 표준시간으로 정류장을 다시 맞추지 않는다: 마지막 GPS 정류장을 그대로 두고 GPS 배지가 '끊김'으로 알린다
+            return;
         } catch (eP) { }
         try {
             const now = new Date();
