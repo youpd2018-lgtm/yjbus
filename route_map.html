@@ -32,8 +32,7 @@
   #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
   #cdBadge { min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
   #anchorName { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #micSlot { position: absolute; right: 4px; bottom: calc(100% + 6px); width: 58px; height: 58px; }   /* 박스 바깥, 오른쪽 윗선 위에 살짝 띄워 고정 */
-  body.standalone #cdTime, body.standalone #cdBadge, body.standalone #micSlot { display: none; }
+  body.standalone #cdTime, body.standalone #cdBadge { display: none; }
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   #msg { position: absolute; top: calc(106px + var(--sat)); left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
@@ -79,7 +78,6 @@
     <span id="cdBadge" class="big badge">0</span>
     <span id="anchorName"></span>
   </div>
-  <div id="micSlot"></div>
   <div class="sub" id="sub" style="display:none"></div>
   <div id="editBox" style="display:none;margin-top:10px;">
     <div id="eHead" style="font-size:20px;font-weight:800;"></div>
@@ -544,14 +542,6 @@
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     if (d.dc) { bd.style.color = d.dc; bd.style.background = d.db; bd.style.borderColor = d.dbd; }
   });
-  // 구차장 마이크: 앱 쪽 마이크를 이 카드의 빈 자리로 옮기도록 위치를 알려 준다
-  function sendMicRect() {
-    if (!EMBED || window.parent === window) return;
-    const r = $('micSlot').getBoundingClientRect();
-    if (!r.width) return;
-    parent.postMessage({ type: 'rm-mic', rect: { right: r.right, bottom: r.bottom, h: r.height } }, location.origin);
-  }
-  setInterval(sendMicRect, 1000); window.addEventListener('resize', sendMicRect);
 
   function onPos(lat, lon, speedKmh, hd, fromSim) {
     if (simTimer && !fromSim) return;

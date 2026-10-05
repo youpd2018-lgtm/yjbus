@@ -597,7 +597,7 @@ function loadBoardItems(cat) { loadFolderMemoTab(cat === 'ROUTE' ? 'route' : (ca
 // ================================================================
 // 🧭 [노선지도 버튼] 오늘 내 근무 노선의 지도(route_map.html)를 앱 위에 덮어 연다
 // - 아래에 라이브 모달을 같이 켜 둔다 → GPS·오차·운행습관 측정이 지도를 보는 동안에도 계속 돌아간다
-// - 지도 화면에는 1초마다 시간카운트·오차배지를 넘겨 주고, 구차장 마이크 위치를 지도 카드 안에 맞춰 준다
+// - 지도 화면에는 1초마다 시간카운트·오차배지를 넘겨 준다(구차장 마이크는 앱의 것을 그대로 쓴다)
 // ================================================================
 var _rm = null;   // { frame, timer, micStyle }
 
@@ -641,7 +641,6 @@ function closeRouteMap() {
   clearInterval(_rm.timer);
   window.removeEventListener('message', routeMapMessage);
   try { _rm.frame.remove(); } catch (e) { }
-  if (_rm.widget) { if (_rm.micStyle == null) _rm.widget.removeAttribute('style'); else _rm.widget.setAttribute('style', _rm.micStyle); }
   _rm = null;
   try { if (typeof closeLiveModal === 'function') closeLiveModal(); } catch (e) { }
 }
@@ -661,13 +660,5 @@ function routeMapMessage(ev) {
   if (!_rm || ev.origin !== location.origin || !ev.data) return;
   var d = ev.data;
   if (d.type === 'rm-close') closeRouteMap();
-  else if (d.type === 'rm-mic' && _rm.widget && d.rect) {
-    // 구차장 마이크를 지도 카드 안의 빈 자리로 옮긴다
-    var w = _rm.widget, sc = Math.max(0.4, Math.min(1, d.rect.h / 76));
-    w.style.right = Math.round(window.innerWidth - d.rect.right) + 'px';
-    w.style.bottom = Math.round(window.innerHeight - d.rect.bottom) + 'px';
-    w.style.left = 'auto'; w.style.top = 'auto';
-    w.style.transformOrigin = 'bottom right'; w.style.transform = 'scale(' + sc + ')';
-    w.style.display = 'flex';
-  }
+  // 구차장 마이크는 다른 화면과 똑같이(원래 크기, 손가락으로 옮길 수 있음) 앱 위에 그대로 떠 있다
 }
