@@ -1125,6 +1125,12 @@ function loadLatestColleagueMessage() {
                 return;
             }
         } catch (eG) { }
+        // 📡 GPS 신호가 살아 있으면(최근 2분 이내 수신) 정류장은 GPS 위치로만 정한다. 표준시간만 보고 정류장을 추측해 표시하지 않는다
+        //    (GPS가 정류장을 아직 못 잡았으면 현재 표시를 그대로 둔다)
+        try {
+            const gp = window.lastGpsPosition;
+            if (gp && gp.time && (Date.now() - new Date(gp.time).getTime()) < 120000) return;
+        } catch (eP) { }
         try {
             const now = new Date();
             let curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
