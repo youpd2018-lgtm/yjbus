@@ -1002,6 +1002,18 @@ function loadLatestColleagueMessage() {
     // 🚦 [3번째 박스] 도로 소통 및 2연속 정류장 흐름(다음 정류장 ━━━━ 다음다음 정류장) 렌더러
     function updateTrafficStopSequence(nextName, nextTime, afterName, afterTime, statusOverride, curName, curTime) {
         try {
+            // 지금 시각과 2시간 넘게 차이 나는 표준시간은 내 회차의 시간이 아니므로 점선으로 표시 (엉뚱한 시간 노출 방지)
+            const _plaus = (t) => {
+                const str = String(t || '').trim();
+                if (!str || str === '-' || str.indexOf('-') === 0) return str;
+                const sec = (typeof parseTimeToSeconds === 'function') ? parseTimeToSeconds(str) : 0;
+                if (!(sec > 0)) return str;
+                const n = new Date();
+                let df = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds() - sec;
+                if (df > 43200) df -= 86400; else if (df < -43200) df += 86400;
+                return Math.abs(df) > 7200 ? '--:--:--' : str;
+            };
+            nextTime = _plaus(nextTime); afterTime = _plaus(afterTime); curTime = _plaus(curTime);
             // 좌측 = 현재 정류장, 우측 = 다음 정류장 (ID는 기존 호환 유지: Next=좌측, After=우측)
             const curEl = document.getElementById('trafficStopNameNext');
             const curTimeEl = document.getElementById('trafficStopTimeNext');

@@ -107,15 +107,16 @@
                 }
             } catch (e) { clockTrip = 0; }
 
-            if (clockTrip > 0) {
-                currentTripRound = clockTrip;
-            } else if (window.currentTripRoundNumber) {
+            // 거점 시퀀스 박스가 쓰는 회차(window.currentTripRoundNumber)와 항상 같은 회차를 쓴다. 없을 때만 시각 비교 규칙 사용
+            if (window.currentTripRoundNumber) {
                 let match = String(window.currentTripRoundNumber).match(/(\d+)\s*회차/);
                 if (match) {
                     currentTripRound = parseInt(match[1], 10) || 1;
                 } else {
                     currentTripRound = parseInt(String(window.currentTripRoundNumber).replace(/[^0-9]/g, ''), 10) || 1;
                 }
+            } else if (clockTrip > 0) {
+                currentTripRound = clockTrip;
             }
         } catch (e) {
             currentTripRound = 1;
@@ -532,11 +533,6 @@
             // 현재 시각 기준 타겟 회차 자동 선택
             let nextStop = stopsSequence.find(s => s.timeDate > now) || stopsSequence[stopsSequence.length - 1];
             let targetTripIdx = nextStop ? nextStop.tripIdx : (myStartTripIdx + 1);
-            // 회차는 getTodayDutyInfo의 '현재 시각 비교 규칙'과 항상 같게 맞춘다 (표시·기록·표준시간이 서로 다른 회차를 보지 않도록)
-            try {
-                const dd = getTodayDutyInfo();
-                if (dd && dd.turnNum >= myStartTripIdx + 1 && dd.turnNum <= myEndTripIdx + 1) targetTripIdx = dd.turnNum;
-            } catch (e) { }
             window.currentTripRoundNumber = targetTripIdx;
 
             let tripData = list[targetTripIdx - 1];
