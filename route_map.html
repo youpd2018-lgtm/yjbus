@@ -116,6 +116,10 @@
 
   try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
   let isAdmin = false;
+  // 오류가 나면 관리자 화면 위쪽 글자 줄에 보여 준다(원인 찾기용)
+  function showErr(m) { try { if (isAdmin || /[?&]debug=1/.test(location.search)) $('msg').textContent = '오류: ' + m; } catch (e) { } }
+  window.addEventListener('error', e => showErr(e.message + (e.lineno ? ' (줄 ' + e.lineno + ')' : '')));
+  window.addEventListener('unhandledrejection', e => showErr(String(e.reason && e.reason.message || e.reason)));
   // 모의주행·수정은 관리자(유재필)에게만 보인다 (수정 내용은 어차피 그 폰에만 저장됨)
   (function () {
     var nm = '';
