@@ -775,6 +775,7 @@ function initVoiceWidgetDrag() {
       widget.style.top = `${initialY + dy}px`;
       widget.style.right = 'auto';
       widget.style.bottom = 'auto';
+      if (window.ytKeepVoiceWidgetOnScreen) window.ytKeepVoiceWidgetOnScreen();
     }
   }
 
@@ -785,6 +786,20 @@ function initVoiceWidgetDrag() {
       }, 250);
     }
   }
+
+  // 화면을 눕히거나 크기가 바뀌었을 때 마이크가 화면 밖으로 나가 안 보이면 화면 안으로 되돌린다
+  function keepWidgetOnScreen() {
+    if (!widget.style.left && !widget.style.top) return;       // 옮긴 적 없으면 기본 자리(오른쪽 아래)라 그대로 둠
+    const w = widget.offsetWidth || 76, h = widget.offsetHeight || 76;
+    const maxX = Math.max(0, window.innerWidth - w - 4), maxY = Math.max(0, window.innerHeight - h - 4);
+    const x = parseFloat(widget.style.left), y = parseFloat(widget.style.top);
+    if (isNaN(x) || isNaN(y)) return;
+    widget.style.left = Math.min(Math.max(4, x), maxX) + 'px';
+    widget.style.top = Math.min(Math.max(4, y), maxY) + 'px';
+  }
+  window.addEventListener('resize', keepWidgetOnScreen);
+  window.addEventListener('orientationchange', function () { setTimeout(keepWidgetOnScreen, 300); });
+  window.ytKeepVoiceWidgetOnScreen = keepWidgetOnScreen;
 
   // 모바일 터치 이벤트 연결
   widget.addEventListener('touchstart', onTouchStart, { passive: true });
