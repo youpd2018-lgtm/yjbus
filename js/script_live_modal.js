@@ -113,7 +113,7 @@
         try {
             const st = JSON.parse(localStorage.getItem('yb_live_turn') || 'null');
             if (st && st.date === searchDateStr && st.turn >= 1 && !st.reachedEnd &&
-                currentTripRound === st.turn + 1 && (Date.now() - (st.at || 0)) < 30 * 60000) {
+                currentTripRound > st.turn && currentTripRound <= st.turn + 2 && (Date.now() - (st.at || 0)) < 30 * 60000) {
                 currentTripRound = st.turn;
             }
         } catch (e) { }

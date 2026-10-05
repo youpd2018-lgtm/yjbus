@@ -309,11 +309,41 @@ function loadLatestColleagueMessage() {
         }
     }
 
+    // 🕒 [출발 전 고정 표시] 내 회차의 출발(첫) 정류장 표준시각 전에는 GPS로 정류장을 판정하지 않고,
+    //    '현재=출발 정류장 / 다음=두 번째 정류장'을 그대로 보여 준다. 출발 시각이 되면 그때부터 GPS가 작동한다.
+    //    (운행 중 조작 없이, 출발 전에 엉뚱한 정류장이 보이는 일을 막음)
+    function isBeforeDeparture(masterList) {
+        try {
+            if (!masterList || masterList.length < 2) return false;
+            if (typeof window.lastPassedStopIndex === 'number' && window.lastPassedStopIndex >= 0) return false;   // 이미 GPS로 정류장을 잡았으면 해당 없음
+            const row = masterList[0];
+            const t = String(Array.isArray(row) ? row[6] : (row.stdTime || row.time || row[6] || '')).trim();
+            const depSec = parseTimeToSeconds(t);
+            if (!(depSec > 0)) return false;
+            const now = new Date();
+            const cur = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            let diff = depSec - cur;
+            if (diff < -43200) diff += 86400; else if (diff > 43200) diff -= 86400;
+            return diff > 0;
+        } catch (e) { return false; }
+    }
+    function renderBeforeDeparture(masterList) {
+        const nm = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
+        const tm = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
+        const c = masterList[0], n = masterList[1];
+        if (typeof updateTrafficStopSequence === 'function') {
+            updateTrafficStopSequence(nm(n) || '다음 정류장', tm(n) || '--:--:--', '', '', undefined, nm(c), tm(c));
+        }
+    }
+
     // 🎯 [핵심] GPS 위치 수신 시 정류장 통과 판정 및 오차시간 확정 잠금(Lock)
     function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
         if (window.DrivingHabit && window.lastGpsPosition) window.DrivingHabit.onFix(speedKmh, window.lastGpsPosition.accuracy, window.lastGpsPosition.heading, duty);
         const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
         if (!masterCache || masterCache.length === 0) return;
+
+        // 출발 시각 전에는 정류장 판정을 하지 않고 출발 정류장·다음 정류장만 고정 표시
+        if (isBeforeDeparture(masterCache)) { renderBeforeDeparture(masterCache); return; }
 
         const now = new Date();
         const curWallSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
@@ -1025,6 +1055,8 @@ function loadLatestColleagueMessage() {
         if (!masterList || !Array.isArray(masterList) || masterList.length === 0) return;
         // 모의주행 중에는 현재 시각 기준 자동 표출이 시뮬레이터의 정류장 표시를 덮어쓰지 않도록 건너뜀
         if (window.simState && window.simState.active) return;
+        // 출발 시각 전이면 출발 정류장·다음 정류장 고정 표시
+        if (isBeforeDeparture(masterList)) { renderBeforeDeparture(masterList); return; }
         // 이미 GPS로 정류장을 통과했다면 시각 기준으로 다시 계산하지 않고 그 정류장 기준으로만 표시한다
         // (15초마다 도는 시각 기준 갱신이 현재 정류장·표준시간을 과거/미래로 흔드는 원인이었음)
         try {
