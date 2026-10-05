@@ -131,7 +131,16 @@
             }
         } catch (e) { }
 
-        const seqInt = parseInt(seqNumText, 10) || 1;
+        // 순번은 저장된 오늘 근무(화면 표시와 같은 원본)에서 읽는다. 화면 글자가 어긋나도 내 순번이 바뀌지 않게 함
+        let seqInt = parseInt(seqNumText, 10) || 1;
+        try {
+            let dk0 = typeof getDriverKey === 'function' ? getDriverKey(`sched_${searchDateStr}`) : `sched_${searchDateStr}`;
+            let sv0 = localStorage.getItem(dk0);
+            if (sv0) {
+                const m0 = String(JSON.parse(sv0).seq || '').match(/\d+/);
+                if (m0) seqInt = parseInt(m0[0], 10) || seqInt;
+            }
+        } catch (e) { }
         const countInt = parseInt(detectedBusCount, 10) || 16;
         const turnInt = parseInt(currentTripRound, 10) || 1;
 
@@ -523,6 +532,11 @@
             // 현재 시각 기준 타겟 회차 자동 선택
             let nextStop = stopsSequence.find(s => s.timeDate > now) || stopsSequence[stopsSequence.length - 1];
             let targetTripIdx = nextStop ? nextStop.tripIdx : (myStartTripIdx + 1);
+            // 회차는 getTodayDutyInfo의 '현재 시각 비교 규칙'과 항상 같게 맞춘다 (표시·기록·표준시간이 서로 다른 회차를 보지 않도록)
+            try {
+                const dd = getTodayDutyInfo();
+                if (dd && dd.turnNum >= myStartTripIdx + 1 && dd.turnNum <= myEndTripIdx + 1) targetTripIdx = dd.turnNum;
+            } catch (e) { }
             window.currentTripRoundNumber = targetTripIdx;
 
             let tripData = list[targetTripIdx - 1];
