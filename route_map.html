@@ -6,8 +6,47 @@
 <meta name="robots" content="noindex">
 <title>노선 지도</title>
 <style>
+  /* 앱 전체 글꼴과 동일: 글자=서울알림체, 숫자=G마켓 산스 */
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-ExtraBold.woff2') format('woff2');
+    font-weight: 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Heavy.woff2') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'GmarketNum';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+    font-weight: 100 900;
+    unicode-range: U+0030-0039;
+    font-display: swap;
+}
+
+  :root { --app-font: 'GmarketNum', 'SeoulNotice', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+  body, button, input, select, textarea { font-family: var(--app-font); }
   :root { --sat: max(env(safe-area-inset-top), 40px); }   /* 폰 맨 위 상태표시줄 아래로 내림 */
-  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: -apple-system, 'Malgun Gothic', sans-serif; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; overflow: hidden; }
   #top { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 8px; padding-top: calc(8px + var(--sat)); display: flex; gap: 6px; background: rgba(15,23,42,.92); }
   #top select, #top button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
   #top button.on { background: #2563eb; border-color: #2563eb; }
