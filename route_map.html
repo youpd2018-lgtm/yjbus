@@ -651,7 +651,7 @@
         if (i0 == null || i1 == null || i1 <= i0) { notes.push(`${k + 1}번째 정류장 구간은 기록이 안 잡혀 기존 선 유지`); continue; }
         const P = recPts.slice(i0, i1 + 1).map(q => [q[0], q[1]]);
         P[0] = [route.stops[k][2], route.stops[k][3]]; P[P.length - 1] = [route.stops[k + 1][2], route.stops[k + 1][3]];
-        segs[k] = simplifyIdx(P, 5).map(q => r5(P[q])); changed.push(k);
+        segs[k] = simplifyIdx(P, 1.5).map(q => r5(P[q])); changed.push(k);
       }
     });
     return { segs, changed, notes };
