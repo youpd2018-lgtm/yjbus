@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>정류장 도로명 채우기</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  select, input, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  button { background: #2563eb; border: 0; font-weight: 700; }
+  button.save { background: #16a34a; }
+  #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  td, th { padding: 4px 3px; border-bottom: 1px solid #1e293b; text-align: left; }
+  td input { margin: 0; padding: 6px; font-size: 13px; }
+  tr.guess td input { color: #fbbf24; }
+  tr.empty td input { background: #3b1d1d; }
+  .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>🛣️ 정류장 도로명 채우기</h1>
+<div class="box">
+  정류장 좌표로 카카오가 도로명을 찾아 줍니다. 틀린 칸은 직접 고친 뒤 [시트에 저장]을 누르면 노선마스터 O열에 기록됩니다. (관리자 전용)
+  <div id="loginInfo"></div>
+  <input id="nm" placeholder="이름 (로그인이 안 되어 있을 때만)">
+  <input id="pn" placeholder="기사번호 6자리" inputmode="numeric">
+</div>
+<select id="route">
+  <option>202</option><option>202A</option><option>203</option><option>203A</option><option>204</option>
+  <option>205</option><option>206</option><option>221</option><option>281</option><option>282</option>
+</select>
+<button id="go">1. 정류장 불러와서 도로명 찾기</button>
+<div id="msg"></div>
+<div id="out"></div>
+<button id="save" class="save" style="display:none;">2. 시트에 저장</button>
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script>
+var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
+var stops = [], roads = [], guess = [];
+var msg = document.getElementById('msg'), out = document.getElementById('out');
+
+function loadKakao() {
+  return new Promise(function (resolve, reject) {
+    if (window.kakao && kakao.maps && kakao.maps.services) return resolve();
+    var s = document.createElement('script');
+    s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&libraries=services&autoload=false';
+    s.onload = function () { kakao.maps.load(resolve); };
+    s.onerror = function () { reject(new Error('카카오 지도를 불러오지 못했습니다')); };
+    document.head.appendChild(s);
+  });
+}
+function saveLogin() {
+  var nm = document.getElementById('nm').value.trim(), pn = document.getElementById('pn').value.trim();
+  if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
+}
+function roadOf(geocoder, lat, lng) {
+  return new Promise(function (resolve) {
+    geocoder.coord2Address(lng, lat, function (res, status) {
+      if (status === kakao.maps.services.Status.OK && res && res[0]) {
+        var ra = res[0].road_address;
+        resolve(ra && ra.road_name ? ra.road_name : '');
+      } else resolve('');
+    });
+  });
+}
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+document.getElementById('go').onclick = async function () {
+  saveLogin();
+  var route = document.getElementById('route').value;
+  out.innerHTML = ''; document.getElementById('save').style.display = 'none';
+  msg.textContent = '정류장 불러오는 중...';
+  try {
+    var r = await fetch(window.GAS_WEB_APP_URL + '?action=get_route_stops&route=' + encodeURIComponent(route)).then(function (x) { return x.json(); });
+    if (!r || !r.success) { msg.textContent = '실패: ' + (r && (r.message || r.error) || '알 수 없음'); return; }
+    stops = r.stops;
+    await loadKakao();
+    var geocoder = new kakao.maps.services.Geocoder();
+    roads = []; guess = [];
+    for (var i = 0; i < stops.length; i++) {
+      msg.textContent = '도로명 찾는 중... ' + (i + 1) + ' / ' + stops.length;
+      var name = '', isGuess = false;
+      if (stops[i][6]) name = stops[i][6];             // 이미 시트에 적힌 값은 그대로 사용
+      else {
+        name = await roadOf(geocoder, stops[i][2], stops[i][3]);
+        if (!name && i > 0) { name = roads[i - 1]; isGuess = !!name; }   // 못 찾으면 앞 정류장과 같다고 추정(노란색)
+        await sleep(120);
+      }
+      roads.push(name); guess.push(isGuess);
+    }
+    render(route);
+  } catch (e) { msg.textContent = '실패: ' + e; }
+};
+
+function render(route) {
+  var h = '<table><tr><th>#</th><th>정류장</th><th>도로명</th></tr>';
+  stops.forEach(function (s, i) {
+    h += '<tr class="' + (guess[i] ? 'guess' : (roads[i] ? '' : 'empty')) + '"><td>' + (i + 1) + '</td><td>' + s[1] + '</td><td><input data-i="' + i + '" value="' + (roads[i] || '').replace(/"/g, '&quot;') + '"></td></tr>';
+  });
+  out.innerHTML = h + '</table>';
+  var empty = roads.filter(function (x) { return !x; }).length, g = guess.filter(Boolean).length;
+  msg.textContent = route + ' 노선 ' + stops.length + '개 정류장. 비어 있는 곳(빨강) ' + empty + '개, 앞과 같다고 추정한 곳(노랑) ' + g + '개. 확인·수정 후 저장하세요.';
+  document.getElementById('save').style.display = 'block';
+}
+
+document.getElementById('save').onclick = async function () {
+  var inputs = out.querySelectorAll('input[data-i]'), list = [];
+  inputs.forEach(function (el) { list[parseInt(el.getAttribute('data-i'), 10)] = el.value.trim(); });
+  var route = document.getElementById('route').value;
+  msg.textContent = '저장 중...';
+  try {
+    var r = await fetch(window.GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'save_road_names', route: route, roads: list }) }).then(function (x) { return x.json(); });
+    msg.textContent = r && r.success ? '저장 완료: ' + route + ' ' + r.count + '개 (시트 O열)' : '실패: ' + (r && (r.error || r.message) || '알 수 없음');
+  } catch (e) { msg.textContent = '실패: ' + e; }
+};
+</script>
+</body>
+</html>

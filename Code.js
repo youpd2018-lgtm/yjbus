@@ -607,6 +607,11 @@ function doPost(e) {
       const res = typeof saveStopHabit === 'function' ? saveStopHabit(postData) : { success: false, error: "saveStopHabit 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
+    if (postData && postData.action === 'save_road_names') {
+      if (!authIsAdmin_(viewer)) return authJson_({ success: false, error: 'forbidden' });
+      const res = typeof saveRoadNames === 'function' ? saveRoadNames(postData.route, postData.roads) : { success: false, error: "saveRoadNames 함수 미정의" };
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
     if (postData && postData.action === 'save_trip_speed') {
       postData.driver = authDriverFor_(viewer, postData.driver);
       const res = typeof saveTripSpeed === 'function' ? saveTripSpeed(postData) : { success: false, error: "saveTripSpeed 함수 미정의" };
