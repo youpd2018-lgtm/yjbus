@@ -75,9 +75,9 @@
   #card .nm { font-size: 24px; line-height: 30px; font-weight: 800; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #card .ds { font-size: 24px; line-height: 30px; color: #38bdf8; font-weight: 800; white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
   #rowB { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-height: 40px; }
-  #cdTime { font-size: 30px !important; flex: 0 0 auto; }
+  #cdTime { font-size: 30px !important; flex: 0 0 auto; text-align: left; white-space: nowrap; }
   #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  #cdBadge { min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
+  #cdBadge { flex: 0 0 auto; white-space: nowrap; min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
   #anchorName { flex: 1 1 0; min-width: 0; font-size: 18px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body.standalone #cdTime, body.standalone #cdBadge { display: none; }
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
@@ -839,6 +839,24 @@
     }, 1000);
   };
   $('route').onchange = () => { simStop(); simDist = 0; me = null; if (recOn) recStop(); recClear(); showRoute($('route').value).then(() => { if (route) recLoad(route.name); }); };
+
+  // 둘째 줄이 숫자 폭 때문에 흔들리지 않게: 시간카운트·오차배지 칸 너비를 가장 넓은 숫자 기준으로 고정(글꼴이 뜬 뒤에 한 번 잰다)
+  function lockRowB() {
+    const meas = (el, txts) => {
+      const c = getComputedStyle(el), sp = document.createElement('span');
+      sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';padding:0;border:0;';
+      document.body.appendChild(sp); let w = 0;
+      txts.forEach(t => { sp.textContent = t; w = Math.max(w, sp.getBoundingClientRect().width); });
+      sp.remove(); return Math.ceil(w) + 2;
+    };
+    try {
+      $('cdTime').style.minWidth = meas($('cdTime'), ['00:00:00', '88:88:88', '00:00:00'.replace(/0/g, '0')]) + 'px';
+      const b = $('cdBadge'), cs = getComputedStyle(b);
+      b.style.minWidth = Math.max(52, meas(b, ['+88', '-88', '88']) + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 4) + 'px';
+    } catch (e) { }
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(lockRowB);
+  setTimeout(lockRowB, 3000);   // 느린 통신에서 글꼴이 늦게 떠도 한 번 더
 
   // 처음 켰을 때 안내 배너 (다음부터 알리지 않기를 누르면 다시 안 나옴)
   (function () {
