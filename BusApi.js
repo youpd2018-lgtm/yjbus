@@ -148,6 +148,13 @@ function getIncheonBusLive(routeShort, targetPlateNo) {
 // 키는 GitHub에 올리지 않는다: Apps Script > 프로젝트 설정 > 스크립트 속성에 ITS_API_KEY 로 저장
 const ITS_API_KEY = PropertiesService.getScriptProperties().getProperty('ITS_API_KEY') || "";
 
+// 오류 메시지에 주소(키 포함)가 섞여 화면으로 나가지 않도록 키를 가린다
+function itsSafeError_(err) {
+  let m = String(err);
+  if (ITS_API_KEY) m = m.split(ITS_API_KEY).join('***');
+  return m.replace(/apiKey=[^&\s"]*/g, 'apiKey=***');
+}
+
 // 1. 실시간 돌발상황 (사고, 공사, 통제) 조회 및 3분 캐싱
 function getTrafficIncidentLive() {
   const cache = CacheService.getScriptCache();
@@ -190,7 +197,7 @@ function getTrafficIncidentLive() {
     return result;
   } catch (err) {
     Logger.log("❌ getTrafficIncidentLive 에러: " + err.toString());
-    return { success: false, error: err.toString(), incidents: [] };
+    return { success: false, error: itsSafeError_(err), incidents: [] };
   }
 }
 
@@ -223,6 +230,6 @@ function getTrafficFlowLive() {
     return result;
   } catch (err) {
     Logger.log("❌ getTrafficFlowLive 에러: " + err.toString());
-    return { success: false, error: err.toString(), items: [] };
+    return { success: false, error: itsSafeError_(err), items: [] };
   }
 }
