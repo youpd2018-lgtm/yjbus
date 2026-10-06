@@ -1,9 +1,7 @@
 name: 도로 소통정보 갱신
 
-# 10분마다(또는 [Run workflow] 버튼으로) 국토교통부 소통·돌발정보를 받아 data/traffic.json 에 저장합니다.
+# [Run workflow] 버튼으로만 실행(자동 실행은 해외 접속이 막혀 중단). 국토교통부 소통·돌발정보를 받아 data/traffic.json 에 저장합니다.
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:

@@ -24,6 +24,12 @@
 </div>
 <button id="go">소통정보 불러오기</button>
 <button id="go3" style="margin-top:8px;background:#0d9488;">저장된 소통정보(data/traffic.json) 보기</button>
+<div style="background:#1e293b;border-radius:10px;padding:12px;margin:14px 0;font-size:13px;color:#94a3b8;">
+  <b>시험 2: 폰에서 직접 받기</b> (서버를 거치지 않음. 키는 이 화면에서만 쓰고 저장하지 않습니다)
+  <input id="ik" placeholder="국토교통부 ITS 키 붙여넣기" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:16px;">
+  <button id="go2" style="margin-top:8px;">폰에서 직접 불러오기</button>
+  <div id="msg2" style="margin-top:8px;color:#fbbf24;white-space:pre-wrap;"></div>
+</div>
 <div id="msg"></div>
 <div id="out"></div>
 <script src="js/app-config.js"></script>
@@ -56,6 +62,23 @@ document.getElementById('go3').onclick = function () {
     items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (x) { return '<td>' + (it[x] === undefined ? '' : it[x]) + '</td>'; }).join('') + '</tr>'; });
     out.innerHTML = h + '</table>';
   }).catch(function (e) { msg.textContent = '실패: ' + e; });
+};
+document.getElementById('go2').onclick = function () {
+  var k = document.getElementById('ik').value.trim(), m = document.getElementById('msg2'), out = document.getElementById('out');
+  if (!k) { m.textContent = '키를 입력해 주세요.'; return; }
+  m.textContent = '불러오는 중... (최대 20초)'; out.innerHTML = '';
+  var url = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(k) + '&type=all&getType=json&minX=126.35&maxX=126.85&minY=37.35&maxY=37.65';
+  var ctl = new AbortController(); setTimeout(function () { ctl.abort(); }, 20000);
+  fetch(url, { signal: ctl.signal }).then(function (r) { return r.text(); }).then(function (t) {
+    var j; try { j = JSON.parse(t); } catch (e) { m.textContent = '받았지만 JSON이 아님: ' + t.slice(0, 300); return; }
+    var items = (j && j.body && j.body.items) || [];
+    m.textContent = '성공 / 건수: ' + items.length;
+    if (!items.length) { out.textContent = t.slice(0, 800); return; }
+    var keys = Object.keys(items[0]);
+    var h = '<p>항목 이름: ' + keys.join(', ') + '</p><table><tr>' + keys.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr>';
+    items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (x) { return '<td>' + (it[x] === undefined ? '' : it[x]) + '</td>'; }).join('') + '</tr>'; });
+    out.innerHTML = h + '</table>';
+  }).catch(function (e) { m.textContent = '실패(브라우저가 막았거나 응답 없음): ' + e; });
 };
 </script>
 </body>
