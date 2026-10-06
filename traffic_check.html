@@ -72,12 +72,18 @@ document.getElementById('go2').onclick = function () {
   fetch(url, { signal: ctl.signal }).then(function (r) { return r.text(); }).then(function (t) {
     var j; try { j = JSON.parse(t); } catch (e) { m.textContent = '받았지만 JSON이 아님: ' + t.slice(0, 300); return; }
     var items = (j && j.body && j.body.items) || [];
-    m.textContent = '성공 / 건수: ' + items.length;
+    m.textContent = '성공 / 건수: ' + items.length + ' / 크기: ' + Math.round(t.length / 1024) + 'KB';
+    var re = /영종|공항|인천|청라|하늘|운북|중산|을왕|용유|영유|신불|송도|경인|검단|서구|중구|신도시|대교/;
+    var by = {};
+    items.forEach(function (it) { var n = String(it.roadName || ''); if (!re.test(n)) return; var o = by[n] || (by[n] = { c: 0, s: 0 }); o.c++; o.s += parseFloat(it.speed) || 0; });
+    var names = Object.keys(by).sort();
+    var sum = '<p><b>인천·영종 관련 도로 이름 ' + names.length + '개</b> (이름: 구간수, 평균속도)</p><div style="font-size:12px;line-height:1.7;">' + names.map(function (n) { return n + ': ' + by[n].c + '개, ' + Math.round(by[n].s / by[n].c) + 'km/h'; }).join('<br>') + '</div>';
+    window.__sum = sum;
     if (!items.length) { out.textContent = t.slice(0, 800); return; }
     var keys = Object.keys(items[0]);
     var h = '<p>항목 이름: ' + keys.join(', ') + '</p><table><tr>' + keys.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr>';
     items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (x) { return '<td>' + (it[x] === undefined ? '' : it[x]) + '</td>'; }).join('') + '</tr>'; });
-    out.innerHTML = h + '</table>';
+    out.innerHTML = window.__sum + h + '</table>';
   }).catch(function (e) { m.textContent = '실패(브라우저가 막았거나 응답 없음): ' + e; });
 };
 </script>
