@@ -44,9 +44,9 @@
 }
 
   :root { --app-font: 'GmarketNum', 'SeoulNotice', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
-  body, button, input, select, textarea { font-family: var(--app-font); }
+  #card, #card button, #card input, #card select { font-family: var(--app-font); }
   :root { --sat: max(env(safe-area-inset-top), 40px); }   /* 폰 맨 위 상태표시줄 아래로 내림 */
-  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: -apple-system, 'Malgun Gothic', sans-serif; overflow: hidden; }
   #top { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 8px; padding-top: calc(8px + var(--sat)); display: flex; gap: 6px; background: rgba(15,23,42,.92); }
   #top select, #top button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
   #top button.on { background: #2563eb; border-color: #2563eb; }
