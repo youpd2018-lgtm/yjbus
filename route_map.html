@@ -56,6 +56,12 @@
   #sim button.on { background: #dc2626; border-color: #dc2626; }
   #sim select { flex: 1; min-width: 0; }
   #sim button { padding: 8px 8px; white-space: nowrap; }
+  #tip { display: none; position: absolute; left: 12px; right: 12px; top: calc(110px + var(--sat)); z-index: 40; background: rgba(15,23,42,.92); border: 1.5px solid rgba(56,189,248,.6); border-radius: 14px; padding: 14px; box-shadow: 0 6px 22px rgba(0,0,0,.6); text-align: center; }
+  body.nonadmin #tip { top: calc(70px + var(--sat)); }
+  #tip .tt { font-size: 18px; font-weight: 800; line-height: 1.4; color: #fff; }
+  #tip .tb { display: flex; gap: 8px; margin-top: 12px; }
+  #tip button { flex: 1; font-size: 15px; font-weight: 700; padding: 10px 6px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  #tip button#tipNever { background: #0369a1; border-color: #0369a1; }
   #rot { display: none; position: fixed; inset: 0; z-index: 99; background: #0f172a; color: #fff; font-size: 20px; font-weight: 800; align-items: center; justify-content: center; }
   @media (orientation: landscape) and (max-height: 520px) { #rot { display: flex; } }
   body.nonadmin #sim { display: none; }
@@ -112,6 +118,10 @@
   <select id="simSpeed"><option value="1">실제 속도(40km/h)</option><option value="3">3배</option><option value="8" selected>8배</option><option value="20">20배</option></select>
 </div>
 <div id="msg"></div>
+<div id="tip">
+  <div class="tt">두 손가락을 벌리면<br>지도가 내 중심으로 확대돼요</div>
+  <div class="tb"><button id="tipClose">닫기</button><button id="tipNever">다음부터 알리지 않기</button></div>
+</div>
 <div id="view"><div id="map"></div></div>
 <div id="card">
   <div id="rowA"><span class="nm" id="nextName">-</span><span class="ds" id="nextDist">GPS 대기 중</span></div>
@@ -829,6 +839,15 @@
     }, 1000);
   };
   $('route').onchange = () => { simStop(); simDist = 0; me = null; if (recOn) recStop(); recClear(); showRoute($('route').value).then(() => { if (route) recLoad(route.name); }); };
+
+  // 처음 켰을 때 안내 배너 (다음부터 알리지 않기를 누르면 다시 안 나옴)
+  (function () {
+    var off = false; try { off = localStorage.getItem('yb_map_tip_off') === '1'; } catch (e) { }
+    if (off) return;
+    $('tip').style.display = 'block';
+    $('tipClose').onclick = () => { $('tip').style.display = 'none'; };
+    $('tipNever').onclick = () => { try { localStorage.setItem('yb_map_tip_off', '1'); } catch (e) { } $('tip').style.display = 'none'; };
+  })();
 
   loadKakao().then(() => {
     map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
