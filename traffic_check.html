@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>국토교통부 도로 소통 점검</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  button { font-size: 16px; padding: 10px 14px; border-radius: 8px; border: 0; background: #2563eb; color: #fff; font-weight: 700; width: 100%; }
+  #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  td, th { padding: 4px 3px; border-bottom: 1px solid #1e293b; text-align: left; word-break: break-all; }
+  th { color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>🚦 국토교통부 도로 소통 점검</h1>
+<button id="go">소통정보 불러오기</button>
+<div id="msg"></div>
+<div id="out"></div>
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script>
+document.getElementById('go').onclick = function () {
+  var msg = document.getElementById('msg'), out = document.getElementById('out');
+  msg.textContent = '불러오는 중...'; out.innerHTML = '';
+  fetch(window.GAS_WEB_APP_URL + '?action=get_traffic_flow').then(function (r) { return r.json(); }).then(function (res) {
+    var items = (res && res.items) || [];
+    msg.textContent = '성공: ' + (res && res.success) + ' / 건수: ' + items.length + ' / 시각: ' + (res && res.timestamp || '-') + (res && res.error ? '\n오류: ' + res.error : '');
+    if (!items.length) { out.textContent = JSON.stringify(res).slice(0, 800); return; }
+    var keys = Object.keys(items[0]);
+    var h = '<p>항목 이름: ' + keys.join(', ') + '</p><table><tr>' + keys.map(function (k) { return '<th>' + k + '</th>'; }).join('') + '</tr>';
+    items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (k) { return '<td>' + (it[k] === undefined ? '' : it[k]) + '</td>'; }).join('') + '</tr>'; });
+    out.innerHTML = h + '</table>';
+  }).catch(function (e) { msg.textContent = '실패: ' + e; });
+};
+</script>
+</body>
+</html>
