@@ -23,6 +23,7 @@
   <input id="pn" placeholder="기사번호 6자리" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:16px;">
 </div>
 <button id="go">소통정보 불러오기</button>
+<button id="go3" style="margin-top:8px;background:#0d9488;">저장된 소통정보(data/traffic.json) 보기</button>
 <div id="msg"></div>
 <div id="out"></div>
 <script src="js/app-config.js"></script>
@@ -40,6 +41,19 @@ document.getElementById('go').onclick = function () {
     var keys = Object.keys(items[0]);
     var h = '<p>항목 이름: ' + keys.join(', ') + '</p><table><tr>' + keys.map(function (k) { return '<th>' + k + '</th>'; }).join('') + '</tr>';
     items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (k) { return '<td>' + (it[k] === undefined ? '' : it[k]) + '</td>'; }).join('') + '</tr>'; });
+    out.innerHTML = h + '</table>';
+  }).catch(function (e) { msg.textContent = '실패: ' + e; });
+};
+document.getElementById('go3').onclick = function () {
+  var msg = document.getElementById('msg'), out = document.getElementById('out');
+  msg.textContent = '불러오는 중...'; out.innerHTML = '';
+  fetch('data/traffic.json?t=' + Date.now()).then(function (r) { if (!r.ok) throw new Error('파일 없음(' + r.status + ')'); return r.json(); }).then(function (j) {
+    msg.textContent = '갱신: ' + j.updated + ' / 소통 ' + (j.flow || []).length + '건 / 돌발 ' + (j.incidents || []).length + '건' + (j.flowError ? '\n소통 오류: ' + j.flowError : '') + (j.incidentError ? '\n돌발 오류: ' + j.incidentError : '');
+    var items = j.flow || [];
+    if (!items.length) { out.textContent = '소통 자료 없음'; return; }
+    var keys = Object.keys(items[0]);
+    var h = '<p>항목 이름: ' + keys.join(', ') + '</p><table><tr>' + keys.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr>';
+    items.slice(0, 40).forEach(function (it) { h += '<tr>' + keys.map(function (x) { return '<td>' + (it[x] === undefined ? '' : it[x]) + '</td>'; }).join('') + '</tr>'; });
     out.innerHTML = h + '</table>';
   }).catch(function (e) { msg.textContent = '실패: ' + e; });
 };

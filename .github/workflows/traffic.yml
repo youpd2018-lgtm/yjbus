@@ -1,0 +1,34 @@
+name: 도로 소통정보 갱신
+
+# 10분마다(또는 [Run workflow] 버튼으로) 국토교통부 소통·돌발정보를 받아 data/traffic.json 에 저장합니다.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traffic
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: 소통·돌발정보 받기
+        env:
+          ITS_API_KEY: ${{ secrets.ITS_API_KEY }}
+        run: python3 tools/fetch_traffic.py
+
+      - name: 바뀐 경우에만 저장
+        run: |
+          git config user.name "traffic-bot"
+          git config user.email "traffic-bot@users.noreply.github.com"
+          git add data/traffic.json
+          git diff --cached --quiet || (git commit -m "도로 소통정보 갱신" && git pull --rebase origin main && git push origin HEAD:main)
