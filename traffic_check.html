@@ -17,6 +17,11 @@
 </head>
 <body>
 <h1>🚦 국토교통부 도로 소통 점검</h1>
+<div id="loginBox" style="background:#1e293b;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#94a3b8;">
+  이 화면은 앱과 따로 저장되어 로그인이 안 되어 있을 수 있습니다. 그러면 아래에 한 번만 입력해 주세요(이 폰에만 저장됩니다).
+  <input id="nm" placeholder="이름" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:16px;">
+  <input id="pn" placeholder="기사번호 6자리" inputmode="numeric" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:16px;">
+</div>
 <button id="go">소통정보 불러오기</button>
 <div id="msg"></div>
 <div id="out"></div>
@@ -24,6 +29,8 @@
 <script src="js/gas-polyfill.js"></script>
 <script>
 document.getElementById('go').onclick = function () {
+  var nm = document.getElementById('nm').value.trim(), pn = document.getElementById('pn').value.trim();
+  if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
   var msg = document.getElementById('msg'), out = document.getElementById('out');
   msg.textContent = '불러오는 중...'; out.innerHTML = '';
   fetch(window.GAS_WEB_APP_URL + '?action=get_traffic_flow').then(function (r) { return r.json(); }).then(function (res) {
