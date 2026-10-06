@@ -71,9 +71,9 @@
   #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .9s linear; will-change: transform; transform-origin: 50% 50%; }
   #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1.5px solid rgba(56,189,248,.5); box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); border-radius: 14px; padding: 10px 14px; }
   #card .lb { font-size: 12px; color: #94a3b8; }
-  #rowA { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); align-items: center; column-gap: 8px; min-height: 30px; }
+  #rowA { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; min-height: 30px; }
   #card .nm { font-size: 24px; line-height: 30px; font-weight: 800; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #card .ds { font-size: 24px; line-height: 30px; color: #38bdf8; font-weight: 800; white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
+  #card .ds { font-size: 26px; line-height: 32px; min-width: 4.2em; color: #38bdf8; font-weight: 800; white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
   #rowB { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-height: 40px; }
   #cdTime { font-size: 30px !important; flex: 0 0 auto; text-align: left; white-space: nowrap; }
   #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -124,7 +124,7 @@
 </div>
 <div id="view"><div id="map"></div></div>
 <div id="card">
-  <div id="rowA"><span class="nm" id="nextName">-</span><span class="ds" id="nextDist">GPS 대기 중</span></div>
+  <div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
   <div id="rowB">
     <span id="cdTime" class="big">--:--:--</span>
     <span id="cdBadge" class="big badge">0</span>
@@ -164,6 +164,7 @@
   let map, route = null, segLines = [], dots = [], meOv = null, ringOv = null;
   let editMode = false, editSel = null, pendingVia = false;
   let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
+  let parentAnchor = '';
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
   try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
@@ -579,7 +580,7 @@
     $('nextName').textContent = s[1];
     $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
-    $('anchorName').textContent = st[anc != null ? anc : st.length - 1][1];
+    $('anchorName').textContent = parentAnchor || st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
@@ -595,6 +596,7 @@
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
+    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; }   // 라이브 모달의 거점 이름과 똑같이
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, false, true); }

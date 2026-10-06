@@ -654,6 +654,11 @@ function pushRouteMapLive() {
     msg.delay = b.innerText.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
   }
   // 앱(라이브 모달)이 받은 GPS도 같이 보내 준다: 지도 쪽 GPS가 멈춰도 내 위치가 멈추지 않게 하는 예비 경로
+  // 라이브 모달 거점 시퀀스에서 지금 가리키는(active-target) 거점 이름: 지도 하단 박스의 거점 이름과 똑같이 보이도록 같이 보낸다
+  try {
+    var tb = document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target .ios-seq-name');
+    if (tb && tb.innerText.trim() && tb.innerText.trim() !== '-') msg.anchor = tb.innerText.trim();
+  } catch (e) { }
   var g = window.lastGpsPosition;
   if (g && window._gpsLastFixAt && Date.now() - window._gpsLastFixAt < 5000) msg.gps = { lat: g.lat, lon: g.lon, spd: g.speedKmh, hd: g.heading, at: window._gpsLastFixAt };
   try { _rm.frame.contentWindow.postMessage(msg, location.origin); } catch (e) { }
