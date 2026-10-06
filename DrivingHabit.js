@@ -159,7 +159,7 @@ function saveStopHabit(d) {
   try {
     if (!d || !d.key || !d.date || !d.driver) return { success: false, error: '데이터 누락' };
     var n = Number(d.n) || 0;
-    if (n < 10) return { success: false, error: '측정 정류장 부족' };
+    if (n < 1) return { success: false, error: '측정 정류장 부족' };
     var lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {

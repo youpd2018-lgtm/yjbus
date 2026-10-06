@@ -236,7 +236,7 @@
     }
 
     function renderStopHabitInner(el, scope, v, loading) {
-        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
+        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 1;
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:12px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
@@ -250,7 +250,7 @@
             ? `<div style="margin-top:6px;"><div style="font-size:11.5px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>` +
               arr.map((nm, i) => `<div style="font-size:11.5px; color:#e2e8f0; font-weight:700; line-height:1.45; word-break:keep-all;">${i + 1}. ${nm}</div>`).join('') + '</div>'
             : '';
-        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:10.5px; ${gray} margin-top:5px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
+        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:10.5px; ${gray} margin-top:5px;">1곳만 측정돼도 쌓여요</div>` : '';
         el.innerHTML =
             row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;

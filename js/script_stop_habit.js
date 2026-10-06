@@ -9,7 +9,7 @@
 // ================================================================
 (function () {
     var KEY_PREFIX = 'yb_stophab_';
-    var MIN_STOPS = 10;          // 통계로 인정하는 최소 측정 정류장 수
+    var MIN_STOPS = 1;           // 통계로 인정하는 최소 측정 정류장 수
     var STOP_RADIUS_M = 60;      // 정류장에 섰다고 보는 거리
     var APPROACH_KMH = 15;       // 정류장에 서기 전에 이 속도 이상으로 달려야 '정차'로 침 (통과·이미 서 있던 차 제외)
     var STOPPED_KMH = 3;
