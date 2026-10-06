@@ -356,7 +356,7 @@
     joinPts(r); renderSegs(); updateEditInfo();
     if (isAdmin) {   // 관리자만: 어느 선을 쓰는지 한 줄 표시
       const ne = Object.keys(r.edits || {}).filter(k => hasEdit2(r, k)).length;
-      $('msg').textContent = r.src === 'github' ? '선: GitHub 확정본' + (ne ? ' + 이 폰 수정 ' + ne + '구간' : '') : '선: 자동생성(GitHub 파일 안 맞음 ' + (r.src || '없음') + ')';
+      $('msg').textContent = r.src === 'github' ? '선: GitHub 확정본(' + (function () { var n = 0; r.base.forEach(function (sg) { n += sg.length; }); var d = r.ghSavedAt > 1 ? new Date(r.ghSavedAt) : null; return n + '점' + (d ? ' · ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') : ''); })() + ')' + (ne ? ' + 이 폰 수정 ' + ne + '구간' : '') : '선: 자동생성(GitHub 파일 안 맞음 ' + (r.src || '없음') + ')';
     }
   }
 
