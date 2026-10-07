@@ -3336,7 +3336,7 @@ html.ui2 #mainBusHeroCard { display: none !important; }
 /* ---------- 2단계: 메인 박스 ---------- */
 #yb2Drive, #yb2Cards, #yb2Btns { display: none; }
 html.ui2.ui2-drive #yb2Drive { display: flex; flex-direction: column; }
-html.ui2.ui2-table.ui2-tt #yb2Cards { display: flex; flex-direction: column; gap: 10px; }
+html.ui2.ui2-table.ui2-tt #yb2Cards { display: flex; flex-direction: column; gap: 0; border-top: 1px solid rgba(147,197,253,.5); }
 html.ui2.ui2-table #yb2Btns { display: flex; gap: 8px; margin: 12px 0 8px; }
 html.ui2.ui2-tt #unifiedScheduleFolder { display: none !important; }
 html.ui2 #hudTabBar { display: none !important; }
@@ -3407,19 +3407,19 @@ html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !im
 
 /* ---------- 4단계: 시간표 카드 + 하단 3버튼 ---------- */
 .yb2-trip {
-    display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 20px; background: #121c30;
-    border: 1.5px solid #22304c; min-height: 78px; box-sizing: border-box; position: relative;
+    display: flex; align-items: center; gap: 6px; padding: 6px 4px 6px 8px; background: transparent;
+    border: 0; border-bottom: 1px solid rgba(147,197,253,.5); min-height: 0; box-sizing: border-box; position: relative;
 }
-.yb2-trip.next { border: 2.5px solid #4ade80; }
+.yb2-trip.next { background: rgba(74,222,128,.12); box-shadow: inset 4px 0 0 #4ade80; }
 .yb2-trip.past { color: #8fa0b8; }
-.yb2-trip-n { flex: none; width: 34px; text-align: center; font-size: 20px; font-weight: 900; color: #7dd3fc; }
+.yb2-trip-n { flex: none; width: 52px; text-align: center; font-size: 20px; font-weight: 900; color: #7dd3fc; line-height: 1.1; display: flex; flex-direction: column; align-items: center; }
+.yb2-trip-n small { font-size: 12px; font-weight: 900; color: #4ade80; }
 .yb2-trip.past .yb2-trip-n { color: #8fa0b8; }
 .yb2-trip-c { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
-.yb2-trip-t { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 26px; font-weight: 700; color: #fff; padding: 0 6px; border-radius: 8px; }
+.yb2-trip-t { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 26px; font-weight: 700; color: #fff; padding: 0 6px; border-radius: 8px; line-height: 1.15; }
 .yb2-trip.past .yb2-trip-t { color: #8fa0b8; }
 .yb2-trip-t.y { background: #fde047; color: #1a1500 !important; }
-.yb2-trip-p { font-size: 14px; font-weight: 700; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.yb2-next-badge { position: absolute; top: -11px; right: 14px; background: #4ade80; color: #04130a; font-size: 14px; font-weight: 900; padding: 1px 10px; border-radius: 10px; }
+.yb2-trip-p { font-size: 14px; font-weight: 700; color: #94a3b8; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .yb2-empty { text-align: center; color: #94a3b8; font-size: 18px; font-weight: 800; padding: 30px 0; }
 .yb2-btn {
     flex: 1; height: 54px; border-radius: 18px; font-size: 18px; font-weight: 900; font-family: inherit; cursor: pointer;
@@ -3485,15 +3485,16 @@ html.ui2.senior .yb2-map { flex: 1; height: 60px; margin: 0; border: 2px solid #
 html.ui2.senior .yb2-map iconify-icon { display: none; }
 html.ui2.senior #yb2Drive { flex: 1; }
 
-html.ui2.senior .yb2-trip { background: #14171C; border: 1px solid #2A2F37; border-radius: 14px; min-height: 64px; }
-html.ui2.senior .yb2-trip.next { background: #241B00; border: 2.5px solid #FFB000; }
+html.ui2.senior #yb2Cards { border-top-color: #4A525E; }
+html.ui2.senior .yb2-trip { background: transparent; border: 0; border-bottom: 1px solid #4A525E; border-radius: 0; min-height: 0; }
+html.ui2.senior .yb2-trip.next { background: #241B00; box-shadow: inset 4px 0 0 #FFB000; }
 html.ui2.senior .yb2-trip-n { color: #F4F5F7; font-size: 18px; }
+html.ui2.senior .yb2-trip-n small { color: #FFB000; }
 html.ui2.senior .yb2-trip.next .yb2-trip-n { color: #FFB000; }
 html.ui2.senior .yb2-trip.past, html.ui2.senior .yb2-trip.past .yb2-trip-n, html.ui2.senior .yb2-trip.past .yb2-trip-t { color: #8A919C; }
 html.ui2.senior .yb2-trip-p { color: #C9CED6; font-size: 15px; }
 html.ui2.senior .yb2-trip-t { font-size: 25px; }
 html.ui2.senior .yb2-trip-t.y { background: #FFE45C; color: #1A1500 !important; border-radius: 8px; }
-html.ui2.senior .yb2-next-badge { background: #FFB000; color: #0B0D10; }
 html.ui2.senior .yb2-btn { background: #14171C; border: 1px solid #2A2F37; border-radius: 16px; }
 html.ui2.senior .yb2-btn.route { color: #7CC4FF; } html.ui2.senior .yb2-btn.shift { color: #FFD84D; } html.ui2.senior .yb2-btn.memo { color: #C4B0FF; }
 html.ui2.senior .yb2-btn.route.on { background: #7CC4FF; color: #04121f; border-color: #7CC4FF; }

@@ -206,8 +206,8 @@
                     cells += '<div class="yb2-trip-c"><span class="yb2-trip-t' + (yellow ? ' y' : '') + '">' + esc(t || '-') + '</span>' +
                         '<span class="yb2-trip-p">' + esc(headers[j - 1] || '') + '</span></div>';
                 }
-                out += '<div class="' + cls + '">' + (cls.indexOf(' next') >= 0 ? '<span class="yb2-next-badge">다음 출발</span>' : '') +
-                    '<div class="yb2-trip-n">' + esc((tds[0].textContent || '').trim()) + '</div>' + cells + '</div>';
+                out += '<div class="' + cls + '">' +
+                    '<div class="yb2-trip-n">' + esc((tds[0].textContent || '').trim()) + (cls.indexOf(' next') >= 0 ? '<small>다음 출발</small>' : '') + '</div>' + cells + '</div>';
             } else {
                 var ths = tr.querySelectorAll('th');
                 if (ths.length > 1) {
