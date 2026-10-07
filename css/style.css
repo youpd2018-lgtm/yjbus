@@ -3536,3 +3536,12 @@ html.ui2.senior #tabEmergency { color: #FF8A80 !important; }
 .yb2-cd.msg .yb2-cd-l { display: none; }
 .yb2-cd.msg .yb2-cd-txt { align-items: center; }
 .yb2-cd.msg .yb2-ring { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); }
+
+/* 노안모드: 6순번·평일 16대를 202 바로 옆에 두 줄로 (글자 +2px) */
+html.ui2.senior .yb2-r1 { display: flex; align-items: flex-end; gap: 14px; grid-column: 1 / -1; grid-row: 1; padding-bottom: 0; }
+html.ui2.senior .yb2-side { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-bottom: 6px; }
+html.ui2.senior .yb2-seq { grid-column: auto; grid-row: auto; justify-self: auto; padding: 0; }
+html.ui2.senior .yb2-seq-n { font-size: 42px; }
+html.ui2.senior .yb2-seq-l { font-size: 22px; }
+html.ui2.senior .yb2-sub { grid-column: auto; grid-row: auto; justify-self: auto; font-size: 20px; }
+html.ui2.senior .yb2-bus { grid-row: 2; }
