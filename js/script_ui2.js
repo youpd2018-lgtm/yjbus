@@ -1,6 +1,6 @@
 // ================================================================
 // 🆕 [새 디자인 ui2] script_ui2.js  (메인 화면 리뉴얼 1단계)
-// - 설정 > 새 디자인 미리보기 스위치 (localStorage yb_ui2), 또는 주소 끝 ?ui2=1
+// - 기본으로 켜짐. 되돌리기: 주소 끝 ?ui2=0 (localStorage yb_ui2='0'), 다시 켜기: ?ui2=1
 // - 켜면 <html> 에 'ui2' 클래스가 붙고, 새 날짜 줄·페이지 탭이 보인다
 // - 날짜 계산, 시간표 채우기 등 기존 기능은 건드리지 않는다 (id 그대로)
 // - 새 메인 박스·시간표 카드는 숨겨 둔 기존 요소의 글자를 따라 적는 방식 (기존 JS 그대로 작동)
@@ -13,7 +13,7 @@
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
     function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { } }
 
-    window.ui2IsOn = function () { return lsGet(LS_KEY) === '1'; };
+    window.ui2IsOn = function () { return lsGet(LS_KEY) !== '0'; };   // 기본 켜짐, '0' 이면 예전 화면
 
     function applyFlag() {
         var on = window.ui2IsOn();
@@ -25,7 +25,7 @@
     }
 
     window.setUi2Mode = function (on) {
-        if (on) lsSet(LS_KEY, '1'); else lsDel(LS_KEY);
+        if (on) lsDel(LS_KEY); else lsSet(LS_KEY, '0');
         applyFlag();
         window.updateUi2SettingsUI();
         if (on) { renderDate(); syncTab(); }

@@ -8,14 +8,14 @@
   <link rel="stylesheet" href="css/style.css">
 
   <meta charset="UTF-8">
-  <!-- 🆕 새 디자인(ui2) 미리보기: 주소 끝에 ?ui2=1 → 켬 / ?ui2=0 → 끔 (설정 화면 스위치와 같은 값 yb_ui2) -->
+  <!-- 🆕 새 디자인(ui2): 이제 모두에게 기본으로 켜짐. 문제가 생기면 주소 끝에 ?ui2=0 → 예전 화면, ?ui2=1 → 새 화면으로 되돌림 -->
   <script>
     try {
       var q = new URLSearchParams(location.search).get('ui2');
-      if (q === '1') localStorage.setItem('yb_ui2', '1');
-      if (q === '0') localStorage.removeItem('yb_ui2');
-      if (localStorage.getItem('yb_ui2') === '1') document.documentElement.classList.add('ui2', 'ui2-drive');
-    } catch (e) { }
+      if (q === '0') localStorage.setItem('yb_ui2', '0');
+      if (q === '1') localStorage.removeItem('yb_ui2');
+      if (localStorage.getItem('yb_ui2') !== '0') document.documentElement.classList.add('ui2', 'ui2-drive');
+    } catch (e) { document.documentElement.classList.add('ui2', 'ui2-drive'); }
   </script>
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -878,7 +878,7 @@
           <div class="set-label">노안모드<div id="seniorStateText" class="set-sub"></div></div>
           <label class="switch"><input type="checkbox" id="seniorSwitch" onchange="setSeniorMode(this.checked)"><span class="slider"></span></label>
         </div>
-        <div class="set-row">
+        <div class="set-row" style="display: none;">  <!-- 새 디자인 스위치: 이제 숨김(기본 켜짐) -->
           <iconify-icon icon="mdi:palette-swatch-outline" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
           <div class="set-label">새 디자인 미리보기<div id="ui2StateText" class="set-sub"></div></div>
           <label class="switch"><input type="checkbox" id="ui2Switch" onchange="setUi2Mode(this.checked)"><span class="slider"></span></label>
