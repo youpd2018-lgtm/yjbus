@@ -3,15 +3,19 @@
 정류장 사이 구간마다 지나는 링크번호(LINK_ID)를 data/route/<노선>_links.json 에 저장한다.
 사용: python3 tools/build_route_links.py <노선> [MOCT_LINK 경로(.shp/.dbf 제외), 기본 /mnt/project-files/MOCT_LINK]
 필요: pip install pyproj  (좌표계 EPSG:5186 → WGS84)
-영종(1720)·청라(1730) 링크만 읽는다. 지역을 넓히려면 REGIONS 를 고친다.
+노선선 둘레(약 1km 여유)에 걸친 링크만 읽는다.
 """
 import json, math, struct, sys, collections
 from pyproj import Transformer
-REGIONS = ('1720', '1730')
 RADIUS_M = 30
 route = sys.argv[1]
 base = sys.argv[2] if len(sys.argv) > 2 else '/mnt/project-files/MOCT_LINK'
 t = Transformer.from_crs('EPSG:5186', 'EPSG:4326', always_xy=True)
+t2 = Transformer.from_crs('EPSG:4326', 'EPSG:5186', always_xy=True)
+line = json.load(open('data/route/%s.json' % route))
+_p = [q for sg in line['segs'] for q in sg]
+_x, _y = t2.transform([q[1] for q in _p], [q[0] for q in _p])
+BX0, BX1, BY0, BY1 = min(_x) - 1000, max(_x) + 1000, min(_y) - 1000, max(_y) + 1000
 sh = open(base + '.shp', 'rb'); sh.seek(100)
 db = open(base + ".dbf", "rb")
 h = db.read(32); hl, rl = struct.unpack('<HH', h[8:12]); db.seek(hl)
@@ -22,7 +26,9 @@ while True:
     _, cl = struct.unpack('>ii', rh); body = sh.read(cl * 2); rec = db.read(rl)
     if len(rec) < rl: break
     lid = rec[1:11].decode()
-    if lid[:4] not in REGIONS or struct.unpack('<i', body[:4])[0] != 3: continue
+    if struct.unpack('<i', body[:4])[0] != 3: continue
+    x0, y0, x1, y1 = struct.unpack('<4d', body[4:36])
+    if x1 < BX0 or x0 > BX1 or y1 < BY0 or y0 > BY1: continue
     npart, npts = struct.unpack('<ii', body[36:44]); off = 44 + 4 * npart
     pts = struct.unpack('<%dd' % (2 * npts), body[off:off + 16 * npts])
     lons, lats = t.transform(pts[0::2], pts[1::2])
@@ -47,7 +53,7 @@ def near(p):
                 d = dseg(p, a, b)
                 if d < RADIUS_M and (best is None or d < best[0]): best = (d, li)
     return best
-line = json.load(open('data/route/%s.json' % route)); segs = []; miss = tot = 0
+segs = []; miss = tot = 0
 for seg in line['segs']:
     pts = []
     for i in range(len(seg) - 1):
