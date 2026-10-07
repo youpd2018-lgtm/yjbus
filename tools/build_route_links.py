@@ -8,6 +8,7 @@
 import json, math, struct, sys, collections
 from pyproj import Transformer
 RADIUS_M = 30
+MAX_TURN = 60   # 노선 진행 방향과 링크 방향이 이 각도(도)보다 어긋나면 반대 차로로 보고 제외
 route = sys.argv[1]
 base = sys.argv[2] if len(sys.argv) > 2 else '/mnt/project-files/MOCT_LINK'
 t = Transformer.from_crs('EPSG:5186', 'EPSG:4326', always_xy=True)
@@ -47,13 +48,18 @@ def dseg(p, a, b):
     dx, dy = bx - ax, by - ay; ll = dx * dx + dy * dy
     u = 0 if ll == 0 else max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / ll))
     return math.hypot(px - ax - u * dx, py - ay - u * dy)
-def near(p):
+def brg(a, b):
+    return math.degrees(math.atan2((b[1] - a[1]) * K, (b[0] - a[0]) * 110540)) % 360
+def turn(x, y):
+    d = abs(x - y) % 360
+    return min(d, 360 - d)
+def near(p, rb):
     c = cell(*p); best = None
     for dx in (-1, 0, 1):
         for dy in (-1, 0, 1):
             for li, a, b in G.get((c[0] + dx, c[1] + dy), []):
                 d = dseg(p, a, b)
-                if d < RADIUS_M and (best is None or d < best[0]): best = (d, li)
+                if d < RADIUS_M and turn(brg(a, b), rb) <= MAX_TURN and (best is None or d < best[0]): best = (d, li)
     return best
 segs = []; miss = tot = 0
 for seg in line['segs']:
@@ -62,8 +68,10 @@ for seg in line['segs']:
         a, b = seg[i], seg[i + 1]; n = max(1, int(math.hypot((a[0] - b[0]) * 110540, (a[1] - b[1]) * K) / 20))
         pts += [(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) for k in range(n)]
     pts.append(tuple(seg[-1])); ids = []
-    for p in pts:
-        tot += 1; r = near(p)
+    for k, p in enumerate(pts):
+        q = pts[min(k + 1, len(pts) - 1)] if k + 1 < len(pts) else None
+        rb = brg(p, q) if q and q != p else (brg(pts[k - 1], p) if k > 0 else 0)
+        tot += 1; r = near(p, rb)
         if r is None: miss += 1; continue
         i = L[r[1]]['id']
         if i not in ids: ids.append(i)
