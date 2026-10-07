@@ -213,6 +213,7 @@ function renderAll() {
     if (f === 'nospd' && fl.have && i !== S.cur) return;
     var nm = {}; ids.forEach(function (id) { var n = info(id)[2]; if (n && n !== '-') nm[n.replace(/번길.*$/, '')] = 1; });
     h += '<div class="blk' + (i === S.cur ? ' sel' : '') + '"><div class="bh" data-sel="' + i + '"><span class="dot ' + fl.cls + '"></span><b>' + (i + 1) + '번째</b><span>' + Object.keys(nm).slice(0, 3).join(', ') + '</span><span class="sub" style="margin-left:auto">링크 ' + ids.length + '개 · ' + fl.txt + '</span></div>';
+    h += '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금</th><th></th></tr>' + ids.map(function (id) { return linkRow(i, id); }).join('') + '</table>';
     if (i === S.cur) {
       var c = S.cand[i] = candidates(i);
       h += '<div class="btns" style="padding:6px 10px;text-align:left;"><span class="sub">후보 종류 고르기(체크하면 그 종류만, 교량·터널·고가는 선에서 120m까지 찾음): </span>'
@@ -222,8 +223,6 @@ function renderAll() {
         return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + r.id + (r.removed ? ' · 빼낸 링크' : ' · 선에서 ' + Math.round(r.d) + 'm') + '</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
       }).join('') : '<tr><td class="sub">없음</td></tr>') + '</table>';
     }
-    if (i === S.cur) h += '<div class="sub" style="padding:6px 10px;">이 구간에 들어 있는 링크</div>';
-    h += '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금</th><th></th></tr>' + ids.map(function (id) { return linkRow(i, id); }).join('') + '</table>';
     h += '</div>';
   });
   var el = document.getElementById('all'); el.innerHTML = h || '<div class="box">해당하는 구간이 없습니다</div>';
