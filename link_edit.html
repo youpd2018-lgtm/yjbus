@@ -76,6 +76,96 @@ function info(id) { var a = S.area.links[id]; return a ? [a[0], a[1], a[2]] : (S
 function brg(a, b) { return Math.atan2((b[1] - a[1]) * 111320 * KX, (b[0] - a[0]) * 110540) * 180 / Math.PI; }
 function turn(x, y) { var d = Math.abs(x - y) % 360; return Math.min(d, 360 - d); }
 
+
+// ---------- 구간 선 만들기: 링크가 있는 곳은 국토부 도로 선, 끊긴 곳은 노선지도 선을 부드럽게 이어 붙임 ----------
+function mxy(p) { return [p[1] * 111320 * KX, p[0] * 110540]; }
+function densify(seg, step) {
+  var out = [seg[0]];
+  for (var i = 0; i < seg.length - 1; i++) {
+    var a = seg[i], b = seg[i + 1], d = Math.hypot((a[0] - b[0]) * 110540, (a[1] - b[1]) * 111320 * KX), n = Math.max(1, Math.round(d / step));
+    for (var k = 1; k <= n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]);
+  }
+  return out;
+}
+function dpSimplify(pts, tol) {   // Douglas-Peucker (미터 기준)
+  if (pts.length < 3) return pts.slice();
+  var keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
+  var stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    var r = stack.pop(), a = mxy(pts[r[0]]), b = mxy(pts[r[1]]), dx = b[0] - a[0], dy = b[1] - a[1], ll = dx * dx + dy * dy, best = -1, bi = -1;
+    for (var i = r[0] + 1; i < r[1]; i++) {
+      var p = mxy(pts[i]), u = ll ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / ll)) : 0, d = Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dy);
+      if (d > best) { best = d; bi = i; }
+    }
+    if (best > tol) { keep[bi] = true; stack.push([r[0], bi], [bi, r[1]]); }
+  }
+  return pts.filter(function (_, i) { return keep[i]; });
+}
+function compose(i) {
+  var P = densify(S.line.segs[i], 8), n = P.length, geo = [];
+  S.segs[i].forEach(function (id) { var g = S.area.links[id]; if (g) geo.push(g[3]); });
+  var off = new Array(n).fill(null), cov = new Array(n).fill(false);
+  for (var k = 1; k < n - 1; k++) {
+    var p = P[k], rb = brg(P[k - 1], P[k + 1]), best = null;
+    var pm = mxy(p);
+    geo.forEach(function (pl) {
+      for (var j = 0; j < pl.length - 1; j++) {
+        if (turn(brg(pl[j], pl[j + 1]), rb) > 60) continue;
+        var a = mxy(pl[j]), b = mxy(pl[j + 1]), dx = b[0] - a[0], dy = b[1] - a[1], ll = dx * dx + dy * dy;
+        var u = ll ? Math.max(0, Math.min(1, ((pm[0] - a[0]) * dx + (pm[1] - a[1]) * dy) / ll)) : 0, qx = a[0] + u * dx, qy = a[1] + u * dy, d = Math.hypot(pm[0] - qx, pm[1] - qy);
+        if (d <= 30 && (!best || d < best.d)) best = { d: d, q: [pl[j][0] + (pl[j + 1][0] - pl[j][0]) * u, pl[j][1] + (pl[j + 1][1] - pl[j][1]) * u] };
+      }
+    });
+    if (best) { off[k] = [best.q[0] - p[0], best.q[1] - p[1]]; cov[k] = true; }
+  }
+  off[0] = [0, 0]; off[n - 1] = [0, 0];   // 정류장 위치(구간 끝)는 움직이지 않아 앞뒤 구간이 정확히 만난다
+  // 덮이지 않은 점은 양옆 오프셋을 거리 비율로 섞어 선이 튀지 않게 한다
+  var cum = [0]; for (var q = 1; q < n; q++) cum.push(cum[q - 1] + Math.hypot((P[q][0] - P[q - 1][0]) * 110540, (P[q][1] - P[q - 1][1]) * 111320 * KX));
+  var lastIdx = 0;
+  for (var m = 1; m < n; m++) {
+    if (off[m] === null) continue;
+    for (var g = lastIdx + 1; g < m; g++) {
+      var t = (cum[g] - cum[lastIdx]) / ((cum[m] - cum[lastIdx]) || 1);
+      off[g] = [off[lastIdx][0] * (1 - t) + off[m][0] * t, off[lastIdx][1] * (1 - t) + off[m][1] * t];
+    }
+    lastIdx = m;
+  }
+  // 오프셋을 앞뒤 평균으로 두 번 부드럽게(교차로에서 링크가 바뀔 때 생기는 지그재그 제거). 구간 끝점은 그대로 둔다
+  for (var pass = 0; pass < 3; pass++) {
+    var sm = off.map(function (o) { return o.slice(); });
+    for (var z = 1; z < n - 1; z++) {
+      var ax = 0, ay = 0, cn = 0;
+      for (var w = -2; w <= 2; w++) { var o2 = off[Math.max(0, Math.min(n - 1, z + w))]; ax += o2[0]; ay += o2[1]; cn++; }
+      sm[z] = [ax / cn, ay / cn];
+    }
+    off = sm;
+  }
+  // 15m보다 긴 덮이지 않은 구간을 '끊김'으로 표시
+  var gaps = [], st = -1;
+  for (var h = 1; h <= n - 1; h++) {
+    var un = h < n - 1 && !cov[h];
+    if (un && st < 0) st = h;
+    if (!un && st >= 0) { if (cum[h - 1] - cum[st] >= 15 || (cum[h] - cum[st - 1]) >= 30) gaps.push([st - 1, h]); st = -1; }
+  }
+  var out = P.map(function (p, k) { return [p[0] + off[k][0], p[1] + off[k][1]]; });
+  var maxMove = 0; off.forEach(function (o) { maxMove = Math.max(maxMove, Math.hypot(o[0] * 110540, o[1] * 111320 * KX)); });
+  return { pts: out, gaps: gaps, maxMove: Math.round(maxMove), cov: cov };
+}
+// 점 목록을 줄여서 저장용 선과 끊김 범위(줄인 뒤 인덱스)를 만든다
+function packLine(c) {
+  var flags = c.pts.map(function (_, k) { return c.gaps.some(function (g) { return k >= g[0] && k <= g[1]; }); });
+  var res = [], gapOut = [], k = 0;
+  while (k < c.pts.length) {
+    var j = k; while (j + 1 < c.pts.length && flags[j + 1] === flags[k]) j++;
+    var run = dpSimplify(c.pts.slice(k, j + 1), 1.0), startIdx = res.length;
+    if (res.length && run.length) run = run.slice(1);   // 앞 덩어리 끝점과 겹치는 점 제거
+    res = res.concat(run);
+    if (flags[k]) gapOut.push([Math.max(0, startIdx - 1), res.length - 1]);
+    k = j + 1;
+  }
+  return { line: res.map(function (p) { return [Math.round(p[0] * 1e5) / 1e5, Math.round(p[1] * 1e5) / 1e5]; }), gaps: gapOut };
+}
+
 function flow(i) {
   var ids = S.segs[i], sumLen = 0, sumSp = 0, sumLim = 0, have = 0;
   ids.forEach(function (id) {
@@ -159,7 +249,14 @@ function drawMap(fit) {
     var t = S.traffic && S.traffic[id];
     S.layers.push(new kakao.maps.Polyline({ path: LL(g[3]), strokeWeight: 7, strokeColor: t ? '#4ade80' : '#f97316', strokeOpacity: 0.9, map: S.map }));
   });
-  S.layers.push(new kakao.maps.Polyline({ path: LL(seg), strokeWeight: 2, strokeColor: '#3b82f6', strokeOpacity: 1, map: S.map }));
+  var c = compose(S.cur);
+  S.layers.push(new kakao.maps.Polyline({ path: LL(seg), strokeWeight: 1, strokeColor: '#60a5fa', strokeOpacity: 0.6, strokeStyle: 'shortdot', map: S.map }));   // 원래 노선지도 선(얇은 점선)
+  var runs = [], from = 0;
+  c.gaps.forEach(function (g) { if (g[0] > from) runs.push([from, g[0], false]); runs.push([g[0], g[1], true]); from = g[1]; });
+  if (from < c.pts.length - 1) runs.push([from, c.pts.length - 1, false]);
+  runs.forEach(function (r) { S.layers.push(new kakao.maps.Polyline({ path: LL(c.pts.slice(r[0], r[1] + 1)), strokeWeight: 3, strokeColor: r[2] ? '#fbbf24' : '#2563eb', strokeOpacity: 1, strokeStyle: r[2] ? 'dash' : 'solid', map: S.map })); });
+  S.compMax = c.maxMove; S.compGaps = c.gaps.length;
+  var inf = document.getElementById('info'); if (inf) inf.textContent = (S.cur + 1) + '번째 구간 · ' + flow(S.cur).txt + ' · 이은 선: 파랑=국토부 도로, 노랑 점선=끊겨서 노선지도 선으로 이음(' + c.gaps.length + '곳), 최대 이동 ' + c.maxMove + 'm';
   if (fit) S.map.setBounds(bounds);
 }
 function select(i, scroll) {
@@ -207,12 +304,14 @@ document.getElementById('reset').onclick = function () { if (!S.segs || S.cur < 
 document.getElementById('save').onclick = function () {
   if (!S.segs) return;
   var links = {}; S.segs.forEach(function (a) { a.forEach(function (id) { links[id] = info(id); }); });
-  var out = { v: 2, route: S.route, source: 'MOCT_LINK', edited: true, savedAt: Date.now(), segs: S.segs, links: links };
+  var lines = [], gaps = [], worst = 0;
+  S.segs.forEach(function (_, i) { var c = compose(i), pk = packLine(c); lines.push(pk.line); gaps.push(pk.gaps); worst = Math.max(worst, c.maxMove); });
+  var out = { v: 3, route: S.route, source: 'MOCT_LINK', edited: true, savedAt: Date.now(), segs: S.segs, links: links, lines: lines, gaps: gaps };
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
   a.download = S.route + '_links.json';
   document.body.appendChild(a); a.click(); a.remove();
-  msg.textContent = '파일을 받았습니다(' + S.route + '_links.json). 이 파일을 채팅에 올려 주세요.';
+  msg.textContent = '파일을 받았습니다(' + S.route + '_links.json, 선 포함). 도로 선에 맞추느라 점이 가장 많이 움직인 거리 ' + worst + 'm. 이 파일을 채팅에 올려 주세요.';
 };
 </script>
 </body>
