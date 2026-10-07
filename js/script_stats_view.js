@@ -224,8 +224,8 @@
     // 측정 N회 / 급정거 N회 / 급출발 N회, 급한 정류장이 생기면 Top3가 아래로 이어서 늘어남 (이번 회차 / 월별 누적 공통)
     function stopHabitDiag() {
         const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
-        if (!d || !d.fix) return '<div style="font-size:12px; color:#64748b; margin-top:10px;">점검: GPS 수신 기록 없음</div>';
-        return `<div style="font-size:13px; color:#64748b; margin-top:12px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
+        if (!d || !d.fix) return '<div style="font-size:15px; color:#64748b; margin-top:14px;">점검: GPS 수신 기록 없음</div>';
+        return `<div style="font-size:15px; color:#64748b; margin-top:14px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
     }
 
     function renderStopHabit(scope, v, loading) {
@@ -238,9 +238,9 @@
     function renderStopHabitInner(el, scope, v, loading) {
         const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
         const gray = 'font-weight:bold; color:#94a3b8;';
-        if (loading) { el.innerHTML = `<div style="font-size:16px; ${gray}">불러오는 중...</div>`; return; }
+        if (loading) { el.innerHTML = `<div style="font-size:24px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
-            el.innerHTML = `<div style="font-size:16px; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:13px;">라이브 모달을 켜고 운행하면 쌓여요</span>' : '기록 없음'}</div>`;
+            el.innerHTML = `<div style="font-size:30px; line-height:1.4; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:22px; color:#cbd5e1;">라이브 모달을 켜고<br>운행하세요</span>' : '기록 없음'}</div>`;
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
@@ -257,7 +257,7 @@
                     (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
             }).join('') + '</div>'
             : '';
-        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:15px; ${gray} margin-top:10px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
+        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:18px; ${gray} margin-top:12px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
         el.innerHTML =
             row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
