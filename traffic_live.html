@@ -6,14 +6,14 @@
 <meta name="robots" content="noindex">
 <title>내 위치 주변 소통 시험</title>
 <style>
-  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0 auto; padding: 16px; max-width: 760px; min-width: 320px; box-sizing: border-box; background: #0f172a; color: #e2e8f0; }
   h1 { font-size: 18px; margin: 0 0 12px; }
   input, select, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
   button { background: #2563eb; border: 0; font-weight: 700; }
   #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
-  .cards { display: flex; gap: 10px; margin: 12px 0; }
-  .card { flex: 1; background: #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
+  .cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+  .card { flex: 1 1 200px; background: #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
   .card .t { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
   .pill { display: inline-block; min-width: 70px; padding: 8px 14px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #fff; }
   .g { background: #16a34a; } .y { background: #eab308; color: #111; } .r { background: #dc2626; } .n { background: #475569; }
@@ -104,6 +104,10 @@ async function tick() {
   var ns = nearestSeg(pos);
   curSeg = ns.i;
   var info = '';
+  if (ns.d > 1500) {   // 노선에서 1.5km 넘게 떨어져 있으면 소통정보를 받지 않는다(시험이 의미 없음)
+    msg.textContent = '내 위치가 노선에서 ' + (ns.d / 1000).toFixed(1) + 'km 떨어져 있어 소통정보를 받지 않았습니다.\n집 컴퓨터에서는 위의 "구간 번호" 칸에 숫자(예: 10)를 넣고 [시작]을 눌러 주세요.';
+    show(0, -1, null); show(1, -1, null); document.getElementById('detail').innerHTML = ''; return;
+  }
   // 5분이 지났거나 받은 사각형 중심에서 2km 넘게 움직였으면 새로 받는다
   if (!trafficAt || Date.now() - trafficAt > 300000 || distM(pos, trafficCenter) > 2000) {
     try { var r = await fetchTraffic(pos); info = '소통정보 ' + r.n + '건(' + r.kb + 'KB) 받음 ' + new Date().toLocaleTimeString('ko-KR') + '\n'; }
