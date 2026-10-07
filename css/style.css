@@ -3295,7 +3295,8 @@ html.senior .bli-bottom-row { min-height: 68px; }
    🆕 새 디자인(ui2) — 메인(운행정보) 화면 리뉴얼
    - html.ui2 일 때만 적용 (설정 > 새 디자인 미리보기 스위치, 또는 주소 끝 ?ui2=1)
    - 새 클래스는 모두 yb2- 로 시작 (html.senior 규칙과 겹치지 않게)
-   - 1단계: 오늘의 한마디, 날짜 줄, 페이지 탭(오늘 운행 / 시간표)
+   - 1단계: 날짜 줄, 페이지 탭(오늘 운행 / 시간표)   ※ 오늘의 한마디·구차장 마이크는 손대지 않음
+   - 2~4단계: 메인 박스, 시작/종료/교대, 시간 카운트 박스, 시간표 카드, 하단 3버튼
    ================================================================ */
 #yb2Top { display: none; }
 html.ui2 #yb2Top { display: block; }
@@ -3303,20 +3304,7 @@ html.ui2 #mainPage .date-navigator { display: none !important; }
 
 /* 페이지 전환: 오늘 운행 = 메인 박스, 시간표 = 시간표 묶음 */
 html.ui2.ui2-drive #unifiedScheduleFolder { display: none !important; }
-html.ui2.ui2-table #mainBusHeroCard { display: none !important; }
-
-/* 오늘의 한마디 알약 */
-html.ui2 #liveMessageWidget {
-    zoom: 1 !important;
-    border-radius: 26px !important;
-    min-height: 52px;
-    padding: 0 18px !important;
-    display: flex !important;
-    align-items: center;
-}
-html.ui2 #liveMessageWidget .message-ticker-wrap { min-height: 0 !important; width: 100%; }
-html.ui2 #liveColleagueMessage,
-html.ui2 #liveColleagueMessage span { font-size: 18px !important; font-weight: 800; }
+html.ui2 #mainBusHeroCard { display: none !important; }
 
 /* 날짜 줄 */
 .yb2-date { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; }
@@ -3344,3 +3332,104 @@ html.ui2 #liveColleagueMessage span { font-size: 18px !important; font-weight: 8
     cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .yb2-tab.on { color: #7dd3fc; border-bottom-color: #38bdf8; }
+
+/* ---------- 2단계: 메인 박스 ---------- */
+#yb2Drive, #yb2Cards, #yb2Btns { display: none; }
+html.ui2.ui2-drive #yb2Drive { display: flex; flex-direction: column; }
+html.ui2.ui2-table.ui2-tt #yb2Cards { display: flex; flex-direction: column; gap: 10px; }
+html.ui2.ui2-table #yb2Btns { display: flex; gap: 8px; margin: 12px 0 8px; }
+html.ui2.ui2-tt #unifiedScheduleFolder { display: none !important; }
+html.ui2 #hudTabBar { display: none !important; }
+html.ui2 #panelTimetable { display: none !important; }
+html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !important; }
+
+#yb2Drive, #yb2Cards, #yb2Btns { font-family: 'GmarketNum','SeoulNotice',sans-serif; }
+.yb2-band {
+    position: relative; flex: none; display: flex; flex-direction: column; justify-content: flex-start; gap: 6px;
+    padding: 16px 18px; border-radius: 24px; box-sizing: border-box;
+    border: 1.5px solid rgba(56,189,248,.35);
+    background-color: #0b1329;
+    background-image: linear-gradient(to right, rgba(14,25,48,.97) 30%, rgba(14,25,48,.55) 65%, rgba(14,25,48,.1) 100%), var(--bus-3d-bg);
+    background-repeat: no-repeat; background-size: cover; background-position: center right;
+    box-shadow: 0 12px 30px rgba(0,0,0,.55), inset 0 0 36px rgba(0,0,0,.6);
+}
+/* 🎨 난이도 색 선택 원: 기존과 같은 자리(오른쪽 위), 크기만 2px 크게 */
+.yb2-band #ybDiffWrap button { width: 24px !important; height: 24px !important; }
+.yb2-band #ybDiffWrap button[data-c] { width: 26px !important; height: 26px !important; }
+.yb2-name { display: flex; align-items: center; gap: 6px; font-size: 17px; font-weight: 800; color: #cbd5e1; }
+.yb2-name img { width: 22px; height: 22px; object-fit: contain; }
+.yb2-col { display: flex; flex-direction: column; gap: 8px; }
+.yb2-r1 { display: flex; align-items: flex-end; gap: 16px; padding-bottom: 6px; }
+.yb2-plate {
+    padding: 17px 22px 8px; border-radius: 20px; color: #fff;
+    background: linear-gradient(180deg,#243a63,#0e1a36);
+    border: 1.5px solid rgba(147,220,255,.6);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.35), inset 0 -3px 6px rgba(0,0,0,.55), 0 4px 0 #0a1630, 0 8px 0 #050a16, 0 16px 26px rgba(0,0,0,.75);
+}
+.yb2-route { min-height: 84px; font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 88px; font-weight: 700; letter-spacing: -3px; line-height: .95; display: block; }
+.yb2-seq { display: flex; align-items: baseline; gap: 4px; padding-bottom: 6px; }
+.yb2-seq-n { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 47px; font-weight: 700; color: #4ade80; text-shadow: 2px 3px 0 #15803d, 3px 5px 0 #166534; }
+.yb2-seq-l { font-size: 23px; font-weight: 800; color: #4ade80; }
+.yb2-r2 { display: flex; align-items: center; gap: 14px; padding-left: 16px; }
+.yb2-sub { font-size: 24px; font-weight: 900; color: #bfdbfe; white-space: nowrap; }
+.yb2-bus {
+    display: flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 14px;
+    background: linear-gradient(180deg,#3a260f,#170f06); border: 1.5px solid rgba(251,146,60,.7);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.2), inset 0 -3px 6px rgba(0,0,0,.5), 0 3px 0 #1a0f04, 0 6px 0 #0d0702, 0 10px 16px rgba(0,0,0,.6);
+    color: #fed7aa;
+}
+.yb2-bus iconify-icon { font-size: 22px; }
+.yb2-bus-n { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 24px; font-weight: 700; }
+
+/* ---------- 3단계: 시작 / 종료 / 교대 + 시간 카운트 박스 ---------- */
+.yb2-stats { flex: none; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+.yb2-tile {
+    background: #121c30; border: 1.5px solid rgba(147,220,255,.6); border-radius: 18px; padding: 10.5px 12.5px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.35), inset 0 -3px 6px rgba(0,0,0,.55), 0 3px 0 #0a1630, 0 6px 0 #050a16, 0 12px 18px rgba(0,0,0,.7);
+}
+.yb2-tile.start { border-color: rgba(255,255,255,.9); }
+.yb2-tile.hand { background: #2a2306; border: 2px solid #facc15; box-shadow: inset 0 2px 0 rgba(255,236,150,.35), inset 0 -3px 6px rgba(0,0,0,.5), 0 3px 0 #4a3a05, 0 6px 0 #241c03, 0 12px 18px rgba(0,0,0,.7); }
+.yb2-tile-l { font-size: 17px; font-weight: 800; color: #cbd5e1; }
+.yb2-tile.hand .yb2-tile-l, .yb2-tile.hand .yb2-tile-v { color: #fde047; }
+.yb2-tile-v { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 28px; font-weight: 700; color: #fff; margin-top: 2px; }
+.yb2-cdwrap { flex: 1; display: flex; align-items: center; margin: 14px 0; }
+.yb2-cd {
+    width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 18px; box-sizing: border-box;
+    background: #0f2a45; border: 2px solid #38bdf8; border-radius: 24px; cursor: pointer; font-family: inherit; text-align: left;
+    -webkit-tap-highlight-color: transparent; color: #fff;
+}
+.yb2-cd:active { transform: translateY(2px); }
+.yb2-ring { flex: none; width: 76px; height: 76px; }
+.yb2-cd-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.yb2-cd-l { font-size: 19px; font-weight: 900; color: #fed7aa; min-height: 23px; line-height: 23px; white-space: nowrap; }
+.yb2-cd-l b { color: #fca5a5; font-weight: 900; }
+.yb2-cd-v { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 42px; font-weight: 900; line-height: 1.15; color: #fff; white-space: nowrap; }
+.yb2-map {
+    flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; height: 56px; border-radius: 18px;
+    background: #38bdf8; color: #04121f; font-size: 21px; font-weight: 900; text-decoration: none; margin-bottom: 8px;
+}
+
+/* ---------- 4단계: 시간표 카드 + 하단 3버튼 ---------- */
+.yb2-trip {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 20px; background: #121c30;
+    border: 1.5px solid #22304c; min-height: 78px; box-sizing: border-box; position: relative;
+}
+.yb2-trip.next { border: 2.5px solid #4ade80; }
+.yb2-trip.past { color: #8fa0b8; }
+.yb2-trip-n { flex: none; width: 34px; text-align: center; font-size: 20px; font-weight: 900; color: #7dd3fc; }
+.yb2-trip.past .yb2-trip-n { color: #8fa0b8; }
+.yb2-trip-c { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.yb2-trip-t { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 26px; font-weight: 700; color: #fff; padding: 0 6px; border-radius: 8px; }
+.yb2-trip.past .yb2-trip-t { color: #8fa0b8; }
+.yb2-trip-t.y { background: #fde047; color: #1a1500 !important; }
+.yb2-trip-p { font-size: 14px; font-weight: 700; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.yb2-next-badge { position: absolute; top: -11px; right: 14px; background: #4ade80; color: #04130a; font-size: 14px; font-weight: 900; padding: 1px 10px; border-radius: 10px; }
+.yb2-empty { text-align: center; color: #94a3b8; font-size: 18px; font-weight: 800; padding: 30px 0; }
+.yb2-btn {
+    flex: 1; height: 54px; border-radius: 18px; font-size: 18px; font-weight: 900; font-family: inherit; cursor: pointer;
+    background: #121c30; border: 1.5px solid #22304c; -webkit-tap-highlight-color: transparent;
+}
+.yb2-btn.route { color: #7dd3fc; } .yb2-btn.shift { color: #facc15; } .yb2-btn.memo { color: #c4b5fd; }
+.yb2-btn.route.on { background: #7dd3fc; color: #04121f; border-color: #7dd3fc; }
+.yb2-btn.shift.on { background: #facc15; color: #1a1500; border-color: #facc15; }
+.yb2-btn.memo.on { background: #c4b5fd; color: #170b3b; border-color: #c4b5fd; }

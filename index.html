@@ -308,6 +308,39 @@
             style="font-size: 16px;"></iconify-icon></button>
       </div>
 
+
+      <!-- 🆕 새 디자인(ui2) 페이지 1: 오늘 운행 (값은 숨겨진 기존 요소를 script_ui2.js 가 따라 적음) -->
+      <div id="yb2Drive">
+        <div class="yb2-band" id="yb2Band">
+          <div class="yb2-name"><img src="icons/logo-128.png" alt=""><span id="yb2Name"></span></div>
+          <div class="yb2-col">
+            <div class="yb2-r1">
+              <div class="yb2-plate"><span id="yb2Route" class="yb2-route">-</span></div>
+              <div class="yb2-seq"><span id="yb2Seq" class="yb2-seq-n"></span><span id="yb2SeqLbl" class="yb2-seq-l"></span></div>
+            </div>
+            <div class="yb2-r2">
+              <span id="yb2Sub" class="yb2-sub"></span>
+              <div class="yb2-bus"><iconify-icon icon="mdi:bus"></iconify-icon><span id="yb2BusNo" class="yb2-bus-n">-</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="yb2-stats">
+          <div class="yb2-tile start"><div class="yb2-tile-l">시작</div><div id="yb2Start" class="yb2-tile-v">-</div></div>
+          <div class="yb2-tile"><div class="yb2-tile-l">종료</div><div id="yb2End" class="yb2-tile-v">-</div></div>
+          <div class="yb2-tile hand"><div class="yb2-tile-l">교대</div><div id="yb2Hand" class="yb2-tile-v">-</div></div>
+        </div>
+        <div class="yb2-cdwrap">
+          <button type="button" id="yb2Cd" class="yb2-cd" onclick="openLiveModal();">
+            <svg class="yb2-ring" viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="#1e3a5f" stroke-width="7"/><circle id="yb2Ring" cx="38" cy="38" r="32" fill="none" stroke="#38bdf8" stroke-width="7" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="90" transform="rotate(-90 38 38)"/><circle id="yb2Dot" cx="38" cy="38" r="7" fill="#ef4444"/></svg>
+            <div class="yb2-cd-txt"><div id="yb2CdL" class="yb2-cd-l"></div><div id="yb2CdV" class="yb2-cd-v">00:00:00</div></div>
+          </button>
+        </div>
+        <a class="yb2-map" href="route_map.html" onclick="return openRouteMap();"><iconify-icon icon="mdi:navigation-variant"></iconify-icon>노선지도 열기</a>
+      </div>
+
+      <!-- 🆕 새 디자인(ui2) 페이지 2: 시간표 카드 (기존 #resTimetable 표를 읽어서 만듦) -->
+      <div id="yb2Cards"></div>
+
       <!-- [1번 카드] 3D 버스 배경 & 좌측 타이포그래피 HUD -->
       <div class="bus-hero-container" id="mainBusHeroCard" style="height: 264px;">
         <!-- 🎨 비밀 난이도 색 버튼 (js/script_difficulty.js) -->
@@ -533,6 +566,14 @@
           </div>
 
         </div>
+      </div>
+
+
+      <!-- 🆕 새 디자인(ui2) 시간표 페이지 하단 3버튼 -->
+      <div id="yb2Btns">
+        <button type="button" id="yb2BtnRoute" class="yb2-btn route" onclick="yb2Tab('route')">노선정보</button>
+        <button type="button" id="yb2BtnShift" class="yb2-btn shift" onclick="yb2Tab('shift')">교대정보</button>
+        <button type="button" id="yb2BtnMemo" class="yb2-btn memo" onclick="yb2Tab('memo')">메모</button>
       </div>
 
       <!-- JS 호환용 숨김 엘리먼트 (mainColleagueMessage ID 보존) -->

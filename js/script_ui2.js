@@ -3,6 +3,7 @@
 // - 설정 > 새 디자인 미리보기 스위치 (localStorage yb_ui2), 또는 주소 끝 ?ui2=1
 // - 켜면 <html> 에 'ui2' 클래스가 붙고, 새 날짜 줄·페이지 탭이 보인다
 // - 날짜 계산, 시간표 채우기 등 기존 기능은 건드리지 않는다 (id 그대로)
+// - 새 메인 박스·시간표 카드는 숨겨 둔 기존 요소의 글자를 따라 적는 방식 (기존 JS 그대로 작동)
 // - 페이지: 'drive'(오늘 운행) / 'table'(시간표) — <html> 에 ui2-drive / ui2-table 클래스
 // ================================================================
 (function () {
@@ -27,7 +28,7 @@
         if (on) lsSet(LS_KEY, '1'); else lsDel(LS_KEY);
         applyFlag();
         window.updateUi2SettingsUI();
-        if (on) renderDate();
+        if (on) { renderDate(); syncTab(); }
     };
     window.updateUi2SettingsUI = function () {
         var on = window.ui2IsOn();
@@ -46,6 +47,11 @@
         var b = document.getElementById('yb2TabTable');
         if (a) a.classList.toggle('on', !isTable);
         if (b) b.classList.toggle('on', isTable);
+        if (isTable && typeof currentScheduleTab !== 'undefined' && currentScheduleTab !== 'timetable'
+            && typeof switchScheduleTab === 'function') {
+            switchScheduleTab('timetable');   // 시간표 탭을 누르면 항상 시간표 카드부터
+        }
+        syncTab();
     };
 
     // ---- 날짜 줄 ----
@@ -105,11 +111,153 @@
         }, { passive: true });
     }
 
+
+    // ---- 하단 3버튼 (노선정보 / 교대정보 / 메모) ----
+    function syncTab() {
+        var cur = (typeof currentScheduleTab !== 'undefined') ? currentScheduleTab : 'timetable';
+        html.classList.toggle('ui2-tt', cur === 'timetable');
+        [['route', 'yb2BtnRoute'], ['shift', 'yb2BtnShift'], ['memo', 'yb2BtnMemo']].forEach(function (a) {
+            var b = document.getElementById(a[1]);
+            if (b) b.classList.toggle('on', cur === a[0]);
+        });
+    }
+    window.yb2Tab = function (name) {
+        if (typeof switchScheduleTab !== 'function') return;
+        var cur = (typeof currentScheduleTab !== 'undefined') ? currentScheduleTab : 'timetable';
+        switchScheduleTab(cur === name ? 'timetable' : name);   // 같은 버튼을 다시 누르면 시간표로 복귀
+        syncTab();
+    };
+
+    // ---- 기존(숨겨진) 요소의 글자를 새 요소가 그대로 따라 적기 ----
+    function txt(id) { var e = document.getElementById(id); return e ? (e.textContent || '').trim() : ''; }
+    function setTxt(id, v) { var e = document.getElementById(id); if (e && e.textContent !== v) e.textContent = v; }
+    function mirror(src, dst) {
+        var el = document.getElementById(src);
+        if (!el) return;
+        var run = function () { setTxt(dst, txt(src)); };
+        run();
+        if (window.MutationObserver) new MutationObserver(run).observe(el, { childList: true, characterData: true, subtree: true });
+    }
+
+    // ---- 시간 카운트 박스 (5가지 상태) ----
+    var C = 201;   // 둥근 표시 한 바퀴 길이
+    function renderCountdown() {
+        var label = txt('resStopSignSubLabel');
+        var timerTxt = txt('resMainCountdownTimer');
+        var wrap = document.getElementById('resMainCountdownTimerWrap');
+        var isCount = wrap && wrap.style.display !== 'none' && timerTxt !== '';
+        var L = document.getElementById('yb2CdL'), V = document.getElementById('yb2CdV');
+        var ring = document.getElementById('yb2Ring'), dot = document.getElementById('yb2Dot');
+        if (!L || !V || !ring || !dot) return;
+        var lHtml, vTxt, vColor = '#fff', rColor = '#38bdf8', off = 90, dColor = '#ef4444';
+        if (isCount) {                       // 교대 전 / 첫 운행 전 대기
+            lHtml = label; vTxt = timerTxt;
+        } else if (label.indexOf('운행중') >= 0) {   // 운행중
+            lHtml = '<b>LIVE</b> 박스를 터치하세요'; vTxt = '운행중'; vColor = '#4ade80'; rColor = '#4ade80'; off = 0;
+        } else if (label.indexOf('휴무') >= 0) {     // 휴무
+            lHtml = ''; vTxt = '휴무'; vColor = '#cbd5e1'; rColor = '#475569'; off = 0; dColor = '#64748b';
+        } else if (label.indexOf('미등록') >= 0) {   // 미등록
+            lHtml = ''; vTxt = '미등록'; vColor = '#94a3b8'; rColor = '#475569'; off = 0; dColor = '#64748b';
+        } else {                              // 운행종료·운행준비중 등
+            lHtml = ''; vTxt = label || '-'; vColor = '#94a3b8'; rColor = '#475569'; off = 0; dColor = '#64748b';
+        }
+        if (L.innerHTML !== lHtml) L.innerHTML = lHtml;
+        if (V.textContent !== vTxt) V.textContent = vTxt;
+        V.style.color = vColor;
+        ring.setAttribute('stroke', rColor);
+        ring.setAttribute('stroke-dashoffset', String(off));
+        dot.setAttribute('fill', dColor);
+    }
+    function watchCountdown() {
+        if (!window.MutationObserver) return;
+        var o = new MutationObserver(renderCountdown);
+        ['resStopSignSubLabel', 'resMainCountdownTimer', 'resMainCountdownTimerWrap'].forEach(function (id) {
+            var e = document.getElementById(id);
+            if (e) o.observe(e, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+        });
+        renderCountdown();
+    }
+
+    // ---- 시간표 카드 (기존 #mainScheduleTable 표를 읽어서 만듦) ----
+    var cardsQueued = false;
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function renderCards() {
+        cardsQueued = false;
+        var box = document.getElementById('yb2Cards');
+        var table = document.getElementById('mainScheduleTable');
+        if (!box) return;
+        if (!table) {
+            var msg = txt('resTimetable') || '시간표가 없습니다.';
+            box.innerHTML = '<div class="yb2-empty">' + esc(msg) + '</div>';
+            return;
+        }
+        var headers = [], out = '';
+        var rows = table.querySelectorAll('tr');
+        for (var i = 0; i < rows.length; i++) {
+            var tr = rows[i];
+            if (tr.hasAttribute('data-rowidx')) {
+                var tds = tr.querySelectorAll('td');
+                var cls = 'yb2-trip' + (tr.classList.contains('highlight-next-trip') ? ' next' : '') + (tr.classList.contains('past-trip') ? ' past' : '');
+                var cells = '';
+                for (var j = 1; j < tds.length; j++) {
+                    var sp = tds[j].querySelector('span');
+                    var t = (tds[j].textContent || '').trim();
+                    var yellow = sp && sp.className.indexOf('effect-yellow') >= 0;
+                    cells += '<div class="yb2-trip-c"><span class="yb2-trip-t' + (yellow ? ' y' : '') + '">' + esc(t || '-') + '</span>' +
+                        '<span class="yb2-trip-p">' + esc(headers[j - 1] || '') + '</span></div>';
+                }
+                out += '<div class="' + cls + '">' + (cls.indexOf(' next') >= 0 ? '<span class="yb2-next-badge">다음 출발</span>' : '') +
+                    '<div class="yb2-trip-n">' + esc((tds[0].textContent || '').trim()) + '</div>' + cells + '</div>';
+            } else {
+                var ths = tr.querySelectorAll('th');
+                if (ths.length > 1) {
+                    headers = [];
+                    for (var k = 1; k < ths.length; k++) headers.push((ths[k].textContent || '').trim().replace(/^-$/, ''));
+                }
+            }
+        }
+        box.innerHTML = out || '<div class="yb2-empty">시간표 데이터가 없습니다.</div>';
+    }
+    function queueCards() {
+        if (cardsQueued) return;
+        cardsQueued = true;
+        (window.requestAnimationFrame || setTimeout)(renderCards);
+    }
+    function watchTimetable() {
+        var el = document.getElementById('resTimetable');
+        if (!el || !window.MutationObserver) return;
+        new MutationObserver(queueCards).observe(el, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        renderCards();
+    }
+
+    function initCards() {
+        mirror('bliRouteNum', 'yb2Route');
+        mirror('bliSeqNum', 'yb2Seq');
+        mirror('bliSeqLabel', 'yb2SeqLbl');
+        mirror('resRouteSub', 'yb2Sub');
+        mirror('bliBusNo', 'yb2BusNo');
+        mirror('bliStartTime', 'yb2Start');
+        mirror('bliEndTime', 'yb2End');
+        mirror('bliHandoverTime', 'yb2Hand');
+        // 이름(기사님): 기존 코드가 나중에 채우므로 #ybHeroTitle 안쪽 변화를 계속 지켜봄
+        var nm = function () { setTxt('yb2Name', txt('ybHeroTitleText')); };
+        var hero = document.getElementById('ybHeroTitle');
+        if (hero && window.MutationObserver) new MutationObserver(nm).observe(hero, { childList: true, characterData: true, subtree: true });
+        nm();
+        // 🎨 난이도 색 선택 원: 새 메인 박스 오른쪽 위로 옮김 (기존 코드는 id 로 찾으므로 그대로 작동)
+        var diff = document.getElementById('ybDiffWrap'), band = document.getElementById('yb2Band');
+        if (diff && band && diff.parentNode !== band) band.appendChild(diff);
+        watchCountdown();
+        watchTimetable();
+    }
+
     function init() {
         applyFlag();
         window.updateUi2SettingsUI();
         watchDate();
         initSwipe();
+        initCards();
+        syncTab();
         if (html.classList.contains('ui2-table')) window.yb2SetPage('table');
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
