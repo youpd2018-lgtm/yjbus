@@ -81,9 +81,9 @@
     } catch (e) { return false; } finally { clearTimeout(tm); }
   }
 
-  // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만 알린다. 같은 건은 한 번만.
+  // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만(소통정보와 같이 5분·2km마다 받음) 알린다. 같은 건은 한 번만.
   async function checkIncidents(R, pos) {
-    if (incBusy || Date.now() - incAt < 180000) return;
+    if (incBusy) return;
     incBusy = true; incAt = Date.now();
     try {
       var k = await getKey(); if (!k) return;
@@ -126,9 +126,10 @@
       var pos = [g.lat, g.lon];
       var s = findSeg(R, pos, g.heading);
       if (s < 0) { if (curSeg >= 0 && dist(pos, R.lines[curSeg][0]) > 3000) curSeg = -1; lamp = null; return; }
-      curSeg = s;
+      curSeg = s; var fresh = false;
       if (!fetching && (!trafficAt || Date.now() - trafficAt > 300000 || dist(pos, trafficCenter) > 2000)) {
         fetching = true; try { await fetchTraffic(pos); } finally { fetching = false; }
+        fresh = true;
       }
       var f = segFlow(R, s);
       if (f) lamps[s] = { f: f, at: Date.now() }; else f = (lamps[s] && Date.now() - lamps[s].at < 1800000) ? lamps[s].f : null;   // 자료가 없으면 이전 값 유지(30분까지)
@@ -137,7 +138,7 @@
         var st = document.getElementById('trafficFlowStatusText');
         if (!(st && st.innerText === '돌발 주의')) setTrafficLamp(lamp.state, lamp.label);
       }
-      checkIncidents(R, pos);
+      if (fresh) checkIncidents(R, pos);   // 돌발정보도 소통정보와 같은 때(5분 또는 2km)에만 받음
     } catch (e) { }
   }
 
