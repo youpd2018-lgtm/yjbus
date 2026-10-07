@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>도로명 소통정보 맞춰 보기</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  button { background: #2563eb; border: 0; font-weight: 700; }
+  #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  td, th { padding: 5px 4px; border-bottom: 1px solid #1e293b; text-align: left; vertical-align: top; }
+  td.n { text-align: right; white-space: nowrap; }
+  tr.ok td.s { color: #4ade80; } tr.part td.s { color: #fbbf24; } tr.no td.s { color: #f87171; } tr.skip td { color: #64748b; }
+  .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
+  .sub { color: #94a3b8; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>🚦 도로명 ↔ 국토부 소통정보 맞춰 보기 (시험)</h1>
+<div class="box">
+  282번 정류장 사이 도로명(data/route/282_roads.json)이 국토교통부 소통정보의 도로 이름(roadName)과 같은 이름으로 들어 있는지 확인합니다. 아무것도 저장하지 않습니다.
+  <input id="nm" placeholder="이름 (서버로 받을 때, 로그인이 안 되어 있으면 입력)">
+  <input id="pn" placeholder="기사번호 6자리" inputmode="numeric">
+  <input id="ik" placeholder="(서버·저장파일이 안 되면) 국토교통부 ITS 키 붙여넣기. 저장하지 않음">
+</div>
+<button id="go">소통정보 불러와서 맞춰 보기</button>
+<div id="msg"></div>
+<div id="out"></div>
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script>
+var msg = document.getElementById('msg'), out = document.getElementById('out');
+function norm(s) { return String(s || '').replace(/\s+/g, '').replace(/\(.*?\)/g, ''); }
+
+async function loadTraffic() {
+  var tried = [];
+  var nm = document.getElementById('nm').value.trim(), pn = document.getElementById('pn').value.trim();
+  if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
+  try {   // 1) 서버(앱스크립트)
+    var r = await fetch(window.GAS_WEB_APP_URL + '?action=get_traffic_flow').then(function (x) { return x.json(); });
+    if (r && r.items && r.items.length) return { items: r.items, from: '서버' };
+    tried.push('서버: ' + (r && r.error ? r.error : '자료 없음'));
+  } catch (e) { tried.push('서버 실패'); }
+  try {   // 2) GitHub에 저장된 소통정보
+    var j = await fetch('data/traffic.json?t=' + Date.now()).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
+    if (j && j.flow && j.flow.length) return { items: j.flow, from: '저장된 파일(' + j.updated + ')' };
+    tried.push('저장 파일: 소통 자료 없음');
+  } catch (e) { tried.push('저장 파일 없음'); }
+  var key = document.getElementById('ik').value.trim();
+  if (key) {   // 3) 폰에서 직접
+    try {
+      var url = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(key) + '&type=all&getType=json&minX=126.35&maxX=126.85&minY=37.35&maxY=37.65';
+      var ctl = new AbortController(); setTimeout(function () { ctl.abort(); }, 20000);
+      var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); });
+      var jj = JSON.parse(t), items = (jj && jj.body && jj.body.items) || [];
+      if (items.length) return { items: items, from: '폰에서 직접' };
+      tried.push('직접: 자료 없음');
+    } catch (e) { tried.push('직접 실패: ' + e); }
+  } else tried.push('(키 입력칸이 비어 있어 직접 받기는 안 함)');
+  return { items: [], from: '', tried: tried };
+}
+
+document.getElementById('go').onclick = async function () {
+  out.innerHTML = ''; msg.textContent = '불러오는 중...';
+  try {
+    var roads = await fetch('data/route/282_roads.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error('도로명 파일 없음'); return x.json(); });
+    var tr = await loadTraffic();
+    if (!tr.items.length) { msg.textContent = '소통정보를 받지 못했습니다.\n' + (tr.tried || []).join('\n'); return; }
+    // 소통정보 도로 이름 목록 (이름 → 구간 수, 평균속도)
+    var by = {};
+    tr.items.forEach(function (it) { var n = String(it.roadName || '').trim(); if (!n) return; var o = by[n] || (by[n] = { c: 0, s: 0 }); o.c++; o.s += parseFloat(it.speed) || 0; });
+    var tnames = Object.keys(by);
+    // 우리 도로명: 이름별로 어느 구간들에 나왔는지, 길이 합
+    var mine = {};
+    roads.segDetail.forEach(function (d) { (d.roads || []).forEach(function (r) { var o = mine[r.name] || (mine[r.name] = { m: 0, segs: [] }); o.m += r.m; if (o.segs.indexOf(d.seg) < 0) o.segs.push(d.seg); }); });
+    var names = Object.keys(mine).sort(function (a, b) { return mine[b].m - mine[a].m; });
+    var ok = 0, part = 0, no = 0, skip = 0, h = '<table><tr><th>우리 도로명</th><th>소통정보</th><th>비고</th></tr>';
+    names.forEach(function (n) {
+      var cls, label, extra = '';
+      if (/^\d+$/.test(n)) { cls = 'skip'; label = '도로명 아님(노선 번호)'; skip++; }
+      else {
+        var exact = tnames.filter(function (t) { return norm(t) === norm(n); });
+        if (exact.length) { cls = 'ok'; ok++; var o = by[exact[0]]; label = '✅ 같은 이름 있음 (' + o.c + '구간, 평균 ' + Math.round(o.s / o.c) + 'km/h)'; }
+        else {
+          var like = tnames.filter(function (t) { return norm(t).indexOf(norm(n)) >= 0 || norm(n).indexOf(norm(t)) >= 0; });
+          if (like.length) { cls = 'part'; part++; label = '🔶 비슷한 이름: ' + like.slice(0, 4).join(', '); }
+          else { cls = 'no'; no++; label = '❌ 소통정보에 없음'; }
+        }
+      }
+      var km = mine[n].m >= 1000 ? (mine[n].m / 1000).toFixed(1) + 'km' : mine[n].m + 'm';
+      h += '<tr class="' + cls + '"><td>' + n + '<div class="sub">약 ' + km + ' · ' + mine[n].segs.length + '구간</div></td><td class="s">' + label + '</td><td class="sub">' + extra + '</td></tr>';
+    });
+    out.innerHTML = h + '</table>';
+    msg.textContent = '소통정보 출처: ' + tr.from + ' / 소통정보 ' + tr.items.length + '건, 도로 이름 ' + tnames.length + '개\n우리 도로명 ' + names.length + '개 중 같은 이름 ' + ok + '개, 비슷한 이름 ' + part + '개, 없음 ' + no + '개, 도로명 아님 ' + skip + '개';
+  } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
+};
+</script>
+</body>
+</html>
