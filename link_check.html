@@ -28,6 +28,7 @@
   <input id="ik" placeholder="(서버·저장파일이 안 되면) 국토교통부 ITS 키 붙여넣기. 저장하지 않음">
 </div>
 <button id="go">소통정보 불러와서 모든 노선 맞춰 보기</button>
+<button id="rng" style="background:#7c3aed;">범위 시험 (전국이 아니게 받는 방법 찾기)</button>
 <div id="msg"></div>
 <div id="out"></div>
 <script src="js/app-config.js"></script>
@@ -87,6 +88,36 @@ document.getElementById('go').onclick = async function () {
     var ex = Object.keys(byId).slice(0, 3);
     msg.textContent = '소통정보 출처: ' + tr.from + ' / 소통정보 ' + tr.items.length + '건, 링크번호 ' + Object.keys(byId).length + '개\n전체: 우리 링크 ' + allMine + '개 중 ' + allHit + '개가 소통정보에 있음\n번호 모양 비교 — 소통정보: ' + ex.join(', ') + ' / 우리: 1720572300 형태(10자리)';
   } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
+};
+
+// 범위 시험: 영종·청라 작은 사각형과 도로 종류를 바꿔 가며 몇 건이 오는지 본다 (각각 20초 안에 안 오면 실패)
+document.getElementById('rng').onclick = async function () {
+  var key = document.getElementById('ik').value.trim();
+  if (!key) { msg.textContent = 'ITS 키 칸에 키를 붙여넣어 주세요(저장되지 않음).'; return; }
+  var box = 'minX=126.40&maxX=126.80&minY=37.40&maxY=37.60';
+  var tests = [
+    ['전체, 작은 사각형', 'type=all&' + box],
+    ['전체, 사각형 없음(기준)', 'type=all'],
+    ['고속도로(ex)', 'type=ex&' + box], ['일반국도(its)', 'type=its&' + box],
+    ['지방도(loc)', 'type=loc&' + box], ['시군도(sgg)', 'type=sgg&' + box],
+    ['전체, 상하행 구분(drcType=all)', 'type=all&drcType=all&' + box]
+  ];
+  var h = '<table><tr><th>방법</th><th>건수</th><th>인천(17) 비율</th></tr>';
+  out.innerHTML = ''; 
+  for (var i = 0; i < tests.length; i++) {
+    msg.textContent = '시험 중... ' + (i + 1) + ' / ' + tests.length;
+    var row;
+    try {
+      var ctl = new AbortController(); var tm = setTimeout(function () { ctl.abort(); }, 20000);
+      var t = await fetch('https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(key) + '&getType=json&' + tests[i][1], { signal: ctl.signal }).then(function (x) { return x.text(); });
+      clearTimeout(tm);
+      var jj = JSON.parse(t), items = (jj && jj.body && jj.body.items) || [];
+      var inc = items.filter(function (it) { return String(it.linkId || '').slice(0, 2) === '17'; }).length;
+      row = '<tr><td>' + tests[i][0] + '</td><td class="n">' + items.length + '건 (' + Math.round(t.length / 1024) + 'KB)</td><td class="n">' + inc + '건</td></tr>';
+    } catch (e) { row = '<tr class="no"><td>' + tests[i][0] + '</td><td colspan="2">실패</td></tr>'; }
+    h += row; out.innerHTML = h + '</table>';
+  }
+  msg.textContent = '끝났습니다. 이 화면을 캡처해서 보내 주세요.';
 };
 </script>
 </body>
