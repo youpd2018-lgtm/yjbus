@@ -236,7 +236,7 @@
     }
 
     function renderStopHabitInner(el, scope, v, loading) {
-        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
+        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 1;
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:24px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
@@ -257,7 +257,7 @@
                     (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
             }).join('') + '</div>'
             : '';
-        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:18px; ${gray} margin-top:12px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
+        const note = '';
         el.innerHTML =
             row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
