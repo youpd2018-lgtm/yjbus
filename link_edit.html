@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>노선 링크 수정</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0 auto; padding: 16px; max-width: 900px; box-sizing: border-box; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input, select, button { font-size: 15px; padding: 9px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  button { background: #2563eb; border: 0; font-weight: 700; }
+  button.sm { width: auto; padding: 4px 10px; margin: 0; font-size: 12px; background: #7f1d1d; }
+  button.gray { background: #475569; } button.green { background: #16a34a; }
+  .row { display: flex; gap: 8px; } .row > * { flex: 1; }
+  #msg { margin: 10px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
+  #list { max-height: 220px; overflow: auto; background: #1e293b; border-radius: 10px; }
+  .it { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #0f172a; font-size: 13px; cursor: pointer; }
+  .it.sel { background: #1d4ed8; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  .g { background: #16a34a; } .y { background: #eab308; } .r { background: #dc2626; } .n { background: #475569; } .a { background: #f97316; } .b { background: #64748b; }
+  #map { width: 100%; height: 340px; border-radius: 10px; margin-top: 10px; background: #1e293b; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  td, th { padding: 4px 3px; border-bottom: 1px solid #1e293b; text-align: left; }
+  td.r2 { text-align: right; white-space: nowrap; }
+  .sub { color: #94a3b8; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>🛠 노선 링크 수정 (시험)</h1>
+<div class="box">
+  구간별로 국토교통부 링크를 확인하고, 잘못 잡힌 링크는 빼고 빠진 링크는 지도에서 눌러 넣습니다. 고친 내용은 이 폰/PC에 임시 저장되고, 마지막에 [최종 저장 파일 받기]로 받은 파일을 채팅에 올려 주시면 반영합니다. 앱 본 화면과 무관합니다.
+  <input id="ik" placeholder="국토교통부 ITS 키 붙여넣기 (저장하지 않음)">
+</div>
+<div class="row">
+  <select id="route"><option>282</option><option>281</option><option>221</option><option>206</option><option>205</option><option>204</option><option>203</option><option>203A</option><option>202</option><option>202A</option></select>
+  <select id="flt"><option value="all">전체 구간</option><option value="nospd">속도 없는 구간만</option></select>
+</div>
+<button id="go">1. 노선 불러오고 소통정보 맞춰 보기</button>
+<div id="msg"></div>
+<div id="list"></div>
+<div id="info" class="sub" style="margin-top:10px;"></div>
+<div class="sub" style="margin-top:10px;">아래 표에서 고칠 수 있고, 지도는 참고용입니다(없어도 됩니다).</div>
+<div id="map"></div>
+<div class="sub" style="margin-top:6px;">지도: <b style="color:#4ade80">초록</b> = 이 구간에 포함(속도 있음), <b style="color:#f97316">주황</b> = 포함(속도 없음), <b style="color:#94a3b8">회색</b> = 포함 안 됨(누르면 추가), 파랑 = 노선선. 선을 누르면 넣고 빼기가 바뀝니다.</div>
+<div id="detail"></div>
+<div id="cand"></div>
+<div class="row">
+  <button id="reset" class="gray">이 구간 처음 상태로</button>
+  <button id="save" class="green">최종 저장 파일 받기</button>
+</div>
+<script>
+var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
+var msg = document.getElementById('msg');
+var S = { route: '', line: null, orig: null, segs: null, links: {}, area: null, traffic: null, itsNames: {}, cur: -1, map: null, layers: [] };
+
+function loadKakao() {
+  return new Promise(function (resolve, reject) {
+    if (window.kakao && kakao.maps && kakao.maps.LatLng) return resolve();
+    var s = document.createElement('script');
+    s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&autoload=false';
+    s.onload = function () { kakao.maps.load(resolve); };
+    s.onerror = function () { reject(new Error('카카오 지도를 불러오지 못했습니다')); };
+    document.head.appendChild(s);
+  });
+}
+function draftKey() { return 'yb_linkedit_' + S.route; }
+function saveDraft() { try { localStorage.setItem(draftKey(), JSON.stringify(S.segs)); } catch (e) { } }
+function info(id) { var a = S.area.links[id]; return a ? [a[0], a[1], a[2]] : (S.links[id] || [0, 0, '?']); }
+
+// 구간 하나의 소통 상태
+function flow(i) {
+  var ids = S.segs[i], sumLen = 0, sumSp = 0, sumLim = 0, have = 0;
+  ids.forEach(function (id) {
+    var inf = info(id), t = S.traffic && S.traffic[id], sp = t ? parseFloat(t.speed) : NaN;
+    if (!isNaN(sp) && inf[0] > 0) { var len = inf[1] || 1; sumLen += len; sumSp += sp * len; sumLim += inf[0] * len; have++; }
+  });
+  if (!S.traffic) return { cls: 'n', txt: '소통정보 없음', have: 0 };
+  if (have) { var ratio = sumSp / sumLim; return { cls: ratio >= 0.8 ? 'g' : (ratio >= 0.4 ? 'y' : 'r'), txt: Math.round(sumSp / sumLen) + 'km (제한 대비 ' + Math.round(ratio * 100) + '%)', have: have }; }
+  var nm = {}; ids.forEach(function (id) { var n = info(id)[2]; if (n && n !== '-') nm[n.replace(/번길.*$/, '').replace(/\s+/g, '')] = 1; });
+  var names = Object.keys(nm), known = names.filter(function (n) { return S.itsNames[n]; });
+  if (!names.length || known.length) return { cls: 'a', txt: '🅰 우리 쪽 확인 필요', have: 0 };
+  return { cls: 'b', txt: '🅱 진짜 없음(소통정보에 이 도로 없음)', have: 0 };
+}
+function renderList() {
+  var f = document.getElementById('flt').value, h = '';
+  S.segs.forEach(function (ids, i) {
+    var fl = flow(i);
+    if (f === 'nospd' && fl.have) return;
+    var nm = {}; ids.forEach(function (id) { var n = info(id)[2]; if (n && n !== '-') nm[n.replace(/번길.*$/, '')] = 1; });
+    h += '<div class="it' + (i === S.cur ? ' sel' : '') + '" data-i="' + i + '"><span class="dot ' + fl.cls + '"></span><b>' + (i + 1) + '번째</b><span>' + Object.keys(nm).slice(0, 3).join(', ') + '</span><span class="sub" style="margin-left:auto">' + fl.txt + '</span></div>';
+  });
+  var el = document.getElementById('list'); el.innerHTML = h || '<div class="it">해당하는 구간이 없습니다</div>';
+  Array.prototype.forEach.call(el.querySelectorAll('.it[data-i]'), function (d) { d.onclick = function () { select(parseInt(d.getAttribute('data-i'), 10)); }; });
+}
+function colorOf(id) { var t = S.traffic && S.traffic[id]; return t ? '#4ade80' : '#f97316'; }
+function drawMap() {
+  S.layers.forEach(function (l) { l.setMap(null); }); S.layers = [];
+  var seg = S.line.segs[S.cur], inc = {}; S.segs[S.cur].forEach(function (id) { inc[id] = 1; });
+  var bounds = new kakao.maps.LatLngBounds();
+  seg.forEach(function (p) { bounds.extend(new kakao.maps.LatLng(p[0], p[1])); });
+  var la0 = bounds.getSouthWest().getLat() - 0.003, la1 = bounds.getNorthEast().getLat() + 0.003, lo0 = bounds.getSouthWest().getLng() - 0.004, lo1 = bounds.getNorthEast().getLng() + 0.004;
+  var near = [];
+  Object.keys(S.area.links).forEach(function (id) {
+    var pts = S.area.links[id][3];
+    if (pts.some(function (p) { return p[0] >= la0 && p[0] <= la1 && p[1] >= lo0 && p[1] <= lo1; })) near.push(id);
+  });
+  near.sort(function (a, b) { return (inc[a] ? 1 : 0) - (inc[b] ? 1 : 0); });   // 포함된 선이 위에 오도록
+  near.forEach(function (id) {
+    var a = S.area.links[id], path = a[3].map(function (p) { return new kakao.maps.LatLng(p[0], p[1]); });
+    var pl = new kakao.maps.Polyline({ path: path, strokeWeight: inc[id] ? 7 : 5, strokeColor: inc[id] ? colorOf(id) : '#94a3b8', strokeOpacity: inc[id] ? 0.9 : 0.55, map: S.map });
+    kakao.maps.event.addListener(pl, 'click', function () { toggle(id); });
+    S.layers.push(pl);
+  });
+  var rl = new kakao.maps.Polyline({ path: seg.map(function (p) { return new kakao.maps.LatLng(p[0], p[1]); }), strokeWeight: 3, strokeColor: '#3b82f6', strokeOpacity: 1, map: S.map });
+  S.layers.push(rl);
+  S.map.setBounds(bounds);
+}
+function renderDetail() {
+  var ids = S.segs[S.cur], fl = flow(S.cur);
+  document.getElementById('info').textContent = (S.cur + 1) + '번째 구간 · 링크 ' + ids.length + '개 · ' + fl.txt;
+  var h = '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금 속도</th><th></th></tr>';
+  ids.forEach(function (id) {
+    var inf = info(id), t = S.traffic && S.traffic[id];
+    h += '<tr><td>' + inf[2] + '<div class="sub">' + id + '</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td><button class="sm" data-id="' + id + '">빼기</button></td></tr>';
+  });
+  var el = document.getElementById('detail'); el.innerHTML = h + '</table>';
+  Array.prototype.forEach.call(el.querySelectorAll('button[data-id]'), function (b) { b.onclick = function () { toggle(b.getAttribute('data-id')); }; });
+}
+// 이 구간 노선선 근처(40m)를 지나지만 아직 안 넣은 링크: 노선 순서대로
+function renderCand() {
+  var seg = S.line.segs[S.cur], inc = {}; S.segs[S.cur].forEach(function (id) { inc[id] = 1; });
+  var K = Math.cos(37.5 * Math.PI / 180), rows = [];
+  Object.keys(S.area.links).forEach(function (id) {
+    if (inc[id]) return;
+    var pts = S.area.links[id][3], best = 1e9, at = 0;
+    pts.forEach(function (p) { for (var j = 0; j < seg.length; j++) { var d = Math.hypot((p[0] - seg[j][0]) * 110540, (p[1] - seg[j][1]) * 111320 * K); if (d < best) { best = d; at = j; } } });
+    if (best <= 40) rows.push({ id: id, at: at, d: best });
+  });
+  rows.sort(function (a, b) { return a.at - b.at; });
+  var h = '<div class="sub" style="margin-top:12px;">노선선 근처(40m 안)에 있지만 이 구간에 안 들어 있는 링크 (노선 순서) — 맞으면 [넣기]</div><table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금 속도</th><th></th></tr>';
+  rows.forEach(function (r) {
+    var inf = info(r.id), t = S.traffic && S.traffic[r.id];
+    h += '<tr><td>' + inf[2] + '<div class="sub">' + r.id + ' · 선에서 ' + Math.round(r.d) + 'm</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td><button class="sm" style="background:#166534" data-add="' + r.id + '">넣기</button></td></tr>';
+  });
+  var el = document.getElementById('cand'); el.innerHTML = h + (rows.length ? '' : '<tr><td colspan="5" class="sub">없음</td></tr>') + '</table>';
+  Array.prototype.forEach.call(el.querySelectorAll('button[data-add]'), function (b) { b.onclick = function () { toggle(b.getAttribute('data-add')); }; });
+}
+function toggle(id) {
+  var a = S.segs[S.cur], k = a.indexOf(id);
+  if (k >= 0) a.splice(k, 1); else a.push(id);
+  saveDraft(); refresh(true);
+}
+function refresh(keepView) {
+  renderList(); renderDetail(); renderCand();
+  if (!S.map) return;
+  // 지도는 선 색만 다시 그리되 화면 위치는 그대로 둔다
+  var c = S.map.getCenter(), lv = S.map.getLevel(); drawMap(); if (keepView) { S.map.setLevel(lv); S.map.setCenter(c); }
+}
+function select(i) {
+  S.cur = i; renderList(); renderDetail(); renderCand(); if (S.map) drawMap();
+  var el = document.querySelector('#list .it.sel'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+}
+async function fetchTraffic(key) {
+  var p = S.line.segs.reduce(function (a, s) { return a.concat(s); }, []);
+  var la = p.map(function (x) { return x[0]; }), lo = p.map(function (x) { return x[1]; }), H = 0.01;
+  var url = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(key) + '&type=all&getType=json'
+    + '&minX=' + (Math.min.apply(null, lo) - H).toFixed(4) + '&maxX=' + (Math.max.apply(null, lo) + H).toFixed(4)
+    + '&minY=' + (Math.min.apply(null, la) - H).toFixed(4) + '&maxY=' + (Math.max.apply(null, la) + H).toFixed(4);
+  var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 25000);
+  var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); });
+  clearTimeout(tm);
+  var items = (JSON.parse(t).body || {}).items || [], m = {}, nm = {};
+  items.forEach(function (it) { if (it.linkId) m[String(it.linkId)] = it; if (it.roadName) nm[String(it.roadName).replace(/\s+/g, '')] = 1; });
+  S.traffic = m; S.itsNames = nm;
+  return items.length;
+}
+document.getElementById('go').onclick = async function () {
+  S.route = document.getElementById('route').value; S.traffic = null; S.cur = -1;
+  msg.textContent = '노선 파일 불러오는 중...';
+  try {
+    var q = function (u) { return fetch(u, { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(u + ' (' + x.status + ')'); return x.json(); }); };
+    S.line = await q('data/route/' + S.route + '.json');
+    var lk = await q('data/route/' + S.route + '_links.json');
+    S.orig = lk.segs; S.links = lk.links || {};
+    if (!S.area) { msg.textContent = '주변 도로 좌표 불러오는 중(1.1MB)...'; S.area = await q('data/route/area_links.json'); }
+    S.segs = lk.segs.map(function (a) { return a.slice(); });
+    var restored = false;
+    try { var d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); if (d && d.length === S.segs.length) { S.segs = d; restored = true; } } catch (e) { }
+    try { await loadKakao(); if (!S.map) S.map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(37.49, 126.55), level: 5 }); }
+    catch (e) { S.map = null; document.getElementById('map').style.display = 'none'; }
+    var key = document.getElementById('ik').value.trim(), note = '';
+    if (key) { msg.textContent = '소통정보 받는 중(노선 전체 범위, 1~2MB)...'; try { note = '소통정보 ' + (await fetchTraffic(key)) + '건 받음.'; } catch (e) { note = '소통정보 받기 실패: ' + e + ' (색 없이 링크만 볼 수 있습니다)'; } }
+    else note = 'ITS 키가 비어 있어 소통정보 없이 링크만 보입니다.';
+    msg.textContent = S.route + ' 노선 ' + S.segs.length + '개 구간. ' + note + (restored ? '\n이전에 고치던 내용을 불러왔습니다.' : '');
+    renderList(); select(0);
+    if (S.map) setTimeout(function () { S.map.relayout(); drawMap(); }, 200);
+  } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
+};
+document.getElementById('flt').onchange = function () { if (S.segs) renderList(); };
+document.getElementById('reset').onclick = function () { if (!S.segs || S.cur < 0) return; S.segs[S.cur] = S.orig[S.cur].slice(); saveDraft(); refresh(true); };
+document.getElementById('save').onclick = function () {
+  if (!S.segs) return;
+  var links = {}; S.segs.forEach(function (a) { a.forEach(function (id) { links[id] = info(id); }); });
+  var out = { v: 2, route: S.route, source: 'MOCT_LINK', edited: true, savedAt: Date.now(), segs: S.segs, links: links };
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
+  a.download = S.route + '_links.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  msg.textContent = '파일을 받았습니다(' + S.route + '_links.json). 이 파일을 채팅에 올려 주세요.';
+};
+</script>
+</body>
+</html>
