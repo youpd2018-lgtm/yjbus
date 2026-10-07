@@ -18,6 +18,7 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'ask_gemini') {
     const query = e.parameter.query || "";
     const context = e.parameter.context || "";
+    usageAdd_(viewer && viewer.name, { gem: 1 });
     const answer = askGeminiVoiceAssistant(query, context, []);
     const result = { success: true, answer: answer };
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -607,8 +608,12 @@ function doPost(e) {
       const query = postData.query || "";
       const context = postData.context || "";
       const history = postData.history || [];
+      usageAdd_(viewer && viewer.name, { gem: 1 });
       const answer = askGeminiVoiceAssistant(query, context, history);
       return ContentService.createTextOutput(JSON.stringify({ success: true, answer: answer })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (postData && postData.action === 'save_usage') {
+      return authJson_(usageSave_(viewer, postData));
     }
     if (postData && postData.action === 'save_driving_habit') {
       postData.driver = authDriverFor_(viewer, postData.driver);
