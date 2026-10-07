@@ -102,7 +102,7 @@ async function tick() {
   if (man >= 1 && man <= R.line.segs.length) pos = R.line.segs[man - 1][0];   // 구간 번호를 직접 넣은 경우(집 컴퓨터 시험)
   if (!pos) { msg.textContent = 'GPS 위치를 기다리는 중...'; return; }
   var ns = nearestSeg(pos);
-  curSeg = ns.i;
+  curSeg = (man >= 1 && man <= R.line.segs.length) ? man - 1 : ns.i;   // 번호를 직접 넣었으면 그 구간 그대로
   var info = '';
   if (ns.d > 1500) {   // 노선에서 1.5km 넘게 떨어져 있으면 소통정보를 받지 않는다(시험이 의미 없음)
     msg.textContent = '내 위치가 노선에서 ' + (ns.d / 1000).toFixed(1) + 'km 떨어져 있어 소통정보를 받지 않았습니다.\n집 컴퓨터에서는 위의 "구간 번호" 칸에 숫자(예: 10)를 넣고 [시작]을 눌러 주세요.';
