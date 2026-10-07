@@ -224,8 +224,8 @@
     // 측정 N회 / 급정거 N회 / 급출발 N회, 급한 정류장이 생기면 Top3가 아래로 이어서 늘어남 (이번 회차 / 월별 누적 공통)
     function stopHabitDiag() {
         const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
-        if (!d || !d.fix) return '<div style="font-size:10px; color:#64748b; margin-top:6px;">점검: GPS 수신 기록 없음</div>';
-        return `<div style="font-size:10px; color:#64748b; margin-top:6px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
+        if (!d || !d.fix) return '<div style="font-size:12px; color:#64748b; margin-top:10px;">점검: GPS 수신 기록 없음</div>';
+        return `<div style="font-size:12px; color:#64748b; margin-top:10px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
     }
 
     function renderStopHabit(scope, v, loading) {
@@ -236,32 +236,48 @@
     }
 
     function renderStopHabitInner(el, scope, v, loading) {
-        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 1;
+        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 10;
         const gray = 'font-weight:bold; color:#94a3b8;';
-        if (loading) { el.innerHTML = `<div style="font-size:12px; ${gray}">불러오는 중...</div>`; return; }
+        if (loading) { el.innerHTML = `<div style="font-size:16px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
-            el.innerHTML = `<div style="font-size:12px; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:11px;">라이브 모달을 켜고 운행하면 쌓여요</span>' : '기록 없음'}</div>`;
+            el.innerHTML = `<div style="font-size:16px; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:13px;">라이브 모달을 켜고 운행하면 쌓여요</span>' : '기록 없음'}</div>`;
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-        const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:13px; padding:2px 0; font-weight:bold; color:#94a3b8;">` +
-            `<span>${label}</span><span style="color:${color}; font-weight:900;">${c}회${showPct ? `<span style="font-size:10.5px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
+        const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:7px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
+            `<span style="font-size:19px;">${label}</span><span style="color:${color}; font-weight:900; font-size:26px;">${c}회${showPct ? `<span style="font-size:14px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
         const top = (title, arr, color) => (arr && arr.length)
-            ? `<div style="margin-top:6px;"><div style="font-size:11.5px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>` +
+            ? `<div style="margin-top:12px;"><div style="font-size:16px; font-weight:900; color:${color}; margin-bottom:4px;">${title}</div>` +
               arr.map((nm, i) => {
                 // 월별은 "정류장이름 N회" 형태: 이름만 ...으로 줄이고 횟수는 항상 보이게
                 const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
                 const name = m ? m[1] : nm, cnt = m ? m[2] : '';
-                return `<div style="display:flex; align-items:baseline; gap:4px; font-size:11.5px; color:#e2e8f0; font-weight:700; line-height:1.45;">` +
+                return `<div style="display:flex; align-items:baseline; gap:6px; font-size:18px; color:#e2e8f0; font-weight:800; line-height:1.6;">` +
                     `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
                     (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
             }).join('') + '</div>'
             : '';
-        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:10.5px; ${gray} margin-top:5px;">1곳만 측정돼도 쌓여요</div>` : '';
+        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:13px; ${gray} margin-top:8px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
         el.innerHTML =
             row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
     }
+
+    // 나의 정류장 운행 2페이지 전환 (이번 회차 / 월별 누적)
+    function setHabitPage(which) {
+        ['cur', 'month'].forEach(k => {
+            const list = document.getElementById('habitList_' + k);
+            const tab = document.getElementById('habitTab_' + k);
+            const on = k === which;
+            if (list) list.style.display = on ? 'block' : 'none';
+            if (tab) {
+                tab.style.background = on ? '#0c4a6e' : '#1e293b';
+                tab.style.borderColor = on ? '#38bdf8' : '#334155';
+                tab.style.color = on ? '#7dd3fc' : '#94a3b8';
+            }
+        });
+    }
+    window.setHabitPage = setHabitPage;
 
     // ================================================================
     // 📅 [모든사용자 날짜 좌우 이동]
