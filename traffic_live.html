@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>내 위치 주변 소통 시험</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input, select, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  button { background: #2563eb; border: 0; font-weight: 700; }
+  #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
+  .cards { display: flex; gap: 10px; margin: 12px 0; }
+  .card { flex: 1; background: #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
+  .card .t { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+  .pill { display: inline-block; min-width: 70px; padding: 8px 14px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #fff; }
+  .g { background: #16a34a; } .y { background: #eab308; color: #111; } .r { background: #dc2626; } .n { background: #475569; }
+  .card .sp { margin-top: 8px; font-size: 22px; font-weight: 800; }
+  .card .sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  td, th { padding: 4px 3px; border-bottom: 1px solid #1e293b; text-align: left; }
+  td.n2 { text-align: right; white-space: nowrap; }
+  .sub { color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>🚦 내 위치 주변 소통 시험</h1>
+<div class="box">
+  폰 GPS 주변 약 5km만 국토교통부에서 받아, 지금 구간과 다음 구간의 색과 속도를 보여 줍니다. 앱 본 화면과 무관하고 아무것도 저장하지 않습니다.
+  색 기준(제한속도 대비): 80% 이상 초록, 40% 이상 80% 미만 노랑, 40% 미만 빨강.
+  <input id="ik" placeholder="국토교통부 ITS 키 붙여넣기 (저장하지 않음)">
+</div>
+<select id="route">
+  <option>282</option><option>281</option><option>221</option><option>206</option><option>205</option>
+  <option>204</option><option>203</option><option>203A</option><option>202</option><option>202A</option>
+</select>
+<button id="go">시작 (5분마다 자동 갱신)</button>
+<div id="msg"></div>
+<div class="cards">
+  <div class="card"><div class="t">현재 구간</div><div id="c0"><span class="pill n">--</span></div><div class="sp" id="s0">--</div><div class="sub" id="d0"></div></div>
+  <div class="card"><div class="t">다음 구간</div><div id="c1"><span class="pill n">--</span></div><div class="sp" id="s1">--</div><div class="sub" id="d1"></div></div>
+</div>
+<div id="detail"></div>
+<script>
+var msg = document.getElementById('msg'), timer = null, gpsTimer = null;
+var R = { line: null, links: null }, traffic = {}, trafficAt = 0, trafficCenter = null, pos = null, curSeg = -1;
+
+function distM(a, b) { var k = Math.cos(a[0] * Math.PI / 180); return Math.hypot((a[0] - b[0]) * 110540, (a[1] - b[1]) * 111320 * k); }
+// 현재 위치에서 가장 가까운 구간 번호(0부터)
+function nearestSeg(p) {
+  var best = -1, bd = 1e9;
+  R.line.segs.forEach(function (sg, i) { for (var j = 0; j < sg.length; j++) { var d = distM(p, sg[j]); if (d < bd) { bd = d; best = i; } } });
+  return { i: best, d: bd };
+}
+// 구간 하나의 소통: 링크 길이로 평균낸 속도 / 제한속도
+function segFlow(i) {
+  if (i < 0 || i >= R.links.segs.length) return null;
+  var ids = R.links.segs[i], sumLen = 0, sumSp = 0, sumLim = 0, have = 0, rows = [];
+  ids.forEach(function (id) {
+    var inf = R.links.links[id] || [0, 0, ''], lim = inf[0], len = inf[1] || 1, t = traffic[id], sp = t ? parseFloat(t.speed) : NaN;
+    rows.push({ id: id, name: inf[2], lim: lim, len: inf[1], sp: isNaN(sp) ? null : sp });
+    if (!isNaN(sp) && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; have++; }
+  });
+  if (!have) return { cls: 'n', label: '자료없음', sp: null, rows: rows, total: ids.length, have: 0 };
+  var sp = sumSp / sumLen, ratio = sumSp / sumLim;
+  return { cls: ratio >= 0.8 ? 'g' : (ratio >= 0.4 ? 'y' : 'r'), label: ratio >= 0.8 ? '원활' : (ratio >= 0.4 ? '서행' : '정체'), sp: Math.round(sp), ratio: ratio, rows: rows, total: ids.length, have: have };
+}
+function show(n, i, f) {
+  var c = document.getElementById('c' + n), s = document.getElementById('s' + n), d = document.getElementById('d' + n);
+  if (!f) { c.innerHTML = '<span class="pill n">--</span>'; s.textContent = '--'; d.textContent = '구간 없음'; return; }
+  c.innerHTML = '<span class="pill ' + f.cls + '">' + f.label + '</span>';
+  s.textContent = f.sp === null ? '--' : f.sp + 'km';
+  d.textContent = (i + 1) + '번째 구간 · 링크 ' + f.have + '/' + f.total + '개에 속도 있음' + (f.ratio ? ' · 제한속도 대비 ' + Math.round(f.ratio * 100) + '%' : '');
+}
+function render() {
+  if (curSeg < 0) return;
+  var f0 = segFlow(curSeg), f1 = segFlow(curSeg + 1);
+  show(0, curSeg, f0); show(1, curSeg + 1, f1);
+  var h = '<div class="sub">현재 구간 링크별 (도로명 · 제한 · 길이 · 지금 속도)</div><table>';
+  (f0 ? f0.rows : []).forEach(function (r) { h += '<tr><td>' + r.name + '</td><td class="n2">' + r.lim + '</td><td class="n2">' + Math.round(r.len) + 'm</td><td class="n2">' + (r.sp === null ? '-' : r.sp) + '</td></tr>'; });
+  document.getElementById('detail').innerHTML = h + '</table>';
+}
+async function fetchTraffic(center) {
+  var key = document.getElementById('ik').value.trim();
+  if (!key) throw new Error('ITS 키 칸이 비어 있습니다.');
+  var H = 0.025;   // 위도·경도 ±0.025도 = 약 5km 사각형
+  var url = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(key) + '&type=all&getType=json'
+    + '&minX=' + (center[1] - H).toFixed(4) + '&maxX=' + (center[1] + H).toFixed(4) + '&minY=' + (center[0] - H).toFixed(4) + '&maxY=' + (center[0] + H).toFixed(4);
+  var ctl = new AbortController(); var tm = setTimeout(function () { ctl.abort(); }, 20000);
+  var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); });
+  clearTimeout(tm);
+  var j = JSON.parse(t), items = (j && j.body && j.body.items) || [];
+  var m = {}; items.forEach(function (it) { if (it.linkId) m[String(it.linkId)] = it; });
+  traffic = m; trafficAt = Date.now(); trafficCenter = center;
+  return { n: items.length, kb: Math.round(t.length / 1024) };
+}
+async function tick() {
+  if (!pos) { msg.textContent = 'GPS 위치를 기다리는 중...'; return; }
+  var ns = nearestSeg(pos);
+  curSeg = ns.i;
+  var info = '';
+  // 5분이 지났거나 받은 사각형 중심에서 2km 넘게 움직였으면 새로 받는다
+  if (!trafficAt || Date.now() - trafficAt > 300000 || distM(pos, trafficCenter) > 2000) {
+    try { var r = await fetchTraffic(pos); info = '소통정보 ' + r.n + '건(' + r.kb + 'KB) 받음 ' + new Date().toLocaleTimeString('ko-KR') + '\n'; }
+    catch (e) { msg.textContent = '소통정보 받기 실패: ' + (e && e.message || e); return; }
+  } else info = '소통정보 갱신 ' + new Date(trafficAt).toLocaleTimeString('ko-KR') + '\n';
+  msg.textContent = info + '내 위치에서 가장 가까운 노선선까지 ' + Math.round(ns.d) + 'm' + (ns.d > 150 ? ' (노선에서 멀리 떨어져 있어 구간이 맞지 않을 수 있음)' : '');
+  render();
+}
+document.getElementById('go').onclick = async function () {
+  var route = document.getElementById('route').value;
+  if (timer) clearInterval(timer); if (gpsTimer !== null && navigator.geolocation) navigator.geolocation.clearWatch(gpsTimer);
+  traffic = {}; trafficAt = 0; curSeg = -1; msg.textContent = '노선 정보 불러오는 중...';
+  try {
+    R.line = await fetch('data/route/' + route + '.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
+    R.links = await fetch('data/route/' + route + '_links.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
+  } catch (e) { msg.textContent = '노선 파일을 못 받았습니다: ' + e; return; }
+  if (!navigator.geolocation) { msg.textContent = '이 폰에서는 GPS를 쓸 수 없습니다.'; return; }
+  msg.textContent = 'GPS 위치를 기다리는 중... (위치 권한을 허용해 주세요)';
+  gpsTimer = navigator.geolocation.watchPosition(function (p) { var first = !pos; pos = [p.coords.latitude, p.coords.longitude]; if (first) tick(); }, function (e) { msg.textContent = 'GPS 오류: ' + e.message; }, { enableHighAccuracy: true, maximumAge: 5000 });
+  timer = setInterval(tick, 15000);   // 15초마다 구간만 다시 찾고, 소통정보는 5분마다만 받음
+};
+</script>
+</body>
+</html>
