@@ -3354,8 +3354,8 @@ html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !im
     box-shadow: 0 12px 30px rgba(0,0,0,.55), inset 0 0 36px rgba(0,0,0,.6);
 }
 /* 🎨 난이도 색 선택 원: 기존과 같은 자리(오른쪽 위), 크기만 2px 크게 */
-.yb2-band #ybDiffWrap button { width: 24px !important; height: 24px !important; }
-.yb2-band #ybDiffWrap button[data-c] { width: 26px !important; height: 26px !important; }
+.yb2-band #ybDiffWrap button { width: 27px !important; height: 27px !important; }
+.yb2-band #ybDiffWrap button[data-c] { width: 29px !important; height: 29px !important; }
 .yb2-name { display: flex; align-items: center; gap: 6px; font-size: 17px; font-weight: 800; color: #cbd5e1; }
 .yb2-name img { width: 22px; height: 22px; object-fit: contain; }
 .yb2-col { display: flex; flex-direction: column; gap: 8px; }
@@ -3545,3 +3545,12 @@ html.ui2.senior .yb2-seq-n { font-size: 42px; }
 html.ui2.senior .yb2-seq-l { font-size: 22px; }
 html.ui2.senior .yb2-sub { grid-column: auto; grid-row: auto; justify-self: auto; font-size: 20px; }
 html.ui2.senior .yb2-bus { grid-row: 2; }
+
+/* 🚌 차량 글자: 버스 아이콘 옆 (일반 모드. 노안모드는 시안 1 줄에 이미 있음) */
+html.ui2:not(.senior) .yb2-bus iconify-icon { order: 0; }
+html.ui2:not(.senior) .yb2-bus::before { content: "차량"; order: 1; font-size: 18px; font-weight: 800; color: #fed7aa; }
+html.ui2:not(.senior) .yb2-bus-n { order: 2; }
+
+/* 노안모드: 번호 판 전체를 감싼 바깥 박스 선을 없애고, 내용을 선이 있던 자리까지 왼쪽으로 */
+html.ui2.senior .yb2-box { border: 0; padding-left: 0; padding-right: 0; border-radius: 0; }
+html.ui2.senior .yb2-box #ybDiffWrap { right: 2px !important; }
