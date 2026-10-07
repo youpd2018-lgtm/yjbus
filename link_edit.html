@@ -57,7 +57,7 @@
 <script>
 var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
 var msg = document.getElementById('msg');
-var S = { typeFilter: [], route: '', line: null, orig: null, segs: null, links: {}, area: null, traffic: null, itsNames: {}, cur: -1, map: null, layers: [], cand: {} };
+var S = { removed: {}, typeFilter: [], route: '', line: null, orig: null, segs: null, links: {}, area: null, traffic: null, itsNames: {}, cur: -1, map: null, layers: [], cand: {} };
 var KX = Math.cos(37.5 * Math.PI / 180);
 
 function loadKakao() {
@@ -71,7 +71,7 @@ function loadKakao() {
   });
 }
 function draftKey() { return 'yb_linkedit_' + S.route; }
-function saveDraft() { try { localStorage.setItem(draftKey(), JSON.stringify(S.segs)); } catch (e) { } }
+function saveDraft() { try { localStorage.setItem(draftKey(), JSON.stringify(S.segs)); localStorage.setItem(draftKey() + '_rm', JSON.stringify(S.removed)); } catch (e) { } }
 function info(id) { var a = S.area.links[id]; return a ? [a[0], a[1], a[2], a[4] || '000'] : (S.links[id] || [0, 0, '?', '000']); }
 var TYPE_MARK = { '001': '🌉 교량', '002': '🚇 터널', '003': '🛣 고가', '004': '🚇 지하차도' };
 function mark(inf) { return TYPE_MARK[inf[3]] ? ' <span style="color:#fbbf24">' + TYPE_MARK[inf[3]] + '</span>' : ''; }
@@ -197,7 +197,9 @@ function candidates(i) {
     rows.push({ id: id, at: at, d: best });
   });
   rows.sort(function (a, b) { return a.at - b.at; });
-  return rows;
+  var rm = (S.removed[i] || []).filter(function (id) { return !inc[id] && S.area.links[id]; });
+  rows = rows.filter(function (r) { return rm.indexOf(r.id) < 0; });
+  return rm.map(function (id) { return { id: id, at: -1, d: 0, removed: true }; }).concat(rows);
 }
 function linkRow(i, id) {
   var inf = info(id), t = S.traffic && S.traffic[id];
@@ -211,16 +213,17 @@ function renderAll() {
     if (f === 'nospd' && fl.have && i !== S.cur) return;
     var nm = {}; ids.forEach(function (id) { var n = info(id)[2]; if (n && n !== '-') nm[n.replace(/번길.*$/, '')] = 1; });
     h += '<div class="blk' + (i === S.cur ? ' sel' : '') + '"><div class="bh" data-sel="' + i + '"><span class="dot ' + fl.cls + '"></span><b>' + (i + 1) + '번째</b><span>' + Object.keys(nm).slice(0, 3).join(', ') + '</span><span class="sub" style="margin-left:auto">링크 ' + ids.length + '개 · ' + fl.txt + '</span></div>';
-    h += '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금</th><th></th></tr>' + ids.map(function (id) { return linkRow(i, id); }).join('') + '</table>';
     if (i === S.cur) {
       var c = S.cand[i] = candidates(i);
       h += '<div class="btns" style="padding:6px 10px;text-align:left;"><span class="sub">후보 종류 고르기(체크하면 그 종류만, 교량·터널·고가는 선에서 120m까지 찾음): </span>'
         + [['001', '🌉 교량'], ['002', '🚇 터널'], ['003', '🛣 고가'], ['004', '🚇 지하차도']].map(function (t) { return '<label style="margin-left:8px;font-size:13px;"><input type="checkbox" data-tf="' + t[0] + '" style="width:auto;margin:0 3px 0 0;"' + (S.typeFilter.indexOf(t[0]) >= 0 ? ' checked' : '') + '>' + t[1] + '</label>'; }).join('') + '</div>';
       h += '<div class="sub" style="padding:6px 10px;">추천: 노선선 근처에 있지만 이 구간에 안 들어 있는 링크(같은 방향만, 노선 순서)</div><table>' + (c.length ? c.map(function (r) {
         var inf = info(r.id), t = S.traffic && S.traffic[r.id];
-        return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + r.id + ' · 선에서 ' + Math.round(r.d) + 'm</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
+        return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + r.id + (r.removed ? ' · 빼낸 링크' : ' · 선에서 ' + Math.round(r.d) + 'm') + '</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
       }).join('') : '<tr><td class="sub">없음</td></tr>') + '</table>';
     }
+    if (i === S.cur) h += '<div class="sub" style="padding:6px 10px;">이 구간에 들어 있는 링크</div>';
+    h += '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금</th><th></th></tr>' + ids.map(function (id) { return linkRow(i, id); }).join('') + '</table>';
     h += '</div>';
   });
   var el = document.getElementById('all'); el.innerHTML = h || '<div class="box">해당하는 구간이 없습니다</div>';
@@ -231,12 +234,12 @@ function renderAll() {
 }
 function op(kind, i, id) {
   var a = S.segs[i], k = a.indexOf(id);
-  if (kind === 'add') { if (k < 0) a.push(id); }
+  if (kind === 'add') { if (k < 0) a.push(id); var rl = S.removed[i] || []; var q = rl.indexOf(id); if (q >= 0) rl.splice(q, 1); }
   else if (kind === 'copyprev' || kind === 'copynext') {
     var from = S.segs[kind === 'copyprev' ? i - 1 : i + 1] || [];
     from.forEach(function (x) { if (a.indexOf(x) < 0) a.push(x); });
   }
-  else if (k >= 0) a.splice(k, 1);
+  else if (k >= 0) { a.splice(k, 1); if ((S.removed[i] = S.removed[i] || []).indexOf(id) < 0) S.removed[i].push(id); }
   saveDraft(); var y = window.scrollY; renderAll(); window.scrollTo(0, y); drawMap(false);
 }
 function drawMap(fit) {
@@ -292,7 +295,7 @@ document.getElementById('go').onclick = async function () {
     if (!S.area) { msg.textContent = '주변 도로 좌표 불러오는 중(1.1MB)...'; S.area = await q('data/route/area_links.json'); }
     S.segs = lk.segs.map(function (a) { return a.slice(); });
     var restored = false;
-    try { var d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); if (d && d.length === S.segs.length) { S.segs = d; restored = true; } } catch (e) { }
+    S.removed = {}; try { var d = JSON.parse(localStorage.getItem(draftKey()) || 'null'); if (d && d.length === S.segs.length) { S.segs = d; restored = true; S.removed = JSON.parse(localStorage.getItem(draftKey() + '_rm') || '{}') || {}; } } catch (e) { }
     try { await loadKakao(); if (!S.map) S.map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(37.49, 126.55), level: 5 }); }
     catch (e) { S.map = null; document.getElementById('mapwrap').style.display = 'none'; }
     var key = document.getElementById('ik').value.trim(), note = '';
@@ -304,7 +307,7 @@ document.getElementById('go').onclick = async function () {
   } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
 };
 document.getElementById('flt').onchange = function () { if (S.segs) renderAll(); };
-document.getElementById('reset').onclick = function () { if (!S.segs || S.cur < 0) return; S.segs[S.cur] = S.orig[S.cur].slice(); saveDraft(); renderAll(); drawMap(false); };
+document.getElementById('reset').onclick = function () { if (!S.segs || S.cur < 0) return; S.segs[S.cur] = S.orig[S.cur].slice(); S.removed[S.cur] = []; saveDraft(); renderAll(); drawMap(false); };
 document.getElementById('save').onclick = function () {
   if (!S.segs) return;
   var links = {}; S.segs.forEach(function (a) { a.forEach(function (id) { links[id] = info(id); }); });
