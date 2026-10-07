@@ -3403,6 +3403,7 @@ html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !im
 .yb2-map {
     flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; height: 56px; border-radius: 18px;
     background: #38bdf8; color: #04121f; font-size: 21px; font-weight: 900; text-decoration: none; margin-bottom: 8px;
+    align-self: center; padding: 0 28px;   /* 버튼 크기를 글자 크기에 맞춤 */
 }
 
 /* ---------- 4단계: 시간표 카드 + 하단 3버튼 ---------- */
@@ -3480,7 +3481,7 @@ html.ui2.senior .yb2-cd-v { font-size: 62px; font-weight: 700; line-height: 1.05
 
 html.ui2.senior .yb2-btns { display: flex; gap: 8px; flex: none; margin: 10px 0 8px; }
 html.ui2.senior .yb2-live { display: block; flex: 1.5; height: 60px; border: 0; border-radius: 16px; background: #FFB000; color: #0B0D10; font-size: 20px; font-weight: 900; font-family: inherit; cursor: pointer; }
-html.ui2.senior .yb2-map { flex: 1; height: 60px; margin: 0; border: 2px solid #FFB000; border-radius: 16px; background: transparent; color: #FFB000; font-size: 20px; box-sizing: border-box; }
+html.ui2.senior .yb2-map { flex: 1; align-self: auto; padding: 0; height: 60px; margin: 0; border: 2px solid #FFB000; border-radius: 16px; background: transparent; color: #FFB000; font-size: 20px; box-sizing: border-box; }
 html.ui2.senior .yb2-map iconify-icon { display: none; }
 html.ui2.senior #yb2Drive { flex: 1; }
 
@@ -3529,3 +3530,9 @@ html.ui2.senior .file-tab { height: 100%; font-size: 15px; font-weight: 800; col
 html.ui2.senior .file-tab iconify-icon { font-size: 26px; }
 html.ui2.senior .file-tab.active { background: #1B1608; color: #FFB000; font-weight: 900; }
 html.ui2.senior #tabEmergency { color: #FF8A80 !important; }
+
+/* 시간 카운트 박스: 휴무·미등록·운행종료·운행준비중 글자는 박스 가운데에 */
+.yb2-cd { position: relative; }
+.yb2-cd.msg .yb2-cd-l { display: none; }
+.yb2-cd.msg .yb2-cd-txt { align-items: center; }
+.yb2-cd.msg .yb2-ring { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); }

@@ -168,6 +168,8 @@
         } else {                              // 운행종료·운행준비중 등
             lHtml = ''; vTxt = label || '-'; vColor = '#94a3b8'; rColor = '#475569'; off = 0; dColor = '#64748b';
         }
+        var cd = document.getElementById('yb2Cd');
+        if (cd) cd.classList.toggle('msg', !isCount && label.indexOf('운행중') < 0);   // 휴무·미등록·운행종료 등은 박스 가운데에
         if (L.innerHTML !== lHtml) L.innerHTML = lHtml;
         if (V.textContent !== vTxt) V.textContent = vTxt;
         V.style.color = vColor;
