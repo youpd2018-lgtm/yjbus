@@ -248,7 +248,14 @@
             `<span>${label}</span><span style="color:${color}; font-weight:900;">${c}회${showPct ? `<span style="font-size:10.5px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
         const top = (title, arr, color) => (arr && arr.length)
             ? `<div style="margin-top:6px;"><div style="font-size:11.5px; font-weight:900; color:${color}; margin-bottom:2px;">${title}</div>` +
-              arr.map((nm, i) => `<div style="font-size:11.5px; color:#e2e8f0; font-weight:700; line-height:1.45; word-break:keep-all;">${i + 1}. ${nm}</div>`).join('') + '</div>'
+              arr.map((nm, i) => {
+                // 월별은 "정류장이름 N회" 형태: 이름만 ...으로 줄이고 횟수는 항상 보이게
+                const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
+                const name = m ? m[1] : nm, cnt = m ? m[2] : '';
+                return `<div style="display:flex; align-items:baseline; gap:4px; font-size:11.5px; color:#e2e8f0; font-weight:700; line-height:1.45;">` +
+                    `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
+                    (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
+            }).join('') + '</div>'
             : '';
         const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:10.5px; ${gray} margin-top:5px;">1곳만 측정돼도 쌓여요</div>` : '';
         el.innerHTML =
