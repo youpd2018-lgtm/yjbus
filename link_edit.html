@@ -40,7 +40,7 @@
 <body>
 <h1>🛠 노선 링크 수정 (시험)</h1>
 <div class="box">
-  노선의 구간을 출발지부터 돌아올 때까지 순서대로 보여 줍니다. 구간 제목을 누르면 위 지도에 그 구간 선만 나오고, 후보 링크가 아래에 나옵니다. 틀린 링크는 [빼기], 추천 링크는 [이 구간에 넣기], 맞는 게 없으면 [앞/뒤 구간 링크를 이 구간에 넣기]로 고칩니다. 고친 내용은 이 기기에 임시 저장되고, 끝나면 [최종 저장 파일 받기]로 받은 파일을 채팅에 올려 주세요. 앱 본 화면과 무관합니다.
+  노선의 구간을 출발지부터 돌아올 때까지 순서대로 보여 줍니다. 구간 제목을 누르면 위 지도에 그 구간 선만 나오고, 후보 링크가 아래에 나옵니다. 틀린 링크는 [빼기], 추천 링크는 [이 구간에 넣기], 교량·터널·고가·지하차도는 후보 위의 체크칸으로 골라 넣습니다. 고친 내용은 이 기기에 임시 저장되고, 끝나면 [최종 저장 파일 받기]로 받은 파일을 채팅에 올려 주세요. 앱 본 화면과 무관합니다.
   <input id="ik" placeholder="국토교통부 ITS 키 붙여넣기 (저장하지 않음)">
 </div>
 <div class="row">
@@ -57,7 +57,7 @@
 <script>
 var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
 var msg = document.getElementById('msg');
-var S = { route: '', line: null, orig: null, segs: null, links: {}, area: null, traffic: null, itsNames: {}, cur: -1, map: null, layers: [], cand: {} };
+var S = { typeFilter: [], route: '', line: null, orig: null, segs: null, links: {}, area: null, traffic: null, itsNames: {}, cur: -1, map: null, layers: [], cand: {} };
 var KX = Math.cos(37.5 * Math.PI / 180);
 
 function loadKakao() {
@@ -189,7 +189,9 @@ function candidates(i) {
     if (inc[id]) return;
     var pts = S.area.links[id][3], best = 1e9, at = 0;
     pts.forEach(function (p) { for (var j = 0; j < seg.length; j++) { var d = Math.hypot((p[0] - seg[j][0]) * 110540, (p[1] - seg[j][1]) * 111320 * KX); if (d < best) { best = d; at = j; } } });
-    if (best > 40) return;
+    var typ = S.area.links[id][4] || '000', special = typ !== '000';
+    if (best > (special ? 120 : 40)) return;
+    if (S.typeFilter.length && S.typeFilter.indexOf(typ) < 0) return;
     var lb = brg(pts[0], pts[pts.length - 1]), sb = brg(seg[Math.min(at, seg.length - 2)], seg[Math.min(at + 1, seg.length - 1)]);
     if (turn(lb, sb) > 60) return;
     rows.push({ id: id, at: at, d: best });
@@ -209,12 +211,11 @@ function renderAll() {
     if (f === 'nospd' && fl.have && i !== S.cur) return;
     var nm = {}; ids.forEach(function (id) { var n = info(id)[2]; if (n && n !== '-') nm[n.replace(/번길.*$/, '')] = 1; });
     h += '<div class="blk' + (i === S.cur ? ' sel' : '') + '"><div class="bh" data-sel="' + i + '"><span class="dot ' + fl.cls + '"></span><b>' + (i + 1) + '번째</b><span>' + Object.keys(nm).slice(0, 3).join(', ') + '</span><span class="sub" style="margin-left:auto">링크 ' + ids.length + '개 · ' + fl.txt + '</span></div>';
-    if (i === S.cur) h += '<div class="btns" style="padding:6px 10px;"><span class="sub">이 구간에 맞는 선택지가 없을 때:</span>'
-      + (i > 0 ? '<button class="sm" data-op="copyprev" data-i="' + i + '">앞 구간 링크를 이 구간에 넣기</button>' : '')
-      + (i < S.segs.length - 1 ? '<button class="sm" data-op="copynext" data-i="' + i + '">뒤 구간 링크를 이 구간에 넣기</button>' : '') + '</div>';
     h += '<table><tr><th>도로명</th><th>제한</th><th>길이</th><th>지금</th><th></th></tr>' + ids.map(function (id) { return linkRow(i, id); }).join('') + '</table>';
     if (i === S.cur) {
       var c = S.cand[i] = candidates(i);
+      h += '<div class="btns" style="padding:6px 10px;text-align:left;"><span class="sub">후보 종류 고르기(체크하면 그 종류만, 교량·터널·고가는 선에서 120m까지 찾음): </span>'
+        + [['001', '🌉 교량'], ['002', '🚇 터널'], ['003', '🛣 고가'], ['004', '🚇 지하차도']].map(function (t) { return '<label style="margin-left:8px;font-size:13px;"><input type="checkbox" data-tf="' + t[0] + '" style="width:auto;margin:0 3px 0 0;"' + (S.typeFilter.indexOf(t[0]) >= 0 ? ' checked' : '') + '>' + t[1] + '</label>'; }).join('') + '</div>';
       h += '<div class="sub" style="padding:6px 10px;">추천: 노선선 근처에 있지만 이 구간에 안 들어 있는 링크(같은 방향만, 노선 순서)</div><table>' + (c.length ? c.map(function (r) {
         var inf = info(r.id), t = S.traffic && S.traffic[r.id];
         return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + r.id + ' · 선에서 ' + Math.round(r.d) + 'm</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
@@ -224,6 +225,7 @@ function renderAll() {
   });
   var el = document.getElementById('all'); el.innerHTML = h || '<div class="box">해당하는 구간이 없습니다</div>';
   Array.prototype.forEach.call(el.querySelectorAll('[data-sel]'), function (d) { d.onclick = function () { select(parseInt(d.getAttribute('data-sel'), 10), false); }; });
+  Array.prototype.forEach.call(el.querySelectorAll('input[data-tf]'), function (cb) { cb.onchange = function () { var t = cb.getAttribute('data-tf'), k = S.typeFilter.indexOf(t); if (cb.checked && k < 0) S.typeFilter.push(t); if (!cb.checked && k >= 0) S.typeFilter.splice(k, 1); var y = window.scrollY; renderAll(); window.scrollTo(0, y); drawMap(false); }; });
   Array.prototype.forEach.call(el.querySelectorAll('button[data-op]'), function (b) { b.onclick = function () { op(b.getAttribute('data-op'), parseInt(b.getAttribute('data-i'), 10), b.getAttribute('data-id')); }; });
   document.getElementById('info').textContent = S.cur < 0 ? '' : (S.cur + 1) + '번째 구간 · ' + flow(S.cur).txt;
 }
