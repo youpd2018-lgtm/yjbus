@@ -3290,3 +3290,57 @@ html.senior .bli-bottom-row { min-height: 68px; }
     #liveModal .live-mirror-btn { pointer-events: auto; display: flex; align-items: center; justify-content: center; height: 48px; padding: 0; border-radius: 12px; border: none; background: #334155; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; order: 1; }
     #liveModal #adminSimPanel { grid-column: 1 / -1; grid-row: 6; margin-top: 4px !important; }
 }
+
+/* ================================================================
+   🆕 새 디자인(ui2) — 메인(운행정보) 화면 리뉴얼
+   - html.ui2 일 때만 적용 (설정 > 새 디자인 미리보기 스위치, 또는 주소 끝 ?ui2=1)
+   - 새 클래스는 모두 yb2- 로 시작 (html.senior 규칙과 겹치지 않게)
+   - 1단계: 오늘의 한마디, 날짜 줄, 페이지 탭(오늘 운행 / 시간표)
+   ================================================================ */
+#yb2Top { display: none; }
+html.ui2 #yb2Top { display: block; }
+html.ui2 #mainPage .date-navigator { display: none !important; }
+
+/* 페이지 전환: 오늘 운행 = 메인 박스, 시간표 = 시간표 묶음 */
+html.ui2.ui2-drive #unifiedScheduleFolder { display: none !important; }
+html.ui2.ui2-table #mainBusHeroCard { display: none !important; }
+
+/* 오늘의 한마디 알약 */
+html.ui2 #liveMessageWidget {
+    zoom: 1 !important;
+    border-radius: 26px !important;
+    min-height: 52px;
+    padding: 0 18px !important;
+    display: flex !important;
+    align-items: center;
+}
+html.ui2 #liveMessageWidget .message-ticker-wrap { min-height: 0 !important; width: 100%; }
+html.ui2 #liveColleagueMessage,
+html.ui2 #liveColleagueMessage span { font-size: 18px !important; font-weight: 800; }
+
+/* 날짜 줄 */
+.yb2-date { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; }
+.yb2-arrow {
+    flex: none; width: 52px; height: 52px; border-radius: 50%;
+    background: #121c30; border: 1.5px solid #22304c; color: #7dd3fc;
+    font-size: 30px; font-weight: 900; line-height: 1; padding: 0 0 4px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 3px 0 #0a1630;
+    -webkit-tap-highlight-color: transparent;
+}
+.yb2-arrow:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 1px 0 #0a1630; }
+.yb2-date-mid { flex: 1; min-width: 0; text-align: center; }
+.yb2-date-main { white-space: nowrap; line-height: 1.2; }
+.yb2-md { font-size: 26px; font-weight: 900; color: #fff; }
+.yb2-dow { font-size: 22px; font-weight: 800; color: #7dd3fc; margin-left: 4px; }
+.yb2-rel { font-size: 14px; font-weight: 700; color: #b6c3d6; min-height: 18px; margin-top: 2px; }
+
+/* 페이지 탭 */
+.yb2-tabs { display: flex; border-bottom: 2px solid #22304c; margin: 6px 0 12px; }
+.yb2-tab {
+    flex: 1; height: 48px; background: transparent; border: 0;
+    border-bottom: 4px solid transparent; margin-bottom: -2px;
+    color: #8fa0b8; font-size: 20px; font-weight: 900; font-family: inherit;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.yb2-tab.on { color: #7dd3fc; border-bottom-color: #38bdf8; }

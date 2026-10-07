@@ -8,6 +8,15 @@
   <link rel="stylesheet" href="css/style.css">
 
   <meta charset="UTF-8">
+  <!-- 🆕 새 디자인(ui2) 미리보기: 주소 끝에 ?ui2=1 → 켬 / ?ui2=0 → 끔 (설정 화면 스위치와 같은 값 yb_ui2) -->
+  <script>
+    try {
+      var q = new URLSearchParams(location.search).get('ui2');
+      if (q === '1') localStorage.setItem('yb_ui2', '1');
+      if (q === '0') localStorage.removeItem('yb_ui2');
+      if (localStorage.getItem('yb_ui2') === '1') document.documentElement.classList.add('ui2', 'ui2-drive');
+    } catch (e) { }
+  </script>
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>영종운수 스마트근무표</title>
@@ -269,6 +278,22 @@
     <!-- 1. 운행정보 페이지 (mainPage) -->
     <!-- ========================================== -->
     <div id="mainPage" class="page">
+
+      <!-- 🆕 새 디자인(ui2) 상단: 날짜 줄 + 페이지 탭 (평소엔 숨김, html.ui2 일 때만 보임) -->
+      <div id="yb2Top">
+        <div class="yb2-date">
+          <button type="button" class="yb2-arrow" onclick="moveDate(-1)" aria-label="이전 날짜">‹</button>
+          <div class="yb2-date-mid">
+            <div class="yb2-date-main"><span id="yb2DateMD" class="yb2-md"></span> <span id="yb2DateDow" class="yb2-dow"></span></div>
+            <div id="yb2DateRel" class="yb2-rel"></div>
+          </div>
+          <button type="button" class="yb2-arrow" onclick="moveDate(1)" aria-label="다음 날짜">›</button>
+        </div>
+        <div class="yb2-tabs" role="tablist">
+          <button type="button" id="yb2TabDrive" class="yb2-tab on" onclick="yb2SetPage('drive')">오늘 운행</button>
+          <button type="button" id="yb2TabTable" class="yb2-tab" onclick="yb2SetPage('table')">시간표</button>
+        </div>
+      </div>
 
       <!-- 날짜 선택기 -->
       <div class="date-navigator" style="margin-bottom: 10px;">
@@ -805,6 +830,11 @@
           <div class="set-label">노안모드<div id="seniorStateText" class="set-sub"></div></div>
           <label class="switch"><input type="checkbox" id="seniorSwitch" onchange="setSeniorMode(this.checked)"><span class="slider"></span></label>
         </div>
+        <div class="set-row">
+          <iconify-icon icon="mdi:palette-swatch-outline" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
+          <div class="set-label">새 디자인 미리보기<div id="ui2StateText" class="set-sub"></div></div>
+          <label class="switch"><input type="checkbox" id="ui2Switch" onchange="setUi2Mode(this.checked)"><span class="slider"></span></label>
+        </div>
         <div class="set-mini-row">
           <button type="button" class="set-mini" id="btnSetContact" onclick="openContactEdit()">
             <iconify-icon icon="mdi:phone-outline" style="font-size: 16px; color: #94a3b8;"></iconify-icon> 연락처 수정
@@ -1218,6 +1248,7 @@
     <script src="js/script_local_alarm.js"></script>
     <script src="js/script_sfx.js"></script>
     <script src="js/script_senior.js"></script>
+    <script src="js/script_ui2.js"></script>
     <script src="js/script_timetable_data.js"></script>
     <script src="js/script_roster_data.js"></script>
     <script src="js/script_usage_log.js"></script>
