@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>링크번호 소통정보 맞춰 보기</title>
+<style>
+  body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  button { background: #2563eb; border: 0; font-weight: 700; }
+  #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  td, th { padding: 5px 4px; border-bottom: 1px solid #1e293b; text-align: left; vertical-align: top; }
+  td.n { text-align: right; white-space: nowrap; }
+  tr.ok td.s { color: #4ade80; } tr.part td.s { color: #fbbf24; } tr.no td.s { color: #f87171; } tr.skip td { color: #64748b; }
+  .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
+  .sub { color: #94a3b8; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>🚦 링크번호 ↔ 국토부 소통정보 맞춰 보기 (시험)</h1>
+<div class="box">
+  우리 노선 링크번호(data/route/노선_links.json)가 국토교통부 소통정보의 링크번호(linkId)에 얼마나 들어 있는지 확인합니다. 아무것도 저장하지 않습니다.
+  <input id="nm" placeholder="이름 (서버로 받을 때, 로그인이 안 되어 있으면 입력)">
+  <input id="pn" placeholder="기사번호 6자리" inputmode="numeric">
+  <input id="ik" placeholder="(서버·저장파일이 안 되면) 국토교통부 ITS 키 붙여넣기. 저장하지 않음">
+</div>
+<button id="go">소통정보 불러와서 모든 노선 맞춰 보기</button>
+<div id="msg"></div>
+<div id="out"></div>
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script>
+var msg = document.getElementById('msg'), out = document.getElementById('out');
+function norm(s) { return String(s || '').replace(/\s+/g, '').replace(/\(.*?\)/g, ''); }
+
+async function loadTraffic() {
+  var tried = [];
+  var nm = document.getElementById('nm').value.trim(), pn = document.getElementById('pn').value.trim();
+  if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
+  try {   // 1) 서버(앱스크립트)
+    var r = await fetch(window.GAS_WEB_APP_URL + '?action=get_traffic_flow').then(function (x) { return x.json(); });
+    if (r && r.items && r.items.length) return { items: r.items, from: '서버' };
+    tried.push('서버: ' + (r && r.error ? r.error : '자료 없음'));
+  } catch (e) { tried.push('서버 실패'); }
+  try {   // 2) GitHub에 저장된 소통정보
+    var j = await fetch('data/traffic.json?t=' + Date.now()).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
+    if (j && j.flow && j.flow.length) return { items: j.flow, from: '저장된 파일(' + j.updated + ')' };
+    tried.push('저장 파일: 소통 자료 없음');
+  } catch (e) { tried.push('저장 파일 없음'); }
+  var key = document.getElementById('ik').value.trim();
+  if (key) {   // 3) 폰에서 직접
+    try {
+      var url = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=' + encodeURIComponent(key) + '&type=all&getType=json&minX=126.35&maxX=126.85&minY=37.35&maxY=37.65';
+      var ctl = new AbortController(); setTimeout(function () { ctl.abort(); }, 20000);
+      var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); });
+      var jj = JSON.parse(t), items = (jj && jj.body && jj.body.items) || [];
+      if (items.length) return { items: items, from: '폰에서 직접' };
+      tried.push('직접: 자료 없음');
+    } catch (e) { tried.push('직접 실패: ' + e); }
+  } else tried.push('(키 입력칸이 비어 있어 직접 받기는 안 함)');
+  return { items: [], from: '', tried: tried };
+}
+
+document.getElementById('go').onclick = async function () {
+  out.innerHTML = ''; msg.textContent = '불러오는 중...';
+  try {
+    var tr = await loadTraffic();
+    if (!tr.items.length) { msg.textContent = '소통정보를 받지 못했습니다.\n' + (tr.tried || []).join('\n'); return; }
+    var byId = {}, sample = [];
+    tr.items.forEach(function (it) { var id = String(it.linkId || '').trim(); if (!id) return; byId[id] = it; if (sample.length < 3) sample.push(id); });
+    var routes = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
+    var h = '<table><tr><th>노선</th><th>우리 링크</th><th>소통정보에 있음</th><th>속도 있는 구간</th></tr>', allMine = 0, allHit = 0, detail = '';
+    for (var r = 0; r < routes.length; r++) {
+      var f = await fetch('data/route/' + routes[r] + '_links.json', { cache: 'no-cache' }).then(function (x) { return x.ok ? x.json() : null; });
+      if (!f) { h += '<tr class="skip"><td>' + routes[r] + '</td><td colspan="3">파일 없음</td></tr>'; continue; }
+      var ids = {}, segHit = 0;
+      f.segs.forEach(function (sg) { var any = false; sg.forEach(function (id) { ids[id] = 1; if (byId[id]) any = true; }); if (any) segHit++; });
+      var mine = Object.keys(ids), hit = mine.filter(function (id) { return byId[id]; }).length;
+      allMine += mine.length; allHit += hit;
+      var pct = mine.length ? Math.round(hit * 100 / mine.length) : 0;
+      h += '<tr class="' + (pct >= 60 ? 'ok' : (pct >= 20 ? 'part' : 'no')) + '"><td>' + routes[r] + '</td><td class="n">' + mine.length + '개</td><td class="s n">' + hit + '개 (' + pct + '%)</td><td class="n">' + segHit + ' / ' + f.segs.length + '</td></tr>';
+    }
+    out.innerHTML = h + '</table>';
+    var ex = Object.keys(byId).slice(0, 3);
+    msg.textContent = '소통정보 출처: ' + tr.from + ' / 소통정보 ' + tr.items.length + '건, 링크번호 ' + Object.keys(byId).length + '개\n전체: 우리 링크 ' + allMine + '개 중 ' + allHit + '개가 소통정보에 있음\n번호 모양 비교 — 소통정보: ' + ex.join(', ') + ' / 우리: 1720572300 형태(10자리)';
+  } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
+};
+</script>
+</body>
+</html>
