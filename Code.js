@@ -163,6 +163,19 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // 💡 [ITS 키 전달: 사용자 지시(2026-10-07, 모든 기사가 소통 알약 사용). 로그인 검사(Auth)를 통과한 요청에만 도달]
+  if (e && e.parameter && e.parameter.action === 'get_its_key') {
+    return ContentService.createTextOutput(JSON.stringify(ITS_API_KEY ? { success: true, key: ITS_API_KEY } : { success: false, error: 'no key' })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 💡 [소통·돌발정보 공유 저장소 읽기 / 새로 받을 폰 정하기] (TrafficShared.js, 로그인 검사 통과 후)
+  if (e && e.parameter && e.parameter.action === 'get_traffic_shared') {
+    return ContentService.createTextOutput(JSON.stringify(trafficSharedGet_())).setMimeType(ContentService.MimeType.JSON);
+  }
+  if (e && e.parameter && e.parameter.action === 'claim_traffic_shared') {
+    return ContentService.createTextOutput(JSON.stringify(trafficSharedClaim_(e.parameter.kind))).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // 💡 [국토교통부 ITS 실시간 도로 소통정보 조회]
   if (e && e.parameter && e.parameter.action === 'get_traffic_flow') {
     let res = { success: false, items: [] };
@@ -611,6 +624,9 @@ function doPost(e) {
       if (!authIsAdmin_(viewer)) return authJson_({ success: false, error: 'forbidden' });
       const res = typeof saveRoadNames === 'function' ? saveRoadNames(postData.route, postData.roads) : { success: false, error: "saveRoadNames 함수 미정의" };
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (postData && postData.action === 'put_traffic_shared') {
+      return ContentService.createTextOutput(JSON.stringify(trafficSharedPut_(postData.kind, postData.data))).setMimeType(ContentService.MimeType.JSON);
     }
     if (postData && postData.action === 'save_trip_speed') {
       postData.driver = authDriverFor_(viewer, postData.driver);

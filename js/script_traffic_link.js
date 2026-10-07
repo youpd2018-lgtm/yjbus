@@ -1,17 +1,16 @@
 // 🚦 소통 알약 + 돌발정보 (국토교통부 표준노드링크 LINK_ID 방식) — 전 노선(202~282), 관리자(또는 시험 켜기)만 사용
 // - 노선 구간별 링크번호: data/route/282_links.json (link_edit.html 에서 사람이 고친 파일)
-// - 폰이 내 위치 주변 약 5km만 국토교통부에서 직접 받는다(전국 X). 키는 시험 단계에서는 이 폰에 직접 넣은 값(yb_its_key)만 쓴다.
+// - 서버 공유 저장소(10분)를 읽고, 오래됐으면 달리는 폰 한 대가 영종·청라 지역만 국토교통부에서 받아 올린다(전국 X). 키는 시험 단계에서는 이 폰에 직접 넣은 값(yb_its_key)만 쓴다.
 // - 어떤 단계든 실패하면 아무것도 바꾸지 않아 옛 표시가 그대로 나온다.
 (function () {
   'use strict';
   var ROUTES = { '202': true, '202A': true, '203': true, '203A': true, '204': true, '205': true, '206': true, '221': true, '281': true, '282': true };
-  var ALL_USERS = false;            // true 로 바꾸면 모든 기사에게 적용 (관리자 확인 후)
+  var ALL_USERS = true;             // false 로 바꾸면 관리자(유재필)만 (재필씨 지시 2026-10-07: 모든 사용자)
   var ITS = 'https://openapi.its.go.kr:9443/';
-  var H = 0.025;                    // 소통정보 받을 사각형: 위도·경도 ±0.025도 ≈ 5km
-  var data = {}, key = null, keyTried = 0;
-  var traffic = {}, trafficAt = 0, trafficCenter = null, fetching = false;
+    var data = {}, key = null, keyTried = 0;
+  
   var curSeg = -1, lamp = null, lamps = {};   // lamps[구간] = 마지막 정상 값(자료 없는 구간은 이전 값 유지)
-  var incAt = 0, incSeen = {}, incBusy = false;
+  var incSeen = {};
 
   function enabled() {
     if (ALL_USERS) return true;
@@ -41,10 +40,17 @@
     } catch (e) { }
     return data[r];
   }
-  // 키: 지금은 시험 단계라 이 폰에 직접 넣은 값만 쓴다(localStorage yb_its_key, 서버에서 내려받지 않음)
+  // 키: 로그인한 사용자만 서버에서 받아 메모리에만 둔다(저장 안 함). 못 받으면 이 폰에 직접 넣은 값(yb_its_key)을 쓴다.
   async function getKey() {
     if (key) return key;
     try { key = (localStorage.getItem('yb_its_key') || '').trim() || null; } catch (e) { }
+    if (key) return key;
+    if (keyTried && Date.now() - keyTried < 300000) return null;
+    keyTried = Date.now();
+    try {
+      var r = await fetch(window.GAS_WEB_APP_URL + '?action=get_its_key').then(function (x) { return x.json(); });
+      if (r && r.success && r.key) key = r.key;
+    } catch (e) { }
     return key;
   }
 
@@ -74,52 +80,93 @@
     return { state: ratio >= 0.8 ? 'ok' : (ratio >= 0.4 ? 'slow' : 'jam'), label: Math.round(sumSp / sumLen) + 'km' };
   }
 
-  async function fetchTraffic(pos) {
-    var k = await getKey(); if (!k) return false;
-    var url = ITS + 'trafficInfo?apiKey=' + encodeURIComponent(k) + '&type=all&getType=json'
-      + '&minX=' + (pos[1] - H).toFixed(4) + '&maxX=' + (pos[1] + H).toFixed(4) + '&minY=' + (pos[0] - H).toFixed(4) + '&maxY=' + (pos[0] + H).toFixed(4);
-    var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 20000);
+  // ── 공유 저장소(서버) ──────────────────────────────────────────
+  // 서버에 10분짜리 소통·돌발정보가 있으면 그것을 읽는다. 10분이 지났으면 운행 중인 폰 한 대만 국토부에서 영종·청라 전체를 받아 서버에 올린다.
+  var AREA = { minX: 126.36, maxX: 126.70, minY: 37.42, maxY: 37.57 };   // 영종·청라·인천 노선 전체
+  var FRESH = 600000, STALE = 2400000;                                   // 10분 / 40분
+  var shared = { t: null, e: null }, sharedAt = 0, collecting = false, allIds = null;
+
+  async function gasGet(q) { return fetch(window.GAS_WEB_APP_URL + '?' + q).then(function (x) { return x.json(); }); }
+  async function gasPost(o) { return fetch(window.GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(o) }).then(function (x) { return x.json(); }); }
+  async function itsGet(path, k) {
+    var url = ITS + path + '?apiKey=' + encodeURIComponent(k) + '&type=all' + (path === 'eventInfo' ? '&eventType=all' : '') + '&getType=json'
+      + '&minX=' + AREA.minX + '&maxX=' + AREA.maxX + '&minY=' + AREA.minY + '&maxY=' + AREA.maxY;
+    var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 30000);
+    try { var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); }); var j = JSON.parse(t); return (j && j.body && j.body.items) || []; }
+    finally { clearTimeout(tm); }
+  }
+  async function loadAllIds() {   // 우리 노선 링크번호 전체(서버에 올릴 때 이것만 추려서 올림)
+    if (allIds) return allIds;
+    var ids = {};
+    for (var r in ROUTES) { var R = await loadRoute(r); if (R) for (var id in R.links) ids[id] = 1; }
+    allIds = ids; return ids;
+  }
+  async function collect(kind) {
+    collecting = true;
     try {
-      var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); });
-      var j = JSON.parse(t), items = (j && j.body && j.body.items) || [], m = {};
-      items.forEach(function (it) { if (it.linkId) m[String(it.linkId)] = it; });
-      if (!items.length) return false;
-      traffic = m; trafficAt = Date.now(); trafficCenter = pos; return true;
-    } catch (e) { return false; } finally { clearTimeout(tm); }
+      var c = await gasGet('action=claim_traffic_shared&kind=' + kind);
+      if (!c || !c.ok) return;                      // 다른 폰이 받는 중이거나 이번 달 한도에 가까움
+      var k = await getKey(); if (!k) return;
+      if (kind === 't') {
+        var items = await itsGet('trafficInfo', k); if (!items.length) return;
+        var ids = await loadAllIds(), m = {};
+        items.forEach(function (it) { var id = String(it.linkId || ''), sp = parseFloat(it.speed); if (ids[id] && !isNaN(sp)) m[id] = Math.round(sp * 10) / 10; });
+        var res = await gasPost({ action: 'put_traffic_shared', kind: 't', data: m });
+        if (res && res.success) shared.t = { at: Date.now(), data: m };
+      } else {
+        var ev = await itsGet('eventInfo', k);
+        var list = ev.map(function (it) { return { roadName: it.roadName || '', message: it.message || '', eventDetailType: it.eventDetailType || '', coordX: it.coordX, coordY: it.coordY }; });
+        var res2 = await gasPost({ action: 'put_traffic_shared', kind: 'e', data: list });
+        if (res2 && res2.success) shared.e = { at: Date.now(), data: list };
+      }
+    } catch (e) { } finally { collecting = false; }
+  }
+  async function syncShared(g) {
+    if (collecting) return;
+    if (!sharedAt || Date.now() - sharedAt > 300000) {   // 서버 값 읽기(국토부 호출 아님): 5분마다
+      try { var r = await gasGet('action=get_traffic_shared'); if (r && r.success) { if (r.t) shared.t = r.t; if (r.e) shared.e = r.e; sharedAt = Date.now(); } } catch (e) { }
+    }
+    var driving = (g.speedKmh || 0) >= 5;
+    if (driving) {   // 달리는 폰만 새로 받는다
+      if (!shared.t || Date.now() - shared.t.at >= FRESH) await collect('t');
+      if (!shared.e || Date.now() - shared.e.at >= FRESH) await collect('e');
+    }
   }
 
-  // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만(소통정보와 같이 5분·2km마다 받음) 알린다. 같은 건은 한 번만.
-  async function checkIncidents(R, pos) {
-    if (incBusy) return;
-    incBusy = true; incAt = Date.now();
-    try {
-      var k = await getKey(); if (!k) return;
-      var bb = 0.05;
-      var url = ITS + 'eventInfo?apiKey=' + encodeURIComponent(k) + '&type=all&eventType=all&getType=json'
-        + '&minX=' + (pos[1] - bb).toFixed(4) + '&maxX=' + (pos[1] + bb).toFixed(4) + '&minY=' + (pos[0] - bb).toFixed(4) + '&maxY=' + (pos[0] + bb).toFixed(4);
-      var ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, 20000);
-      var t = await fetch(url, { signal: ctl.signal }).then(function (x) { return x.text(); }); clearTimeout(tm);
-      var j = JSON.parse(t), items = (j && j.body && j.body.items) || [];
-      var from = Math.max(0, curSeg), to = Math.min(R.lines.length - 1, curSeg + 3);
-      items.forEach(function (it) {
-        var p = [parseFloat(it.coordY), parseFloat(it.coordX)];
-        if (isNaN(p[0]) || isNaN(p[1])) return;
-        var near = false;
-        for (var i = from; i <= to && !near; i++) { var ln = R.lines[i]; for (var q = 0; q < ln.length; q++) if (dist(p, ln[q]) < 150) { near = true; break; } }
-        if (!near) return;
-        var id = (it.roadName || '') + '|' + (it.message || it.eventDetailType || '') + '|' + it.coordX + '|' + it.coordY;
-        if (incSeen[id]) return; incSeen[id] = 1;
-        var km = (dist(pos, p) / 1000).toFixed(1);
-        var road = String(it.roadName || '주요도로').trim(), msg = String(it.message || it.eventDetailType || '돌발상황 발생').trim();
-        var text = '🚨 [돌발] ' + road + ' ' + msg + ' (' + km + 'km 전방)';
-        window.liveTrafficAlerts = window.liveTrafficAlerts || [];
-        window.liveTrafficAlerts.unshift(text);
-        window._trafficAlertMeta = window._trafficAlertMeta || [];
-        window._trafficAlertMeta.push({ text: text, receivedAt: Date.now() });
-        if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();
-        if (typeof triggerTrafficIncidentTest === 'function') triggerTrafficIncidentTest(text);
-      });
-    } catch (e) { } finally { incBusy = false; }
+  function segFlow(R, i) {
+    var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, m = (shared.t && Date.now() - shared.t.at < STALE) ? shared.t.data : null;
+    if (!m) return null;
+    ids.forEach(function (id) {
+      var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, sp = m[id];
+      if (typeof sp === 'number' && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; }
+    });
+    if (!sumLen) return null;
+    var ratio = sumSp / sumLim;
+    return { state: ratio >= 0.8 ? 'ok' : (ratio >= 0.4 ? 'slow' : 'jam'), label: Math.round(sumSp / sumLen) + 'km' };
+  }
+
+  // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만 알린다. 같은 건은 한 번만.
+  function checkIncidents(R, pos) {
+    if (!shared.e || Date.now() - shared.e.at > STALE) return;
+    var from = Math.max(0, curSeg), to = Math.min(R.lines.length - 1, curSeg + 3);
+    shared.e.data.forEach(function (it) {
+      var p = [parseFloat(it.coordY), parseFloat(it.coordX)];
+      if (isNaN(p[0]) || isNaN(p[1])) return;
+      var near = false;
+      for (var i = from; i <= to && !near; i++) { var ln = R.lines[i]; for (var q = 0; q < ln.length; q++) if (dist(p, ln[q]) < 150) { near = true; break; } }
+      if (!near) return;
+      var id = (it.roadName || '') + '|' + (it.message || it.eventDetailType || '') + '|' + it.coordX + '|' + it.coordY;
+      if (incSeen[id]) return; incSeen[id] = 1;
+      var km = (dist(pos, p) / 1000).toFixed(1);
+      var road = String(it.roadName || '주요도로').trim(), msg = String(it.message || it.eventDetailType || '돌발상황 발생').trim();
+      var text = '🚨 [돌발] ' + road + ' ' + msg + ' (' + km + 'km 전방)';
+      window.liveTrafficAlerts = window.liveTrafficAlerts || [];
+      window.liveTrafficAlerts.unshift(text);
+      window._trafficAlertMeta = window._trafficAlertMeta || [];
+      window._trafficAlertMeta.push({ text: text, receivedAt: Date.now() });
+      if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();
+      if (typeof triggerTrafficIncidentTest === 'function') triggerTrafficIncidentTest(text);
+    });
   }
 
   async function tick() {
@@ -133,11 +180,8 @@
       var pos = [g.lat, g.lon];
       var s = findSeg(R, pos, g.heading);
       if (s < 0) { if (curSeg >= 0 && dist(pos, R.lines[curSeg][0]) > 3000) curSeg = -1; lamp = null; return; }
-      curSeg = s; var fresh = false;
-      if (!fetching && (!trafficAt || Date.now() - trafficAt > 300000 || dist(pos, trafficCenter) > 2000)) {
-        fetching = true; try { await fetchTraffic(pos); } finally { fetching = false; }
-        fresh = true;
-      }
+      curSeg = s;
+      await syncShared(g);
       var f = segFlow(R, s);
       if (f) lamps[s] = { f: f, at: Date.now() }; else f = (lamps[s] && Date.now() - lamps[s].at < 1800000) ? lamps[s].f : null;   // 자료가 없으면 이전 값 유지(30분까지)
       lamp = f;
@@ -145,7 +189,7 @@
         var st = document.getElementById('trafficFlowStatusText');
         if (!(st && st.innerText === '돌발 주의')) setTrafficLamp(lamp.state, lamp.label);
       }
-      if (fresh) checkIncidents(R, pos);   // 돌발정보도 소통정보와 같은 때(5분 또는 2km)에만 받음
+      checkIncidents(R, pos);
     } catch (e) { }
   }
 
