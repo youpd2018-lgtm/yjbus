@@ -96,11 +96,11 @@ document.getElementById('rng').onclick = async function () {
   if (!key) { msg.textContent = 'ITS 키 칸에 키를 붙여넣어 주세요(저장되지 않음).'; return; }
   var box = 'minX=126.40&maxX=126.80&minY=37.40&maxY=37.60';
   var tests = [
-    ['전체, 작은 사각형', 'type=all&' + box],
-    ['전체, 사각형 없음(기준)', 'type=all'],
-    ['고속도로(ex)', 'type=ex&' + box], ['일반국도(its)', 'type=its&' + box],
-    ['지방도(loc)', 'type=loc&' + box], ['시군도(sgg)', 'type=sgg&' + box],
-    ['전체, 상하행 구분(drcType=all)', 'type=all&drcType=all&' + box]
+    ['영종 전체(126.40~126.62, 37.40~37.56)', 'type=all&minX=126.40&maxX=126.62&minY=37.40&maxY=37.56'],
+    ['영종 중앙 작게(126.48~126.58, 37.43~37.52)', 'type=all&minX=126.48&maxX=126.58&minY=37.43&maxY=37.52'],
+    ['청라(126.60~126.72, 37.50~37.58)', 'type=all&minX=126.60&maxX=126.72&minY=37.50&maxY=37.58'],
+    ['아주 작게(126.52~126.54, 37.46~37.48)', 'type=all&minX=126.52&maxX=126.54&minY=37.46&maxY=37.48'],
+    ['영종+청라 한 번에(126.40~126.72, 37.40~37.58)', 'type=all&minX=126.40&maxX=126.72&minY=37.40&maxY=37.58']
   ];
   var h = '<table><tr><th>방법</th><th>건수</th><th>인천(17) 비율</th></tr>';
   out.innerHTML = ''; 
