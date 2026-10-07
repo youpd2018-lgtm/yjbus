@@ -175,6 +175,7 @@
       var r = dutyRoute();
       if (!ROUTES[r]) { lamp = null; curSeg = -1; return; }
       var g = window.lastGpsPosition;
+      if ((!g || !g.time) && window.simState && window.simState.active && window.curBusGpsLat) g = { lat: window.curBusGpsLat, lon: window.curBusGpsLon, speedKmh: window.curBusSpeed || 45, heading: -1, time: new Date() };   // 모의주행(PC 시험)
       if (!g || !g.time || Date.now() - new Date(g.time).getTime() > 120000) return;   // GPS 없으면 그대로(옛 표시)
       var R = await loadRoute(r); if (!R) return;
       var pos = [g.lat, g.lon];
