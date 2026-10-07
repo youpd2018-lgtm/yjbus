@@ -1125,6 +1125,8 @@ function loadLatestColleagueMessage() {
             }
 
             setTrafficLamp((flowStatus === 'jam' || flowStatus === '정체') ? 'jam' : (flowStatus === 'slow' || flowStatus === '서행') ? 'slow' : 'ok', statusLabel);
+            // 🚦 국토부 링크 방식(282 등, 켜진 경우만): 있으면 위 옛 표시를 덮어씀
+            try { const _tl = window.TrafficLink && window.TrafficLink.getLamp(); const _st = document.getElementById('trafficFlowStatusText'); if (_tl && !(_st && _st.innerText === '돌발 주의')) setTrafficLamp(_tl.state, _tl.label); } catch (e) { }
 
             // 이전 호환용 ID 동기화
             const old1 = document.getElementById('trafficStopName1');
