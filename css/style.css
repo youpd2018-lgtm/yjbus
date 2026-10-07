@@ -3433,3 +3433,79 @@ html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !im
 .yb2-btn.route.on { background: #7dd3fc; color: #04121f; border-color: #7dd3fc; }
 .yb2-btn.shift.on { background: #facc15; color: #1a1500; border-color: #facc15; }
 .yb2-btn.memo.on { background: #c4b5fd; color: #170b3b; border-color: #c4b5fd; }
+
+/* 구조용 껍데기: 평소(새 디자인)에는 화면에 영향 없음 */
+.yb2-box, .yb2-btns { display: contents; }
+.yb2-live, .yb2-tab-x { display: none; }
+
+/* ================================================================
+   👓 노안모드 + 새 디자인 = 시안 1 "행선판" (검정 바탕, 호박색 글자)
+   - 오늘의 한마디, 구차장 마이크는 그대로. 시간표 탭 사용법은 시안 3과 같음
+   ================================================================ */
+html.ui2.senior .yb2-date { margin-top: 6px; }
+html.ui2.senior .yb2-arrow { width: 56px; height: 56px; border-radius: 16px; background: #14171C; border: 1px solid #2A2F37; color: #F4F5F7; box-shadow: none; }
+html.ui2.senior .yb2-arrow:active { transform: none; background: #1d2128; }
+html.ui2.senior .yb2-dow { color: #F4F5F7; }
+html.ui2.senior .yb2-rel { color: #B8BEC8; }
+html.ui2.senior .yb2-tabs { gap: 6px; padding: 5px; background: #14171C; border: 1px solid #2A2F37; border-radius: 18px; margin: 8px 0 12px; }
+html.ui2.senior .yb2-tab { height: 52px; border: 0; margin: 0; border-radius: 14px; font-size: 19px; color: #C9CED6; }
+html.ui2.senior .yb2-tab.on { background: #FFB000; color: #0B0D10; }
+html.ui2.senior .yb2-tab-x { display: inline; }
+
+html.ui2.senior .yb2-box { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; background: #000; border: 2px solid #2A2F37; border-radius: 22px; padding: 16px 18px; position: relative; }
+html.ui2.senior .yb2-band { position: static; padding: 0; border: 0; background: none; box-shadow: none; border-radius: 0; gap: 0; }
+html.ui2.senior .yb2-box #ybDiffWrap { top: 10px !important; right: 12px !important; }
+html.ui2.senior .yb2-name { display: none; }
+html.ui2.senior .yb2-col { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 10px; }
+html.ui2.senior .yb2-r1, html.ui2.senior .yb2-r2 { display: contents; }
+html.ui2.senior .yb2-plate { background: none; border: 0; box-shadow: none; padding: 0; grid-column: 1; grid-row: 1; color: #FFB000; }
+html.ui2.senior .yb2-route { font-size: 92px; letter-spacing: -2px; line-height: .9; min-height: 0; color: #FFB000; text-shadow: 0 0 22px rgba(255,176,0,.45); }
+html.ui2.senior .yb2-seq { grid-column: 2; grid-row: 1; padding: 0 0 4px; justify-self: end; }
+html.ui2.senior .yb2-seq-n { font-size: 40px; color: #3DDC84; text-shadow: none; }
+html.ui2.senior .yb2-seq-l { font-size: 20px; color: #3DDC84; }
+html.ui2.senior .yb2-sub { grid-column: 2; grid-row: 2; justify-self: end; font-size: 18px; font-weight: 700; color: #C9CED6; }
+html.ui2.senior .yb2-bus { grid-column: 1 / -1; grid-row: 3; margin-top: 8px; height: 48px; box-sizing: border-box; padding: 0 14px; gap: 10px; border: 1.5px solid #3A414B; border-radius: 12px; background: none; box-shadow: none; color: #C9CED6; }
+html.ui2.senior .yb2-bus iconify-icon { order: 0; font-size: 26px; }
+html.ui2.senior .yb2-bus::before { content: "차량"; order: 1; font-size: 16px; font-weight: 700; color: #C9CED6; }
+html.ui2.senior .yb2-bus-n { order: 2; font-size: 22px; color: #F4F5F7; }
+
+html.ui2.senior .yb2-stats { margin-top: 0; gap: 8px; }
+html.ui2.senior .yb2-tile, html.ui2.senior .yb2-tile.start, html.ui2.senior .yb2-tile.hand { background: none; border: 0; box-shadow: none; padding: 0; border-radius: 0; }
+html.ui2.senior .yb2-tile-l { font-size: 17px; font-weight: 800; color: #C9CED6; }
+html.ui2.senior .yb2-tile-v { font-size: 32px; color: #F4F5F7; }
+html.ui2.senior .yb2-tile.hand .yb2-tile-l, html.ui2.senior .yb2-tile.hand .yb2-tile-v { color: #FFB000; }
+
+html.ui2.senior .yb2-cdwrap { flex: none; margin: 0; border-top: 2px dashed #2A2F37; padding-top: 12px; display: block; }
+html.ui2.senior .yb2-cd { display: block; background: none; border: 0; border-radius: 0; padding: 0; width: 100%; }
+html.ui2.senior .yb2-ring { display: none; }
+html.ui2.senior .yb2-cd-txt { align-items: flex-start; }
+html.ui2.senior .yb2-cd-l { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; color: #F4F5F7; min-height: 26px; }
+html.ui2.senior .yb2-cd-l:not(:empty)::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: #FF5A4F; flex: none; }
+html.ui2.senior .yb2-cd-v { font-size: 62px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+
+html.ui2.senior .yb2-btns { display: flex; gap: 8px; flex: none; margin: 10px 0 8px; }
+html.ui2.senior .yb2-live { display: block; flex: 1.5; height: 60px; border: 0; border-radius: 16px; background: #FFB000; color: #0B0D10; font-size: 20px; font-weight: 900; font-family: inherit; cursor: pointer; }
+html.ui2.senior .yb2-map { flex: 1; height: 60px; margin: 0; border: 2px solid #FFB000; border-radius: 16px; background: transparent; color: #FFB000; font-size: 20px; box-sizing: border-box; }
+html.ui2.senior .yb2-map iconify-icon { display: none; }
+html.ui2.senior #yb2Drive { flex: 1; }
+
+html.ui2.senior .yb2-trip { background: #14171C; border: 1px solid #2A2F37; border-radius: 14px; min-height: 64px; }
+html.ui2.senior .yb2-trip.next { background: #241B00; border: 2.5px solid #FFB000; }
+html.ui2.senior .yb2-trip-n { color: #F4F5F7; font-size: 18px; }
+html.ui2.senior .yb2-trip.next .yb2-trip-n { color: #FFB000; }
+html.ui2.senior .yb2-trip.past, html.ui2.senior .yb2-trip.past .yb2-trip-n, html.ui2.senior .yb2-trip.past .yb2-trip-t { color: #8A919C; }
+html.ui2.senior .yb2-trip-p { color: #C9CED6; font-size: 15px; }
+html.ui2.senior .yb2-trip-t { font-size: 25px; }
+html.ui2.senior .yb2-trip-t.y { background: #FFE45C; color: #1A1500 !important; border-radius: 8px; }
+html.ui2.senior .yb2-next-badge { background: #FFB000; color: #0B0D10; }
+html.ui2.senior .yb2-btn { background: #14171C; border: 1px solid #2A2F37; border-radius: 16px; }
+html.ui2.senior .yb2-btn.route { color: #7CC4FF; } html.ui2.senior .yb2-btn.shift { color: #FFD84D; } html.ui2.senior .yb2-btn.memo { color: #C4B0FF; }
+html.ui2.senior .yb2-btn.route.on { background: #7CC4FF; color: #04121f; border-color: #7CC4FF; }
+html.ui2.senior .yb2-btn.shift.on { background: #FFD84D; color: #1a1500; border-color: #FFD84D; }
+html.ui2.senior .yb2-btn.memo.on { background: #C4B0FF; color: #170b3b; border-color: #C4B0FF; }
+
+/* 기존 노안모드 규칙이 노선·교대·메모 칸을 숨기는 것을, 새 디자인에서는 열린 칸만 보이게 되돌림 */
+html.ui2.senior #panelRoute[style*="display: block"],
+html.ui2.senior #panelShift[style*="display: block"],
+html.ui2.senior #panelMemo[style*="display: block"] { display: block !important; }
+html.ui2.senior .yb2-map-x { display: none; }

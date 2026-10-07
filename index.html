@@ -291,7 +291,7 @@
         </div>
         <div class="yb2-tabs" role="tablist">
           <button type="button" id="yb2TabDrive" class="yb2-tab on" onclick="yb2SetPage('drive')">오늘 운행</button>
-          <button type="button" id="yb2TabTable" class="yb2-tab" onclick="yb2SetPage('table')">시간표</button>
+          <button type="button" id="yb2TabTable" class="yb2-tab" onclick="yb2SetPage('table')">시간표<span class="yb2-tab-x"> · 메모</span></button>
         </div>
       </div>
 
@@ -311,6 +311,7 @@
 
       <!-- 🆕 새 디자인(ui2) 페이지 1: 오늘 운행 (값은 숨겨진 기존 요소를 script_ui2.js 가 따라 적음) -->
       <div id="yb2Drive">
+        <div class="yb2-box">
         <div class="yb2-band" id="yb2Band">
           <div class="yb2-name"><img src="icons/logo-128.png" alt=""><span id="yb2Name"></span></div>
           <div class="yb2-col">
@@ -335,7 +336,11 @@
             <div class="yb2-cd-txt"><div id="yb2CdL" class="yb2-cd-l"></div><div id="yb2CdV" class="yb2-cd-v">00:00:00</div></div>
           </button>
         </div>
-        <a class="yb2-map" href="route_map.html" onclick="return openRouteMap();"><iconify-icon icon="mdi:navigation-variant"></iconify-icon>노선지도 열기</a>
+        </div>
+        <div class="yb2-btns">
+          <button type="button" class="yb2-live" onclick="openLiveModal();">실시간 운행 보기</button>
+          <a class="yb2-map" href="route_map.html" onclick="return openRouteMap();"><iconify-icon icon="mdi:navigation-variant"></iconify-icon>노선지도<span class="yb2-map-x"> 열기</span></a>
+        </div>
       </div>
 
       <!-- 🆕 새 디자인(ui2) 페이지 2: 시간표 카드 (기존 #resTimetable 표를 읽어서 만듦) -->
