@@ -3554,3 +3554,7 @@ html.ui2:not(.senior) .yb2-bus-n { order: 2; }
 /* 노안모드: 번호 판 전체를 감싼 바깥 박스 선을 없애고, 내용을 선이 있던 자리까지 왼쪽으로 */
 html.ui2.senior .yb2-box { border: 0; padding-left: 0; padding-right: 0; border-radius: 0; }
 html.ui2.senior .yb2-box #ybDiffWrap { right: 2px !important; }
+
+/* 일반 모드: 버스 이미지가 있는 큰 박스를 없애고, 내용을 박스 선이 있던 자리까지 왼쪽으로 */
+html.ui2:not(.senior) .yb2-band { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 4px 0 0; }
+html.ui2:not(.senior) .yb2-band #ybDiffWrap { right: 2px !important; top: 2px !important; }
