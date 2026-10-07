@@ -77,12 +77,12 @@ document.getElementById('go').onclick = async function () {
     for (var r = 0; r < routes.length; r++) {
       var f = await fetch('data/route/' + routes[r] + '_links.json', { cache: 'no-cache' }).then(function (x) { return x.ok ? x.json() : null; });
       if (!f) { h += '<tr class="skip"><td>' + routes[r] + '</td><td colspan="3">파일 없음</td></tr>'; continue; }
-      var ids = {}, segHit = 0;
-      f.segs.forEach(function (sg) { var any = false; sg.forEach(function (id) { ids[id] = 1; if (byId[id]) any = true; }); if (any) segHit++; });
+      var ids = {}, segHit = 0, noSp = [];
+      f.segs.forEach(function (sg) { var any = false; sg.forEach(function (id) { ids[id] = 1; if (byId[id]) any = true; }); if (any) segHit++; else noSp.push(f.segs.indexOf(sg) + 1); });
       var mine = Object.keys(ids), hit = mine.filter(function (id) { return byId[id]; }).length;
       allMine += mine.length; allHit += hit;
       var pct = mine.length ? Math.round(hit * 100 / mine.length) : 0;
-      h += '<tr class="' + (pct >= 60 ? 'ok' : (pct >= 20 ? 'part' : 'no')) + '"><td>' + routes[r] + '</td><td class="n">' + mine.length + '개</td><td class="s n">' + hit + '개 (' + pct + '%)</td><td class="n">' + segHit + ' / ' + f.segs.length + '</td></tr>';
+      h += '<tr class="' + (pct >= 60 ? 'ok' : (pct >= 20 ? 'part' : 'no')) + '"><td>' + routes[r] + '</td><td class="n">' + mine.length + '개</td><td class="s n">' + hit + '개 (' + pct + '%)</td><td class="n">' + segHit + ' / ' + f.segs.length + '</td></tr>' + (noSp.length ? '<tr class="skip"><td></td><td colspan="3">속도 없는 구간 번호: ' + noSp.join(', ') + '</td></tr>' : '');
     }
     out.innerHTML = h + '</table>';
     var ex = Object.keys(byId).slice(0, 3);
