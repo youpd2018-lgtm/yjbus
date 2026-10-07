@@ -35,7 +35,7 @@ while True:
     lons, lats = t.transform(pts[0::2], pts[1::2])
     num = lambda a, b: float(rec[a:b].decode().strip() or 0)
     L.append({'id': lid, 'name': rec[52:82].decode('cp949', 'replace').strip(), 'p': list(zip(lats, lons)),
-              'spd': int(num(87, 97)), 'len': round(num(121, 139), 1)})
+              'typ': rec[44:47].decode().strip(), 'spd': int(num(87, 97)), 'len': round(num(121, 139), 1)})
 K = 111320 * math.cos(math.radians(37.5)); G = collections.defaultdict(list)
 cell = lambda la, lo: (int(la * 1000), int(lo * 1000 / 1.27))
 for li, l in enumerate(L):
@@ -76,7 +76,7 @@ for seg in line['segs']:
         i = L[r[1]]['id']
         if i not in ids: ids.append(i)
     segs.append(ids)
-info = {l['id']: [l['spd'], l['len'], l['name']] for l in L}
+info = {l['id']: [l['spd'], l['len'], l['name'], l['typ']] for l in L}
 json.dump({'v': 2, 'route': route, 'source': 'MOCT_LINK', 'segs': segs, 'links': {i: info[i] for s in segs for i in s}},
           open('data/route/%s_links.json' % route, 'w'), ensure_ascii=False, separators=(',', ':'))
 print(route, '구간', len(segs), '링크', sum(map(len, segs)), '못 찾은 점', miss, '/', tot)

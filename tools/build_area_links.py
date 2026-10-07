@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """모든 노선선 둘레 250m 안을 지나는 국토부 링크의 좌표를 data/route/area_links.json 에 저장한다.
+링크별 값: [제한속도, 길이m, 도로명, 좌표목록, 도로종류(000 일반, 001 교량, 002 터널, 003 고가, 004 지하차도)]
 링크 수정 화면(link_edit.html)이 지도에 주변 도로를 그릴 때만 받아 쓴다.
 사용: python3 tools/build_area_links.py [MOCT_LINK 경로(.shp/.dbf 제외)]   필요: pip install pyproj
 """
@@ -47,6 +48,6 @@ while True:
     if not any(near(p) for p in ll): continue
     num = lambda a, b: float(rec[a:b].decode().strip() or 0)
     out[rec[1:11].decode()] = [int(num(87, 97)), round(num(121, 139), 1), rec[52:82].decode('cp949', 'replace').strip(),
-                               [[round(a, 5), round(b, 5)] for a, b in ll]]
+                               [[round(a, 5), round(b, 5)] for a, b in ll], rec[44:47].decode().strip()]
 json.dump({'v': 1, 'links': out}, open('data/route/area_links.json', 'w'), ensure_ascii=False, separators=(',', ':'))
 print('링크', len(out))

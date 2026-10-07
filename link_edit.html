@@ -72,7 +72,9 @@ function loadKakao() {
 }
 function draftKey() { return 'yb_linkedit_' + S.route; }
 function saveDraft() { try { localStorage.setItem(draftKey(), JSON.stringify(S.segs)); } catch (e) { } }
-function info(id) { var a = S.area.links[id]; return a ? [a[0], a[1], a[2]] : (S.links[id] || [0, 0, '?']); }
+function info(id) { var a = S.area.links[id]; return a ? [a[0], a[1], a[2], a[4] || '000'] : (S.links[id] || [0, 0, '?', '000']); }
+var TYPE_MARK = { '001': '🌉 교량', '002': '🚇 터널', '003': '🛣 고가', '004': '🚇 지하차도' };
+function mark(inf) { return TYPE_MARK[inf[3]] ? ' <span style="color:#fbbf24">' + TYPE_MARK[inf[3]] + '</span>' : ''; }
 function brg(a, b) { return Math.atan2((b[1] - a[1]) * 111320 * KX, (b[0] - a[0]) * 110540) * 180 / Math.PI; }
 function turn(x, y) { var d = Math.abs(x - y) % 360; return Math.min(d, 360 - d); }
 
@@ -197,7 +199,7 @@ function candidates(i) {
 }
 function linkRow(i, id) {
   var inf = info(id), t = S.traffic && S.traffic[id];
-  return '<tr><td>' + inf[2] + '<div class="sub">' + id + '</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns">'
+  return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + id + '</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns">'
     + '<button class="rm" data-op="del" data-i="' + i + '" data-id="' + id + '">빼기</button></td></tr>';
 }
 function renderAll() {
@@ -215,7 +217,7 @@ function renderAll() {
       var c = S.cand[i] = candidates(i);
       h += '<div class="sub" style="padding:6px 10px;">추천: 노선선 근처에 있지만 이 구간에 안 들어 있는 링크(같은 방향만, 노선 순서)</div><table>' + (c.length ? c.map(function (r) {
         var inf = info(r.id), t = S.traffic && S.traffic[r.id];
-        return '<tr><td>' + inf[2] + '<div class="sub">' + r.id + ' · 선에서 ' + Math.round(r.d) + 'm</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
+        return '<tr><td>' + inf[2] + mark(inf) + '<div class="sub">' + r.id + ' · 선에서 ' + Math.round(r.d) + 'm</div></td><td class="r2">' + inf[0] + '</td><td class="r2">' + Math.round(inf[1]) + 'm</td><td class="r2">' + (t ? t.speed : '-') + '</td><td class="btns"><button class="ad" data-op="add" data-i="' + i + '" data-id="' + r.id + '">이 구간에 넣기</button></td></tr>';
       }).join('') : '<tr><td class="sub">없음</td></tr>') + '</table>';
     }
     h += '</div>';
