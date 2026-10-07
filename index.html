@@ -346,6 +346,13 @@
       </div>
 
       <!-- 🆕 새 디자인(ui2) 페이지 2: 시간표 카드 (기존 #resTimetable 표를 읽어서 만듦) -->
+      <!-- 🆕 노안모드(시안 1) 시간표 페이지 위쪽 작은 탭: 시간표 / 노선정보 / 교대정보 / 메모 -->
+      <div id="yb2Subtabs">
+        <button type="button" class="yb2-st tt on" data-tab="timetable" onclick="yb2Pick('timetable')">시간표</button>
+        <button type="button" class="yb2-st route" data-tab="route" onclick="yb2Pick('route')">노선정보</button>
+        <button type="button" class="yb2-st shift" data-tab="shift" onclick="yb2Pick('shift')">교대정보</button>
+        <button type="button" class="yb2-st memo" data-tab="memo" onclick="yb2Pick('memo')">메모</button>
+      </div>
       <div id="yb2Cards"></div>
 
       <!-- [1번 카드] 3D 버스 배경 & 좌측 타이포그래피 HUD -->

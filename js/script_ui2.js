@@ -120,7 +120,14 @@
             var b = document.getElementById(a[1]);
             if (b) b.classList.toggle('on', cur === a[0]);
         });
+        var sts = document.querySelectorAll('#yb2Subtabs .yb2-st');
+        for (var i = 0; i < sts.length; i++) sts[i].classList.toggle('on', sts[i].getAttribute('data-tab') === cur);
     }
+    window.yb2Pick = function (name) {   // 노안모드 위쪽 작은 탭: 누른 칸으로 바로 이동
+        var cur = (typeof currentScheduleTab !== 'undefined') ? currentScheduleTab : 'timetable';
+        if (cur !== name && typeof switchScheduleTab === 'function') switchScheduleTab(name);
+        syncTab();
+    };
     window.yb2Tab = function (name) {
         if (typeof switchScheduleTab !== 'function') return;
         var cur = (typeof currentScheduleTab !== 'undefined') ? currentScheduleTab : 'timetable';

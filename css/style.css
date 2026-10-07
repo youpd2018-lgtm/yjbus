@@ -3446,7 +3446,6 @@ html.ui2.senior .yb2-rel { color: #B8BEC8; }
 html.ui2.senior .yb2-tabs { gap: 6px; padding: 5px; background: #14171C; border: 1px solid #2A2F37; border-radius: 18px; margin: 8px 0 12px; }
 html.ui2.senior .yb2-tab { height: 52px; border: 0; margin: 0; border-radius: 14px; font-size: 19px; color: #C9CED6; }
 html.ui2.senior .yb2-tab.on { background: #FFB000; color: #0B0D10; }
-html.ui2.senior .yb2-tab-x { display: inline; }
 
 html.ui2.senior .yb2-box { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; background: #000; border: 2px solid #2A2F37; border-radius: 22px; padding: 16px 18px; position: relative; }
 html.ui2.senior .yb2-band { position: static; padding: 0; border: 0; background: none; box-shadow: none; border-radius: 0; gap: 0; }
@@ -3509,3 +3508,24 @@ html.ui2.senior .yb2-map-x { display: none; }
 
 html.ui2.senior .yb2-side { display: contents; }
 html.ui2.senior .yb2-bus iconify-icon { display: inline-block; }
+
+/* ---------- 노안모드(시안 1) 나머지: 작은 탭, 메모 칸, 아래 메뉴, 바탕 ---------- */
+#yb2Subtabs { display: none; }
+html.ui2.senior.ui2-table #yb2Subtabs { display: flex; border-bottom: 2px solid #2A2F37; margin-bottom: 10px; }
+html.ui2.senior #yb2Btns { display: none !important; }
+.yb2-st { flex: 1; height: 52px; border: 0; border-bottom: 4px solid transparent; margin-bottom: -2px; background: transparent; color: #C9CED6; font-size: 19px; font-weight: 900; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.yb2-st.tt.on { color: #FFB000; border-bottom-color: #FFB000; }
+.yb2-st.route.on { color: #7CC4FF; border-bottom-color: #7CC4FF; }
+.yb2-st.shift.on { color: #FFD84D; border-bottom-color: #FFD84D; }
+.yb2-st.memo.on { color: #C4B0FF; border-bottom-color: #C4B0FF; }
+
+html.ui2.senior body { background-color: #0B0D10; }
+html.ui2.senior #todayTimetableBody { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; backdrop-filter: none !important; }
+html.ui2.senior .hud-memo-textarea { border: 2px solid #3A414B !important; border-radius: 16px !important; padding: 16px !important; background: #14171C !important; color: #F4F5F7 !important; font-size: 20px !important; font-weight: 700 !important; line-height: 1.5 !important; box-sizing: border-box; }
+html.ui2.senior #routeMemoSaveBtn, html.ui2.senior #shiftMemoSaveBtn, html.ui2.senior #todayMemoSaveBtn { height: 60px !important; border: 0 !important; border-radius: 16px !important; background: #FFB000 !important; color: #0B0D10 !important; font-size: 20px !important; font-weight: 900 !important; box-shadow: none !important; }
+
+html.ui2.senior .file-tabs { height: 76px; background: #000; border-top: 1px solid #2A2F37; box-shadow: none; padding: 6px 6px 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+html.ui2.senior .file-tab { height: 100%; font-size: 15px; font-weight: 800; color: #C9CED6; border-radius: 12px; gap: 3px; }
+html.ui2.senior .file-tab iconify-icon { font-size: 26px; }
+html.ui2.senior .file-tab.active { background: #1B1608; color: #FFB000; font-weight: 900; }
+html.ui2.senior #tabEmergency { color: #FF8A80 !important; }
