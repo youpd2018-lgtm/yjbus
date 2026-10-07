@@ -23,7 +23,7 @@
 <body>
 <h1>🛣️ 정류장 도로명 채우기</h1>
 <div class="box">
-  정류장 좌표로 카카오가 도로명을 찾아 줍니다. 틀린 칸은 직접 고친 뒤 [시트에 저장]을 누르면 노선마스터 O열에 기록됩니다. (관리자 전용)
+  GitHub에 저장된 도로명 파일(노선_roads.json)을 정류장별로 옮겨 옵니다(앞 정류장→이 정류장 구간의 도로). 틀린 칸은 직접 고친 뒤 [시트에 저장]을 누르면 노선마스터 O열에 기록됩니다. (관리자 전용)
   <div id="loginInfo"></div>
   <input id="nm" placeholder="이름 (로그인이 안 되어 있을 때만)">
   <input id="pn" placeholder="기사번호 6자리" inputmode="numeric">
@@ -32,43 +32,34 @@
   <option>202</option><option>202A</option><option>203</option><option>203A</option><option>204</option>
   <option>205</option><option>206</option><option>221</option><option>281</option><option>282</option>
 </select>
-<button id="go">1. 정류장 불러와서 도로명 찾기</button>
+<label style="display:block;margin-top:8px;font-size:13px;"><input type="checkbox" id="keep" checked style="width:auto;margin:0 6px 0 0;">시트 O열에 이미 적힌 값은 그대로 두기 (처음부터 새로 채우려면 체크 해제)</label>
+<button id="go">1. 정류장 불러와서 도로명 채우기</button>
 <div id="msg"></div>
 <div id="out"></div>
 <button id="save" class="save" style="display:none;">2. 시트에 저장</button>
 <script src="js/app-config.js"></script>
 <script src="js/gas-polyfill.js"></script>
 <script>
-var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
 var stops = [], roads = [], guess = [];
 var msg = document.getElementById('msg'), out = document.getElementById('out');
-
-function loadKakao() {
-  return new Promise(function (resolve, reject) {
-    if (window.kakao && kakao.maps && kakao.maps.services) return resolve();
-    var s = document.createElement('script');
-    s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&libraries=services&autoload=false';
-    s.onload = function () { kakao.maps.load(resolve); };
-    s.onerror = function () { reject(new Error('카카오 지도를 불러오지 못했습니다')); };
-    document.head.appendChild(s);
-  });
+// 지도(OSRM) 도로명 → 국토교통부 소통정보 이름. 여기에 없는 이름은 그대로 쓰고, 안 맞는 곳은 표에서 직접 고치면 됩니다.
+var ALIAS = { '청라하늘대로': '하늘대로', '칠천왕로': '천왕로' };
+function fixName(n) {
+  n = String(n || '').trim();
+  if (!n || /^[0-9]+$/.test(n)) return '';   // 노선 번호는 도로명이 아님
+  return ALIAS[n] || n;
 }
+// 구간 하나의 도로명: 가장 길게 지난 도로(노선 번호 제외)
+function segRoad(d) {
+  var list = (d && d.roads) || [];
+  for (var i = 0; i < list.length; i++) { var n = fixName(list[i].name); if (n) return n; }
+  return '';
+}
+
 function saveLogin() {
   var nm = document.getElementById('nm').value.trim(), pn = document.getElementById('pn').value.trim();
   if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
 }
-function roadOf(geocoder, lat, lng) {
-  return new Promise(function (resolve) {
-    geocoder.coord2Address(lng, lat, function (res, status) {
-      if (status === kakao.maps.services.Status.OK && res && res[0]) {
-        var ra = res[0].road_address;
-        resolve(ra && ra.road_name ? ra.road_name : '');
-      } else resolve('');
-    });
-  });
-}
-function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-
 document.getElementById('go').onclick = async function () {
   saveLogin();
   var route = document.getElementById('route').value;
@@ -78,20 +69,20 @@ document.getElementById('go').onclick = async function () {
     var r = await fetch(window.GAS_WEB_APP_URL + '?action=get_route_stops&route=' + encodeURIComponent(route)).then(function (x) { return x.json(); });
     if (!r || !r.success) { msg.textContent = '실패: ' + (r && (r.message || r.error) || '알 수 없음'); return; }
     stops = r.stops;
-    await loadKakao();
-    var geocoder = new kakao.maps.services.Geocoder();
+    var rd = await fetch('data/route/' + encodeURIComponent(route) + '_roads.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error('이 노선의 도로명 파일(' + route + '_roads.json)이 아직 없습니다. 먼저 road_line.html 에서 뽑아야 합니다.'); return x.json(); });
+    var det = rd.segDetail || [];
+    if (det.length !== stops.length - 1) { msg.textContent = '정류장 ' + stops.length + '개인데 구간은 ' + det.length + '개입니다(정류장-1개여야 함). 저장하지 않았습니다.'; return; }
+    var keepOld = document.getElementById('keep').checked;
     roads = []; guess = [];
     for (var i = 0; i < stops.length; i++) {
-      msg.textContent = '도로명 찾는 중... ' + (i + 1) + ' / ' + stops.length;
       var name = '', isGuess = false;
-      if (stops[i][6]) name = stops[i][6];             // 이미 시트에 적힌 값은 그대로 사용
-      else {
-        name = await roadOf(geocoder, stops[i][2], stops[i][3]);
-        if (!name && i > 0) { name = roads[i - 1]; isGuess = !!name; }   // 못 찾으면 앞 정류장과 같다고 추정(노란색)
-        await sleep(120);
-      }
-      roads.push(name); guess.push(isGuess);
+      if (keepOld && stops[i][6]) name = stops[i][6];                  // 이미 시트에 적힌 값(직접 고친 것 포함)은 그대로 사용
+      else name = segRoad(det[Math.max(0, i - 1)]);          // 앞 정류장에서 이 정류장까지 달리는 도로
+      roads.push(name); guess.push(false);
     }
+    // 빈 칸은 앞 정류장 도로, 맨 앞이 비면 뒤 정류장 도로로 채움(노랑)
+    for (var j = 1; j < roads.length; j++) if (!roads[j] && roads[j - 1]) { roads[j] = roads[j - 1]; guess[j] = true; }
+    for (var k = roads.length - 2; k >= 0; k--) if (!roads[k] && roads[k + 1]) { roads[k] = roads[k + 1]; guess[k] = true; }
     render(route);
   } catch (e) { msg.textContent = '실패: ' + e; }
 };
