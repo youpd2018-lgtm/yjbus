@@ -225,7 +225,7 @@
     function stopHabitDiag() {
         const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
         if (!d || !d.fix) return '<div style="font-size:12px; color:#64748b; margin-top:10px;">점검: GPS 수신 기록 없음</div>';
-        return `<div style="font-size:12px; color:#64748b; margin-top:10px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
+        return `<div style="font-size:13px; color:#64748b; margin-top:12px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
     }
 
     function renderStopHabit(scope, v, loading) {
@@ -244,20 +244,20 @@
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-        const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:7px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
-            `<span style="font-size:19px;">${label}</span><span style="color:${color}; font-weight:900; font-size:26px;">${c}회${showPct ? `<span style="font-size:14px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
+        const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:9px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
+            `<span style="font-size:23px;">${label}</span><span style="color:${color}; font-weight:900; font-size:34px;">${c}회${showPct ? `<span style="font-size:17px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
         const top = (title, arr, color) => (arr && arr.length)
-            ? `<div style="margin-top:12px;"><div style="font-size:16px; font-weight:900; color:${color}; margin-bottom:4px;">${title}</div>` +
+            ? `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:${color}; margin-bottom:6px;">${title}</div>` +
               arr.map((nm, i) => {
                 // 월별은 "정류장이름 N회" 형태: 이름만 ...으로 줄이고 횟수는 항상 보이게
                 const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
                 const name = m ? m[1] : nm, cnt = m ? m[2] : '';
-                return `<div style="display:flex; align-items:baseline; gap:6px; font-size:18px; color:#e2e8f0; font-weight:800; line-height:1.6;">` +
+                return `<div style="display:flex; align-items:baseline; gap:8px; font-size:22px; color:#e2e8f0; font-weight:800; line-height:1.65;">` +
                     `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
                     (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
             }).join('') + '</div>'
             : '';
-        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:13px; ${gray} margin-top:8px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
+        const note = (scope === 'cur' && !v.ok) ? `<div style="font-size:15px; ${gray} margin-top:10px;">${min}회 이상 측정되면 통계로 인정돼요</div>` : '';
         el.innerHTML =
             row('측정', v.n, '#e2e8f0', false) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;

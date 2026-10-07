@@ -728,12 +728,10 @@
 
           <!-- 2단: 나의 정류장 운행 (2페이지: 이번 회차 / 월별 누적) -->
           <div style="background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 12px 14px;">
-            <div style="font-size: 18px; font-weight: 900; color: #fbbf24; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-              <iconify-icon icon="mdi:steering" style="font-size: 24px;"></iconify-icon> 나의 정류장 운행
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-              <button type="button" id="habitTab_cur" onclick="setHabitPage('cur')" style="flex: 1; padding: 10px 4px; border-radius: 10px; border: 1.5px solid #38bdf8; background: #0c4a6e; color: #7dd3fc; font-size: 17px; font-weight: 900; cursor: pointer;">이번 회차</button>
-              <button type="button" id="habitTab_month" onclick="setHabitPage('month')" style="flex: 1; padding: 10px 4px; border-radius: 10px; border: 1.5px solid #334155; background: #1e293b; color: #94a3b8; font-size: 17px; font-weight: 900; cursor: pointer;">월별 누적</button>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+              <div style="flex: 1 1 auto; min-width: 0; font-size: 17px; font-weight: 900; color: #fbbf24; white-space: nowrap;">나의 정류장 운행</div>
+              <button type="button" id="habitTab_cur" onclick="setHabitPage('cur')" style="flex: 0 0 auto; padding: 9px 10px; border-radius: 10px; border: 1.5px solid #38bdf8; background: #0c4a6e; color: #7dd3fc; font-size: 15px; font-weight: 900; cursor: pointer; white-space: nowrap;">이번 회차</button>
+              <button type="button" id="habitTab_month" onclick="setHabitPage('month')" style="flex: 0 0 auto; padding: 9px 10px; border-radius: 10px; border: 1.5px solid #334155; background: #1e293b; color: #94a3b8; font-size: 15px; font-weight: 900; cursor: pointer; white-space: nowrap;">월별 누적</button>
             </div>
             <div id="habitList_cur"></div>
             <div id="habitList_month" style="display: none;"></div>
