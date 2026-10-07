@@ -4,126 +4,119 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>노선선 도로명 뽑기</title>
+<title>정류장 사이 도로명 뽑기</title>
 <style>
   body { font-family: -apple-system, 'Malgun Gothic', sans-serif; margin: 0; padding: 16px; background: #0f172a; color: #e2e8f0; }
   h1 { font-size: 18px; margin: 0 0 12px; }
-  select, input, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  select, button { font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; width: 100%; box-sizing: border-box; margin-top: 8px; }
   button { background: #2563eb; border: 0; font-weight: 700; }
   button.dl { background: #16a34a; }
   #msg { margin: 12px 0; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-  td, th { padding: 5px 4px; border-bottom: 1px solid #1e293b; text-align: left; }
+  td, th { padding: 5px 4px; border-bottom: 1px solid #1e293b; text-align: left; vertical-align: top; }
   td.n { text-align: right; white-space: nowrap; }
   tr.none td { color: #f87171; }
+  tr.guess td.r { color: #fbbf24; }
+  .sub { color: #94a3b8; }
   .box { background: #1e293b; border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #94a3b8; }
 </style>
 </head>
 <body>
-<h1>🛣️ 노선선 도로명 뽑기 (시험 페이지)</h1>
+<h1>🛣️ 정류장 사이 도로명 뽑기 (시험 페이지)</h1>
 <div class="box">
-  GitHub에 저장된 노선선(data/route/노선.json)을 따라 일정 간격으로 점을 찍고, 카카오가 알려 주는 도로명을 순서대로 이어 붙여 보여 줍니다. 앱 본 화면과 무관하고 아무것도 저장하지 않습니다.
+  GitHub에 저장된 노선선(data/route/노선.json)에서 정류장과 정류장 사이 구간마다 길찾기 서버(OSRM, OpenStreetMap)에게 "이 선은 어떤 도로를 지나나요?"를 물어 도로명을 정리합니다. 앱 본 화면과 무관하고 아무것도 저장하지 않습니다.
 </div>
 <select id="route">
   <option>282</option><option>202</option><option>202A</option><option>203</option><option>203A</option>
   <option>204</option><option>205</option><option>206</option><option>221</option><option>281</option>
-</select>
-<select id="step">
-  <option value="30">간격 30m (촘촘, 느림)</option>
-  <option value="50" selected>간격 50m</option>
-  <option value="100">간격 100m (빠름)</option>
 </select>
 <button id="go">도로명 뽑기 시작</button>
 <div id="msg"></div>
 <button id="dl" class="dl" style="display:none;">📥 결과 파일 받기</button>
 <div id="out"></div>
 <script>
-var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
 var msg = document.getElementById('msg'), out = document.getElementById('out'), result = null;
+var OSRM = 'https://router.project-osrm.org/';
 
-function loadKakao() {
-  return new Promise(function (resolve, reject) {
-    if (window.kakao && kakao.maps && kakao.maps.services) return resolve();
-    var s = document.createElement('script');
-    s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&libraries=services&autoload=false';
-    s.onload = function () { kakao.maps.load(resolve); };
-    s.onerror = function () { reject(new Error('카카오 지도를 불러오지 못했습니다')); };
-    document.head.appendChild(s);
-  });
-}
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function distM(a, b) {
   var k = Math.cos(a[0] * Math.PI / 180);
   return Math.hypot((a[0] - b[0]) * 110540, (a[1] - b[1]) * 111320 * k);
 }
-// 노선선 전체를 따라 step(m)마다 점을 만든다. seg = 몇 번째 정류장 구간인지(0부터)
-function sample(segs, step) {
-  var pts = [], carry = 0;
-  segs.forEach(function (sg, si) {
-    for (var i = 1; i < sg.length; i++) {
-      var a = sg[i - 1], b = sg[i], d = distM(a, b);
-      if (d === 0) continue;
-      var pos = step - carry;            // 이 선분 위에서 다음 점까지 남은 거리
-      while (pos <= d) {
-        var f = pos / d;
-        pts.push({ lat: a[0] + (b[0] - a[0]) * f, lng: a[1] + (b[1] - a[1]) * f, seg: si });
-        pos += step;
-      }
-      carry = d - (pos - step);
-    }
-  });
-  if (!pts.length || distM([pts[pts.length - 1].lat, pts[pts.length - 1].lng], segs[segs.length - 1][segs[segs.length - 1].length - 1]) > 5) {
-    var l = segs[segs.length - 1]; var e = l[l.length - 1];
-    pts.push({ lat: e[0], lng: e[1], seg: segs.length - 1 });
-  }
-  return pts;
+// 점이 너무 많으면(서버 한도 100개) 균등하게 솎는다. 처음과 끝은 반드시 남긴다.
+function thin(pts, max) {
+  if (pts.length <= max) return pts;
+  var out = [], step = (pts.length - 1) / (max - 1);
+  for (var i = 0; i < max; i++) out.push(pts[Math.round(i * step)]);
+  return out;
 }
-function roadOf(geocoder, lat, lng) {
-  return new Promise(function (resolve) {
-    geocoder.coord2Address(lng, lat, function (res, status) {
-      if (status === kakao.maps.services.Status.OK && res && res[0]) {
-        var ra = res[0].road_address;
-        resolve({ road: ra && ra.road_name ? ra.road_name : '', addr: (ra && ra.address_name) || (res[0].address && res[0].address.address_name) || '' });
-      } else resolve({ road: '', addr: '' });
-    });
+function coordStr(pts) { return pts.map(function (p) { return p[1].toFixed(5) + ',' + p[0].toFixed(5); }).join(';'); }
+
+// 구간(점 목록)을 OSRM에 묻는다 → [{name, m}] (지나간 순서대로, 같은 이름은 합침)
+async function roadsOfSeg(pts) {
+  var P = thin(pts, 90);
+  if (P.length < 2) return [];
+  var steps = null;
+  try {   // 1순위: 지도 맞추기(선을 따라 실제 도로에 붙여 줌)
+    var rad = P.map(function () { return 30; }).join(';');
+    var r = await fetch(OSRM + 'match/v1/driving/' + coordStr(P) + '?steps=true&geometries=geojson&overview=false&gaps=ignore&radiuses=' + rad).then(function (x) { return x.json(); });
+    if (r && r.code === 'Ok' && r.matchings && r.matchings.length) {
+      steps = [];
+      r.matchings.forEach(function (m) { m.legs.forEach(function (l) { l.steps.forEach(function (s) { steps.push(s); }); }); });
+    }
+  } catch (e) { }
+  if (!steps) {   // 2순위: 점 몇 개만 지나가는 길찾기
+    try {
+      var Q = thin(pts, 20);
+      var r2 = await fetch(OSRM + 'route/v1/driving/' + coordStr(Q) + '?steps=true&overview=false').then(function (x) { return x.json(); });
+      if (r2 && r2.code === 'Ok' && r2.routes && r2.routes.length) {
+        steps = [];
+        r2.routes[0].legs.forEach(function (l) { l.steps.forEach(function (s) { steps.push(s); }); });
+      }
+    } catch (e) { }
+  }
+  if (!steps) return null;
+  var list = [];
+  steps.forEach(function (s) {
+    var nm = (s.name || '').trim() || (s.ref || '').trim();
+    var m = Math.round(s.distance || 0);
+    if (!nm) { nm = ''; }
+    var last = list[list.length - 1];
+    if (last && last.name === nm) last.m += m; else list.push({ name: nm, m: m });
   });
+  return list;
 }
 
 document.getElementById('go').onclick = async function () {
-  var route = document.getElementById('route').value, step = parseInt(document.getElementById('step').value, 10);
+  var route = document.getElementById('route').value;
   out.innerHTML = ''; document.getElementById('dl').style.display = 'none'; result = null;
   msg.textContent = '노선선 불러오는 중...';
   try {
     var line = await fetch('data/route/' + encodeURIComponent(route) + '.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error('파일 없음 (HTTP ' + x.status + ')'); return x.json(); });
-    var pts = sample(line.segs, step);
-    await loadKakao();
-    var geocoder = new kakao.maps.services.Geocoder();
-    var names = [];
-    for (var i = 0; i < pts.length; i++) {
-      if (i % 5 === 0) msg.textContent = '도로명 찾는 중... ' + (i + 1) + ' / ' + pts.length + ' (창을 닫지 마세요)';
-      var r = await roadOf(geocoder, pts[i].lat, pts[i].lng);
-      names.push(r.road);
-      await sleep(110);
+    var detail = [], failed = 0, noname = 0;
+    for (var i = 0; i < line.segs.length; i++) {
+      msg.textContent = '도로명 찾는 중... ' + (i + 1) + ' / ' + line.segs.length + ' 구간 (창을 닫지 마세요)';
+      var list = await roadsOfSeg(line.segs[i]);
+      if (list === null) { failed++; detail.push({ seg: i + 1, road: '', roads: [], failed: true }); }
+      else {
+        var byName = {};
+        list.forEach(function (x) { if (x.name) byName[x.name] = (byName[x.name] || 0) + x.m; });
+        var keys = Object.keys(byName).sort(function (a, b) { return byName[b] - byName[a]; });
+        if (!keys.length) noname++;
+        detail.push({ seg: i + 1, road: keys[0] || '', roads: keys.map(function (k) { return { name: k, m: byName[k] }; }), order: list.filter(function (x) { return x.name; }).map(function (x) { return x.name; }) });
+      }
+      await sleep(1100);   // 무료 서버라서 천천히 (초당 1회 안팎)
     }
-    // 도로명 없는 점은 앞 도로명을 잇고, 같은 도로명이 이어지면 한 줄로 합친다
-    var runs = [], lastName = '';
-    pts.forEach(function (p, i) {
-      var nm = names[i] || '';
-      var shown = nm || lastName;
-      if (nm) lastName = nm;
-      var prev = runs[runs.length - 1];
-      if (prev && prev.road === shown) { prev.to = i; prev.segTo = p.seg; prev.n++; if (!nm) prev.guess++; }
-      else runs.push({ road: shown, from: i, to: i, segFrom: p.seg, segTo: p.seg, n: 1, guess: nm ? 0 : 1 });
-    });
-    runs.forEach(function (r) { r.meters = r.n * step; });
-    result = { v: 1, route: route, step: step, points: pts.length, savedAt: Date.now(), roads: runs.map(function (r) { return { road: r.road, segFrom: r.segFrom + 1, segTo: r.segTo + 1, meters: r.meters, unnamed: r.guess }; }) };
-    var h = '<table><tr><th>#</th><th>도로명</th><th>정류장 구간</th><th>길이</th></tr>';
-    runs.forEach(function (r, i) {
-      h += '<tr class="' + (r.road ? '' : 'none') + '"><td>' + (i + 1) + '</td><td>' + (r.road || '(이름 없음)') + '</td><td>' + (r.segFrom + 1) + (r.segTo !== r.segFrom ? '~' + (r.segTo + 1) : '') + '번째</td><td class="n">약 ' + (r.meters >= 1000 ? (r.meters / 1000).toFixed(1) + 'km' : r.meters + 'm') + '</td></tr>';
+    for (var q = 0; q < detail.length; q++) if (!detail[q].road && q > 0 && detail[q - 1].road) { detail[q].road = detail[q - 1].road; detail[q].guess = true; }
+    result = { v: 1, route: route, source: 'osrm', savedAt: Date.now(), segRoads: detail.map(function (x) { return x.road; }), segDetail: detail };
+    var h = '<table><tr><th>구간</th><th>도로명</th></tr>';
+    detail.forEach(function (x) {
+      var others = (x.roads || []).slice(1).map(function (r) { return r.name; });
+      h += '<tr class="' + (x.road ? (x.guess ? 'guess' : '') : 'none') + '"><td class="n">' + x.seg + '번째</td><td class="r">' + (x.road || (x.failed ? '(서버 응답 없음)' : '(이름 없음)')) + (x.guess ? ' (앞 구간과 같다고 추정)' : '') + (others.length ? ' <span class="sub">외 ' + others.join(', ') + '</span>' : '') + '</td></tr>';
     });
     out.innerHTML = h + '</table>';
-    var empty = names.filter(function (x) { return !x; }).length;
-    msg.textContent = route + ' 노선선 ' + pts.length + '개 지점 조사 완료. 도로명이 안 나온 지점 ' + empty + '개(앞 도로명으로 이어 붙임). 도로가 ' + runs.length + '번 바뀝니다.';
+    var empty = detail.filter(function (x) { return !x.road; }).length;
+    msg.textContent = route + ' 노선 ' + detail.length + '개 구간 조사 완료. 서버가 답하지 않은 구간 ' + failed + '개, 도로 이름이 없는 구간 ' + noname + '개 (비어 있으면 빨강, 앞 구간으로 이어 붙인 곳은 노랑). 한 구간에 이름이 여러 개면 가장 길게 지난 도로를 앞에 두고 나머지는 "외"로 표시했어요.';
     document.getElementById('dl').style.display = 'block';
   } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
 };
