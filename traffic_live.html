@@ -36,6 +36,7 @@
   <option>282</option><option>281</option><option>221</option><option>206</option><option>205</option>
   <option>204</option><option>203</option><option>203A</option><option>202</option><option>202A</option>
 </select>
+<input id="man" inputmode="numeric" placeholder="PC 시험용: 구간 번호 (비우면 내 GPS 사용)">
 <button id="go">시작 (5분마다 자동 갱신)</button>
 <div id="msg"></div>
 <div class="cards">
@@ -97,6 +98,8 @@ async function fetchTraffic(center) {
   return { n: items.length, kb: Math.round(t.length / 1024) };
 }
 async function tick() {
+  var man = parseInt(document.getElementById('man').value, 10);
+  if (man >= 1 && man <= R.line.segs.length) pos = R.line.segs[man - 1][0];   // 구간 번호를 직접 넣은 경우(집 컴퓨터 시험)
   if (!pos) { msg.textContent = 'GPS 위치를 기다리는 중...'; return; }
   var ns = nearestSeg(pos);
   curSeg = ns.i;
@@ -117,9 +120,10 @@ document.getElementById('go').onclick = async function () {
     R.line = await fetch('data/route/' + route + '.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
     R.links = await fetch('data/route/' + route + '_links.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
   } catch (e) { msg.textContent = '노선 파일을 못 받았습니다: ' + e; return; }
+  if (parseInt(document.getElementById('man').value, 10) >= 1) { timer = setInterval(tick, 15000); tick(); return; }   // 구간 번호 직접 입력 모드
   if (!navigator.geolocation) { msg.textContent = '이 폰에서는 GPS를 쓸 수 없습니다.'; return; }
   msg.textContent = 'GPS 위치를 기다리는 중... (위치 권한을 허용해 주세요)';
-  gpsTimer = navigator.geolocation.watchPosition(function (p) { var first = !pos; pos = [p.coords.latitude, p.coords.longitude]; if (first) tick(); }, function (e) { msg.textContent = 'GPS 오류: ' + e.message; }, { enableHighAccuracy: true, maximumAge: 5000 });
+  gpsTimer = navigator.geolocation.watchPosition(function (p) { var first = !pos; if (parseInt(document.getElementById('man').value, 10) >= 1) return; pos = [p.coords.latitude, p.coords.longitude]; if (first) tick(); }, function (e) { msg.textContent = 'GPS 오류: ' + e.message; }, { enableHighAccuracy: true, maximumAge: 5000 });
   timer = setInterval(tick, 15000);   // 15초마다 구간만 다시 찾고, 소통정보는 5분마다만 받음
 };
 </script>
