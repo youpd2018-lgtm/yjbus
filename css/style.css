@@ -3375,7 +3375,10 @@ html.ui2 #unifiedScheduleFolder { margin-top: 0 !important; margin-bottom: 0 !im
 .yb2-sub { font-size: 24px; font-weight: 900; color: #bfdbfe; white-space: nowrap; }
 .yb2-bus { display: flex; align-items: center; gap: 6px; color: #fed7aa; }
 .yb2-bus iconify-icon { display: none; font-size: 22px; }
-.yb2-bus-n { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 24px; font-weight: 700; }
+.yb2-bus-n { font-family: 'GmarketSans','GmarketNum',sans-serif; font-size: 26px; font-weight: 700; }
+/* 🚌 이모지는 숫자 왼쪽에 걸어 둠 → 숫자 첫 글자는 202 첫 글자와 같은 줄 유지 */
+html.ui2:not(.senior) .yb2-bus { position: relative; }
+html.ui2:not(.senior) .yb2-bus::before { content: "🚌"; position: absolute; left: -34px; top: 50%; transform: translateY(-50%); font-size: 24px; line-height: 1; }
 
 /* ---------- 3단계: 시작 / 종료 / 교대 + 시간 카운트 박스 ---------- */
 .yb2-stats { flex: none; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
