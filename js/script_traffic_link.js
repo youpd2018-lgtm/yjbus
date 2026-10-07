@@ -1,10 +1,10 @@
-// 🚦 소통 알약 + 돌발정보 (국토교통부 표준노드링크 LINK_ID 방식) — 지금은 282 노선만, 관리자(또는 시험 켜기)만 사용
+// 🚦 소통 알약 + 돌발정보 (국토교통부 표준노드링크 LINK_ID 방식) — 전 노선(202~282), 관리자(또는 시험 켜기)만 사용
 // - 노선 구간별 링크번호: data/route/282_links.json (link_edit.html 에서 사람이 고친 파일)
 // - 폰이 내 위치 주변 약 5km만 국토교통부에서 직접 받는다(전국 X). 키는 시험 단계에서는 이 폰에 직접 넣은 값(yb_its_key)만 쓴다.
 // - 어떤 단계든 실패하면 아무것도 바꾸지 않아 옛 표시가 그대로 나온다.
 (function () {
   'use strict';
-  var ROUTES = { '282': true };
+  var ROUTES = { '202': true, '202A': true, '203': true, '203A': true, '204': true, '205': true, '206': true, '221': true, '281': true, '282': true };
   var ALL_USERS = false;            // true 로 바꾸면 모든 기사에게 적용 (관리자 확인 후)
   var ITS = 'https://openapi.its.go.kr:9443/';
   var H = 0.025;                    // 소통정보 받을 사각형: 위도·경도 ±0.025도 ≈ 5km
@@ -23,14 +23,21 @@
   function angDiff(a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
 
   function dutyRoute() {
-    try { var d = (typeof getTodayDutyInfo === 'function') ? getTodayDutyInfo() : null; return d ? String(d.baseRoute || d.routeShort || '') : ''; } catch (e) { return ''; }
+    try { var d = (typeof getTodayDutyInfo === 'function') ? getTodayDutyInfo() : null; return d ? String(d.routeShort || d.baseRoute || '') : ''; } catch (e) { return ''; }
   }
   async function loadRoute(r) {
     if (data[r] !== undefined) return data[r];
     data[r] = null;
     try {
       var x = await fetch('data/route/' + r + '_links.json', { cache: 'no-cache' });
-      if (x.ok) { var j = await x.json(); if (j && j.v === 3 && j.lines && j.segs) data[r] = j; }
+      if (x.ok) {
+        var j = await x.json();
+        if (j && j.segs && j.links && !j.lines) {   // 아직 사람이 안 고친(v2) 노선: 노선지도 선을 구간 선으로 씀
+          var m = await fetch('data/route/' + r + '.json', { cache: 'no-cache' }).then(function (y) { return y.ok ? y.json() : null; });
+          if (m && m.segs && m.segs.length === j.segs.length) j.lines = m.segs;
+        }
+        if (j && j.lines && j.segs && j.lines.length === j.segs.length) data[r] = j;
+      }
     } catch (e) { }
     return data[r];
   }
