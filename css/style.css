@@ -3570,7 +3570,7 @@ html.ui2:not(.senior) .yb2-band #ybDiffWrap { right: 12px !important; top: 10px 
     background: #38bdf8; color: #04121f; font-size: 15px; font-weight: 900; text-decoration: none;
     display: flex; align-items: center; justify-content: center; gap: 6px; pointer-events: auto;
 }
-#liveModal .ios-close-btn { order: 2; }
+#liveModal .ios-close-btn { order: 2; margin-top: 20px; }   /* 노선지도 보기와 너무 붙지 않게 */
 @media (orientation: landscape) and (max-height: 520px) {
     #liveModal .live-map-btn { width: 100%; min-width: 0; height: 48px; }
 }
