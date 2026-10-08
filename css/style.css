@@ -3558,3 +3558,7 @@ html.ui2.senior .yb2-box #ybDiffWrap { right: 2px !important; }
 /* 일반 모드: 버스 이미지 박스의 테두리 선만 없애고, 내용을 선이 있던 자리까지 왼쪽으로 */
 html.ui2:not(.senior) .yb2-band { border: 0; padding: 16px 0; }   /* 버스 이미지는 그대로, 테두리 선만 없앰 */
 html.ui2:not(.senior) .yb2-band #ybDiffWrap { right: 12px !important; top: 10px !important; }
+
+/* 시간표 특별 표시: 파란색(282 등)·빨간색 — 노란색과 함께 */
+.yb2-trip-t.b, html.ui2.senior .yb2-trip-t.b { background: #38bdf8; color: #04121f !important; border-radius: 8px; }
+.yb2-trip-t.r, html.ui2.senior .yb2-trip-t.r { background: rgba(248,113,113,.18); color: #fca5a5 !important; border: 2px solid #f87171; border-radius: 8px; padding: 0 4px; }

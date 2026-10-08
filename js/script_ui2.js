@@ -211,8 +211,9 @@
                 for (var j = 1; j < tds.length; j++) {
                     var sp = tds[j].querySelector('span');
                     var t = (tds[j].textContent || '').trim();
-                    var yellow = sp && sp.className.indexOf('effect-yellow') >= 0;
-                    cells += '<div class="yb2-trip-c"><span class="yb2-trip-t' + (yellow ? ' y' : '') + '">' + esc(t || '-') + '</span>' +
+                    var spc = sp ? sp.className : '';
+                    var fx = spc.indexOf('effect-yellow') >= 0 ? ' y' : (spc.indexOf('effect-blue') >= 0 ? ' b' : (spc.indexOf('effect-red') >= 0 ? ' r' : ''));   // 노란·파란·빨간 표시
+                    cells += '<div class="yb2-trip-c"><span class="yb2-trip-t' + fx + '">' + esc(t || '-') + '</span>' +
                         '<span class="yb2-trip-p">' + esc(headers[j - 1] || '') + '</span></div>';
                 }
                 out += '<div class="' + cls + '">' +
