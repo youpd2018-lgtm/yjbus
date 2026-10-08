@@ -3562,3 +3562,20 @@ html.ui2:not(.senior) .yb2-band #ybDiffWrap { right: 12px !important; top: 10px 
 /* 시간표 특별 표시: 파란색(282 등)·빨간색 — 노란색과 함께 */
 .yb2-trip-t.b, html.ui2.senior .yb2-trip-t.b { background: #38bdf8; color: #04121f !important; border-radius: 8px; }
 .yb2-trip-t.r, html.ui2.senior .yb2-trip-t.r { background: rgba(248,113,113,.18); color: #fca5a5 !important; border: 2px solid #f87171; border-radius: 8px; padding: 0 4px; }
+
+/* 🧭 라이브 모달: 노선지도 보기 버튼 = 닫기 버튼 바로 위 */
+#liveModal .ios-footer { flex-direction: column; align-items: center; gap: 10px; }
+#liveModal .live-map-btn {
+    order: 1; width: 52%; min-width: 150px; height: 44px; box-sizing: border-box; border-radius: 12px;
+    background: #38bdf8; color: #04121f; font-size: 15px; font-weight: 900; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px; pointer-events: auto;
+}
+#liveModal .ios-close-btn { order: 2; }
+@media (orientation: landscape) and (max-height: 520px) {
+    #liveModal .live-map-btn { width: 100%; min-width: 0; height: 48px; }
+}
+
+/* 일반 모드 메인: 노선지도 버튼은 라이브 모달로 옮겼으므로 빼고, 빠진 만큼 위 박스 간격을 넓혀 카운트 박스를 아래로 */
+html.ui2:not(.senior) .yb2-map { display: none; }
+html.ui2:not(.senior) .yb2-stats { margin-top: 30px; }
+html.ui2:not(.senior) .yb2-cdwrap { margin: 38px 0 14px; }

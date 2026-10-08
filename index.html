@@ -1233,6 +1233,10 @@
         <div class="ios-footer" style="margin-top: 14px; padding-top: 2px; display: flex; justify-content: center;">
           <!-- 좌우반전 (가로 모드에서만 보임: 앞유리 반사용) -->
           <button type="button" id="liveMirrorBtn" class="live-mirror-btn" onclick="toggleLiveMirror()">좌우반전</button>
+          <!-- 🧭 노선지도 보기: 닫기 버튼 바로 위 (메인 화면에서 옮겨 옴) -->
+          <a class="live-map-btn" href="route_map.html" onclick="return openRouteMap();" title="오늘 근무 노선 지도 열기">
+            <iconify-icon icon="mdi:navigation-variant" style="font-size: 18px;"></iconify-icon> 노선지도 보기
+          </a>
           <button type="button" class="ios-close-btn" onclick="closeLiveModal()"
             style="width: 52%; min-width: 150px; height: 44px; font-size: 15px; font-weight: 900; border-radius: 12px; background: #334155; color: #ffffff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <iconify-icon icon="mdi:close" style="font-size: 18px;"></iconify-icon> 닫기
