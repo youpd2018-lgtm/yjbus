@@ -3579,3 +3579,10 @@ html.ui2:not(.senior) .yb2-band #ybDiffWrap { right: 12px !important; top: 10px 
 html.ui2:not(.senior) .yb2-map { display: none; }
 html.ui2:not(.senior) .yb2-stats { margin-top: 30px; }
 html.ui2:not(.senior) .yb2-cdwrap { margin: 38px 0 14px; }
+
+/* 🔎 라이브 모달 거점 박스: 이름·시간 글자를 키움 (세로 화면, 2026-10-08 요청). 가로 화면은 기존 규칙 유지 */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+    #liveModal .ios-seq-item { max-width: 130px !important; }
+    #liveModal .ios-seq-name { font-size: 17px !important; }
+    #liveModal .ios-seq-time { font-size: 27px !important; }
+}
