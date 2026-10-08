@@ -3587,17 +3587,11 @@ html.ui2:not(.senior) .yb2-cdwrap { margin: 38px 0 14px; }
     #liveModal .ios-seq-time { font-size: 27px !important; }
 }
 
-/* 🔎 라이브 모달 신호등 알약·속도·정류장 카드 키움 (세로 화면, 2026-10-08 요청): 알약+속도를 위쪽 가운데 크게, 현재/다음 정류장은 그 아래 좌우 */
+/* 🔎 라이브 모달 신호등 알약(가운데 칸)과 속도 글자만 키움 (세로 화면, 2026-10-08). 다른 UI는 그대로 */
 @media not all and (orientation: landscape) and (max-height: 520px) {
-    #liveModal .tf-card { grid-template-columns: 1fr 1fr; gap: 12px 10px; padding: 18px 14px 16px; }
-    #liveModal .tf-card .tf-flow { grid-column: 1 / -1; grid-row: 1; justify-self: center; width: auto; min-width: 190px; padding: 12px 22px 11px; gap: 8px; border-radius: 26px; }
-    #liveModal .tf-card .tf-lamp { gap: 14px; padding: 11px 18px; }
-    #liveModal .tf-card .tf-lamp i { width: 27px; height: 27px; }
-    #liveModal .tf-card .tf-lamp i::before { height: 14px; top: -4px; }
-    #liveModal .tf-card .tf-flow-text { font-size: 32px; line-height: 1.1; font-weight: 800; }
-    #liveModal .tf-card .tf-cur { grid-column: 1; grid-row: 2; }
-    #liveModal .tf-card .tf-stop.tf-next { grid-column: 2; grid-row: 2; }
-    #liveModal .tf-card .tf-time { font-size: clamp(26px, 8vw, 36px); }
-    #liveModal .tf-card .tf-name { font-size: 16px; }
-    #liveModal .tf-card .tf-role { font-size: 13px; }
+    #liveModal .tf-card .tf-lamp { gap: 10px; padding: 9px 14px; }
+    #liveModal .tf-card .tf-lamp i { width: 21px; height: 21px; }
+    #liveModal .tf-card .tf-lamp i::before { height: 11px; top: -3px; }
+    #liveModal .tf-card .tf-flow { padding: 8px 12px 7px; gap: 5px; border-radius: 20px; }
+    #liveModal .tf-card .tf-flow-text { font-size: 24px; font-weight: 800; line-height: 1.1; }
 }
