@@ -38,7 +38,7 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-gauge svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .yb3-ring-track { fill: none; stroke: rgba(0,0,0,0.35); stroke-width: 16; stroke-linecap: round; }
 .yb3-ring-fill { fill: none; stroke: var(--yb3-ac); stroke-width: 16; stroke-linecap: round; opacity: 0.6; filter: blur(0.5px) drop-shadow(0 0 6px var(--yb3-ac)); transition: stroke-dasharray 0.9s linear; }
-.yb3-ring-tick { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 2; stroke-dasharray: 2 7; }
+.yb3-ring-tick { fill: none; stroke: rgba(255,255,255,0.65); stroke-width: 3; stroke-dasharray: 3 7; stroke-linecap: round; }
 .yb3-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 0; padding-top: 11px; padding-top: 3.7cqw; z-index: 1; }
 .yb3-center::before { content: ""; position: absolute; inset: 17%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.34), rgba(0,0,0,0)); filter: blur(8px); z-index: -1; }
 .yb3-label { max-width: 118cqw; font-size: 24px; font-size: 8cqw; font-weight: 900; color: #FED7AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
@@ -67,6 +67,10 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-nm, .yb3-tm, .yb3-sn, .yb3-st { text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
 .yb3-node.on .yb3-nm { color: #fff; font-weight: 800; }
 .yb3-node.on .yb3-tm { color: #fff; font-size: 30px; }
+/* 가운데 거점은 +1px */
+.yb3-node:nth-child(2) .yb3-nm { font-size: 18px; }
+.yb3-node:nth-child(2) .yb3-tm { font-size: 25px; }
+.yb3-node:nth-child(2).on .yb3-tm { font-size: 31px; }
 
 /* 현재 · 다음 정류장 (표준시간) */
 .yb3-stops { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 8px; align-items: center; border-top: 1px solid rgba(255,255,255,0.22); padding-top: 10px; }
@@ -102,6 +106,8 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     html.lv2 .yb3-nm { text-align: left; flex: 1; }
     html.lv2 .yb3-tm { font-size: 24px; }
     html.lv2 .yb3-node.on .yb3-tm { font-size: 28px; }
+    html.lv2 .yb3-node:nth-child(2) .yb3-tm { font-size: 25px; }
+    html.lv2 .yb3-node:nth-child(2).on .yb3-tm { font-size: 29px; }
     html.lv2 .yb3-st { font-size: 28px; }
     html.lv2 .yb3-label { max-width: 100cqw; }
     html.lv2 .yb3-pill { padding: 6px 10px; }
