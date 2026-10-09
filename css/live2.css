@@ -7,9 +7,11 @@
    ================================================================ */
 #yb3 { display: none; }
 
-.ios-widget-modal.yb3-ok   { --yb3-bg: linear-gradient(180deg,#064E3B 0%,#022C22 100%); --yb3-solid: #043d2f; --yb3-ac: #6EE7B7; }
-.ios-widget-modal.yb3-late { --yb3-bg: linear-gradient(180deg,#78350F 0%,#451A03 100%); --yb3-solid: #5e2909; --yb3-ac: #FCD34D; }
-.ios-widget-modal.yb3-vlate{ --yb3-bg: linear-gradient(180deg,#881337 0%,#4C0519 100%); --yb3-solid: #6a0e2b; --yb3-ac: #FDA4AF; }
+/* 배경은 항상 같은 초록. 오차에 따라 바뀌는 건 원(시간 경과)과 오차 숫자 색뿐 */
+.ios-widget-modal { --yb3-bg: linear-gradient(180deg,#064E3B 0%,#022C22 100%); --yb3-solid: #043d2f; --yb3-ac: #6EE7B7; }
+.ios-widget-modal.yb3-ok   { --yb3-ac: #6EE7B7; }
+.ios-widget-modal.yb3-late { --yb3-ac: #FCD34D; }
+.ios-widget-modal.yb3-vlate{ --yb3-ac: #FDA4AF; }
 
 html.lv2 #liveGroupTop,
 html.lv2 #liveModal .ios-seq-card-wrapper,
@@ -18,7 +20,7 @@ html.lv2 #liveGroupStop { display: none !important; }
 html.lv2 #liveModal .live-modal-content.ios-widget-modal {
     background: var(--yb3-bg, linear-gradient(180deg,#064E3B 0%,#022C22 100%)) !important;
     color: #fff; border: 0 !important; gap: 10px !important;
-    transition: background 0.4s ease;
+    
 }
 
 html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: 'GmarketNum','SeoulNotice',sans-serif; color: #fff; }
