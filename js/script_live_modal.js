@@ -535,6 +535,9 @@
 
             // 현재 시각 기준 타겟 회차 자동 선택
             let nextStop = stopsSequence.find(s => s.timeDate > now) || stopsSequence[stopsSequence.length - 1];
+            // 🔄 오늘 내 근무 전체 거점(출발·기점·도착 …)과 '다음 거점' 위치를 새 라이브 화면(script_live2.js)에 넘김: 가운데=다음 거점, 왼쪽으로 밀리는 방식
+            window.todayStopSeq = stopsSequence.map(s => ({ key: s.tripIdx + '-' + s.stopIdx, name: s.stopName, time: String(s.timeStr).length >= 8 ? String(s.timeStr).substring(0, 5) : String(s.timeStr), color: s.color }));
+            window.todayStopNext = nextStop ? stopsSequence.indexOf(nextStop) : -1;
             let targetTripIdx = nextStop ? nextStop.tripIdx : (myStartTripIdx + 1);
             window.currentTripRoundNumber = targetTripIdx;
 
@@ -652,6 +655,8 @@
             if (window.standardMasterCache && window.standardMasterCache.length > 0 && typeof updateTrafficStopFromMaster === 'function') {
                 updateTrafficStopFromMaster(window.standardMasterCache);
             }
+
+            if (typeof window.ybLv2Refresh === 'function') window.ybLv2Refresh();
 
             console.log(`🎯 [회차 ${targetTripIdx}] 시퀀스 동기화 완료 (유효 거점: ${validStops.length}개)`);
 

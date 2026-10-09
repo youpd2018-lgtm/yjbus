@@ -52,18 +52,40 @@
     fill.setAttribute('stroke-dasharray', (f * RING_LEN).toFixed(1) + ' 1000');
   }
 
+  var lastSeqKey = '';
   function syncSeq() {
+    var seq = $('yb3Seq');
+    var list = window.todayStopSeq, ni = window.todayStopNext;
+    if (list && list.length && typeof ni === 'number' && ni >= 0) {
+      // 오늘 내 근무 전체를 쭉 이어서: 가운데 = 다음 거점, 왼쪽 = 방금 지난 거점, 오른쪽 = 그 다음 거점 (거점을 지나면 왼쪽으로 한 칸 밀림)
+      var pick = [list[ni - 1], list[ni], list[ni + 1]];
+      for (var k = 0; k < 3; k++) {
+        var node = $('yb3N' + (k + 1)); if (!node) continue;
+        var it = pick[k];
+        setText(node.children[0], it ? it.name : '');
+        setText(node.children[1], it ? it.time : '');
+        node.style.visibility = it ? '' : 'hidden';
+        node.classList.toggle('on', k === 1);
+      }
+      if (seq) {
+        seq.setAttribute('data-a', '2');
+        var key = list[ni].key;
+        if (lastSeqKey && lastSeqKey !== key) { seq.classList.remove('yb3-slide'); void seq.offsetWidth; seq.classList.add('yb3-slide'); }
+        lastSeqKey = key;
+      }
+      return;
+    }
     var active = 0;
     for (var i = 1; i <= 3; i++) {
-      var node = $('yb3N' + i); if (!node) continue;
-      setText(node.children[0], txt('seqPoint' + i + 'Loc'));
-      setText(node.children[1], txt('seqPoint' + i + 'Time'));
+      var node2 = $('yb3N' + i); if (!node2) continue;
+      node2.style.visibility = '';
+      setText(node2.children[0], txt('seqPoint' + i + 'Loc'));
+      setText(node2.children[1], txt('seqPoint' + i + 'Time'));
       var box = $('seqBoxContainer' + i);
       var on = !!(box && box.classList.contains('active-target'));
-      node.classList.toggle('on', on);
+      node2.classList.toggle('on', on);
       if (on && !active) active = i;
     }
-    var seq = $('yb3Seq');
     if (seq) seq.setAttribute('data-a', String(active || 1));
   }
 

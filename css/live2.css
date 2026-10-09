@@ -122,3 +122,8 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     html.lv2 #liveModal .live-map-btn iconify-icon { display: none; }
     html.lv2 #liveModal .ios-footer .ios-close-btn { order: 2; flex: none; height: 48px !important; width: 100% !important; }
 }
+
+/* 거점 3칸이 왼쪽으로 밀리며 바뀌는 효과 (다음 거점이 바뀔 때) */
+@keyframes yb3Slide { from { transform: translateX(32%); opacity: .25; } to { transform: translateX(0); opacity: 1; } }
+.yb3-seq.yb3-slide .yb3-node { animation: yb3Slide .55s ease-out; }
+@media (prefers-reduced-motion: reduce) { .yb3-seq.yb3-slide .yb3-node { animation: none; } }
