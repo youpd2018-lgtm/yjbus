@@ -103,9 +103,5 @@ html.ui3:not(.senior) #yb2Btns .yb2-btn.on { background: rgba(255,255,255,0.9); 
 /* 근무 없는 날(휴무·미등록 등): 버스 안 큰 글자는 비워 둠 — 안내는 아래 카운트 박스에서 */
 #yb4Bus.off .yb4-txt { display: none; }
 
-/* ✨ 로고 뒤에서 은은하게 깜빡이는 금빛 */
-.yb4-glow { opacity: 0.2; animation: yb4Twinkle 3s ease-in-out infinite; }
-.yb4-logo { animation: yb4LogoPulse 3s ease-in-out infinite; }
-@keyframes yb4Twinkle { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.95; } }
-@keyframes yb4LogoPulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .yb4-glow, .yb4-logo { animation: none; } .yb4-glow { opacity: 0.5; } }
+/* 로고: 볼록하게 솟은 느낌(그림자 + 윗면 하이라이트) */
+.yb4-logo { filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,0.55)); }
