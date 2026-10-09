@@ -104,4 +104,4 @@ html.ui3:not(.senior) #yb2Btns .yb2-btn.on { background: rgba(255,255,255,0.9); 
 #yb4Bus.off .yb4-txt { display: none; }
 
 /* 로고: 볼록하게 솟은 느낌(그림자 + 윗면 하이라이트) */
-.yb4-logo { filter: drop-shadow(0 2.5px 2px rgba(0,0,0,0.65)); }
+.yb4-logo { filter: none; }
