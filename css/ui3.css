@@ -48,7 +48,7 @@ html.ui3:not(.senior) .yb2-tab.on { background: rgba(255,255,255,0.22); color: #
 html.ui3:not(.senior) .yb2-tab-x { display: none; }
 
 /* ---------- 버스 ---------- */
-#yb4Bus { position: relative; width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 362 / 328; container-type: inline-size; }
+#yb4Bus { position: relative; width: 100%; max-width: 344px; margin: 0 auto; aspect-ratio: 362 / 328; container-type: inline-size; }
 #yb4Bus svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #yb4Arc { transition: stroke-dasharray .6s ease; }
 .yb4-txt { position: absolute; left: 13.81%; top: 7.3%; width: 72.38%; height: 46.95%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
@@ -57,10 +57,10 @@ html.ui3:not(.senior) .yb2-tab-x { display: none; }
 .yb4-fleet { color: #fff; }
 .yb4-seq { color: #FED7AA; }
 .yb4-offmsg { display: none; text-align: center; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
-.yb4-plate { position: absolute; left: 29.83%; top: 83.54%; width: 40.33%; height: 12.2%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
+.yb4-plate { position: absolute; left: 29.83%; top: 75%; width: 40.33%; height: 12.2%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
 .yb4-hit { position: absolute; top: 52.44%; width: 23.2%; height: 25.6%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.yb4-hl { left: 9.39%; }
-.yb4-hr { left: 67.4%; }
+.yb4-hl { left: 13.26%; }
+.yb4-hr { left: 63.5%; }
 .yb4-eye { filter: drop-shadow(0 0 7px rgba(255,255,255,0.35)); transition: fill .2s; }
 .yb4-lamp { position: absolute; left: 50%; top: 65.2%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 28px; background: #04382c; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 3; }
 .yb4-lamp[hidden] { display: none; }
