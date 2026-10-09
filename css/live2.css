@@ -82,9 +82,9 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-sn { max-width: 100%; font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* 아래 버튼 (기존 닫기·노선지도·좌우반전 버튼을 그대로 재사용) */
-html.lv2 #liveModal .ios-footer { margin-top: auto !important; padding: 8px 0 0 !important; flex-direction: column !important; align-items: stretch; gap: 12px !important; width: 100%; padding-bottom: 6px !important; }
-html.lv2 #liveModal .live-map-btn, html.lv2 #liveModal .ios-footer .ios-close-btn { flex: none; width: 100% !important; min-width: 0 !important; height: 52px !important; border-radius: 26px !important; font-size: 17px !important; font-weight: 900 !important; padding: 0 !important; }
-html.lv2 #liveModal .live-map-btn, html.lv2 #liveModal .ios-footer .ios-close-btn { margin: 0 !important; align-self: stretch; box-sizing: border-box !important; display: flex !important; align-items: center; justify-content: center; }
+html.lv2 #liveModal .ios-footer { margin-top: auto !important; padding: 8px 0 0 !important; flex-direction: column !important; align-items: center; gap: 26px !important; width: 100%; padding-bottom: 8px !important; }
+html.lv2 #liveModal .live-map-btn, html.lv2 #liveModal .ios-footer .ios-close-btn { flex: none; width: 62% !important; min-width: 0 !important; height: 52px !important; border-radius: 26px !important; font-size: 17px !important; font-weight: 900 !important; padding: 0 !important; }
+html.lv2 #liveModal .live-map-btn, html.lv2 #liveModal .ios-footer .ios-close-btn { margin: 0 !important; align-self: center; box-sizing: border-box !important; display: flex !important; align-items: center; justify-content: center; }
 html.lv2 #liveModal .ios-footer .ios-close-btn { order: 1; }
 html.lv2 #liveModal .live-map-btn { order: 2; background: transparent; border: 2px solid rgba(255,255,255,0.85); color: #fff; }
 html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.18) !important; color: #fff !important; border: 0 !important; }
