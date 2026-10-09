@@ -99,3 +99,6 @@ html.ui3:not(.senior) #yb2Btns .yb2-btn.on { background: rgba(255,255,255,0.9); 
 
 /* 📌 우리 규칙: 교대 시간은 항상 노란 글자로 표시 */
 .yb4-st.hand .yb4-sl, .yb4-st.hand .yb4-sv { color: #FDE047; }
+
+/* 근무 없는 날(휴무·미등록 등): 버스 안 큰 글자는 비워 둠 — 안내는 아래 카운트 박스에서 */
+#yb4Bus.off .yb4-txt { display: none; }
