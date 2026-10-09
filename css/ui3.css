@@ -52,8 +52,8 @@ html.ui3:not(.senior) .yb2-tab-x { display: none; }
 #yb4Bus svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #yb4Arc { transition: stroke-dasharray .6s ease; }
 .yb4-txt { position: absolute; left: 13.81%; top: 7.3%; width: 72.38%; height: 46.95%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
-.yb4-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 92px; font-size: 26.7cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
-.yb4-fs { display: flex; justify-content: center; width: 100%; text-align: center; align-items: baseline; gap: 12px; margin-top: 4px; font-size: 30px; font-size: 8.6cqw; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
+.yb4-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 87px; font-size: 25.3cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
+.yb4-fs { display: flex; justify-content: center; width: 100%; text-align: center; align-items: baseline; gap: 8px; margin-top: 4px; font-size: 33px; font-size: 9.5cqw; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
 .yb4-fleet { color: #fff; }
 .yb4-seq { color: #FED7AA; }
 .yb4-offmsg { display: none; text-align: center; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
