@@ -20,44 +20,46 @@
 
     // ---- 노선·순번·대수·차량번호 ----
     function renderBus() {
-        var bus = $('yb3Bus');
+        var bus = $('yb4Bus');
         if (!bus) return;
         var route = txt('yb2Route');
         var working = route !== '' && route !== '-';
         bus.classList.toggle('off', !working);
         if (working) {
-            setTxt('yb3Route', route);
+            setTxt('yb4Route', route);
         } else {
             // 휴무·미등록 등: 시간 카운트 칸에서 쓰는 안내 글자를 크게 보여 줌
             var msg = txt('yb2CdV');
             if (!msg || /^\d\d:\d\d/.test(msg)) msg = '휴무';
-            setTxt('yb3Route', msg);
+            setTxt('yb4Route', msg);
             bus.classList.toggle('noreset', msg !== '휴무');
         }
         // 평일 16대 / 6순번
         var sub = txt('yb2Sub'), seq = txt('yb2Seq'), lbl = txt('yb2SeqLbl');
-        setTxt('yb3Fleet', sub);
-        setTxt('yb3Seq', seq && seq !== '-' ? seq + (lbl || '순번') : '');
+        setTxt('yb4Fleet', sub);
+        setTxt('yb4Seq', seq && seq !== '-' ? seq + (lbl || '순번') : '');
         // 차량번호: 뒤 네 자리만
         var no = txt('yb2BusNo').replace(/[^\d]/g, '');
-        setTxt('yb3Plate', no ? no.slice(-4) : '');
+        setTxt('yb4Plate', no ? no.slice(-4) : '');
         renderEyes();
         renderArc();
     }
 
     // ---- 시작 / 종료 / 교대 ----
     function renderTimes() {
-        setTxt('yb3Start', txt('yb2Start'));
-        setTxt('yb3End', txt('yb2End'));
-        setTxt('yb3Hand', txt('yb2Hand'));
+        setTxt('yb4Start', txt('yb2Start'));
+        setTxt('yb4End', txt('yb2End'));
+        setTxt('yb4Hand', txt('yb2Hand'));
         renderArc();
     }
 
     // ---- 시간 카운트 (두 줄) ----
     function renderCd() {
-        var L = $('yb2CdL'), V = $('yb2CdV'), l = $('yb3CdL'), v = $('yb3CdV');
+        var L = $('yb2CdL'), V = $('yb2CdV'), l = $('yb4CdL'), v = $('yb4CdV');
         if (!L || !V || !l || !v) return;
-        if (l.innerHTML !== L.innerHTML) l.innerHTML = L.innerHTML;
+        var lh = L.innerHTML;
+        if (lh.indexOf('LIVE') >= 0) lh = '여기를 터치하면 라이브 모드로 들어갑니다';   // 운행중 안내 문구
+        if (l.innerHTML !== lh) l.innerHTML = lh;
         if (v.textContent !== V.textContent) v.textContent = V.textContent;
         if (v.style.color !== V.style.color) v.style.color = V.style.color;
         renderBus();   // 휴무 글자 따라가기
@@ -66,7 +68,7 @@
     // ---- 하루 진행선: 오늘은 시작~종료 사이 지금 위치, 지난 날은 한 바퀴, 앞날은 0 ----
     function toMin(s) { var m = /(\d{1,2}):(\d\d)/.exec(s || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
     function renderArc() {
-        var arc = $('yb3Arc'), bus = $('yb3Bus');
+        var arc = $('yb4Arc'), bus = $('yb4Bus');
         if (!arc || !bus) return;
         var frac = 0;
         if (!bus.classList.contains('off')) {
@@ -91,12 +93,12 @@
 
     // ---- 날짜 줄: 오늘이면 html 에 표시, 날짜 입력칸 맞추기 ----
     function renderDateBits() {
-        html.classList.toggle('yb3-today', txt('yb2DateRel') === '오늘');
-        var s = $('searchDate'), i = $('yb3DateIn');
+        html.classList.toggle('yb4-today', txt('yb2DateRel') === '오늘');
+        var s = $('searchDate'), i = $('yb4DateIn');
         if (s && i && i.value !== s.value) i.value = s.value;
         renderArc();
     }
-    window.yb3GoToday = function () {
+    window.yb4GoToday = function () {
         var s = $('searchDate');
         if (!s) return;
         var t = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
@@ -106,28 +108,28 @@
 
     // ---- 헤드라이트(눈) = 난이도 색 ----
     function renderEyes() {
-        var api = window.ybDiffApi, bus = $('yb3Bus');
+        var api = window.ybDiffApi, bus = $('yb4Bus');
         if (!bus) return;
         var c = api && api.color ? api.color() : '';
         var def = (api && api.colors && api.colors[c]) || null;
         var fill = def ? def.bg : 'rgba(255,255,255,0.92)';
         var ring = def ? def.ring : '#FFFFFF';
         var glow = def ? def.glow : 'rgba(255,255,255,0.35)';
-        var eyes = bus.querySelectorAll('.yb3-eye');
+        var eyes = bus.querySelectorAll('.yb4-eye');
         for (var i = 0; i < eyes.length; i++) {
             eyes[i].setAttribute('fill', fill);
             eyes[i].setAttribute('stroke', ring);
             eyes[i].style.filter = 'drop-shadow(0 0 7px ' + glow + ')';
         }
-        var btns = document.querySelectorAll('#yb3Lamp button');
+        var btns = document.querySelectorAll('#yb4Lamp button');
         for (var j = 0; j < btns.length; j++) {
             var k = btns[j].getAttribute('data-c'), cd = api && api.colors ? api.colors[k] : null;
             if (cd) { btns[j].style.background = cd.bg; btns[j].style.boxShadow = '0 0 8px ' + cd.glow; }
             btns[j].classList.toggle('sel', k === c);
         }
     }
-    function lampBox() { return $('yb3Lamp'); }
-    window.yb3Lamp = function () {
+    function lampBox() { return $('yb4Lamp'); }
+    window.yb4Lamp = function () {
         var api = window.ybDiffApi, box = lampBox();
         if (!box || !api || !api.hasKey()) return;   // 노선·순번이 정해진 날에만
         box.hidden = !box.hidden;
@@ -146,14 +148,14 @@
         });
         document.addEventListener('click', function (ev) {
             if (box.hidden) return;
-            if (ev.target.closest && (ev.target.closest('#yb3Lamp') || ev.target.closest('.yb3-hit'))) return;
+            if (ev.target.closest && (ev.target.closest('#yb4Lamp') || ev.target.closest('.yb4-hit'))) return;
             box.hidden = true;
         });
         document.addEventListener('yb-diff-change', renderEyes);
     }
 
     function initDateInput() {
-        var i = $('yb3DateIn');
+        var i = $('yb4DateIn');
         if (!i) return;
         i.addEventListener('change', function () {
             var s = $('searchDate');
@@ -164,7 +166,7 @@
     }
 
     function init() {
-        if (!$('yb3Bus')) return;
+        if (!$('yb4Bus')) return;
         ['yb2Route', 'yb2Seq', 'yb2SeqLbl', 'yb2Sub', 'yb2BusNo'].forEach(function (id) { watch(id, renderBus); });
         ['yb2Start', 'yb2End', 'yb2Hand'].forEach(function (id) { watch(id, renderTimes); });
         watch('yb2CdL', renderCd); watch('yb2CdV', renderCd, ['style']);

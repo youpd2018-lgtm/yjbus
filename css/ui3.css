@@ -3,14 +3,14 @@
    - html.ui3 이고 노안모드(html.senior)가 아닐 때만 적용. 되돌리기: 주소 끝 ?ui3=0
    - 기존 박스(.yb2-box)는 숨겨 두고 값만 따라 적는다(노안모드는 그 박스를 그대로 사용)
    ================================================================ */
-#yb3Drive { display: none; }
-#yb3TodayBtn, .yb3-datein { display: none; }
+#yb4Drive { display: none; }
+#yb4TodayBtn, .yb4-datein { display: none; }
 
 /* 초록 배경: 운행정보 페이지가 켜져 있을 때만 */
 html.ui3:not(.senior) body:has(#mainPage.active) { background: linear-gradient(180deg, #064E3B 0%, #022C22 100%) fixed; }
 html.ui3:not(.senior) body:has(#mainPage.active) .container { background: transparent; }
 
-html.ui3:not(.senior) #yb3Drive { display: flex; flex-direction: column; gap: 10px; font-family: 'GmarketNum','SeoulNotice',sans-serif; color: #E6F1FF; }
+html.ui3:not(.senior) #yb4Drive { display: flex; flex-direction: column; gap: 10px; font-family: 'GmarketNum','SeoulNotice',sans-serif; color: #E6F1FF; }
 html.ui3:not(.senior) .yb2-box,
 html.ui3:not(.senior) .yb2-btns { display: none !important; }
 
@@ -22,8 +22,8 @@ html.ui3:not(.senior) .yb2-arrow {
     color: #fff; font-size: 26px; font-weight: 900;
 }
 html.ui3:not(.senior) .yb2-arrow:active { transform: none; background: rgba(255,255,255,0.18); }
-html.ui3:not(.senior) .yb3-prev { border-radius: 25px 0 0 25px; border-right: 0; margin-right: -8px; }
-html.ui3:not(.senior) .yb3-next { border-radius: 0 25px 25px 0; border-left: 0; margin-left: -8px; }
+html.ui3:not(.senior) .yb4-prev { border-radius: 25px 0 0 25px; border-right: 0; margin-right: -8px; }
+html.ui3:not(.senior) .yb4-next { border-radius: 0 25px 25px 0; border-left: 0; margin-left: -8px; }
 html.ui3:not(.senior) .yb2-date-mid {
     position: relative; height: 50px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px;
     background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,255,255,0.45); border-left-color: rgba(255,255,255,0.2); border-right-color: rgba(255,255,255,0.2);
@@ -33,13 +33,13 @@ html.ui3:not(.senior) .yb2-date-main { line-height: 1.15; }
 html.ui3:not(.senior) .yb2-md { font-size: 19px; font-weight: 900; color: #fff; }
 html.ui3:not(.senior) .yb2-dow { font-size: 19px; font-weight: 900; color: #fff; margin-left: 2px; }
 html.ui3:not(.senior) .yb2-rel { font-size: 15px; font-weight: 900; line-height: 1.1; min-height: 0; margin-top: 0; white-space: nowrap; color: rgba(255,255,255,0.6); }
-html.ui3.yb3-today:not(.senior) .yb2-rel { color: #6EE7B7; }
-html.ui3:not(.senior) .yb3-datein { display: block; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; }
-html.ui3:not(.senior) .yb3-todaybtn {
+html.ui3.yb4-today:not(.senior) .yb2-rel { color: #6EE7B7; }
+html.ui3:not(.senior) .yb4-datein { display: block; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; }
+html.ui3:not(.senior) .yb4-todaybtn {
     display: flex; flex: none; align-items: center; height: 34px; padding: 0 14px; border: 0; border-radius: 17px;
     background: #6EE7B7; color: #022C22; font-family: inherit; font-size: 15px; font-weight: 900; cursor: pointer;
 }
-html.ui3.yb3-today:not(.senior) .yb3-todaybtn { display: none; }
+html.ui3.yb4-today:not(.senior) .yb4-todaybtn { display: none; }
 
 /* ---------- 페이지 탭 ---------- */
 html.ui3:not(.senior) .yb2-tabs { border: 0; margin: 0 0 10px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: 22px; }
@@ -48,43 +48,43 @@ html.ui3:not(.senior) .yb2-tab.on { background: rgba(255,255,255,0.22); color: #
 html.ui3:not(.senior) .yb2-tab-x { display: none; }
 
 /* ---------- 버스 ---------- */
-#yb3Bus { position: relative; width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 362 / 352; container-type: inline-size; }
-#yb3Bus svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-#yb3Arc { transition: stroke-dasharray .6s ease; }
-.yb3-txt { position: absolute; left: 13.81%; top: 6.8%; width: 72.38%; height: 50.57%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
-.yb3-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 112px; font-size: 30.9cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
-.yb3-fs { display: flex; align-items: baseline; gap: 12px; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
-.yb3-fleet { color: #fff; }
-.yb3-seq { color: #FED7AA; }
-.yb3-offmsg { display: none; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
-.yb3-plate { position: absolute; left: 29.83%; top: 84.66%; width: 40.33%; height: 11.36%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
-.yb3-hit { position: absolute; top: 55.68%; width: 23.2%; height: 23.86%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.yb3-hl { left: 9.39%; }
-.yb3-hr { left: 67.4%; }
-.yb3-eye { filter: drop-shadow(0 0 7px rgba(255,255,255,0.35)); transition: fill .2s; }
-.yb3-lamp { position: absolute; left: 50%; top: 67.6%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 28px; background: #04382c; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 3; }
-.yb3-lamp[hidden] { display: none; }
-.yb3-lamp button { width: 38px; height: 38px; border-radius: 50%; padding: 0; cursor: pointer; border: 3px solid transparent; }
-.yb3-lamp button.sel { border-color: #fff; }
+#yb4Bus { position: relative; width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 362 / 352; container-type: inline-size; }
+#yb4Bus svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#yb4Arc { transition: stroke-dasharray .6s ease; }
+.yb4-txt { position: absolute; left: 13.81%; top: 6.8%; width: 72.38%; height: 50.57%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
+.yb4-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 108px; font-size: 29.8cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
+.yb4-fs { display: flex; justify-content: center; width: 100%; text-align: center; align-items: baseline; gap: 12px; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
+.yb4-fleet { color: #fff; }
+.yb4-seq { color: #FED7AA; }
+.yb4-offmsg { display: none; text-align: center; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
+.yb4-plate { position: absolute; left: 29.83%; top: 84.66%; width: 40.33%; height: 11.36%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
+.yb4-hit { position: absolute; top: 55.68%; width: 23.2%; height: 23.86%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.yb4-hl { left: 9.39%; }
+.yb4-hr { left: 67.4%; }
+.yb4-eye { filter: drop-shadow(0 0 7px rgba(255,255,255,0.35)); transition: fill .2s; }
+.yb4-lamp { position: absolute; left: 50%; top: 67.6%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 28px; background: #04382c; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 3; }
+.yb4-lamp[hidden] { display: none; }
+.yb4-lamp button { width: 38px; height: 38px; border-radius: 50%; padding: 0; cursor: pointer; border: 3px solid transparent; }
+.yb4-lamp button.sel { border-color: #fff; }
 
 /* 휴무·미등록·운행종료 등 (근무 없음) */
-#yb3Bus.off .yb3-wk { display: none; }
-#yb3Bus.off .yb3-route { font-size: 58px; font-size: 26cqw; letter-spacing: -1px; }
-#yb3Bus.off .yb3-offmsg { display: block; }
-#yb3Bus.off.noreset .yb3-offmsg { display: none; }
+#yb4Bus.off .yb4-wk { display: none; }
+#yb4Bus.off .yb4-route { font-size: 58px; font-size: 26cqw; letter-spacing: -1px; }
+#yb4Bus.off .yb4-offmsg { display: block; }
+#yb4Bus.off.noreset .yb4-offmsg { display: none; }
 
 /* ---------- 시작 / 종료 / 교대 ---------- */
-.yb3-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; border-top: 1px solid rgba(255,255,255,0.22); border-bottom: 1px solid rgba(255,255,255,0.22); padding: 8px 0; }
-.yb3-st { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.yb3-st.mid { border-left: 1px solid rgba(255,255,255,0.18); border-right: 1px solid rgba(255,255,255,0.18); }
-.yb3-sl { font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.75); }
-.yb3-sv { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 30px; font-weight: 700; color: #fff; }
+.yb4-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; border-top: 1px solid rgba(255,255,255,0.22); border-bottom: 1px solid rgba(255,255,255,0.22); padding: 8px 0; }
+.yb4-st { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.yb4-st.mid { border-left: 1px solid rgba(255,255,255,0.18); border-right: 1px solid rgba(255,255,255,0.18); }
+.yb4-sl { font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.75); }
+.yb4-sv { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 30px; font-weight: 700; color: #fff; }
 
 /* ---------- 시간 카운트 박스 (두 줄) ---------- */
-.yb3-cd { flex: none; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 100px; padding: 6px; border-radius: 26px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(110,231,183,0.4); color: inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.yb3-cdl { font-size: 19px; font-weight: 800; color: #FED7AA; min-height: 22px; line-height: 22px; white-space: nowrap; }
-.yb3-cdl b { color: #fca5a5; font-weight: 900; }
-.yb3-cdv { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 46px; font-weight: 700; line-height: 1.05; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 2px 14px rgba(0,0,0,0.4); white-space: nowrap; }
+.yb4-cd { flex: none; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 100px; padding: 6px; border-radius: 26px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(110,231,183,0.4); color: inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.yb4-cdl { font-size: 19px; font-weight: 800; color: #FED7AA; min-height: 22px; line-height: 22px; white-space: nowrap; }
+.yb4-cdl b { color: #fca5a5; font-weight: 900; }
+.yb4-cdv { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 46px; font-weight: 700; line-height: 1.05; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 2px 14px rgba(0,0,0,0.4); white-space: nowrap; }
 
 /* ---------- 시간표 페이지 아래 메뉴 (노선정보 / 교대정보 / 메모) ---------- */
 html.ui3:not(.senior).ui2-table #yb2Btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 8px; }
@@ -93,3 +93,6 @@ html.ui3:not(.senior) #yb2Btns .yb2-btn {
     color: #fff; font-family: inherit; font-size: 17px; font-weight: 900; box-shadow: none; padding: 0;
 }
 html.ui3:not(.senior) #yb2Btns .yb2-btn.on { background: rgba(255,255,255,0.9); color: #022C22; }
+
+/* 평일 몇 대 / 몇 순번 글자를 가운데로 (다른 규칙이 칸을 늘리지 못하게) */
+.yb4-fs > span { flex: 0 0 auto !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
