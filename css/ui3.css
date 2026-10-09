@@ -48,21 +48,21 @@ html.ui3:not(.senior) .yb2-tab.on { background: rgba(255,255,255,0.22); color: #
 html.ui3:not(.senior) .yb2-tab-x { display: none; }
 
 /* ---------- 버스 ---------- */
-#yb4Bus { position: relative; width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 362 / 352; container-type: inline-size; }
+#yb4Bus { position: relative; width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 362 / 328; container-type: inline-size; }
 #yb4Bus svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 #yb4Arc { transition: stroke-dasharray .6s ease; }
-.yb4-txt { position: absolute; left: 13.81%; top: 6.8%; width: 72.38%; height: 50.57%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
-.yb4-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 108px; font-size: 29.8cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
+.yb4-txt { position: absolute; left: 13.81%; top: 7.3%; width: 72.38%; height: 46.95%; display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: nowrap; }
+.yb4-route { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 102px; font-size: 28.2cqw; font-weight: 700; line-height: 1.02; letter-spacing: -3px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.28); }
 .yb4-fs { display: flex; justify-content: center; width: 100%; text-align: center; align-items: baseline; gap: 12px; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
 .yb4-fleet { color: #fff; }
 .yb4-seq { color: #FED7AA; }
 .yb4-offmsg { display: none; text-align: center; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
-.yb4-plate { position: absolute; left: 29.83%; top: 84.66%; width: 40.33%; height: 11.36%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
-.yb4-hit { position: absolute; top: 55.68%; width: 23.2%; height: 23.86%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.yb4-plate { position: absolute; left: 29.83%; top: 83.54%; width: 40.33%; height: 12.2%; display: flex; align-items: center; justify-content: center; font-size: 23px; font-size: 6.35cqw; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 1px; }
+.yb4-hit { position: absolute; top: 52.44%; width: 23.2%; height: 25.6%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .yb4-hl { left: 9.39%; }
 .yb4-hr { left: 67.4%; }
 .yb4-eye { filter: drop-shadow(0 0 7px rgba(255,255,255,0.35)); transition: fill .2s; }
-.yb4-lamp { position: absolute; left: 50%; top: 67.6%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 28px; background: #04382c; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 3; }
+.yb4-lamp { position: absolute; left: 50%; top: 65.2%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 28px; background: #04382c; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 3; }
 .yb4-lamp[hidden] { display: none; }
 .yb4-lamp button { width: 38px; height: 38px; border-radius: 50%; padding: 0; cursor: pointer; border: 3px solid transparent; }
 .yb4-lamp button.sel { border-color: #fff; }
@@ -96,3 +96,6 @@ html.ui3:not(.senior) #yb2Btns .yb2-btn.on { background: rgba(255,255,255,0.9); 
 
 /* 평일 몇 대 / 몇 순번 글자를 가운데로 (다른 규칙이 칸을 늘리지 못하게) */
 .yb4-fs > span { flex: 0 0 auto !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
+
+/* 📌 우리 규칙: 교대 시간은 항상 노란 글자로 표시 */
+.yb4-st.hand .yb4-sl, .yb4-st.hand .yb4-sv { color: #FDE047; }
