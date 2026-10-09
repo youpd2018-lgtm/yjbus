@@ -175,6 +175,9 @@
         if (inp) inp.addEventListener('change', renderDateBits);
         var dd = $('dateDisplayText');
         if (dd && window.MutationObserver) new MutationObserver(renderDateBits).observe(dd, { childList: true, characterData: true, subtree: true });
+        // 예전 버전의 번호판 흰 테두리 사각형이 남아 있으면 지움 (번호판 박스는 이제 글자와 한 몸)
+        var oldBox = document.querySelector('#yb4Bus svg rect[x="108"]');
+        if (oldBox && oldBox.parentNode) oldBox.parentNode.removeChild(oldBox);
         initLamp();
         initDateInput();
         renderBus(); renderTimes(); renderCd(); renderDateBits();
