@@ -57,7 +57,7 @@ html.ui3:not(.senior) .yb2-tab-x { display: none; }
 .yb4-fleet { color: #fff; }
 .yb4-seq { color: #FED7AA; }
 .yb4-offmsg { display: none; text-align: center; margin-top: 4px; font-size: 28px; font-size: 7.73cqw; font-weight: 900; color: #FED7AA; }
-.yb4-plate { position: absolute; left: 28.5%; top: 81.1%; transform: translateY(-50%); width: 43%; height: 38px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 23px; font-weight: 900; line-height: 1; color: #fff; white-space: nowrap; letter-spacing: 1.5px; background: linear-gradient(180deg, #05473a 0%, #04382c 100%); border: 2.5px solid rgba(255,255,255,0.8); border-radius: 10px 10px 22px 22px / 8px 8px 20px 20px; box-shadow: inset 0 -3px 6px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3); }
+.yb4-plate { position: absolute; left: 33.5%; top: 81.1%; transform: translateY(-50%); width: 33%; height: 38px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 23px; font-weight: 900; line-height: 1; color: #fff; -webkit-text-stroke: 0.8px #fff; white-space: nowrap; letter-spacing: 1.5px; background: linear-gradient(180deg, #05473a 0%, #04382c 100%); border: 2.5px solid rgba(255,255,255,0.8); border-radius: 10px 10px 22px 22px / 8px 8px 20px 20px; box-shadow: inset 0 -3px 6px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3); }
 .yb4-hit { position: absolute; top: 52.44%; width: 23.2%; height: 25.6%; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .yb4-hl { left: 13.26%; }
 .yb4-hr { left: 63.5%; }
