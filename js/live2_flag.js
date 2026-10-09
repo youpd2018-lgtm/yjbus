@@ -2,7 +2,7 @@
 // ▶ 모든 기사에게 켜려면 아래 DEFAULT_ON 을 true 로 바꾸고 push 하면 끝.
 // ▶ 내 폰에서만 시험: 주소 끝에 ?lv2=1  /  끄기: ?lv2=0  /  기본값 따르기: ?lv2=reset
 (function () {
-  var DEFAULT_ON = false;
+  var DEFAULT_ON = true;
   var on = DEFAULT_ON;
   try {
     var q = new URLSearchParams(location.search).get('lv2');

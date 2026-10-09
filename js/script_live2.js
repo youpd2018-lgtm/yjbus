@@ -25,9 +25,7 @@
     var label = txt('liveCardStatus');
     setText($('yb3Label'), label);
     var tl = txt('liveCardTimeLeft');
-    var shown = tl;
-    if (/^00:\d{2}:\d{2}$/.test(tl)) shown = tl.slice(3); // 1시간 안이면 분:초만
-    setText($('yb3Time'), shown || '-');
+    setText($('yb3Time'), tl || '-'); // 시:분:초 전체 표시
 
     // 오차: 숫자만
     var d = txt('bisDelayBadge');
@@ -69,10 +67,24 @@
     if (seq) seq.setAttribute('data-a', String(active || 1));
   }
 
+  // 표준시간: 시:분은 크게, 초는 작게
+  function setHms(el, v) {
+    if (!el) return;
+    v = v || '--:--:--';
+    var key = el.getAttribute('data-v');
+    if (key === v) return;
+    el.setAttribute('data-v', v);
+    var m = /^(\d{1,2}:\d{2})(:\d{2})$/.exec(v);
+    el.textContent = '';
+    if (!m) { el.textContent = v; return; }
+    el.appendChild(document.createTextNode(m[1]));
+    var sm = document.createElement('small'); sm.textContent = m[2]; el.appendChild(sm);
+  }
+
   function syncStops() {
-    setText($('yb3StCur'), txt('trafficStopTimeNext') || '--:--:--');
+    setHms($('yb3StCur'), txt('trafficStopTimeNext'));
     setText($('yb3SnCur'), txt('trafficStopNameNext'));
-    setText($('yb3StNext'), txt('trafficStopTimeAfter') || '--:--:--');
+    setHms($('yb3StNext'), txt('trafficStopTimeAfter'));
     setText($('yb3SnNext'), txt('trafficStopNameAfter'));
     syncRing();
   }
