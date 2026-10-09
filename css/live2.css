@@ -127,3 +127,8 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
 @keyframes yb3Slide { from { transform: translateX(32%); opacity: .25; } to { transform: translateX(0); opacity: 1; } }
 .yb3-seq.yb3-slide .yb3-node { animation: yb3Slide .55s ease-out; }
 @media (prefers-reduced-motion: reduce) { .yb3-seq.yb3-slide .yb3-node { animation: none; } }
+
+/* 세로 화면: 닫기·노선지도 버튼을 아래에서 더 위로 (2026-10-09 요청) */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #liveModal .ios-footer { padding-bottom: 52px !important; }
+}

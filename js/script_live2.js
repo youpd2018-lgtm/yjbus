@@ -53,6 +53,7 @@
   }
 
   var lastSeqKey = '';
+  var SEQ_COLOR = { yellow: '#fbbf24', red: '#ef4444', important: '#ef4444', blue: '#38bdf8' };   // 근무표 시간 색(노랑·빨강·파랑)을 그대로 표시
   function syncSeq() {
     var seq = $('yb3Seq');
     var list = window.todayStopSeq, ni = window.todayStopNext;
@@ -65,6 +66,7 @@
         setText(node.children[0], it ? it.name : '');
         setText(node.children[1], it ? it.time : '');
         node.style.visibility = it ? '' : 'hidden';
+        if (node.children[1]) node.children[1].style.color = (it && SEQ_COLOR[it.color]) || '';
         node.classList.toggle('on', k === 1);
       }
       if (seq) {
@@ -81,6 +83,8 @@
       node2.style.visibility = '';
       setText(node2.children[0], txt('seqPoint' + i + 'Loc'));
       setText(node2.children[1], txt('seqPoint' + i + 'Time'));
+      var te = $('seqPoint' + i + 'Time'), tc = te && te.style.color;
+      if (node2.children[1]) node2.children[1].style.color = (tc && tc !== 'rgb(255, 255, 255)' && tc !== '#fff') ? tc : '';
       var box = $('seqBoxContainer' + i);
       var on = !!(box && box.classList.contains('active-target'));
       node2.classList.toggle('on', on);
