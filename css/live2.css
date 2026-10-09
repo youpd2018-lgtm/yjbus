@@ -1,0 +1,107 @@
+/* ================================================================
+   🆕 라이브 모달 리뉴얼 "콕핏" (lv2) — css/live2.css
+   - html.lv2 일 때만 적용. 켜는 법: 주소 끝 ?lv2=1 (끄기 ?lv2=0). 기본값은 js/script_live2.js 맨 위 DEFAULT_ON
+   - 새 요소는 모두 yb3- 로 시작. 기존 id 는 숨겨 두고 script_live2.js 가 값을 따라 적음
+   - 바탕색은 상태(정시/지연/많이 지연)에 따라 .ios-widget-modal 의 yb3-ok / yb3-late / yb3-vlate 클래스로 바뀜
+   - 라이브 시험 페이지(live_test.html)도 이 파일을 그대로 씀
+   ================================================================ */
+#yb3 { display: none; }
+
+.ios-widget-modal.yb3-ok   { --yb3-bg: linear-gradient(180deg,#064E3B 0%,#022C22 100%); --yb3-solid: #043d2f; --yb3-ac: #6EE7B7; }
+.ios-widget-modal.yb3-late { --yb3-bg: linear-gradient(180deg,#78350F 0%,#451A03 100%); --yb3-solid: #5e2909; --yb3-ac: #FCD34D; }
+.ios-widget-modal.yb3-vlate{ --yb3-bg: linear-gradient(180deg,#881337 0%,#4C0519 100%); --yb3-solid: #6a0e2b; --yb3-ac: #FDA4AF; }
+
+html.lv2 #liveGroupTop,
+html.lv2 #liveModal .ios-seq-card-wrapper,
+html.lv2 #liveGroupStop { display: none !important; }
+
+html.lv2 #liveModal .live-modal-content.ios-widget-modal {
+    background: var(--yb3-bg, linear-gradient(180deg,#064E3B 0%,#022C22 100%)) !important;
+    color: #fff; border: 0 !important; gap: 10px !important;
+    transition: background 0.4s ease;
+}
+
+html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: 'GmarketNum','SeoulNotice',sans-serif; color: #fff; }
+
+/* 위 줄: 날씨 · 차량번호 · GPS */
+.yb3-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.85); }
+.yb3-top > span:first-child { white-space: nowrap; }
+.yb3-plate { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#yb3GpsSlot { flex: none; display: inline-flex; }
+#yb3 #gpsAdminTrigger { background: rgba(0,0,0,0.3) !important; border-color: rgba(255,255,255,0.5) !important; color: #fff !important; }
+#yb3 #gpsAdminTrigger iconify-icon, #yb3 #gpsAdminTrigger span { color: #fff !important; }
+
+/* 둥근 게이지 */
+.yb3-gauge { position: relative; width: min(300px, 80vw); aspect-ratio: 1 / 1; margin: 0 auto; container-type: inline-size; flex: none; }
+.yb3-gauge svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.yb3-ring-track { fill: none; stroke: rgba(0,0,0,0.35); stroke-width: 16; stroke-linecap: round; }
+.yb3-ring-fill { fill: none; stroke: var(--yb3-ac); stroke-width: 16; stroke-linecap: round; opacity: 0.6; filter: blur(0.5px) drop-shadow(0 0 6px var(--yb3-ac)); transition: stroke-dasharray 0.9s linear; }
+.yb3-ring-tick { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 2; stroke-dasharray: 2 7; }
+.yb3-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 12%; z-index: 1; }
+.yb3-center::before { content: ""; position: absolute; inset: 17%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.34), rgba(0,0,0,0)); filter: blur(8px); z-index: -1; }
+.yb3-label { max-width: 82%; font-size: 19px; font-size: 6.4cqw; font-weight: 900; color: #FED7AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+.yb3-time { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 62px; font-size: 20.7cqw; font-weight: 700; line-height: 1.1; letter-spacing: -1px; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 2px 14px rgba(0,0,0,0.6), 0 0 18px rgba(255,255,255,0.2); }
+.yb3-delay { margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.28); font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 46px; font-size: 15.3cqw; font-weight: 700; line-height: 1; color: var(--yb3-ac); text-shadow: 0 2px 10px rgba(0,0,0,0.55), 0 0 14px var(--yb3-ac); min-width: 30%; text-align: center; }
+
+/* 신호등 알약: 게이지 아래 빈틈, 위 = 신호등 / 아래 = 글자 */
+.yb3-pill { --pc: #6EE7B7; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 14px 7px; border-radius: 22px; background: rgba(0,0,0,0.42); border: 1.5px solid var(--pc); box-shadow: 0 0 12px rgba(0,0,0,0.4); cursor: pointer; min-width: 92px; box-sizing: border-box; }
+.yb3-pill[data-s="slow"] { --pc: #FCD34D; }
+.yb3-pill[data-s="jam"] { --pc: #FDA4AF; }
+.yb3-pill[data-s="off"] { --pc: rgba(255,255,255,0.6); }
+.yb3-lamps { display: flex; gap: 6px; }
+.yb3-lamps i { width: 11px; height: 11px; border-radius: 50%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.25); box-sizing: border-box; }
+.yb3-pill[data-s="jam"] .yb3-lamps i:nth-child(1), .yb3-pill[data-s="slow"] .yb3-lamps i:nth-child(2), .yb3-pill[data-s="ok"] .yb3-lamps i:nth-child(3) { background: var(--pc); border-color: var(--pc); box-shadow: 0 0 8px var(--pc); }
+.yb3-pill-text { font-size: 15px; font-weight: 900; color: var(--pc); white-space: nowrap; line-height: 1.1; }
+
+/* 거점 3칸 + 시간·장소 아래로 깔린 선 */
+.yb3-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.yb3-seq { --f: 50%; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; padding: 2px 0; }
+.yb3-seq[data-a="1"] { --f: 0%; } .yb3-seq[data-a="2"] { --f: 50%; } .yb3-seq[data-a="3"] { --f: 100%; }
+.yb3-seq::before { content: ""; position: absolute; left: 16.6%; right: 16.6%; top: 40px; height: 4px; border-radius: 2px; transform: translateY(-50%); z-index: 0; opacity: 0.55; filter: blur(0.8px);
+    background: linear-gradient(90deg, var(--yb3-ac) 0, var(--yb3-ac) var(--f), rgba(255,255,255,0.28) var(--f), rgba(255,255,255,0.28) 100%); }
+.yb3-node { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 0 3px; }
+.yb3-nm { max-width: 100%; font-size: 17px; font-weight: 700; line-height: 21px; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yb3-tm { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 24px; font-weight: 700; line-height: 30px; color: rgba(255,255,255,0.7); }
+.yb3-nm, .yb3-tm, .yb3-sn, .yb3-st { text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
+.yb3-node.on .yb3-nm { color: #fff; font-weight: 800; }
+.yb3-node.on .yb3-tm { color: #fff; font-size: 30px; }
+
+/* 현재 · 다음 정류장 (표준시간) */
+.yb3-stops { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid rgba(255,255,255,0.22); padding-top: 10px; }
+.yb3-stop { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.yb3-stop.r { text-align: right; align-items: flex-end; }
+.yb3-role { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); }
+.yb3-st { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 34px; font-weight: 700; line-height: 1.05; color: #fff; }
+.yb3-sn { max-width: 100%; font-size: 17px; font-weight: 700; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 아래 버튼 (기존 닫기·노선지도·좌우반전 버튼을 그대로 재사용) */
+html.lv2 #liveModal .ios-footer { margin-top: auto !important; padding: 8px 0 0 !important; flex-direction: row !important; align-items: stretch; gap: 10px !important; width: 100%; }
+html.lv2 #liveModal .live-map-btn, html.lv2 #liveModal .ios-footer .ios-close-btn { flex: 1; width: auto !important; min-width: 0 !important; height: 52px !important; border-radius: 26px !important; font-size: 17px !important; font-weight: 900 !important; padding: 0 !important; }
+html.lv2 #liveModal .live-map-btn { background: transparent; border: 2px solid rgba(255,255,255,0.85); color: #fff; }
+html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.18) !important; color: #fff !important; border: 0 !important; }
+
+/* ---------- 가로 모드 ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #liveModal .live-modal-content.ios-widget-modal {
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) 100px !important;
+        grid-template-rows: auto auto minmax(0, 1fr) !important;
+        gap: 6px 16px !important;
+    }
+    html.lv2 #liveModal #gpsPermissionBanner { grid-column: 1 / -1; grid-row: 1; }
+    html.lv2 #yb3 { display: contents; }
+    html.lv2 .yb3-top { grid-column: 1 / 3; grid-row: 2; }
+    html.lv2 .yb3-gauge { grid-column: 1; grid-row: 3; align-self: center; justify-self: center; width: min(100%, calc(100dvh - 78px)); }
+    html.lv2 .yb3-right { grid-column: 2; grid-row: 3; justify-content: center; gap: 14px; }
+    html.lv2 .yb3-seq { grid-template-columns: 1fr; gap: 6px; padding: 0; }
+    html.lv2 .yb3-seq::before { display: none; }
+    html.lv2 .yb3-node { flex-direction: row; justify-content: space-between; align-items: center; gap: 10px; }
+    html.lv2 .yb3-nm { text-align: left; flex: 1; }
+    html.lv2 .yb3-tm { font-size: 24px; }
+    html.lv2 .yb3-node.on .yb3-tm { font-size: 28px; }
+    html.lv2 .yb3-st { font-size: 28px; }
+    html.lv2 #liveModal .ios-footer { grid-column: 3; grid-row: 2 / span 2 !important; flex-direction: column !important; justify-content: flex-start !important; padding: 0 !important; margin: 0 !important; gap: 10px !important; pointer-events: auto !important; }
+    html.lv2 #liveModal .live-mirror-btn { order: 0; height: 48px; border-radius: 24px; width: 100%; background: rgba(255,255,255,0.18); }
+    html.lv2 #liveModal .live-map-btn { order: 1; flex: none; height: 48px !important; white-space: nowrap; font-size: 15px !important; width: 100% !important; justify-content: center; }
+    html.lv2 #liveModal .live-map-btn iconify-icon { display: none; }
+    html.lv2 #liveModal .ios-footer .ios-close-btn { order: 2; flex: none; height: 48px !important; width: 100% !important; }
+}

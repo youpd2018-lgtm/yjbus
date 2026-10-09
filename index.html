@@ -6,6 +6,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/live2.css">
+  <script src="js/live2_flag.js"></script>
 
   <meta charset="UTF-8">
   <!-- 🆕 새 디자인(ui2): 이제 모두에게 기본으로 켜짐. 문제가 생기면 주소 끝에 ?ui2=0 → 예전 화면, ?ui2=1 → 새 화면으로 되돌림 -->
@@ -1013,6 +1015,42 @@
           </div>
         </div>
 
+        <!-- 🆕 [라이브 모달 리뉴얼 "콕핏" — html.lv2 일 때만 보임] 값은 아래 기존 요소(숨김)를 js/script_live2.js 가 따라 적음 -->
+        <div id="yb3">
+          <div class="yb3-top">
+            <span id="yb3Weather">영종도 --℃</span>
+            <span class="yb3-plate" id="yb3Plate"></span>
+            <span id="yb3GpsSlot"></span>
+          </div>
+          <div class="yb3-gauge" id="yb3Gauge">
+            <svg viewBox="0 0 300 300" aria-hidden="true">
+              <circle class="yb3-ring-tick" cx="150" cy="150" r="118"></circle>
+              <circle class="yb3-ring-track" cx="150" cy="150" r="136"></circle>
+              <circle class="yb3-ring-fill" id="yb3Fill" cx="150" cy="150" r="136" transform="rotate(-90 150 150)" stroke-dasharray="0 1000"></circle>
+            </svg>
+            <div class="yb3-center">
+              <div class="yb3-label" id="yb3Label">운행 정보 확인 중...</div>
+              <div class="yb3-time" id="yb3Time">00:00</div>
+              <div class="yb3-delay" id="yb3Delay">0</div>
+            </div>
+            <div class="yb3-pill" id="yb3Pill" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
+              <div class="yb3-lamps"><i></i><i></i><i></i></div>
+              <span class="yb3-pill-text" id="yb3PillText">소통원활</span>
+            </div>
+          </div>
+          <div class="yb3-right">
+            <div class="yb3-seq" id="yb3Seq" data-a="1">
+              <div class="yb3-node" id="yb3N1"><span class="yb3-nm"></span><span class="yb3-tm"></span></div>
+              <div class="yb3-node" id="yb3N2"><span class="yb3-nm"></span><span class="yb3-tm"></span></div>
+              <div class="yb3-node" id="yb3N3"><span class="yb3-nm"></span><span class="yb3-tm"></span></div>
+            </div>
+            <div class="yb3-stops">
+              <div class="yb3-stop"><span class="yb3-role">현재</span><span class="yb3-st" id="yb3StCur">--:--:--</span><span class="yb3-sn" id="yb3SnCur"></span></div>
+              <div class="yb3-stop r"><span class="yb3-role">다음</span><span class="yb3-st" id="yb3StNext">--:--:--</span><span class="yb3-sn" id="yb3SnNext"></span></div>
+            </div>
+          </div>
+        </div>
+
         <!-- 화면 위쪽 그룹: [날씨(왼쪽) ... GPS 버튼(오른쪽)] + 시간카운트 상자 + 차량번호 줄 -->
         <div class="live-group" id="liveGroupTop">
         <div id="liveTopRow" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 2px 14px 2px;">
@@ -1304,6 +1342,7 @@
     <script src="js/script_sfx.js"></script>
     <script src="js/script_senior.js"></script>
     <script src="js/script_ui2.js"></script>
+    <script src="js/script_live2.js"></script>
     <script src="js/script_timetable_data.js"></script>
     <script src="js/script_roster_data.js"></script>
     <script src="js/script_usage_log.js"></script>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이브 모달 콕핏 시험</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/live2.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  /* ===== 바깥(안내) 화면 ===== */
+  html.host body { margin: 0; background: #0b1220; color: #e2e8f0; font-family: sans-serif; padding: 16px; }
+  .host-h { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+  .host-p { font-size: 13px; color: #94a3b8; margin: 0 0 12px; line-height: 1.5; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .chips button { height: 38px; padding: 0 14px; border-radius: 19px; border: 1.5px solid #475569; background: #1e293b; color: #e2e8f0; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .chips button.on { background: #38bdf8; color: #0b1220; border-color: #38bdf8; }
+  .frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .fr-wrap b { display: block; margin: 0 0 6px; font-size: 13px; color: #94a3b8; }
+  iframe { border: 2px solid #334155; border-radius: 18px; background: #000; display: block; }
+  #fp { width: 390px; height: 780px; }
+  #fl { width: 780px; height: 360px; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+  var P = new URLSearchParams(location.search);
+  if (P.get('frame') === '1') { startFrame(P); return; }
+  document.documentElement.classList.add('host');
+  document.write(
+    '<h1 class="host-h">🧪 라이브 모달 콕핏 시험 페이지</h1>' +
+    '<p class="host-p">아래 단추로 상태를 바꿔 보세요. 왼쪽은 세로, 오른쪽은 가로 화면입니다. (실제 앱의 index.html 라이브 모달 틀과 같은 CSS·JS를 씁니다)</p>' +
+    '<div class="chips" id="chips"></div>' +
+    '<div class="frames"><div class="fr-wrap"><b>세로 (390×780)</b><iframe id="fp"></iframe></div>' +
+    '<div class="fr-wrap"><b>가로 (780×360)</b><iframe id="fl"></iframe></div></div>');
+  var states = [['ok','정시 (0)'],['late','지연 (-7)'],['vlate','많이 지연 (-12)'],['slow','신호등 서행'],['jam','신호등 정체'],['long','긴 정류장 이름'],['hour','1시간 넘게 남음'],['mirror','좌우반전']];
+  var cur = P.get('s') || 'ok', box = document.getElementById('chips');
+  function go(s) {
+    cur = s;
+    [].forEach.call(box.children, function (b) { b.classList.toggle('on', b.dataset.s === s); });
+    document.getElementById('fp').src = 'live_test.html?frame=1&s=' + s;
+    document.getElementById('fl').src = 'live_test.html?frame=1&s=' + s;
+  }
+  states.forEach(function (x) {
+    var b = document.createElement('button'); b.textContent = x[1]; b.dataset.s = x[0];
+    b.onclick = function () { go(x[0]); }; box.appendChild(b);
+  });
+  go(cur);
+})();
+
+function startFrame(P) {
+  var s = P.get('s') || 'ok';
+  document.documentElement.classList.add('lv2', 'ui2');
+  document.documentElement.style.background = '#000';
+  var d = {
+    ok:   { delay: '0',   status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 2, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'ok', ft: '소통원활' },
+    late: { delay: '-7',  status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 2, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'ok', ft: '소통원활' },
+    vlate:{ delay: '-12', status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 3, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'jam', ft: '정체' },
+    slow: { delay: '+3',  status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 2, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'slow', ft: '서행' },
+    jam:  { delay: '-4',  status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 2, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'jam', ft: '정체' },
+    long: { delay: '0',   status: '[12] 인천국제공항 제2여객터미널 교통센터까지', left: '00:03:09', n: ['인천국제공항 제2여객터미널 교통센터','영종도 하늘도시 신도시 종점','동춘차고지'], t: ['05:40','06:48','07:55'], a: 1, cur: ['06:21:10','인천국제공항 제2여객터미널 교통센터'], nxt: ['06:33:46','영종도 하늘도시 신도시 종점'], flow: 'ok', ft: '소통원활' },
+    hour: { delay: '+1',  status: '[1] 운행대기중', left: '01:23:45', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 1, cur: ['05:40:00','동춘차고지'], nxt: ['07:05:00','인천공항T1'], flow: 'ok', ft: '소통원활' },
+    mirror:{ delay: '0',  status: '[3] 인천공항T1까지', left: '00:12:34', n: ['동춘차고지','인천공항T1','동춘차고지'], t: ['05:40','06:48','07:55'], a: 2, cur: ['06:21:10','영종하늘도시'], nxt: ['06:33:46','인천공항T1'], flow: 'ok', ft: '소통원활' }
+  }[s] || null;
+  // 실제 앱(index.html)에서 라이브 모달 틀을 그대로 가져옴
+  fetch('index.html').then(function (r) { return r.text(); }).then(function (html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    var modal = doc.getElementById('liveModal');
+    document.body.style.margin = '0';
+    document.body.appendChild(document.importNode(modal, true));
+    var m = document.getElementById('liveModal');
+    m.classList.add('active');
+    var box = m.querySelector('.ios-widget-modal');
+    if (s === 'mirror') box.classList.add('mirrored');
+    function set(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+    window.ybLv2On = true;
+    var sc = document.createElement('script');
+    sc.src = 'js/script_live2.js';
+    sc.onload = function () {
+      set('weatherTempDisplay', '18℃'); set('weatherStatusDisplay', '맑음'); set('bisVehicleNo', '인천70아1214');
+      set('liveCardStatus', d.status); set('liveCardTimeLeft', d.left); set('bisDelayBadge', d.delay);
+      for (var i = 1; i <= 3; i++) {
+        set('seqPoint' + i + 'Loc', d.n[i - 1]); set('seqPoint' + i + 'Time', d.t[i - 1]);
+        document.getElementById('seqBoxContainer' + i).classList.toggle('active-target', i === d.a);
+      }
+      set('trafficStopTimeNext', d.cur[0]); set('trafficStopNameNext', d.cur[1]);
+      set('trafficStopTimeAfter', d.nxt[0]); set('trafficStopNameAfter', d.nxt[1]);
+      document.querySelector('#liveTrafficStopBox .tf-flow').setAttribute('data-s', d.flow);
+      set('trafficFlowStatusText', d.ft);
+      if (window.ybLv2Refresh) window.ybLv2Refresh();
+    };
+    document.body.appendChild(sc);
+  });
+}
+</script>
+</body>
+</html>
