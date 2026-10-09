@@ -61,7 +61,16 @@
     }
     html += '<button type="button" id="ybDiffMain" style="' + dot(current, 22, '') + '"></button>';
     wrap.innerHTML = html;
+    try { document.dispatchEvent(new CustomEvent('yb-diff-change')); } catch (e) {}   // 새 메인 화면(ui3)의 헤드라이트 색 갱신용
   }
+
+  // 새 메인 화면(ui3)의 '헤드라이트 눈'이 같은 기능을 쓰도록 바깥에 열어 둠
+  window.ybDiffApi = {
+    color: function () { return current; },
+    hasKey: function () { return !!currentKey; },
+    set: function (c) { if (COLORS[c] && currentKey) save(c); },
+    colors: COLORS
+  };
 
   function load() {
     var key = getKey();

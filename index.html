@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/live2.css">
+  <link rel="stylesheet" href="css/ui3.css">
   <script src="js/live2_flag.js"></script>
 
   <meta charset="UTF-8">
@@ -18,6 +19,15 @@
       if (q === '1') localStorage.removeItem('yb_ui2');
       if (localStorage.getItem('yb_ui2') !== '0') document.documentElement.classList.add('ui2', 'ui2-drive');
     } catch (e) { document.documentElement.classList.add('ui2', 'ui2-drive'); }
+  </script>
+  <!-- 🆕 새 메인 화면 "버스 콕핏"(ui3): 기본으로 켜짐(노안모드에서는 적용 안 됨). 되돌리기: 주소 끝 ?ui3=0, 다시 켜기: ?ui3=1 -->
+  <script>
+    try {
+      var q3 = new URLSearchParams(location.search).get('ui3');
+      if (q3 === '0') localStorage.setItem('yb_ui3', '0');
+      if (q3 === '1') localStorage.removeItem('yb_ui3');
+      if (localStorage.getItem('yb_ui3') !== '0') document.documentElement.classList.add('ui3');
+    } catch (e) { document.documentElement.classList.add('ui3'); }
   </script>
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -284,12 +294,14 @@
       <!-- 🆕 새 디자인(ui2) 상단: 날짜 줄 + 페이지 탭 (평소엔 숨김, html.ui2 일 때만 보임) -->
       <div id="yb2Top">
         <div class="yb2-date">
-          <button type="button" class="yb2-arrow" onclick="moveDate(-1)" aria-label="이전 날짜">‹</button>
+          <button type="button" class="yb2-arrow yb3-prev" onclick="moveDate(-1)" aria-label="이전 날짜">‹</button>
           <div class="yb2-date-mid">
             <div class="yb2-date-main"><span id="yb2DateMD" class="yb2-md"></span> <span id="yb2DateDow" class="yb2-dow"></span></div>
             <div id="yb2DateRel" class="yb2-rel"></div>
+            <input type="date" id="yb3DateIn" class="yb3-datein" aria-label="날짜 고르기">
           </div>
-          <button type="button" class="yb2-arrow" onclick="moveDate(1)" aria-label="다음 날짜">›</button>
+          <button type="button" class="yb2-arrow yb3-next" onclick="moveDate(1)" aria-label="다음 날짜">›</button>
+          <button type="button" id="yb3TodayBtn" class="yb3-todaybtn" onclick="yb3GoToday()">오늘</button>
         </div>
         <div class="yb2-tabs" role="tablist">
           <button type="button" id="yb2TabDrive" class="yb2-tab on" onclick="yb2SetPage('drive')">오늘 운행</button>
@@ -313,6 +325,56 @@
 
       <!-- 🆕 새 디자인(ui2) 페이지 1: 오늘 운행 (값은 숨겨진 기존 요소를 script_ui2.js 가 따라 적음) -->
       <div id="yb2Drive">
+        <!-- 🆕 새 메인 화면 "버스 콕핏"(ui3, 노안모드 아닐 때만 보임) — 값은 아래 기존 박스(숨김)를 js/script_ui3.js 가 따라 적음 -->
+        <div id="yb3Drive">
+          <div id="yb3Bus">
+            <svg viewBox="0 0 362 352" aria-hidden="true">
+              <rect x="52" y="296" width="48" height="52" rx="12" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+              <rect x="262" y="296" width="48" height="52" rx="12" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+              <path d="M64 322H88M64 332H88M64 342H88" stroke="rgba(255,255,255,0.28)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M274 322H298M274 332H298M274 342H298" stroke="rgba(255,255,255,0.28)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M17 88H26M17 124H26" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M345 88H336M345 124H336" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
+              <rect x="1" y="66" width="17" height="76" rx="8" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+              <rect x="344" y="66" width="17" height="76" rx="8" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+              <path d="M9 80V128M353 80V128" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="50" y="36" width="262" height="254" rx="34" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-dasharray="3 7" stroke-linecap="round"/>
+              <rect x="26" y="12" width="310" height="304" rx="52" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="16"/>
+              <rect id="yb3Arc" x="26" y="12" width="310" height="304" rx="52" pathLength="1000" fill="none" stroke="#6EE7B7" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 1000" opacity="0.6" style="filter: drop-shadow(0 0 6px #6EE7B7)"/>
+              <g class="yb3-wk">
+                <path d="M52 215Q74 200 98 212" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round"/>
+                <path d="M264 212Q288 200 310 215" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round"/>
+                <circle class="yb3-eye" cx="76" cy="238" r="20" fill="rgba(255,255,255,0.92)" stroke="#FFFFFF" stroke-width="3"/>
+                <circle class="yb3-eye" cx="286" cy="238" r="20" fill="rgba(255,255,255,0.92)" stroke="#FFFFFF" stroke-width="3"/>
+                <circle cx="82" cy="240" r="9" fill="#04271f"/><circle cx="85" cy="236" r="3" fill="#FFFFFF"/>
+                <circle cx="280" cy="240" r="9" fill="#04271f"/><circle cx="283" cy="236" r="3" fill="#FFFFFF"/>
+                <rect x="108" y="298" width="146" height="40" rx="9" fill="#04382c" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"/>
+              </g>
+            </svg>
+            <div class="yb3-txt">
+              <span id="yb3Route" class="yb3-route">-</span>
+              <div class="yb3-wk yb3-fs"><span id="yb3Fleet" class="yb3-fleet"></span><span id="yb3Seq" class="yb3-seq"></span></div>
+              <span id="yb3OffMsg" class="yb3-offmsg">푹 쉬세요</span>
+            </div>
+            <div id="yb3Plate" class="yb3-plate yb3-wk"></div>
+            <div class="yb3-hit yb3-hl yb3-wk" onclick="yb3Lamp()"></div>
+            <div class="yb3-hit yb3-hr yb3-wk" onclick="yb3Lamp()"></div>
+            <div id="yb3Lamp" class="yb3-lamp" hidden>
+              <button type="button" data-c="red" aria-label="빨강(아주 힘듦)"></button>
+              <button type="button" data-c="yellow" aria-label="노랑(그럭저럭)"></button>
+              <button type="button" data-c="blue" aria-label="파랑(아주 편함)"></button>
+            </div>
+          </div>
+          <div class="yb3-stats">
+            <div class="yb3-st"><span class="yb3-sl">시작</span><span id="yb3Start" class="yb3-sv">-</span></div>
+            <div class="yb3-st mid"><span class="yb3-sl">종료</span><span id="yb3End" class="yb3-sv">-</span></div>
+            <div class="yb3-st"><span class="yb3-sl">교대</span><span id="yb3Hand" class="yb3-sv">-</span></div>
+          </div>
+          <button type="button" id="yb3Cd" class="yb3-cd" onclick="openLiveModal();">
+            <span id="yb3CdL" class="yb3-cdl"></span>
+            <span id="yb3CdV" class="yb3-cdv">00:00:00</span>
+          </button>
+        </div>
         <div class="yb2-box">
         <div class="yb2-band" id="yb2Band">
           <div class="yb2-name"><img src="icons/logo-128.png" alt=""><span id="yb2Name"></span></div>
@@ -1342,6 +1404,7 @@
     <script src="js/script_sfx.js"></script>
     <script src="js/script_senior.js"></script>
     <script src="js/script_ui2.js"></script>
+    <script src="js/script_ui3.js"></script>
     <script src="js/script_live2.js"></script>
     <script src="js/script_timetable_data.js"></script>
     <script src="js/script_roster_data.js"></script>
