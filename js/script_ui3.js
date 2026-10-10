@@ -60,6 +60,11 @@
     function renderTimes() {
         setTxt('yb4Start', txt('yb2Start'));
         setTxt('yb4End', txt('yb2End'));
+        // 시간표에서 빨강인 시작·종료 시간은 빨강 글자로 (교대는 항상 노란색)
+        [['yb4Start', 'bliStartTime'], ['yb4End', 'bliEndTime']].forEach(function (p) {
+            var t = $(p[0]), src = $(p[1]);
+            if (t) t.classList.toggle('red', !!src && src.getAttribute('data-c') === 'red');
+        });
         setTxt('yb4Hand', txt('yb2Hand'));
         renderArc();
     }
@@ -173,6 +178,7 @@
         if (!$('yb4Bus')) return;
         ['yb2Route', 'yb2Seq', 'yb2SeqLbl', 'yb2Sub', 'yb2BusNo'].forEach(function (id) { watch(id, renderBus); });
         ['yb2Start', 'yb2End', 'yb2Hand'].forEach(function (id) { watch(id, renderTimes); });
+        ['bliStartTime', 'bliEndTime'].forEach(function (id) { watch(id, renderTimes, ['data-c']); });
         watch('yb2CdL', renderCd); watch('yb2CdV', renderCd, ['style']);
         watch('yb2DateRel', renderDateBits);
         var inp = $('searchDate');

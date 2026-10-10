@@ -497,6 +497,7 @@
             safeSetText('resStartTime', '-');
             safeSetText('resEndTime', '-');
             safeSetText('resHandoverTime', '-');
+            { const a = document.getElementById('bliStartTime'), b = document.getElementById('bliEndTime'); if (a) a.removeAttribute('data-c'); if (b) b.removeAttribute('data-c'); }
             safeSetText('bliStartTime', '-');
             safeSetText('bliEndTime', '-');
             safeSetText('bliHandoverTime', '-');
@@ -543,6 +544,7 @@
             safeSetText('resStartTime', '-');
             safeSetText('resEndTime', '-');
             safeSetText('resHandoverTime', '-');
+            { const a = document.getElementById('bliStartTime'), b = document.getElementById('bliEndTime'); if (a) a.removeAttribute('data-c'); if (b) b.removeAttribute('data-c'); }
             safeSetText('bliStartTime', '-');
             safeSetText('bliEndTime', '-');
             safeSetText('bliHandoverTime', '-');
@@ -577,6 +579,9 @@
         safeSetText('resStartTime', timing && timing.startTime ? timing.startTime : '-');
         safeSetText('resEndTime', timing && timing.endTime ? timing.endTime : '-');
         safeSetText('resHandoverTime', timing && timing.handoverTime ? timing.handoverTime : '-');
+        { const a = document.getElementById('bliStartTime'), b = document.getElementById('bliEndTime');
+          if (a) a.setAttribute('data-c', timing && timing.startColor || '');
+          if (b) b.setAttribute('data-c', timing && timing.endColor || ''); }
         safeSetText('bliStartTime', timing && timing.startTime ? timing.startTime : '-');
         safeSetText('bliEndTime', timing && timing.endTime ? timing.endTime : '-');
         safeSetText('bliHandoverTime', timing && timing.handoverTime ? timing.handoverTime : '-');
@@ -648,6 +653,18 @@
         return '-';
     }
 
+    // 회차(tripObj)에서 해당 시간(val)이 적힌 칸의 색을 돌려줌 (reverse=true 면 뒤 칸부터 찾음)
+    function colorOfTime(tripObj, val, colCount, reverse) {
+        if (!tripObj || !val || val === '-') return '';
+        const order = [];
+        for (let c = 1; c <= colCount; c++) order.push(c);
+        if (reverse) order.reverse();
+        for (const c of order) {
+            if (tripObj[`time${c}`] && String(tripObj[`time${c}`]).trim() === val) return tripObj[`c${c}`] || '';
+        }
+        return '';
+    }
+
     function calculateStartAndHandoverTime(route, seq, timeType) {
         let list = customGetItem(route, seq);
         if (!list || list.length === 0) return { startTime: '-', endTime: '-', handoverTime: '-', startEndDisplay: '-' };
@@ -677,23 +694,32 @@
         let startTime = '-';
         let endTime = '-';
         let handoverTime = yellowTimeVal;
+        let startTrip = null, endTrip = null;
 
         if (timeType === '오전') {
+            startTrip = list[0];
             startTime = getValidStartTime(list[0], colCount);
             endTime = yellowTimeVal;
+            endTrip = list[yellowRowIdx];
         } else {
             let pmStartIdx = yellowRowIdx + 1;
             if (pmStartIdx < list.length) {
+                startTrip = list[pmStartIdx];
                 startTime = getValidStartTime(list[pmStartIdx], colCount);
             } else if (list[yellowRowIdx]) {
+                startTrip = list[yellowRowIdx];
                 startTime = getValidStartTime(list[yellowRowIdx], colCount);
             }
             let lastTrip = list[list.length - 1];
+            endTrip = lastTrip;
             endTime = lastTrip ? getValidEndTime(lastTrip, colCount, true) : '-';
         }
 
+        // 시간표(GitHub)의 색: 시작·종료 시간이 빨강이면 메인 화면에도 빨강으로 표시
+        let startColor = colorOfTime(startTrip, startTime, colCount, false);
+        let endColor = colorOfTime(endTrip, endTime, colCount, true);
         let startEndDisplay = `${startTime} / ${endTime}`;
-        return { startTime, endTime, handoverTime, startEndDisplay };
+        return { startTime, endTime, handoverTime, startEndDisplay, startColor, endColor };
     }
 
     function customGetItem(route, seq) {
