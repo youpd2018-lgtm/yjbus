@@ -173,7 +173,7 @@
   function notify(info, trip) {
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
     const body = `${trip.text} 출발` + (trip.place ? ` · ${trip.place}` : '') + ` · ${info.sched.route} ${info.sched.seq}` + (info.sched.busNo && info.sched.busNo !== '-' ? ` · 차량 ${info.sched.busNo}` : '');
-    showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
+    // 2026-10-10 사용자 지시: 폰 알림 메시지는 보내지 않고 화면 위 알림 카드(배너)만 띄움
     try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
     playAlarmSound();
     showAlarmBanner(title, body);
