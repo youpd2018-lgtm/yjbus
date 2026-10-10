@@ -72,7 +72,7 @@
     }
 
     // ---- 교대 시간이 지나면: 시작·종료·교대 자리에 '다음 정류장 3개'를 밀어내듯 보여 줌 (라이브 모달 거점과 같은 방식) ----
-    //      [다음 정류장, 그 다음, 그 다음다음] → 정류장을 지나면 한 칸씩 앞으로 밀림. 남은 정류장이 없으면 원래 시작·종료·교대로 돌아옴.
+    //      [다음 정류장, 그 다음, 그 다음다음] → 정류장을 지나면 한 칸씩 앞으로 밀림. 정류장이 다 끝나면 마지막 정류장까지 마지막 칸에 그대로 둠(원래대로 돌아가지 않음, 날짜가 오늘이 아니거나 교대 전이면 원래 시작·종료·교대).
     var SEQ_COLOR = { yellow: '#fbbf24', red: '#ef4444', important: '#ef4444', blue: '#38bdf8' };
     var lastFirstKey = '';
     function todayStops() {
@@ -125,7 +125,9 @@
                 if (stops && stops.length) {
                     var ni = -1;
                     for (var i = 0; i < stops.length; i++) if (stops[i].date > now) { ni = i; break; }
-                    if (ni >= 0) picked = stops.slice(Math.max(0, Math.min(ni, stops.length - 3)), Math.max(0, Math.min(ni, stops.length - 3)) + 3);
+                    if (ni < 0) ni = stops.length - 1;   // 정류장이 다 끝나면 마지막 정류장까지 마지막 칸에 그대로 보여 줌
+                    var st0 = Math.max(0, Math.min(ni, stops.length - 3));
+                    picked = stops.slice(st0, st0 + 3);
                 }
             }
         } catch (e) { picked = null; }
