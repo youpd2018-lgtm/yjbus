@@ -118,16 +118,20 @@
   window.disablePushNotifications = disablePushNotifications;
   window.isPushOn = isPushOn;
 
-  // 처음 쓰는 기기: 로그인 후 첫 터치 때 알림 허용창을 한 번 띄움(브라우저 규칙상 터치가 있어야 띄울 수 있음)
-  const ASKED_KEY = 'yb_push_first_asked';
+  // 새로 가입·처음 로그인한 사용자: 로그인 후 첫 터치 때 알림 허용창을 한 번 띄우고(브라우저 규칙상 터치가 있어야 띄울 수 있음),
+  // 이미 허용된 기기면 그 사용자 이름으로 알림 등록을 바로 해 준다. 사용자별로 한 번만.
+  const ASKED_KEY = 'yb_push_first_asked_';
   function autoAskOnFirstTouch() {
     const handler = function () {
       try {
-        if (!isPushSupported() || Notification.permission !== 'default') { cleanup(); return; }
-        if (localStorage.getItem(ASKED_KEY)) { cleanup(); return; }
-        if (!localStorage.getItem('yeongjong_logged_user') || isFamilyLogin()) return; // 로그인 전이면 다음 터치에 다시 확인
-        localStorage.setItem(ASKED_KEY, '1');
-        cleanup();
+        if (!isPushSupported() || Notification.permission === 'denied') { cleanup(); return; }
+        let u = null;
+        try { u = JSON.parse(localStorage.getItem('yeongjong_logged_user')); } catch (e) { }
+        if (!u || !u.name || u.userType === 'family') return; // 로그인 전·가족이면 다음 터치에 다시 확인
+        const key = ASKED_KEY + u.name;
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, '1');
+        if (Notification.permission === 'granted') { refreshPushToken(); return; }
         Notification.requestPermission().then(function (p) { if (p === 'granted') refreshPushToken(); }).catch(function () {});
       } catch (e) { cleanup(); }
     };
