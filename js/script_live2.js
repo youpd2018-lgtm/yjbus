@@ -45,7 +45,7 @@
   }
 
   function syncMain() {
-    var label = txt('liveCardStatus');
+    var label = txt('liveCardStatus').replace(/\d+\s*순번\s*/, ''); // 순번은 숨기고 회차만 표시
     setText($('yb3Label'), label);
     var tl = txt('liveCardTimeLeft');
     setText($('yb3Time'), tl || '-'); // 시:분:초 전체 표시
