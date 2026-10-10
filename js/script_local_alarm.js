@@ -117,7 +117,7 @@
   function setAudioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) { } }
   setAudioSession('ambient');
   // 아이폰만 무음 파일로 미리 열어 둔다(안드로이드는 첫 터치 이후 자동 허용이라 불필요, 오히려 음악을 끊음)
-  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) document.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
+  // (알림음을 재생하지 않으므로 아이폰 무음 파일 미리 열기도 하지 않음)
 
   // 대비책: 위 방법이 막히면 WebAudio 로 알림음을 낸다 (터치할 때마다 열어 둔다)
   let actx = null, alarmBuf = null, alarmSrc = null;
@@ -139,7 +139,7 @@
       }
     } catch (e) { }
   }
-  ['pointerdown', 'touchend', 'click'].forEach(ev => document.addEventListener(ev, unlockCtx, { passive: true }));
+  // (알림음을 재생하지 않으므로 터치 때 소리 장치를 열어 두지 않음)
   function playViaWebAudio() {
     try {
       if (!actx || !alarmBuf) return false;
@@ -150,7 +150,10 @@
       return true;
     } catch (e) { return false; }
   }
+  // 2026-10-10 사용자 지시: 출발 10분 전 알림음(음악)은 더 이상 재생하지 않음(화면 알림·진동·배너는 그대로)
+  const ALARM_SOUND_ENABLED = false;
   function playAlarmSound() {
+    if (!ALARM_SOUND_ENABLED) return;
     setAudioSession('playback');
     setTimeout(() => setAudioSession('ambient'), 20000);
     const au = getAlarmAudio();
