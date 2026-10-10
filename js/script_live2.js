@@ -15,11 +15,25 @@
     return (+m[1]) * 3600 + (+m[2]) * 60 + (+(m[3] || 0));
   }
 
-  // 날씨 글자 → 속이 빈(선으로 그린) 기호. VS15(\uFE0E)로 색 이모지가 아닌 글자 모양을 쓴다
-  var WX_ICON = { '맑음': '\u263C', '구름조금': '\u26C5\uFE0E', '흐림': '\u2601\uFE0E', '안개': '\u224B', '비': '\u2602\uFE0E', '눈': '\u2744\uFE0E', '뇌우': '\u26A1\uFE0E' };
+  // 날씨 글자 → Iconify 의 Lucide(ISC 무료 오픈소스) 선(속이 빈) 아이콘 + 어울리는 색
+  var WX_ICON = {
+    '맑음': ['lucide:sun', '#FBBF24'], '구름조금': ['lucide:cloud-sun', '#FCD34D'], '흐림': ['lucide:cloud', '#CBD5E1'],
+    '안개': ['lucide:cloud-fog', '#CBD5E1'], '비': ['lucide:cloud-rain', '#7DD3FC'], '눈': ['lucide:cloud-snow', '#E0F2FE'], '뇌우': ['lucide:cloud-lightning', '#FDE68A']
+  };
   function syncTop() {
+    var el = $('yb3Weather'); if (!el) return;
     var t = txt('weatherTempDisplay'), st = txt('weatherStatusDisplay');
-    setText($('yb3Weather'), '영종도 ' + (t || '--℃') + (st && WX_ICON[st] ? ' ' + WX_ICON[st] : (st && st !== '조회 중' ? ' (' + st + ')' : '')));
+    var ic = WX_ICON[st];
+    var key = (t || '--℃') + '|' + st;
+    if (el.getAttribute('data-k') === key) return;
+    el.setAttribute('data-k', key);
+    el.textContent = '영종도 ' + (t || '--℃') + (!ic && st && st !== '조회 중' ? ' (' + st + ')' : '');
+    if (ic) {
+      var i = document.createElement('iconify-icon');
+      i.setAttribute('icon', ic[0]);
+      i.style.cssText = 'color:' + ic[1] + ';font-size:1.2em;vertical-align:-0.2em;margin-left:6px;';
+      el.appendChild(i);
+    }
   }
 
   function syncMain() {
