@@ -1079,14 +1079,19 @@
           <div class="yb3-gauge" id="yb3Gauge">
             <svg viewBox="0 0 300 300" aria-hidden="true">
               <defs>
-                <linearGradient id="yb3Rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.18"/><stop offset="1" stop-color="#fff" stop-opacity="0.04"/></linearGradient>
-                <linearGradient id="yb3Face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.42"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient>
-                <linearGradient id="yb3Lip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0.22"/></linearGradient>
+                <linearGradient id="yb3Bezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.4"/></linearGradient>
+                <linearGradient id="yb3Rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.7"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.2"/><stop offset="1" stop-color="#fff" stop-opacity="0.04"/></linearGradient>
+                <linearGradient id="yb3Face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0.14"/></linearGradient>
+                <linearGradient id="yb3Lip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.65"/><stop offset="1" stop-color="#fff" stop-opacity="0.25"/></linearGradient>
+                <clipPath id="yb3Clip"><circle cx="150" cy="150" r="128"/></clipPath>
               </defs>
+              <g class="yb3-ext"><circle cx="150" cy="165.0" r="144" fill="#031a14"/><circle cx="150" cy="163.75" r="144" fill="#042019"/><circle cx="150" cy="162.5" r="144" fill="#04261d"/><circle cx="150" cy="161.25" r="144" fill="#052c22"/><circle cx="150" cy="160.0" r="144" fill="#063226"/><circle cx="150" cy="158.75" r="144" fill="#06382b"/><circle cx="150" cy="157.5" r="144" fill="#073e2f"/><circle cx="150" cy="156.25" r="144" fill="#074434"/><circle cx="150" cy="155.0" r="144" fill="#084a38"/><circle cx="150" cy="153.75" r="144" fill="#09503d"/><circle cx="150" cy="152.5" r="144" fill="#095641"/><circle cx="150" cy="151.25" r="144" fill="#0a5c46"/></g>
               <circle class="yb3-body" cx="150" cy="150" r="144"></circle>
               <circle class="yb3-face" cx="150" cy="150" r="128"></circle>
+              <g clip-path="url(#yb3Clip)"><circle class="yb3-inshadow" cx="150" cy="156" r="134"></circle></g>
               <circle class="yb3-ring-tick" cx="150" cy="150" r="118"></circle>
               <circle class="yb3-ring-track" cx="150" cy="150" r="136"></circle>
+              <circle class="yb3-bezel" cx="150" cy="150" r="136"></circle>
               <circle class="yb3-ring-fill" id="yb3Fill" cx="150" cy="150" r="136" transform="rotate(-90 150 150)" stroke-dasharray="0 1000"></circle>
               <circle class="yb3-rim" cx="150" cy="150" r="143.2"></circle>
               <circle class="yb3-lip" cx="150" cy="150" r="127.2"></circle>
