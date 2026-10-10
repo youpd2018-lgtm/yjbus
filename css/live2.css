@@ -144,8 +144,7 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
 .yb3-inshadow { fill: none; stroke: rgba(0,0,0,0.6); stroke-width: 16; filter: blur(5px); }
 .yb3-bezel { fill: none; stroke: url(#yb3Bezel); stroke-width: 16; }
 .yb3-face { fill: url(#yb3Face); }
-.yb3-rim { fill: none; stroke: url(#yb3Rim); stroke-width: 5; }   /* 윗부분 모서리(엣지): 메인 박스 위쪽 테두리처럼 밝게 */
-.yb3-edge { fill: none; stroke: rgba(255,255,255,0.35); stroke-width: 1.2; }
+.yb3-rim { fill: none; stroke: url(#yb3Rim); stroke-width: 1.8; }
 .yb3-lip { fill: none; stroke: url(#yb3Lip); stroke-width: 2; }
 
 /* 신호등 알약: 박스는 그대로, 전구만 입체 */
