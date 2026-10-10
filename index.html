@@ -708,7 +708,7 @@
 
         <!-- [뷰 2] 주간 운행 일정 -->
         <div id="subViewWeekly" class="stats-sub-view"
-          style="display: none; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
+          style="display: none; background: transparent; border: none; border-radius: 0; padding: 4px 0;">
 
           <div class="date-navigator" style="margin-bottom: 10px; padding: 6px 8px;">
             <button class="date-nav-btn" onclick="moveWeek(-1)" style="padding: 4px 10px; font-size: 12px;">
@@ -722,7 +722,7 @@
             </button>
           </div>
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <div id="weeklyCardsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div id="weeklyCardsContainer" style="display: flex; flex-direction: column; gap: 0; border-top: 1px solid #475569;">
               <!-- 주간 운행 일정이 카드로 생성됩니다 -->
             </div>
           </div>
@@ -730,7 +730,7 @@
 
         <!-- [뷰 3] 모든 사용자 근무 현황 -->
         <div id="subViewAllUsers" class="stats-sub-view"
-          style="display: none; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
+          style="display: none; background: transparent; border: none; border-radius: 0; padding: 4px 0;">
 
           <!-- 날짜 좌우 화살표 선택기 (오늘 기본) -->
           <div class="date-navigator" style="margin-bottom: 10px; padding: 6px 8px;">
@@ -745,7 +745,7 @@
             </button>
           </div>
           <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <div id="allUsersCardsContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            <div id="allUsersCardsContainer" style="display: flex; flex-direction: column; gap: 0; border-top: 1px solid #475569;"></div>
           </div>
         </div>
 

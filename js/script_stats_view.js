@@ -737,26 +737,20 @@ function renderEditRouteOptions() {
             let card = document.createElement('div');
             card.style.display = 'flex';
             card.style.alignItems = 'stretch';
-            card.style.border = isMe ? '1.5px solid #22c55e' : '1px solid #334155';
-            card.style.borderRadius = '6px';
-            card.style.overflow = 'hidden';
-            card.style.background = isMe ? 'rgba(34, 197, 94, 0.08)' : '#0f172a';
-            card.style.marginBottom = '6px';
+            card.style.borderBottom = '1px solid #475569';
+            card.style.background = isMe ? 'rgba(34, 197, 94, 0.10)' : 'transparent';
 
             let infoHtml = '';
             if (isOffWork) {
                 infoHtml = `
-                    <span style="color: #94a3b8; font-size: 14.5px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : '☕'}</span>
+                    <span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : '☕'}</span>
                 `;
             } else {
                 infoHtml = `
-                                        <span style="color: #38bdf8; font-size: 14.5px; font-weight: 900; white-space: nowrap;">${route}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #22c55e; font-size: 14.5px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #fbbf24; font-size: 14.5px; font-weight: bold; white-space: nowrap;">${busNo}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #cbd5e1; font-size: 14px; white-space: nowrap;">${startEnd}</span>
+                                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900; white-space: nowrap;">${route}</span>
+                    <span style="color: #22c55e; font-size: 18px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
+                    <span style="color: #fbbf24; font-size: 18px; font-weight: bold; white-space: nowrap;">${busNo}</span>
+                    <span style="color: #cbd5e1; font-size: 17px; white-space: nowrap;">${startEnd}</span>
                 `;
             }
 
@@ -773,11 +767,11 @@ function renderEditRouteOptions() {
             let nameDisplay = u.name;
 
             card.innerHTML = `
-                <div style="width: 85px; background: #1e293b; border-right: 1px solid #334155; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0; gap: 4px;">
-                    <iconify-icon icon="${starIcon}" style="font-size: 20px; color: ${starColor};" onclick="event.stopPropagation(); window.toggleFavorite('${u.name}')"></iconify-icon>
-                    <span style="font-size: 14.5px; font-weight: bold; color: ${nameColor};">${nameDisplay}</span>
+                <div style="width: 104px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0; gap: 4px;">
+                    <iconify-icon icon="${starIcon}" style="font-size: 24px; color: ${starColor};" onclick="event.stopPropagation(); window.toggleFavorite('${u.name}')"></iconify-icon>
+                    <span style="font-size: 18px; font-weight: bold; color: ${nameColor};">${nameDisplay}</span>
                 </div>
-                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 6px 8px;">
+                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 14px; padding: 8px 6px;">
                     ${infoHtml}
                 </div>
                 ${callBtnHtml}
@@ -934,11 +928,8 @@ function renderEditRouteOptions() {
             // 한눈에 들어오는 컴팩트 박스 디자인 (오늘 강조 제거, 휴대폰 공간 최적화)
             card.style.display = 'flex';
             card.style.alignItems = 'stretch';
-            card.style.border = '1px solid #334155';
-            card.style.borderRadius = '6px';
-            card.style.overflow = 'hidden';
-            card.style.background = '#0f172a';
-            card.style.marginBottom = '6px';
+            card.style.borderBottom = '1px solid #475569';
+            card.style.background = 'transparent';
 
             // 요일/날짜 색상 (휴일 빨간색 처리만)
             let dateColor = isRedDay ? '#ef4444' : '#cbd5e1';
@@ -950,27 +941,24 @@ function renderEditRouteOptions() {
             let infoHtml = '';
             if (isOffWork) {
                 infoHtml = `
-                    <span style="color: #94a3b8; font-size: 14.5px; padding: 4px 8px;">${route} ☕</span>
+                    <span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ☕</span>
                 `;
             } else {
                 // 4개의 정보 각각 분리된 묶음(배지) 디자인 (크기 20% 업그레이드)
                 infoHtml = `
-                                        <span style="color: #38bdf8; font-size: 14.5px; font-weight: 900; white-space: nowrap;">${route}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #22c55e; font-size: 14.5px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #fbbf24; font-size: 14.5px; font-weight: bold; white-space: nowrap;">${busNo}</span>
-                    <span style="color: #475569; font-size: 13px; margin: 0 3px;">|</span>
-                    <span style="color: #cbd5e1; font-size: 14px; white-space: nowrap;">${startEnd}</span>
+                                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900; white-space: nowrap;">${route}</span>
+                    <span style="color: #22c55e; font-size: 18px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
+                    <span style="color: #fbbf24; font-size: 18px; font-weight: bold; white-space: nowrap;">${busNo}</span>
+                    <span style="color: #cbd5e1; font-size: 17px; white-space: nowrap;">${startEnd}</span>
                 `;
             }
 
             // 좌측 날짜 영역과 우측 정보 영역 완벽히 분리 (크기 20% 업그레이드)
             card.innerHTML = `
-                <div style="width: 85px; background: #1e293b; border-right: 1px solid #334155; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0;">
-                    <span style="font-size: 14.5px; font-weight: bold; color: ${dateColor};">${dayLabel}</span>
+                <div style="width: 104px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0;">
+                    <span style="font-size: 18px; font-weight: bold; color: ${dateColor};">${dayLabel}</span>
                 </div>
-                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 6px 8px;">
+                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 14px; padding: 8px 6px;">
                     ${infoHtml}
                 </div>
             `;
