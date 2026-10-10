@@ -244,7 +244,7 @@
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-        const inLabel = scope === 'month' ? ` (${v.n}회)` : '';
+        const inLabel = ` (${v.n}회)`;
         const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:9px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
             `<span style="font-size:23px;">${label}${showPct ? inLabel : ''}</span><span style="color:${color}; font-weight:900; font-size:34px;">${c}회${showPct ? `<span style="font-size:17px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
         const top = (title, arr, color) => (arr && arr.length)
@@ -260,7 +260,7 @@
             : '';
         const note = '';
         el.innerHTML =
-            (scope === 'month' ? '' : row('측정', v.n, '#e2e8f0', false)) + row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
+            row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
     }
 
