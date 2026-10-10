@@ -55,3 +55,5 @@
 - 2026-10-10: 근무정보 > 노선시간표 목록은 GitHub 시간표(`ytTimetableRoutes`)의 노선 이름을 우선 쓴다(새 컴퓨터처럼 저장값이 없어도 나옴).
 
 - **규칙(사용자 지시 2026-10-10): 앱에 아이콘이 필요하면 https://iconify.design/ (아이콘 검색: https://icon-sets.iconify.design/)의 무료 오픈소스 아이콘을 쓴다.** 앱은 이미 `iconify-icon` 태그(`index.html`에서 불러옴)를 쓰므로 `<iconify-icon icon="세트:이름">`로 넣으면 된다. 선(속이 빈) 모양은 `lucide:*`(ISC 라이선스)를 기본으로 쓴다(예: 라이브 모달 날씨 `lucide:sun`·`lucide:cloud-rain` 등, `js/script_live2.js`). 세트를 고를 땐 라이선스가 무료 사용 가능한지 확인한다.
+
+- 2026-10-10: **사용설명서(웹페이지)**: `manual/menu.html`(메뉴 설명서), `manual/login.html`(로그인 방법)과 쪽별 그림 `manual/menu/`, `manual/login/`, 원본 PDF `manual/menu.pdf`, `manual/login.pdf`. 앱이 업그레이드되면 새로 만들어 **같은 주소·같은 파일명으로 덮어쓴다**(옛 것은 지움, 쪽 수가 줄면 남은 옛 그림 삭제). 기사에게 보내는 안내문은 로그인 방법·메뉴 설명서·앱 링크 3개이고, 앱 링크 설명에는 "바탕화면에 꼭 놓고 사용하세요"를 넣는다(사용자 지시).
