@@ -76,13 +76,16 @@
         renderBus();   // 휴무 글자 따라가기
     }
 
-    // ---- 하루 진행선: 오늘은 시작~종료 사이 지금 위치, 지난 날은 한 바퀴, 앞날은 0 ----
+    // ---- 하루 진행선: 처음엔 선이 꽉 차 있고, 시간이 지날수록 색이 빠짐 ----
+    //      (12시 위치에서 시계 방향으로 지나간 만큼 색이 사라져 마지막엔 비게 됨)
+    //      오늘은 시작~종료 사이 지금 위치, 지난 날은 모두 빠진 상태, 앞날은 꽉 찬 상태
     function toMin(s) { var m = /(\d{1,2}):(\d\d)/.exec(s || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
     function renderArc() {
         var arc = $('yb4Arc'), bus = $('yb4Bus');
         if (!arc || !bus) return;
-        var frac = 0;
-        if (!bus.classList.contains('off')) {
+        var off = bus.classList.contains('off');
+        var frac = 0;   // 지나간 비율 (0 = 아직 안 시작, 1 = 끝남)
+        if (!off) {
             var inp = $('searchDate'), s = toMin(txt('yb2Start')), e = toMin(txt('yb2End'));
             if (inp && inp.value && s !== null && e !== null) {
                 var p = inp.value.split('-');
@@ -99,7 +102,10 @@
                 }
             }
         }
-        arc.setAttribute('stroke-dasharray', Math.round(frac * 1000) + ' 1000');
+        var gone = Math.round(frac * 1000);
+        arc.setAttribute('stroke-dasharray', (1000 - gone) + ' 1000');
+        arc.setAttribute('stroke-dashoffset', -gone);
+        arc.style.opacity = (off || frac >= 1) ? '0' : '1';   // 다 빠졌거나 근무 없는 날은 색선 없음
     }
 
     // ---- 날짜 줄: 오늘이면 html 에 표시, 날짜 입력칸 맞추기 ----
