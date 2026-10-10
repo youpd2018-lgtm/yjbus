@@ -272,15 +272,17 @@
 
     // ---- 이달 합계: 서버에 올라간 회차 + 아직 못 올린 이 폰 회차 ----
     function countTop(lists) {
-        var cnt = {}, order = [];
+        // 많이 나온 정류장 먼저, 같은 횟수면 가장 나중에 나온(새로 추가된) 정류장 먼저
+        var cnt = {}, last = {}, order = [], pos = 0;
         lists.forEach(function (arr) {
             arr.forEach(function (nm) {
                 if (!nm) return;
                 if (cnt[nm] === undefined) { cnt[nm] = 0; order.push(nm); }
                 cnt[nm]++;
+                last[nm] = pos++;
             });
         });
-        order.sort(function (a, b) { return cnt[b] - cnt[a]; });
+        order.sort(function (a, b) { return (cnt[b] - cnt[a]) || (last[b] - last[a]); });
         return order.slice(0, 3).map(function (nm) { return nm + ' ' + cnt[nm] + '회'; });
     }
     function fetchMonth(year, month) {
