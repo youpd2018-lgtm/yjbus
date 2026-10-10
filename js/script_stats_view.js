@@ -245,7 +245,7 @@
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
                 const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:9px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
-            `<span style="font-size:23px;">${label}</span><span style="color:${color}; font-weight:900; font-size:34px;">${v.n}회 / ${c}회${showPct ? `<span style="font-size:17px; color:#94a3b8; font-weight:bold;"> ${pct(c)}%</span>` : ''}</span></div>`;
+            `<span style="font-size:23px;">${label}</span><span style="white-space:nowrap;"><span style="font-size:23px; color:#94a3b8; font-weight:bold;">${v.n}회 / </span><span style="color:${color}; font-weight:900; font-size:34px;">${c}회${showPct ? ` ${pct(c)}%` : ''}</span></span></div>`;
         const top = (title, arr, color) => (arr && arr.length)
             ? `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:${color}; margin-bottom:6px;">${title}</div>` +
               arr.map((nm, i) => {
