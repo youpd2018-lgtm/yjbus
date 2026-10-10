@@ -240,7 +240,7 @@
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:24px; ${gray}">불러오는 중...</div>`; return; }
         if (!v || !v.n) {
-            el.innerHTML = `<div style="font-size:30px; line-height:1.4; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:22px; color:#cbd5e1;">라이브 모달을 켜고<br>운행하세요</span>' : '기록 없음'}</div>`;
+            el.innerHTML = `<div style="font-size:30px; line-height:1.4; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:22px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span>' : '기록 없음'}</div>`;
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
