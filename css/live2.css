@@ -153,5 +153,5 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
 #yb3 #gpsStatusText { font-size: 0 !important; }
 #yb3 #gpsStatusText::after { content: "GPS"; font-size: 20px; font-weight: 800; }
 #yb3Speed { display: flex; align-items: baseline; gap: 2px; font-family: 'GMarketSans','GmarketNum',sans-serif; color: #fff; line-height: 1; text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
-#yb3Speed b { font-size: min(66px, 17.6vw); font-weight: 700; font-variant-numeric: tabular-nums; }
+#yb3Speed b { font-size: 31px; font-weight: 700; font-variant-numeric: tabular-nums; }
 #yb3Speed small { font-size: 10px; font-weight: 700; opacity: .75; }
