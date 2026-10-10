@@ -26,9 +26,9 @@ html.lv2 #liveModal .live-modal-content.ios-widget-modal {
 html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: 'GmarketNum','SeoulNotice',sans-serif; color: #fff; }
 
 /* 위 줄: 날씨 · 차량번호 · GPS */
-.yb3-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.85); }
+.yb3-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.85); }
 .yb3-top > span:first-child { white-space: nowrap; }
-.yb3-plate { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.yb3-plate { display: none; font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 #yb3GpsSlot { flex: none; display: inline-flex; }
 #yb3 #gpsAdminTrigger { background: rgba(0,0,0,0.3) !important; border-color: rgba(255,255,255,0.5) !important; color: #fff !important; }
 #yb3 #gpsAdminTrigger iconify-icon, #yb3 #gpsAdminTrigger span { color: #fff !important; }

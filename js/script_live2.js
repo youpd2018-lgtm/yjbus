@@ -15,10 +15,11 @@
     return (+m[1]) * 3600 + (+m[2]) * 60 + (+(m[3] || 0));
   }
 
+  // 날씨 글자 → 속이 빈(선으로 그린) 기호. VS15(\uFE0E)로 색 이모지가 아닌 글자 모양을 쓴다
+  var WX_ICON = { '맑음': '\u263C', '구름조금': '\u26C5\uFE0E', '흐림': '\u2601\uFE0E', '안개': '\u224B', '비': '\u2602\uFE0E', '눈': '\u2744\uFE0E', '뇌우': '\u26A1\uFE0E' };
   function syncTop() {
     var t = txt('weatherTempDisplay'), st = txt('weatherStatusDisplay');
-    setText($('yb3Weather'), '영종도 ' + (t || '--℃') + (st ? ' (' + st + ')' : ''));
-    setText($('yb3Plate'), txt('bisVehicleNo'));
+    setText($('yb3Weather'), '영종도 ' + (t || '--℃') + (st && WX_ICON[st] ? ' ' + WX_ICON[st] : (st && st !== '조회 중' ? ' (' + st + ')' : '')));
   }
 
   function syncMain() {
@@ -39,15 +40,18 @@
     syncRing();
   }
 
+  // 색 링: 이전 거점 시간 → 다음 거점 시간 동안 남은 시간 비율만큼만 색이 남고, 시간이 갈수록 빠짐
   function syncRing() {
     var fill = $('yb3Fill'); if (!fill) return;
     var left = hmsToSec(txt('liveCardTimeLeft'));
-    var cur = hmsToSec(txt('trafficStopTimeNext'));
-    var nxt = hmsToSec(txt('trafficStopTimeAfter'));
-    var f = 0;
-    if (left !== null && cur !== null && nxt !== null) {
-      var total = nxt - cur; if (total < 0) total += 86400;
-      if (total > 0) f = Math.max(0, Math.min(1, left / total));
+    var f = 1;   // 첫 거점 전·계산 불가: 가득
+    var list = window.todayStopSeq, ni = window.todayStopNext;
+    if (left !== null && list && typeof ni === 'number' && ni > 0 && list[ni] && list[ni - 1]) {
+      var a = hmsToSec(list[ni - 1].time), b = hmsToSec(list[ni].time);
+      if (a !== null && b !== null) {
+        var total = b - a; if (total < 0) total += 86400;
+        if (total > 0) f = Math.max(0, Math.min(1, left / total));
+      }
     }
     fill.setAttribute('stroke-dasharray', (f * RING_LEN).toFixed(1) + ' 1000');
   }
