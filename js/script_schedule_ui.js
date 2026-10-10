@@ -40,7 +40,9 @@
 
         let regRouteEl = document.getElementById('regRoute');
         let currentSelected = regRouteEl ? regRouteEl.value : '';
-        let keys = Object.keys(routeDataMap || {});
+        // 노선 목록은 GitHub 시간표(개별 시간표)가 기준이다. 폰에 남은 옛 노선 목록은 시간표를 못 받았을 때만 쓴다.
+        let keys = (typeof window.ytTimetableRoutes === 'function') ? window.ytTimetableRoutes() : [];
+        if (keys.length === 0) keys = Object.keys(routeDataMap || {});
 
         // 노선 데이터가 비어있을 때 대비
         if (keys.length === 0 && typeof defaultRouteDataMap !== 'undefined') {

@@ -64,6 +64,7 @@
         // 처음 받았거나 새 버전이면 화면을 다시 그림
         if (changed && typeof window.searchSchedule === 'function') { try { window.searchSchedule(); } catch (e) { } }
         if (changed && typeof window.initAllRouteTimetableUI === 'function') { try { window.initAllRouteTimetableUI(); } catch (e) { } }
+        if (changed && typeof window.initRouteDropdowns === 'function') { try { window.initRouteDropdowns(); } catch (e) { } }
       })
       .catch(err => console.warn('개별 시간표 받기 실패(저장된 것 또는 기존 방식 사용):', err));
   }
