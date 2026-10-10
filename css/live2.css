@@ -148,10 +148,10 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
 }
 
 /* 라이브 모달 우상단: GPS 버튼(이모지+GPS 글자만, 날씨 크기) + 그 아래 속도 숫자(거점 시간 크기, km 는 아주 작게) */
-#yb3 #gpsAdminTrigger { font-size: 20px !important; padding: 3px 11px !important; gap: 6px !important; }
+#yb3 #gpsAdminTrigger { font-size: 20px !important; height: 32px; box-sizing: border-box; padding: 0 11px !important; gap: 6px !important; }   /* 높이 = 날씨 줄(32px) */
 #yb3 #gpsBadgeIcon { font-size: 24px !important; }
 #yb3 #gpsStatusText { font-size: 0 !important; }
 #yb3 #gpsStatusText::after { content: "GPS"; font-size: 20px; font-weight: 800; }
-#yb3Speed { display: flex; align-items: baseline; gap: 2px; font-family: 'GMarketSans','GmarketNum',sans-serif; color: #fff; line-height: 1; text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
-#yb3Speed b { font-size: 31px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#yb3Speed { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; align-items: baseline; gap: 2px; font-family: 'GMarketSans','GmarketNum',sans-serif; color: #fff; line-height: 1; text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
+#yb3Speed b { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
 #yb3Speed small { font-size: 10px; font-weight: 700; opacity: .75; }
