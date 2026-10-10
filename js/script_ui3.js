@@ -68,6 +68,94 @@
         });
         setTxt('yb4Hand', txt('yb2Hand'));
         renderArc();
+        renderStops();
+    }
+
+    // ---- 교대 시간이 지나면: 시작·종료·교대 자리에 '다음 정류장 3개'를 밀어내듯 보여 줌 (라이브 모달 거점과 같은 방식) ----
+    //      [다음 정류장, 그 다음, 그 다음다음] → 정류장을 지나면 한 칸씩 앞으로 밀림. 남은 정류장이 없으면 원래 시작·종료·교대로 돌아옴.
+    var SEQ_COLOR = { yellow: '#fbbf24', red: '#ef4444', important: '#ef4444', blue: '#38bdf8' };
+    var lastFirstKey = '';
+    function todayStops() {
+        var inp = $('searchDate');
+        if (!inp || !inp.value) return null;
+        if (typeof getDriverKey !== 'function' || typeof customGetItem !== 'function' || typeof getHeaderArray !== 'function' || typeof parseTimeToDate !== 'function') return null;
+        var saved = localStorage.getItem(getDriverKey('sched_' + inp.value));
+        if (!saved) return null;
+        var sched; try { sched = JSON.parse(saved); } catch (e) { return null; }
+        if (!sched || !sched.route || !sched.seq) return null;
+        var list = customGetItem(sched.route, sched.seq), heads = getHeaderArray(sched.route, sched.seq);
+        var cols = heads ? heads.length : 0;
+        if (!list || !list.length || !cols) return null;
+        var yellow = -1;
+        for (var i = 0; i < list.length && yellow < 0; i++)
+            for (var c = 1; c <= cols; c++) if (list[i]['c' + c] === 'yellow') { yellow = i; break; }
+        var from = 0, to = list.length - 1;
+        if (sched.time === '오전') { to = yellow >= 0 ? yellow : Math.min(2, list.length - 1); }
+        else if (sched.time === '오후') { from = yellow >= 0 ? yellow + 1 : Math.min(3, list.length - 1); }
+        var out = [], prev = null;
+        for (var t = from; t <= to; t++) {
+            var trip = list[t], h = heads;
+            if (t === 0 && typeof getFirstTripHeaderArray === 'function') {
+                var fh = getFirstTripHeaderArray(sched.route, sched.seq);
+                if (fh && fh.enabled && Array.isArray(fh.headers) && fh.headers.length) h = fh.headers;
+            }
+            for (var k = 1; k <= cols; k++) {
+                var ts = trip['time' + k];
+                if (!ts || String(ts).trim() === '' || String(ts).trim() === '-') continue;
+                var d = parseTimeToDate(ts, inp.value);
+                if (!d) continue;
+                if (prev && d.getTime() < prev.getTime() - 2 * 3600 * 1000) d.setDate(d.getDate() + 1);
+                prev = new Date(d);
+                out.push({ key: t + '-' + k, name: h[k - 1] || ('정류장' + k), time: String(ts).length >= 8 ? String(ts).substring(0, 5) : String(ts), date: d, color: trip['c' + k] || '' });
+            }
+        }
+        return out;
+    }
+    function renderStops() {
+        var box = document.querySelector('.yb4-stats');
+        if (!box) return;
+        var cells = box.querySelectorAll('.yb4-st');
+        var picked = null;
+        try {
+            var now = new Date(), inp = $('searchDate'), hm = toMin(txt('yb2Hand'));
+            var isToday = false;
+            if (inp && inp.value) { var p = inp.value.split('-'); isToday = +p[0] === now.getFullYear() && +p[1] === now.getMonth() + 1 && +p[2] === now.getDate(); }
+            if (isToday && hm !== null && now.getHours() * 60 + now.getMinutes() >= hm) {
+                var stops = todayStops();
+                if (stops && stops.length) {
+                    var ni = -1;
+                    for (var i = 0; i < stops.length; i++) if (stops[i].date > now) { ni = i; break; }
+                    if (ni >= 0) picked = stops.slice(Math.max(0, Math.min(ni, stops.length - 3)), Math.max(0, Math.min(ni, stops.length - 3)) + 3);
+                }
+            }
+        } catch (e) { picked = null; }
+        var on = !!picked && picked.length > 0;
+        var was = box.classList.contains('stops');
+        box.classList.toggle('stops', on);
+        var labels = ['시작', '종료', '교대'];
+        for (var j = 0; j < 3; j++) {
+            var cell = cells[j]; if (!cell) continue;
+            var l = cell.children[0], v = cell.children[1];
+            if (on) {
+                var it = picked[j];
+                cell.style.visibility = it ? '' : 'hidden';
+                if (it) {
+                    if (l.textContent !== it.name) l.textContent = it.name;
+                    if (v.textContent !== it.time) v.textContent = it.time;
+                    v.style.color = SEQ_COLOR[it.color] || '';
+                    v.classList.remove('red');
+                }
+            } else {
+                cell.style.visibility = '';
+                if (l.textContent !== labels[j]) l.textContent = labels[j];
+                v.style.color = '';
+            }
+        }
+        if (on) {
+            if (lastFirstKey && lastFirstKey !== picked[0].key) { box.classList.remove('slide'); void box.offsetWidth; box.classList.add('slide'); }
+            lastFirstKey = picked[0].key;
+        } else lastFirstKey = '';
+        if (was && !on) renderTimes();   // 원래 시작·종료·교대(빨강 표시 포함)로 되돌림
     }
 
     // ---- 시간 카운트 (두 줄) ----
@@ -190,6 +278,7 @@
         initDateInput();
         renderBus(); renderTimes(); renderCd(); renderDateBits();
         setInterval(function () { renderArc(); renderName(); }, 30000);
+        setInterval(renderStops, 5000);
         setTimeout(renderName, 1500); setTimeout(renderName, 5000);   // 로그인 직후 이름 늦게 채워질 때 대비
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

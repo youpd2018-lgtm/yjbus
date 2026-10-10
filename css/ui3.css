@@ -118,3 +118,13 @@ html.ui3:not(.senior) .yb2-date-main { letter-spacing: -0.6px; white-space: nowr
 
 /* 노안모드(옛 시작·종료 칸)에서도 시간표 빨강 규칙 적용 */
 html .yb2-tile-v.red, html.ui2.senior .yb2-tile-v.red { color: #FF5A5A; }
+
+/* 교대 시간이 지난 뒤: 시작·종료·교대 자리에 다음 정류장 3개(같은 글꼴·스타일) */
+.yb4-stats.stops .yb4-st { min-width: 0; padding: 0 4px; }
+.yb4-stats.stops .yb4-sl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.yb4-stats.stops .yb4-st.hand .yb4-sl { color: rgba(255,255,255,0.75); }
+.yb4-stats.stops .yb4-st.hand .yb4-sv { color: #fff; }
+.yb4-stats.stops .yb4-st:first-child .yb4-sl { color: #fff; }
+.yb4-stats.slide .yb4-st { animation: yb4Slide .5s ease-out; }
+@keyframes yb4Slide { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .yb4-stats.slide .yb4-st { animation: none; } }
