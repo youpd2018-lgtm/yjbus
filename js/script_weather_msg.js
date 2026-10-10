@@ -9,6 +9,7 @@ function playChimeDingDong() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
+    try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'ambient'; } catch (e) { }   // 다른 앱 음악을 끊지 않게
     const ctx = new AudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
 

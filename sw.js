@@ -4,7 +4,7 @@
 // - CDN(SweetAlert2/iconify/폰트)은 stale-while-revalidate
 // - GAS(script.google.com), 버스/날씨/AI 등 API 요청은 절대 캐시하지 않고 그대로 통과
 // ※ 셸 파일을 수정하면 CACHE_VERSION을 올려 주세요.
-const CACHE_VERSION = 'v294';
+const CACHE_VERSION = 'v295';
 const SHELL_CACHE = `yjbus-shell-${CACHE_VERSION}`;
 const CDN_CACHE = `yjbus-cdn-${CACHE_VERSION}`;
 

@@ -15,9 +15,21 @@
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
     window.sfxIsOn = function () { return lsGet(LS_ON) !== '0'; };
 
+    // ---------- 🎵 다른 앱 음악을 끊지 않도록 (아이폰) ----------
+    // 소리 장치를 열기 전·앱으로 돌아올 때마다 오디오 세션을 '섞어 듣기(ambient)'로 맞추고, 화면이 숨겨지면 소리 장치를 쉬게 한다.
+    function ambient() { try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'ambient'; } catch (e) { } }
+    ambient();
+    document.addEventListener('visibilitychange', function () {
+        ambient();
+        try { if (document.hidden && ctx && ctx.state === 'running') ctx.suspend(); } catch (e) { }
+    });
+    window.addEventListener('pageshow', ambient);
+    window.addEventListener('focus', ambient);
+
     // ---------- 소리 재생 (WebAudio, 안 되면 Audio 태그) ----------
     var ctx = null, buffers = {}, loading = {};
     function getCtx() {
+        ambient();
         if (!ctx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) { try { ctx = new AC(); } catch (e) { ctx = null; } } }
         return ctx;
     }
@@ -45,6 +57,7 @@
 
     function play(name) {
         try {
+            ambient();
             var c = ctx;
             if (c && buffers[name]) {
                 if (c.state !== 'running') c.resume();
