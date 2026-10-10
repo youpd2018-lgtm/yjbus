@@ -78,7 +78,6 @@ html.ui3:not(.senior) .yb2-tab-x { display: none; }
 .yb4-pick-row button.sel { background: rgba(255,255,255,0.16); border-color: #fff; }
 .yb4-pick-row button svg { width: calc(var(--u) * 52); height: calc(var(--u) * 52); filter: drop-shadow(0 3px 2px rgba(0,0,0,0.5)); }
 .yb4-pick-row b { font-size: calc(var(--u) * 17); font-weight: 900; white-space: nowrap; }
-.yb4-pick-row i { font-style: normal; font-size: calc(var(--u) * 14); font-weight: 800; color: rgba(255,255,255,0.7); }
 .yb4-pick-h { font-size: calc(var(--u) * 15); font-weight: 800; color: rgba(255,255,255,0.6); }
 
 /* 휴무·미등록·운행종료 등 (근무 없음): 박스 안은 비워 둠 — 안내는 아래 카운트 박스에서 */
