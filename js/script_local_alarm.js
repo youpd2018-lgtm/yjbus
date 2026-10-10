@@ -173,10 +173,11 @@
   function notify(info, trip) {
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
     const body = `${trip.text} 출발` + (trip.place ? ` · ${trip.place}` : '') + ` · ${info.sched.route} ${info.sched.seq}` + (info.sched.busNo && info.sched.busNo !== '-' ? ` · 차량 ${info.sched.busNo}` : '');
-    // 2026-10-10 사용자 지시: 폰 알림 메시지는 보내지 않고 화면 위 알림 카드(배너)만 띄움
+    // 2026-10-10 사용자 지시: 카드는 항상 한 개만. 앱이 화면에 있으면 화면 위 알림 카드(배너), 백그라운드면 폰 알림 메시지
     try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
     playAlarmSound();
-    showAlarmBanner(title, body);
+    if (document.visibilityState === 'visible') showAlarmBanner(title, body);
+    else showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
   }
 
   // 📢 화면 위 알림 배너 (Swal 등 외부 라이브러리에 의존하지 않아 아이폰에서도 항상 표시)
@@ -191,10 +192,9 @@
           'background:#1e293b;color:#fff;border:2px solid #facc15;border-radius:14px;padding:12px 14px;' +
           'box-shadow:0 8px 24px rgba(0,0,0,.45);display:flex;align-items:center;gap:10px;font-family:inherit;';
         el.innerHTML = '<div style="flex:1;min-width:0"><div id="localAlarmBannerTitle" style="font-size:17px;font-weight:900;"></div>' +
-          '<div id="localAlarmBannerBody" style="font-size:14px;margin-top:3px;color:#cbd5e1;word-break:keep-all;"></div></div>' +
-          '<button type="button" id="localAlarmBannerBtn" style="flex:none;background:#facc15;color:#0f172a;border:none;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:900;">소리 끄기</button>';
+          '<div id="localAlarmBannerBody" style="font-size:14px;margin-top:3px;color:#cbd5e1;word-break:keep-all;"></div></div>';
         document.body.appendChild(el);
-        el.querySelector('#localAlarmBannerBtn').addEventListener('click', hideAlarmBanner);
+        el.addEventListener('click', hideAlarmBanner); // 카드를 누르면 닫힘
       }
       el.querySelector('#localAlarmBannerTitle').textContent = title;
       el.querySelector('#localAlarmBannerBody').textContent = body;
