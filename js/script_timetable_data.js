@@ -46,6 +46,12 @@
     return same ? { enabled: false, headers: [] } : { enabled: true, headers: first.slice() };
   };
   window.ytTimetableRounds = getRounds;
+  // GitHub 시간표에 있는 노선 이름 목록 / 노선별 순번 개수 (근무정보 > 노선시간표 목록용)
+  window.ytTimetableRoutes = function () { return data && data.tt ? Object.keys(data.tt) : []; };
+  window.ytTimetableSeqCount = function (route) {
+    const r = data && data.tt && data.tt[route];
+    return r ? Object.keys(r).length : 0;
+  };
 
   function refresh() {
     fetch(URL, { cache: 'no-cache' })
@@ -57,6 +63,7 @@
         try { localStorage.setItem(LS_KEY, JSON.stringify(json)); } catch (e) { }
         // 처음 받았거나 새 버전이면 화면을 다시 그림
         if (changed && typeof window.searchSchedule === 'function') { try { window.searchSchedule(); } catch (e) { } }
+        if (changed && typeof window.initAllRouteTimetableUI === 'function') { try { window.initAllRouteTimetableUI(); } catch (e) { } }
       })
       .catch(err => console.warn('개별 시간표 받기 실패(저장된 것 또는 기존 방식 사용):', err));
   }

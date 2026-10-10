@@ -507,7 +507,10 @@ function renderEditRouteOptions() {
         const viewRouteSelect = document.getElementById('viewRouteSelect');
         const editRouteSelect = document.getElementById('editRouteSelect');
 
-        let keys = Object.keys(window.routeDataMap || (typeof routeDataMap !== 'undefined' ? routeDataMap : {}));
+        // GitHub 시간표의 노선 이름을 우선 사용 (새 컴퓨터처럼 폰 저장값이 없어도 나옴), 없으면 기존 목록
+        let keys = (typeof window.ytTimetableRoutes === 'function') ? window.ytTimetableRoutes() : [];
+        if (!keys.length) keys = Object.keys(window.routeDataMap || (typeof routeDataMap !== 'undefined' ? routeDataMap : {}));
+        let prevRoute = viewRouteSelect ? viewRouteSelect.value : '';
         let optionsHtml = '';
         if (keys.length === 0) {
             optionsHtml = '<option value="">등록된 노선 없음</option>';
@@ -518,6 +521,7 @@ function renderEditRouteOptions() {
 
         if (viewRouteSelect) {
             viewRouteSelect.innerHTML = optionsHtml;
+            if (prevRoute && keys.indexOf(prevRoute) >= 0) viewRouteSelect.value = prevRoute;
             onViewRouteSelectionChange();
         }
         if (editRouteSelect) {
@@ -536,6 +540,7 @@ function renderEditRouteOptions() {
         let count = 4;
         let match = String(route).match(/(\d+)\s*대/);
         if (match) count = parseInt(match[1], 10);
+        if (typeof window.ytTimetableSeqCount === 'function' && window.ytTimetableSeqCount(route) > 0) count = window.ytTimetableSeqCount(route);
 
         for (let i = 1; i <= count; i++) {
             seqSelect.innerHTML += `<option value="${i}순번">${i}순번</option>`;
