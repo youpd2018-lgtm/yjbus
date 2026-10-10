@@ -1078,9 +1078,18 @@
           </div>
           <div class="yb3-gauge" id="yb3Gauge">
             <svg viewBox="0 0 300 300" aria-hidden="true">
+              <defs>
+                <linearGradient id="yb3Rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.18"/><stop offset="1" stop-color="#fff" stop-opacity="0.04"/></linearGradient>
+                <linearGradient id="yb3Face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.42"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient>
+                <linearGradient id="yb3Lip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0.22"/></linearGradient>
+              </defs>
+              <circle class="yb3-body" cx="150" cy="150" r="144"></circle>
+              <circle class="yb3-face" cx="150" cy="150" r="128"></circle>
               <circle class="yb3-ring-tick" cx="150" cy="150" r="118"></circle>
               <circle class="yb3-ring-track" cx="150" cy="150" r="136"></circle>
               <circle class="yb3-ring-fill" id="yb3Fill" cx="150" cy="150" r="136" transform="rotate(-90 150 150)" stroke-dasharray="0 1000"></circle>
+              <circle class="yb3-rim" cx="150" cy="150" r="143.2"></circle>
+              <circle class="yb3-lip" cx="150" cy="150" r="127.2"></circle>
             </svg>
             <div class="yb3-center">
               <div class="yb3-label" id="yb3Label">운행 정보 확인 중...</div>
