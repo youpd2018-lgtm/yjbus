@@ -3,7 +3,8 @@
 // - 켜짐/꺼짐: <html> 의 'ui3' 클래스 (index.html head 에서 붙임). 되돌리기 ?ui3=0, 다시 켜기 ?ui3=1
 // - 노안모드(html.senior)에서는 CSS 가 적용되지 않아 기존 화면 그대로
 // - 값은 script_ui2.js 가 채우는 숨은 박스(#yb2Route 등)를 따라 적는 방식 → 기존 JS 는 그대로 작동
-// - 헤드라이트(눈) = 난이도 색 선택 (js/script_difficulty.js 의 window.ybDiffApi 사용, 양쪽 눈 동시에 바뀜)
+// - 박스 안 버스 아이콘 = 난이도 색 선택 (녹색 쉬움 / 파랑 기본 / 노랑 약간 힘듦 / 빨강 하드)
+//   js/script_difficulty.js 의 window.ybDiffApi 로 저장·불러오기 (색을 안 골랐으면 파랑으로 보임)
 // ================================================================
 (function () {
     var html = document.documentElement;
@@ -18,29 +19,39 @@
         new MutationObserver(fn).observe(el, o);
     }
 
+    // ---- 기사 이름 (박스 바깥 왼쪽 위) ----
+    function renderName() {
+        var n = '';
+        try { n = (typeof getLoggedInDriverName === 'function' ? getLoggedInDriverName() : '') || window.currentDriver || ''; } catch (e) {}
+        n = String(n || '').trim();
+        setTxt('yb4Name', n ? n + ' 기사님' : '');
+    }
+
     // ---- 노선·순번·대수·차량번호 ----
     function renderBus() {
         var bus = $('yb4Bus');
         if (!bus) return;
         var route = txt('yb2Route');
         var working = route !== '' && route !== '-';
-        bus.classList.toggle('off', !working);
-        if (working) {
-            setTxt('yb4Route', route);
-        } else {
-            // 휴무·미등록 등: 시간 카운트 칸에서 쓰는 안내 글자를 크게 보여 줌
-            var msg = txt('yb2CdV');
-            if (!msg || /^\d\d:\d\d/.test(msg)) msg = '휴무';
-            setTxt('yb4Route', msg);
-            bus.classList.toggle('noreset', msg !== '휴무');
-        }
+        bus.classList.toggle('off', !working);   // 휴무·미등록 등: 박스 안은 비워 둠
+        setTxt('yb4Route', working ? route : '');
         // 평일 16대 / 6순번
         var sub = txt('yb2Sub'), seq = txt('yb2Seq'), lbl = txt('yb2SeqLbl');
+        var seqTxt = seq && seq !== '-' ? seq + (lbl || '순번') : '';
         setTxt('yb4Fleet', sub);
-        setTxt('yb4Seq', seq && seq !== '-' ? seq + (lbl || '순번') : '');
+        setTxt('yb4Seq', seqTxt);
+        // 가운데 줄이 길어지면 글자를 조금 줄임 (10자까지 44, 그 이상은 비율로 줄여 최소 26)
+        var fs = $('yb4Fs');
+        if (fs) {
+            var len = (sub + ' ' + seqTxt).length;
+            var size = Math.max(26, Math.min(44, Math.floor(44 * 10 / Math.max(len, 10))));
+            var v = 'calc(var(--u) * ' + size + ')';
+            if (fs.style.fontSize !== v) fs.style.fontSize = v;
+        }
         // 차량번호: 뒤 네 자리만
         var no = txt('yb2BusNo').replace(/[^\d]/g, '');
         setTxt('yb4Plate', no ? no.slice(-4) : '');
+        renderName();
         renderEyes();
         renderArc();
     }
@@ -106,27 +117,17 @@
         if (typeof onDateInputChange === 'function') onDateInputChange();
     };
 
-    // ---- 헤드라이트(눈) = 난이도 색 ----
+    // ---- 버스 아이콘 = 난이도 색 ----
+    var LEVELS = { green: '#4ADE80', blue: '#60A5FA', yellow: '#FCD34D', red: '#F87171' };
+    function shownColor() {
+        var api = window.ybDiffApi, c = api && api.color ? api.color() : '';
+        return LEVELS[c] ? c : 'blue';   // 아직 아무도 안 골랐으면 기본(파랑·무난)
+    }
     function renderEyes() {
-        var api = window.ybDiffApi, bus = $('yb4Bus');
-        if (!bus) return;
-        var c = api && api.color ? api.color() : '';
-        var def = (api && api.colors && api.colors[c]) || null;
-        var fill = def ? def.bg : 'rgba(255,255,255,0.92)';
-        var ring = def ? def.ring : '#FFFFFF';
-        var glow = def ? def.glow : 'rgba(255,255,255,0.35)';
-        var eyes = bus.querySelectorAll('.yb4-eye');
-        for (var i = 0; i < eyes.length; i++) {
-            eyes[i].setAttribute('fill', fill);
-            eyes[i].setAttribute('stroke', ring);
-            eyes[i].style.filter = 'drop-shadow(0 0 7px ' + glow + ')';
-        }
+        var icon = $('yb4BusIcon'), c = shownColor();
+        if (icon) icon.setAttribute('fill', LEVELS[c]);
         var btns = document.querySelectorAll('#yb4Lamp button');
-        for (var j = 0; j < btns.length; j++) {
-            var k = btns[j].getAttribute('data-c'), cd = api && api.colors ? api.colors[k] : null;
-            if (cd) { btns[j].style.background = cd.bg; btns[j].style.boxShadow = '0 0 8px ' + cd.glow; }
-            btns[j].classList.toggle('sel', k === c);
-        }
+        for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('sel', btns[j].getAttribute('data-c') === c);
     }
     function lampBox() { return $('yb4Lamp'); }
     window.yb4Lamp = function () {
@@ -140,16 +141,13 @@
         if (!box) return;
         box.addEventListener('click', function (ev) {
             var b = ev.target.closest && ev.target.closest('button[data-c]');
-            if (!b) return;
-            ev.stopPropagation();
-            if (window.ybDiffApi) window.ybDiffApi.set(b.getAttribute('data-c'));   // 양쪽 눈이 같이 바뀜
-            box.hidden = true;
-            renderEyes();
-        });
-        document.addEventListener('click', function (ev) {
-            if (box.hidden) return;
-            if (ev.target.closest && (ev.target.closest('#yb4Lamp') || ev.target.closest('.yb4-hit'))) return;
-            box.hidden = true;
+            if (b) {
+                if (window.ybDiffApi) window.ybDiffApi.set(b.getAttribute('data-c'));   // 서버 '색선택' 시트에 기록됨
+                box.hidden = true;
+                renderEyes();
+                return;
+            }
+            box.hidden = true;   // 빈 곳을 누르면 그냥 닫음
         });
         document.addEventListener('yb-diff-change', renderEyes);
     }
@@ -175,13 +173,11 @@
         if (inp) inp.addEventListener('change', renderDateBits);
         var dd = $('dateDisplayText');
         if (dd && window.MutationObserver) new MutationObserver(renderDateBits).observe(dd, { childList: true, characterData: true, subtree: true });
-        // 예전 버전의 번호판 흰 테두리 사각형이 남아 있으면 지움 (번호판 박스는 이제 글자와 한 몸)
-        var oldBox = document.querySelector('#yb4Bus svg rect[x="108"]');
-        if (oldBox && oldBox.parentNode) oldBox.parentNode.removeChild(oldBox);
         initLamp();
         initDateInput();
         renderBus(); renderTimes(); renderCd(); renderDateBits();
-        setInterval(renderArc, 30000);
+        setInterval(function () { renderArc(); renderName(); }, 30000);
+        setTimeout(renderName, 1500); setTimeout(renderName, 5000);   // 로그인 직후 이름 늦게 채워질 때 대비
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

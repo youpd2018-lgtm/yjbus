@@ -13,6 +13,7 @@
   var CATEGORY = 'DIFFICULTY';          // 현재 색 (노선-순번당 1줄)
   var LOG_CATEGORY = 'DIFFICULTY_LOG';  // 누적 기록 (바꿀 때마다 1줄)
   var COLORS = {
+    green:  { bg: '#4ade80', ring: '#86efac', glow: 'rgba(74,222,128,.8)' },
     red:    { bg: '#ff2d55', ring: '#ff6b8a', glow: 'rgba(255,45,85,.85)' },
     yellow: { bg: '#ffe600', ring: '#fff27a', glow: 'rgba(255,230,0,.8)' },
     blue:   { bg: '#00c8ff', ring: '#7fe4ff', glow: 'rgba(0,200,255,.85)' }

@@ -328,54 +328,33 @@
         <!-- 🆕 새 메인 화면 "버스 콕핏"(ui3, 노안모드 아닐 때만 보임) — 값은 아래 기존 박스(숨김)를 js/script_ui3.js 가 따라 적음 -->
         <div id="yb4Drive">
           <div id="yb4Bus">
-            <svg viewBox="0 0 362 328" aria-hidden="true">
-              <defs><linearGradient id="yb4Box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d7a5e"/><stop offset="1" stop-color="#04382c"/></linearGradient><filter id="yb4Blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter><filter id="yb4Soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5"/></filter></defs>
-              <g transform="rotate(9 22 66)">
-                <path d="M20 88H34M20 126H34" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
-                <rect x="0" y="64" width="20" height="82" rx="9" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
-                <path d="M10 78V132" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" stroke-linecap="round"/>
-              </g>
-              <g transform="rotate(-9 340 66)">
-                <path d="M342 88H328M342 126H328" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
-                <rect x="342" y="64" width="20" height="82" rx="9" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
-                <path d="M352 78V132" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" stroke-linecap="round"/>
-              </g>
-              <rect x="50" y="36" width="262" height="230" rx="34" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" stroke-dasharray="3 7" stroke-linecap="round"/>
-              <rect x="26" y="12" width="310" height="280" rx="52" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="7"/>
-              <path id="yb4Arc" d="M181 12H284A52 52 0 0 1 336 64V240A52 52 0 0 1 284 292H78A52 52 0 0 1 26 240V64A52 52 0 0 1 78 12Z" pathLength="1000" fill="none" stroke="#6EE7B7" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 1000" opacity="0.6" style="filter: drop-shadow(0 0 4px #6EE7B7)"/>
-              <rect x="52" y="272" width="48" height="52" rx="12" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
-              <rect x="262" y="272" width="48" height="52" rx="12" fill="#04271f" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
-              <path d="M64 298H88M64 308H88M64 318H88" stroke="rgba(255,255,255,0.28)" stroke-width="3" stroke-linecap="round"/>
-              <path d="M274 298H298M274 308H298M274 318H298" stroke="rgba(255,255,255,0.28)" stroke-width="3" stroke-linecap="round"/>
-              <g class="yb4-face" transform="translate(0,-24)">
-                <path d="M66 215Q88 200 112 212" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round"/>
-                <path d="M250 212Q274 200 296 215" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="5" stroke-linecap="round"/>
-                <g class="yb4-sleep" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="4.5" stroke-linecap="round">
-                  <path d="M70 236Q90 254 110 236"/>
-                  <path d="M252 236Q272 254 292 236"/>
-                </g>
-                <path d="M157 243L137 237M157 250L137 256M205 243L225 237M205 250L225 256" fill="none" stroke="#E8B923" stroke-width="1.6" stroke-linecap="round"/>
-                <image class="yb4-logo" href="icons/logo-128.png" x="160" y="225" width="42" height="42"/>
-                <g class="yb4-wk">
-                <circle class="yb4-eye" cx="90" cy="238" r="20" fill="rgba(255,255,255,0.92)" stroke="#FFFFFF" stroke-width="3"/>
-                <circle class="yb4-eye" cx="272" cy="238" r="20" fill="rgba(255,255,255,0.92)" stroke="#FFFFFF" stroke-width="3"/>
-                <circle cx="96" cy="240" r="9" fill="#04271f"/><circle cx="99" cy="236" r="3" fill="#FFFFFF"/>
-                <circle cx="266" cy="240" r="9" fill="#04271f"/><circle cx="269" cy="236" r="3" fill="#FFFFFF"/>
-                </g>
-              </g>
-            </svg>
-            <div class="yb4-txt">
-              <span id="yb4Route" class="yb4-route">-</span>
-              <div class="yb4-wk yb4-fs"><span id="yb4Fleet" class="yb4-fleet"></span><span id="yb4Seq" class="yb4-seq"></span></div>
-              <span id="yb4OffMsg" class="yb4-offmsg">푹 쉬세요</span>
+            <div class="yb4-who"><img src="icons/logo-128.png" alt="영종운수"><span id="yb4Name"></span></div>
+            <div class="yb4-card">
+              <div class="yb4-face"></div>
+              <svg class="yb4-ring" viewBox="0 0 362 296" aria-hidden="true">
+                <path d="M181 12H326A24 24 0 0 1 350 36V260A24 24 0 0 1 326 284H36A24 24 0 0 1 12 260V36A24 24 0 0 1 36 12Z" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="3.5"/>
+                <path id="yb4Arc" d="M181 12H326A24 24 0 0 1 350 36V260A24 24 0 0 1 326 284H36A24 24 0 0 1 12 260V36A24 24 0 0 1 36 12Z" pathLength="1000" fill="none" stroke="#6EE7B7" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0 1000" style="filter: drop-shadow(0 0 4px #6EE7B7)"/>
+              </svg>
+              <div class="yb4-txt">
+                <span id="yb4Route" class="yb4-route">-</span>
+                <span class="yb4-dv"></span>
+                <div id="yb4Fs" class="yb4-fs"><span id="yb4Fleet" class="yb4-fleet"></span><span id="yb4Seq" class="yb4-seq"></span></div>
+                <span class="yb4-dv s"></span>
+                <div class="yb4-busline">
+                  <button type="button" id="yb4BusBtn" class="yb4-busbtn" onclick="yb4Lamp()" aria-label="이 순번 난이도 색 선택"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="yb4BusIcon" fill="#60A5FA" d="M18,11H6V6H18M16.5,17A1.5,1.5 0 0,1 15,15.5A1.5,1.5 0 0,1 16.5,14A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 16.5,17M7.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,14A1.5,1.5 0 0,1 9,15.5A1.5,1.5 0 0,1 7.5,17M4,16C4,16.88 4.39,17.67 5,18.22V20A1,1 0 0,0 6,21H7A1,1 0 0,0 8,20V19H16V20A1,1 0 0,0 17,21H18A1,1 0 0,0 19,20V18.22C19.61,17.67 20,16.88 20,16V6C20,2.5 16.42,2 12,2C7.58,2 4,2.5 4,6V16Z"/></svg></button>
+                  <span id="yb4Plate" class="yb4-plate"></span>
+                </div>
+              </div>
             </div>
-            <div id="yb4Plate" class="yb4-plate"></div>
-            <div class="yb4-hit yb4-hl yb4-wk" onclick="yb4Lamp()"></div>
-            <div class="yb4-hit yb4-hr yb4-wk" onclick="yb4Lamp()"></div>
-            <div id="yb4Lamp" class="yb4-lamp" hidden>
-              <button type="button" data-c="red" aria-label="빨강(아주 힘듦)"></button>
-              <button type="button" data-c="yellow" aria-label="노랑(그럭저럭)"></button>
-              <button type="button" data-c="blue" aria-label="파랑(아주 편함)"></button>
+            <div id="yb4Lamp" class="yb4-pick" hidden>
+              <span class="yb4-pick-t">이 순번은 어떤가요?</span>
+              <div class="yb4-pick-row">
+              <button type="button" data-c="green" aria-label="쉬움(여유)"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4ADE80" d="M18,11H6V6H18M16.5,17A1.5,1.5 0 0,1 15,15.5A1.5,1.5 0 0,1 16.5,14A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 16.5,17M7.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,14A1.5,1.5 0 0,1 9,15.5A1.5,1.5 0 0,1 7.5,17M4,16C4,16.88 4.39,17.67 5,18.22V20A1,1 0 0,0 6,21H7A1,1 0 0,0 8,20V19H16V20A1,1 0 0,0 17,21H18A1,1 0 0,0 19,20V18.22C19.61,17.67 20,16.88 20,16V6C20,2.5 16.42,2 12,2C7.58,2 4,2.5 4,6V16Z"/></svg><b>쉬움</b><i>여유</i></button>
+              <button type="button" data-c="blue" aria-label="기본(무난)"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#60A5FA" d="M18,11H6V6H18M16.5,17A1.5,1.5 0 0,1 15,15.5A1.5,1.5 0 0,1 16.5,14A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 16.5,17M7.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,14A1.5,1.5 0 0,1 9,15.5A1.5,1.5 0 0,1 7.5,17M4,16C4,16.88 4.39,17.67 5,18.22V20A1,1 0 0,0 6,21H7A1,1 0 0,0 8,20V19H16V20A1,1 0 0,0 17,21H18A1,1 0 0,0 19,20V18.22C19.61,17.67 20,16.88 20,16V6C20,2.5 16.42,2 12,2C7.58,2 4,2.5 4,6V16Z"/></svg><b>기본</b><i>무난</i></button>
+              <button type="button" data-c="yellow" aria-label="약간 힘듦(바쁨)"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FCD34D" d="M18,11H6V6H18M16.5,17A1.5,1.5 0 0,1 15,15.5A1.5,1.5 0 0,1 16.5,14A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 16.5,17M7.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,14A1.5,1.5 0 0,1 9,15.5A1.5,1.5 0 0,1 7.5,17M4,16C4,16.88 4.39,17.67 5,18.22V20A1,1 0 0,0 6,21H7A1,1 0 0,0 8,20V19H16V20A1,1 0 0,0 17,21H18A1,1 0 0,0 19,20V18.22C19.61,17.67 20,16.88 20,16V6C20,2.5 16.42,2 12,2C7.58,2 4,2.5 4,6V16Z"/></svg><b>약간 힘듦</b><i>바쁨</i></button>
+              <button type="button" data-c="red" aria-label="하드(힘듦)"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#F87171" d="M18,11H6V6H18M16.5,17A1.5,1.5 0 0,1 15,15.5A1.5,1.5 0 0,1 16.5,14A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 16.5,17M7.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,14A1.5,1.5 0 0,1 9,15.5A1.5,1.5 0 0,1 7.5,17M4,16C4,16.88 4.39,17.67 5,18.22V20A1,1 0 0,0 6,21H7A1,1 0 0,0 8,20V19H16V20A1,1 0 0,0 17,21H18A1,1 0 0,0 19,20V18.22C19.61,17.67 20,16.88 20,16V6C20,2.5 16.42,2 12,2C7.58,2 4,2.5 4,6V16Z"/></svg><b>하드</b><i>힘듦</i></button>
+              </div>
+              <span class="yb4-pick-h">빈 곳을 누르면 닫힙니다</span>
             </div>
           </div>
           <div class="yb4-stats">
