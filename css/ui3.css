@@ -115,3 +115,6 @@ html.ui3:not(.senior) .yb2-date-main { letter-spacing: -0.6px; white-space: nowr
 /* 오늘 버튼은 사용하지 않음(사용자 지시 2026-10-10) — 화살표를 크게 */
 .yb4-todaybtn { display: none !important; }
 
+
+/* 노안모드(옛 시작·종료 칸)에서도 시간표 빨강 규칙 적용 */
+html .yb2-tile-v.red, html.ui2.senior .yb2-tile-v.red { color: #FF5A5A; }

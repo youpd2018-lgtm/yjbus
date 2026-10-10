@@ -61,7 +61,8 @@
         setTxt('yb4Start', txt('yb2Start'));
         setTxt('yb4End', txt('yb2End'));
         // 시간표에서 빨강인 시작·종료 시간은 빨강 글자로 (교대는 항상 노란색)
-        [['yb4Start', 'bliStartTime'], ['yb4End', 'bliEndTime']].forEach(function (p) {
+        // (노안모드가 쓰는 옛 칸 yb2Start/yb2End 에도 같은 규칙 적용)
+        [['yb4Start', 'bliStartTime'], ['yb4End', 'bliEndTime'], ['yb2Start', 'bliStartTime'], ['yb2End', 'bliEndTime']].forEach(function (p) {
             var t = $(p[0]), src = $(p[1]);
             if (t) t.classList.toggle('red', !!src && src.getAttribute('data-c') === 'red');
         });
