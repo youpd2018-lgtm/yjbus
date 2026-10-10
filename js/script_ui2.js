@@ -148,6 +148,19 @@
 
     // ---- 시간 카운트 박스 (5가지 상태) ----
     var C = 201;   // 둥근 표시 한 바퀴 길이
+    // 카운트 숫자는 글자마다 같은 폭의 칸에 넣고, 바뀐 글자만 갱신(숫자 폭이 달라 생기는 딸깍거림 방지)
+    function setDigits(el, v) {
+        if (el.dataset.ybDigits === v) return;
+        var cells = el.children;
+        if (!el.dataset.ybDigits || cells.length !== v.length) {
+            var h = '';
+            for (var i = 0; i < v.length; i++) h += '<span class="yb-dg' + (v[i] === ':' ? ' yb-colon' : '') + '">' + v[i] + '</span>';
+            el.innerHTML = h;
+        } else {
+            for (var j = 0; j < v.length; j++) if (cells[j].textContent !== v[j]) cells[j].textContent = v[j];
+        }
+        el.dataset.ybDigits = v;
+    }
     function renderCountdown() {
         var label = txt('resStopSignSubLabel');
         var timerTxt = txt('resMainCountdownTimer');
@@ -171,7 +184,7 @@
         var cd = document.getElementById('yb2Cd');
         if (cd) cd.classList.toggle('msg', !isCount && label.indexOf('운행중') < 0);   // 휴무·미등록·운행종료 등은 박스 가운데에
         if (L.innerHTML !== lHtml) L.innerHTML = lHtml;
-        if (V.textContent !== vTxt) V.textContent = vTxt;
+        if (isCount) setDigits(V, vTxt); else if (V.textContent !== vTxt || V.dataset.ybDigits) { V.textContent = vTxt; delete V.dataset.ybDigits; }
         V.style.color = vColor;
         ring.setAttribute('stroke', rColor);
         ring.setAttribute('stroke-dashoffset', String(off));

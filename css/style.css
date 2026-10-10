@@ -3595,3 +3595,9 @@ html.ui2:not(.senior) .yb2-cdwrap { margin: 38px 0 14px; }
     #liveModal .tf-card .tf-flow { padding: 8px 12px 7px; gap: 5px; border-radius: 20px; }
     #liveModal .tf-card .tf-flow-text { font-size: 24px; font-weight: 800; line-height: 1.1; }
 }
+
+/* 메인 시간 카운트: 숫자 칸 폭 고정(숫자가 바뀌어도 폭이 변하지 않음) */
+#yb2CdV { display: flex; justify-content: center; align-items: baseline; font-variant-numeric: tabular-nums; }
+#yb2CdV .yb-dg { display: inline-block; width: 0.62em; text-align: center; }
+#yb2CdV .yb-colon { width: 0.3em; }
+html.ui2.senior #yb2CdV { justify-content: flex-start; }
