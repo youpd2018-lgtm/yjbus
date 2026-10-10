@@ -137,15 +137,8 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
 /* ================================================================
    🧊 입체감 (2026-10-10): 모양·색·크기는 그대로, 메인 화면 네모 박스처럼 두께·빛·그림자만 더함
    ================================================================ */
-/* 둥근 게이지: 솟은 판 + 움푹한 안쪽 + 윗면에 빛 */
-/* 두께는 SVG 안의 .yb3-ext 원 12장으로 쌓음 */
-.yb3-body { fill: var(--yb3-solid, #043d2f); }
-.yb3-ext { filter: drop-shadow(0 8px 6px rgba(0,0,0,0.0)); }
-.yb3-inshadow { fill: none; stroke: rgba(0,0,0,0.6); stroke-width: 30; filter: blur(7px); }
-.yb3-bezel { fill: none; stroke: url(#yb3Bezel); stroke-width: 22; }
-.yb3-face { fill: url(#yb3Face); }
-.yb3-rim { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 1.8; }
-.yb3-lip { fill: none; stroke: rgba(0,0,0,0.6); stroke-width: 2; }
+/* 둥근 게이지: 처음 모양 그대로 + 링 양옆에 가는 연두빛 선만 더해 살짝 입체감 (검은색 없음) */
+.yb3-emb { fill: none; stroke: rgba(167,243,208,0.13); stroke-width: 1.2; }
 
 /* 신호등 알약: 박스는 그대로, 전구만 입체 */
 .yb3-lamps i { box-shadow: inset 0 3px 4px rgba(0,0,0,0.65), inset 0 -1px 0 rgba(255,255,255,0.18); }
