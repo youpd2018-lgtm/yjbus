@@ -29,7 +29,7 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.85); }
 .yb3-top > span:first-child { white-space: nowrap; }
 .yb3-plate { display: none; font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-#yb3GpsSlot { flex: none; display: inline-flex; }
+#yb3GpsSlot { flex: none; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 #yb3 #gpsAdminTrigger { background: rgba(0,0,0,0.3) !important; border-color: rgba(255,255,255,0.5) !important; color: #fff !important; }
 #yb3 #gpsAdminTrigger iconify-icon, #yb3 #gpsAdminTrigger span { color: #fff !important; }
 
@@ -146,3 +146,12 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.75) 0, rgba(255,255,255,0) 38%), var(--pc);
     box-shadow: 0 0 8px var(--pc), inset 0 -3px 4px rgba(0,0,0,0.3), 0 2px 0 rgba(0,0,0,0.35);
 }
+
+/* 라이브 모달 우상단: GPS 버튼(이모지+GPS 글자만, 날씨 크기) + 그 아래 속도 숫자(거점 시간 크기, km 는 아주 작게) */
+#yb3 #gpsAdminTrigger { font-size: 20px !important; padding: 3px 11px !important; gap: 6px !important; }
+#yb3 #gpsBadgeIcon { font-size: 24px !important; }
+#yb3 #gpsStatusText { font-size: 0 !important; }
+#yb3 #gpsStatusText::after { content: "GPS"; font-size: 20px; font-weight: 800; }
+#yb3Speed { display: flex; align-items: baseline; gap: 2px; font-family: 'GMarketSans','GmarketNum',sans-serif; color: #fff; line-height: 1; text-shadow: 0 0 5px var(--yb3-solid, #043d2f), 0 0 10px var(--yb3-solid, #043d2f); }
+#yb3Speed b { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#yb3Speed small { font-size: 9px; font-weight: 700; opacity: .75; }

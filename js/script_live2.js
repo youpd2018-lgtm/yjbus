@@ -36,6 +36,14 @@
     }
   }
 
+  function syncSpeed() {
+    var b = $('yb3Speed'); if (!b || !b.firstChild) return;
+    var g = window.lastGpsPosition, v = '--';
+    if (window.simState && window.simState.active) v = String(Math.round(window.curBusSpeed || 0));
+    else if (g && g.time && Date.now() - new Date(g.time).getTime() < 15000 && typeof g.speedKmh === 'number') v = String(Math.max(0, Math.round(g.speedKmh)));
+    setText(b.firstChild, v);
+  }
+
   function syncMain() {
     var label = txt('liveCardStatus');
     setText($('yb3Label'), label);
@@ -152,7 +160,11 @@
   function init() {
     if (!window.ybLv2On && !document.documentElement.classList.contains('lv2')) return;
     var gps = $('gpsAdminTrigger'), slot = $('yb3GpsSlot');
-    if (gps && slot && gps.parentNode !== slot) slot.appendChild(gps); // GPS 알약(재연결·관리자 길게누르기)을 새 화면으로 옮김
+    if (gps && slot && gps.parentNode !== slot) slot.appendChild(gps);
+    if (slot && !$('yb3Speed')) {   // GPS 버튼 아래 속도: 숫자는 거점 시간 크기, km 는 아주 작게
+      var sp = document.createElement('div'); sp.id = 'yb3Speed'; sp.innerHTML = '<b>--</b><small>km</small>'; slot.appendChild(sp);
+      setInterval(syncSpeed, 1000); syncSpeed();
+    } // GPS 알약(재연결·관리자 길게누르기)을 새 화면으로 옮김
     modalBox = document.querySelector('#liveModal .ios-widget-modal');
     if (modalBox) modalBox.classList.add('yb3-ok');
 
