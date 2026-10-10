@@ -139,7 +139,7 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
    ================================================================ */
 /* 둥근 게이지: 솟은 판 + 움푹한 안쪽 + 윗면에 빛 */
 /* 두께는 SVG 안의 .yb3-ext 원 12장으로 쌓음 */
-.yb3-body { fill: var(--yb3-solid, #043d2f); filter: drop-shadow(0 22px 14px rgba(0,0,0,0.5)); }
+.yb3-body { fill: var(--yb3-solid, #043d2f); filter: drop-shadow(0 22px 14px rgba(0,0,0,0.5)) drop-shadow(0 -22px 14px rgba(0,0,0,0.5)); }
 .yb3-ext { filter: drop-shadow(0 8px 6px rgba(0,0,0,0.0)); }
 .yb3-inshadow { fill: none; stroke: rgba(0,0,0,0.6); stroke-width: 16; filter: blur(5px); }
 .yb3-bezel { fill: none; stroke: url(#yb3Bezel); stroke-width: 16; }
