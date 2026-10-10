@@ -53,3 +53,5 @@
 - 2026-10-10: **난이도 색 기록**(`ColorLog.js` + `BOARD_DB.js` 호출). 색을 고르면 시트 `색선택`(날짜·노선+순번·이름·색·시각)에 쌓고, 묶음 키는 `202평일16대1순번`(노선+평일/휴일+대수+순번). 하루 중엔 마지막 선택 색, 하루가 바뀌면(자정, `COLOR_DAY_START_HOUR`) 전날 최다 색(동점은 나중 선택)으로 BOARD_DB `DIFFICULTY` 갱신. 트리거 없이 첫 접근 때 집계. 프론트는 `js/script_difficulty.js`. 새 메인 박스(버스 아이콘 4단계 녹색·파랑[기본]·노랑·빨강, 시안 M)는 2026-10-10 앱에 적용 완료. 라이브 모달 원형 게이지·신호등 램프 입체 디자인도 확정.
 
 - 2026-10-10: 근무정보 > 노선시간표 목록은 GitHub 시간표(`ytTimetableRoutes`)의 노선 이름을 우선 쓴다(새 컴퓨터처럼 저장값이 없어도 나옴).
+
+- **규칙(사용자 지시 2026-10-10): 앱에 아이콘이 필요하면 https://iconify.design/ (아이콘 검색: https://icon-sets.iconify.design/)의 무료 오픈소스 아이콘을 쓴다.** 앱은 이미 `iconify-icon` 태그(`index.html`에서 불러옴)를 쓰므로 `<iconify-icon icon="세트:이름">`로 넣으면 된다. 선(속이 빈) 모양은 `lucide:*`(ISC 라이선스)를 기본으로 쓴다(예: 라이브 모달 날씨 `lucide:sun`·`lucide:cloud-rain` 등, `js/script_live2.js`). 세트를 고를 땐 라이선스가 무료 사용 가능한지 확인한다.
