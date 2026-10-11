@@ -89,7 +89,8 @@
     var d = new Date(Date.now() + 9 * 3600000), m = d.getUTCHours() * 60 + d.getUTCMinutes();
     return m >= 270 || m < 30;
   }
-  var shared = { t: null, e: null }, sharedAt = 0, collecting = false, allIds = null;
+  var shared = { t: null, e: null }, sharedAt = 0, skew = 0, collecting = false, allIds = null;
+  function nowS() { return Date.now() + skew; }   // 서버 시각 기준(폰 시계가 틀려도 '몇 분 지났나'를 정확히 판단)
 
   async function gasGet(q) { return fetch(window.GAS_WEB_APP_URL + '?' + q).then(function (x) { return x.json(); }); }
   async function gasPost(o) { return fetch(window.GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(o) }).then(function (x) { return x.json(); }); }
@@ -117,29 +118,29 @@
         var ids = await loadAllIds(), m = {};
         items.forEach(function (it) { var id = String(it.linkId || ''), sp = parseFloat(it.speed); if (ids[id] && !isNaN(sp)) m[id] = Math.round(sp * 10) / 10; });
         var res = await gasPost({ action: 'put_traffic_shared', kind: 't', data: m });
-        if (res && res.success) shared.t = { at: Date.now(), data: m };
+        if (res && res.success) shared.t = { at: nowS(), data: m };
       } else {
         var ev = await itsGet('eventInfo', k);
         var list = ev.map(function (it) { return { roadName: it.roadName || '', message: it.message || '', eventDetailType: it.eventDetailType || '', coordX: it.coordX, coordY: it.coordY }; });
         var res2 = await gasPost({ action: 'put_traffic_shared', kind: 'e', data: list });
-        if (res2 && res2.success) shared.e = { at: Date.now(), data: list };
+        if (res2 && res2.success) shared.e = { at: nowS(), data: list };
       }
     } catch (e) { } finally { collecting = false; }
   }
   async function syncShared(g) {
     if (collecting) return;
-    if (!sharedAt || Date.now() - sharedAt > 300000) {   // 서버 값 읽기(국토부 호출 아님): 5분마다
-      try { var r = await gasGet('action=get_traffic_shared'); if (r && r.success) { if (r.t) shared.t = r.t; if (r.e) shared.e = r.e; sharedAt = Date.now(); } } catch (e) { }
+    if (!sharedAt || Date.now() - sharedAt > 60000) {   // 서버 값 읽기(국토부 호출 아님): 1분마다
+      try { var r = await gasGet('action=get_traffic_shared'); if (r && r.success) { if (r.now) skew = r.now - Date.now(); if (r.t) shared.t = r.t; if (r.e) shared.e = r.e; sharedAt = Date.now(); } } catch (e) { }
     }
     var driving = (g.speedKmh || 0) >= 5;
     if (driving && inServiceHours()) {   // 달리는 폰만, 운행시간 안에만 새로 받는다
-      if (!shared.t || Date.now() - shared.t.at >= FRESH) await collect('t');
-      if (COLLECT_EVENTS && (!shared.e || Date.now() - shared.e.at >= FRESH)) await collect('e');
+      if (!shared.t || nowS() - shared.t.at >= FRESH) await collect('t');
+      if (COLLECT_EVENTS && (!shared.e || nowS() - shared.e.at >= FRESH)) await collect('e');
     }
   }
 
   function segFlow(R, i) {
-    var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, m = (shared.t && Date.now() - shared.t.at < STALE) ? shared.t.data : null;
+    var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
     if (!m) return null;
     ids.forEach(function (id) {
       var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, sp = m[id];
@@ -152,7 +153,7 @@
 
   // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만 알린다. 같은 건은 한 번만.
   function checkIncidents(R, pos) {
-    if (!shared.e || Date.now() - shared.e.at > STALE) return;
+    if (!shared.e || nowS() - shared.e.at > STALE) return;
     var from = Math.max(0, curSeg), to = Math.min(R.lines.length - 1, curSeg + 3);
     shared.e.data.forEach(function (it) {
       var p = [parseFloat(it.coordY), parseFloat(it.coordX)];
