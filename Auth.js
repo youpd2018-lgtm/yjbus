@@ -227,19 +227,20 @@ function authRegisterFamily_(p) {
   if (!driver) return { success: false, message: '그 이름의 기사님을 찾지 못했습니다. 이름을 다시 확인해 주세요.' };
   const res = authUpdateUsers_(function (list) {
     if (list.some(function (u) { return u && u.name === name; })) return { success: false, message: '이미 등록된 이름입니다.' };
-    if (list.filter(function (u) { return u && u.userType === 'family' && u.active === false; }).length >= 20) {
-      return { success: false, message: '승인 대기가 너무 많습니다. 관리자에게 먼저 승인을 요청해 주세요.' };
+    // 가족은 승인 없이 바로 사용 (사용자 지시 2026-10-11). 한 기사님당 5명까지만 만들 수 있다.
+    if (list.filter(function (u) { return u && u.userType === 'family' && u.targetDriver === target; }).length >= 5) {
+      return { success: false, message: '이 기사님께 등록할 수 있는 가족 수(5명)를 넘었습니다.' };
     }
-    list.push({ name: name, pin: pin, active: false, userType: 'family', targetDriver: target, registeredAt: new Date().toISOString() });
-    return { success: true, save: true, pending: true };
+    list.push({ name: name, pin: pin, active: true, userType: 'family', targetDriver: target, registeredAt: new Date().toISOString() });
+    return { success: true, save: true, pending: false };
   });
-  if (res && res.success && res.pending) authNotifyAdminSignup_(name, '가족');
+  if (res && res.success) authNotifyAdminSignup_(name, '가족', true);
   return res;
 }
 
 // 새 가입 신청이 들어오면 관리자(유재필)에게 푸시 알림 (실패해도 가입은 그대로 진행)
-function authNotifyAdminSignup_(name, kind) {
-  try { pushNotifyAdmin_('새 가입 신청', name + ' ' + kind + '님이 가입을 신청했습니다. 사용자 관리에서 승인해 주세요.'); } catch (e) { console.warn('가입 알림 실패', e); }
+function authNotifyAdminSignup_(name, kind, autoApproved) {
+  try { pushNotifyAdmin_(autoApproved ? '새 가족 사용자' : '새 가입 신청', autoApproved ? name + ' ' + kind + '님이 가입했습니다. (승인 없이 바로 사용 가능)' : name + ' ' + kind + '님이 가입을 신청했습니다. 사용자 관리에서 승인해 주세요.'); } catch (e) { console.warn('가입 알림 실패', e); }
 }
 
 // ---------- 로그인 후 사용자 관리 ----------

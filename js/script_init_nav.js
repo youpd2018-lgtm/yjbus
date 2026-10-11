@@ -357,7 +357,7 @@
                     document.getElementById('gatewayFamilyName').value = '';
                     document.getElementById('gatewayFamilyPin').value = '';
                     document.getElementById('gatewayFamilyTargetDriver').value = '';
-                    alert(`'${name}' 가족 가입을 신청했어요.\n관리자가 승인하면 로그인할 수 있어요.`);
+                    alert(`'${name}' 가족 등록이 끝났어요.\n지금 바로 로그인할 수 있어요.`);
                     toggleAccordion('addFamilyAccordionContent', document.getElementById('addFamilyAccordionContent').previousElementSibling);
                     initGateway();
                 })
