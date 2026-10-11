@@ -36,6 +36,7 @@
 
     function check() {
         if (!window.currentDriver || !window.GAS_WEB_APP_URL || shown) return;
+        if (typeof getUsersList === 'function') { try { var me = getUsersList().find(function (u) { return u.name === window.currentDriver; }); if (me && me.userType === 'family') return; } catch (e) { } }
         lastCheck = Date.now();
         fetch(window.GAS_WEB_APP_URL + '?action=get_notice')
             .then(function (r) { return r.json(); })
@@ -58,7 +59,7 @@
     function $(id) { return document.getElementById(id); }
     function users() {
         var list = (typeof getUsersList === 'function') ? getUsersList() : [];
-        return list.filter(function (u) { return u && u.active !== false; }).map(function (u) { return u.name; });
+        return list.filter(function (u) { return u && u.active !== false && u.userType !== 'family'; }).map(function (u) { return u.name; });
     }
 
     window.setNoticeTarget = function (t) {

@@ -271,6 +271,7 @@ function authNoticeFor_(n, name) {
 }
 
 function authGetNotice_(viewer) {
+  if (!viewer || viewer.userType === 'family') return { success: true, notice: null };   // 가족 사용자는 공지 대상이 아님
   const list = authReadNotices_();   // 최신이 맨 앞
   const n = list.find(function (x) { return authNoticeFor_(x, viewer.name); });
   if (!n) return { success: true, notice: null };
@@ -304,7 +305,7 @@ function authAdminPublishNotice_(viewer, p) {
 function authAdminListNotices_(viewer) {
   if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
   const list = authReadNotices_();
-  const names = authReadUsers_().filter(function (u) { return u && u.name && u.active !== false; }).map(function (u) { return u.name; });
+  const names = authReadUsers_().filter(function (u) { return u && u.name && u.active !== false && u.userType !== 'family'; }).map(function (u) { return u.name; });
   const live = {};   // 누군가에게 '가장 최근 공지'인 것 = 배포중
   names.forEach(function (nm) {
     const n = list.find(function (x) { return authNoticeFor_(x, nm); });
