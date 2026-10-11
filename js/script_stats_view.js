@@ -318,6 +318,38 @@
     }
     window.toggleScheduleBox = toggleScheduleBox;
 
+    // 내 근무 정보 감추기: 켜면 다른 사람의 '모든사용자' 화면에서 내 근무가 '비공개'로 보인다 (서버 사용자 기록에 표시)
+    function myUserRecord() {
+        try { return (typeof getUsersList === 'function' ? getUsersList() : []).find(u => u.name === window.currentDriver) || null; } catch (e) { return null; }
+    }
+    function updateHideWorkUI() {
+        const me = myUserRecord();
+        const on = !!(me && me.hideWork);
+        const sw = document.getElementById('hideWorkSwitch');
+        if (sw) sw.checked = on;
+        const txt = document.getElementById('hideWorkStateText');
+        if (txt) txt.innerText = on ? '다른 사람에게 비공개예요' : '꺼짐 (모든 사용자에게 보여요)';
+    }
+    function setHideWork(on) {
+        const sw = document.getElementById('hideWorkSwitch');
+        fetch(window.GAS_WEB_APP_URL + '?action=set_hide_work&on=' + (on ? '1' : '0'))
+            .then(r => r.json())
+            .then(res => {
+                if (!res || !res.success) { alert((res && res.message) || '저장하지 못했습니다. 잠시 뒤 다시 해 주세요.'); if (sw) sw.checked = !on; return; }
+                try {
+                    const list = JSON.parse(localStorage.getItem('yeongjong_users_db') || '[]');
+                    const me = list.find(u => u.name === window.currentDriver);
+                    if (me) { if (on) me.hideWork = true; else delete me.hideWork; localStorage.setItem('yeongjong_users_db', JSON.stringify(list)); }
+                } catch (e) { }
+                updateHideWorkUI();
+            })
+            .catch(() => { alert('서버에 연결하지 못했습니다. 인터넷을 확인해 주세요.'); if (sw) sw.checked = !on; });
+    }
+    window.setHideWork = setHideWork;
+    window.updateHideWorkUI = updateHideWorkUI;
+    document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#tabSettings')) setTimeout(updateHideWorkUI, 50); });
+    setTimeout(updateHideWorkUI, 2000);
+
     // 사용자 정보 삭제: 이름을 직접 써야 지워진다. 서버 사용자 목록에서 빠지고 이 폰의 로그인 정보도 지운다.
     function deleteMyAccount() {
         const me = window.currentDriver;
@@ -756,6 +788,8 @@ function renderEditRouteOptions() {
 
             let offWorkTypes = ['휴무', '휴일', '연차', '공가', '병가'];
             let isOffWork = offWorkTypes.includes(route) || route === '미등록';
+            const hiddenWork = !!u.hideWork && !isMe;
+            if (hiddenWork) { isOffWork = true; route = '비공개'; }
 
             let card = document.createElement('div');
             card.style.display = 'flex';
@@ -766,7 +800,7 @@ function renderEditRouteOptions() {
             let infoHtml = '';
             if (isOffWork) {
                 infoHtml = `
-                    <span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : '☕'}</span>
+                    <span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : (route === '비공개' ? '🔒' : '☕')}</span>
                 `;
             } else {
                 infoHtml = `

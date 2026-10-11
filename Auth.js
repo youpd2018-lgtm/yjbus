@@ -98,6 +98,7 @@ function authPublicUser_(u, withPin) {
   if (u.targetDriver) o.targetDriver = u.targetDriver;
   if (!isFamily && u.phone) o.phone = u.phone;
   if (u.registeredAt) o.registeredAt = u.registeredAt;
+  if (u.hideWork) o.hideWork = true;   // 내 근무 정보 감추기(모든사용자 화면에서 비공개로 보임)
   o.pin = withPin ? String(u.pin || '') : '';
   return o;
 }
@@ -244,6 +245,18 @@ function authUpdateMyPhone_(viewer, phoneRaw) {
   });
 }
 
+// 내 근무 정보 감추기 켜기/끄기 (본인만, 가족 계정은 불가)
+function authSetHideWork_(viewer, on) {
+  if (!viewer || viewer.userType === 'family') return { success: false, message: '가족 사용자는 사용할 수 없습니다.' };
+  const flag = String(on) === '1' || String(on) === 'true';
+  return authUpdateUsers_(function (list) {
+    const me = list.find(function (u) { return u && u.name === viewer.name; });
+    if (!me) return { success: false, message: '사용자를 찾지 못했습니다.' };
+    if (flag) me.hideWork = true; else delete me.hideWork;
+    return { success: true, save: true, hideWork: flag };
+  });
+}
+
 function authAdminDeleteUser_(viewer, name) {
   if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
   name = String(name || '').trim();
@@ -305,6 +318,7 @@ function authHandle_(p, viewer) {
     case 'register_driver': return authRegisterDriver_(p);
     case 'register_family': return authRegisterFamily_(p);
     case 'update_my_phone': return authUpdateMyPhone_(viewer, p.phone);
+    case 'set_hide_work': return authSetHideWork_(viewer, p.on);
     case 'delete_my_account': return authDeleteMe_(viewer);
     case 'admin_approve_user': return authAdminApproveUser_(viewer, p.name);
     case 'admin_delete_user': return authAdminDeleteUser_(viewer, p.name);

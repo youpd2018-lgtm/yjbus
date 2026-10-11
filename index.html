@@ -937,6 +937,11 @@
           <div class="set-label">노안모드<div id="seniorStateText" class="set-sub"></div></div>
           <label class="switch"><input type="checkbox" id="seniorSwitch" onchange="setSeniorMode(this.checked)"><span class="slider"></span></label>
         </div>
+        <div class="set-row">
+          <iconify-icon icon="lucide:eye-off" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
+          <div class="set-label">내 근무 정보 감추기<div id="hideWorkStateText" class="set-sub"></div></div>
+          <label class="switch"><input type="checkbox" id="hideWorkSwitch" onchange="setHideWork(this.checked)"><span class="slider"></span></label>
+        </div>
         <div class="set-row" style="display: none;">  <!-- 새 디자인 스위치: 이제 숨김(기본 켜짐) -->
           <iconify-icon icon="mdi:palette-swatch-outline" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
           <div class="set-label">새 디자인 미리보기<div id="ui2StateText" class="set-sub"></div></div>
