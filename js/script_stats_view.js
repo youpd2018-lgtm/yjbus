@@ -800,7 +800,7 @@ function renderEditRouteOptions() {
             let infoHtml = '';
             if (isOffWork) {
                 infoHtml = `
-                    <span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : (route === '비공개' ? '🔒' : '☕')}</span>
+                    ${route === '비공개' ? '<div style="width: 90%; border-top: 2px dashed #64748b; margin: 4px 8px;"></div>' : `<span style="color: #94a3b8; font-size: 18px; padding: 4px 8px;">${route} ${route === '미등록' ? '❓' : '☕'}</span>`}
                 `;
             } else {
                 infoHtml = `
