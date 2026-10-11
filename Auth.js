@@ -383,18 +383,12 @@ function authLogDeleted_(u, key) {
 function authAdminApproveUser_(viewer, name) {
   if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
   name = String(name || '').trim();
-  let wasPending = false;
   const res = authUpdateUsers_(function (list) {
     const u = list.find(function (x) { return x && x.name === name; });
     if (!u) return { success: false, message: '사용자를 찾지 못했습니다.' };
-    wasPending = u.active === false;
     u.active = true;
     return { success: true, save: true };
   });
-  // 승인되면 그 사용자에게 푸시 알림 (알림을 켜 둔 기기가 있을 때만 도착, 실패해도 승인은 그대로)
-  if (res && res.success && wasPending) {
-    try { pushNotifyUser_(name, '가입 승인', '가입이 승인되었습니다. 이제 로그인해서 사용하실 수 있어요.'); } catch (e) { console.warn('승인 알림 실패', e); }
-  }
   return res;
 }
 
