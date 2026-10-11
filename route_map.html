@@ -349,26 +349,14 @@
       const res = await fetch('data/map/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
       if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; r.src = 'github'; } else if (o) r.src = '불일치:파일 ' + o.n + '개, 지금 ' + r.stops.length + '개'; }
     } catch (e) { }
-    readEdits(r);
-    if (!base) try {
-      const o = JSON.parse(localStorage.getItem(ROAD_KEY + r.name));
-      if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) base = o.segs;
-    } catch (e) { }
-    if (!base) {
-      const st = r.stops, CH = 20; base = []; let fail = 0;
-      for (let a = 0; a < st.length - 1; a += CH - 1) {
-        if (r !== route) return;                       // 노선을 바꿨으면 중단
-        $('msg').textContent = `${r.name} 도로선 만드는 중... ${Math.min(100, Math.round(a / st.length * 100))}%`;
-        const part = st.slice(a, Math.min(st.length, a + CH)).map(x => [x[2], x[3]]);
-        const legs = await osrmLegs(part);
-        if (legs) base.push(...legs); else { fail++; for (let k = 1; k < part.length; k++) base.push([part[k - 1], part[k]]); }
-      }
-      if (r !== route) return;
-      $('msg').textContent = fail ? `도로선 일부(${fail}덩어리)는 직선으로 표시됩니다.` : '';
-      if (!fail) { try { localStorage.setItem(ROAD_KEY + r.name, JSON.stringify({ n: st.length, segs: base })); } catch (e) { } }
+    // 노선선은 data/map/노선.json 하나만 쓴다(폰에 남은 옛 수정·자동 생성선은 불러오지 않고 지운다)
+    r.edits = {}; r.ok = {};
+    try { localStorage.removeItem(EDIT_KEY + r.name); localStorage.removeItem(ROAD_KEY + r.name); } catch (e) { }
+    if (!base) {   // 파일이 없거나 정류장 수가 안 맞으면 정류장끼리 직선
+      base = r.stops.slice(1).map((x, i) => [[r.stops[i][2], r.stops[i][3]], [x[2], x[3]]]);
+      if (r.src === 'github' || !r.src) r.src = '없음';
     }
     r.base = base; r.segs = base.slice();
-    for (const k of Object.keys(r.edits)) { await applyEdit(r, +k); if (r !== route) return; }
     joinPts(r); renderSegs(); updateEditInfo();
     if (false) {   // (관리자 안내 줄은 없앰: 모두 같은 화면)
       const ne = Object.keys(r.edits || {}).filter(k => hasEdit2(r, k)).length;
