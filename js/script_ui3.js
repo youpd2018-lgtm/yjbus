@@ -111,6 +111,17 @@
         }
         return out;
     }
+    // 지금(또는 다음으로 갈) 회차 번호: 다음 정류장이 속한 회차. 다 끝났으면 마지막 회차. (난이도 색을 회차별로 기록하는 데 씀)
+    window.ybCurrentTrip = function () {
+        try {
+            var stops = todayStops();
+            if (!stops || !stops.length) return 0;
+            var now = new Date(), ni = -1;
+            for (var i = 0; i < stops.length; i++) if (stops[i].date > now) { ni = i; break; }
+            if (ni < 0) ni = stops.length - 1;
+            return (+String(stops[ni].key).split('-')[0]) + 1;
+        } catch (e) { return 0; }
+    };
     function renderStops() {
         var box = document.querySelector('.yb4-stats');
         if (!box) return;
@@ -228,6 +239,8 @@
     function renderEyes() {
         var icon = $('yb4BusIcon'), c = shownColor();
         if (icon) icon.setAttribute('fill', LEVELS[c]);
+        var q = document.querySelector('#yb4Lamp .yb4-pick-t'), tr = typeof window.ybCurrentTrip === 'function' ? window.ybCurrentTrip() : 0;
+        if (q) { var qt = tr ? tr + '회차는 어떤가요?' : '이 순번은 어떤가요?'; if (q.textContent !== qt) q.textContent = qt; }   // 색은 회차별로 기록됨
         var btns = document.querySelectorAll('#yb4Lamp button');
         for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('sel', btns[j].getAttribute('data-c') === c);
     }

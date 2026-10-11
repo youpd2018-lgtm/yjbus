@@ -31,7 +31,7 @@
     };
   }
 
-  function getKey() {
+  function getBaseKey() {
     // 한 묶음 = 노선 + 평일/휴일 + 대수 + 순번  예) 202평일16대1순번
     var r = (document.getElementById('bliRouteNum') || {}).innerText || '';
     var sub = (document.getElementById('resRouteSub') || {}).innerText || '';
@@ -39,6 +39,16 @@
     r = r.trim(); s = s.trim(); sub = sub.replace(/\s+/g, '');
     if (!r || r === '-' || !s || s === '-' || !sub || sub === '-') return '';
     return r + sub + s + '순번';
+  }
+  // 회차별 기록: 순번 키 뒤에 '3회차'를 붙임 예) 202평일16대1순번3회차 (회차를 모르면 순번 키 그대로)
+  function getTrip() {
+    try { return typeof window.ybCurrentTrip === 'function' ? (window.ybCurrentTrip() || 0) : 0; } catch (e) { return 0; }
+  }
+  function getKey() {
+    var b = getBaseKey();
+    if (!b) return '';
+    var t = getTrip();
+    return t ? b + t + '회차' : b;
   }
 
   function getWriter() {
@@ -81,22 +91,29 @@
     if (key === currentKey) return;
     currentKey = key;
     open = false;
+    var base = getBaseKey();
     var cached = '';
     try { cached = localStorage.getItem('yb_diff_' + key) || ''; } catch (e) {}
+    if (!COLORS[cached] && base && base !== key) { try { cached = localStorage.getItem('yb_diff_' + base) || ''; } catch (e) {} }   // 이 회차 색이 없으면 순번 색
     current = COLORS[cached] ? cached : '';
     render();
     if (!key) return;
     if (typeof google === 'undefined' || !google.script || !google.script.run) return;
-    google.script.run
-      .withSuccessHandler(function (res) {
-        if (key !== currentKey) return;   // 그 사이 다른 날짜로 이동했으면 무시
-        var v = (res && res.success && res.content) ? String(res.content).trim() : '';
-        current = COLORS[v] ? v : '';
-        try { localStorage.setItem('yb_diff_' + key, current); } catch (e) {}
-        render();
-      })
-      .withFailureHandler(function () {})
-      .loadBoardMemo(CATEGORY, key);
+    function ask(k, onNone) {
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (key !== currentKey) return;   // 그 사이 다른 날짜·회차로 이동했으면 무시
+          var v = (res && res.success && res.content) ? String(res.content).trim() : '';
+          if (!COLORS[v] && onNone) { onNone(); return; }
+          current = COLORS[v] ? v : '';
+          try { localStorage.setItem('yb_diff_' + k, current); } catch (e) {}
+          render();
+        })
+        .withFailureHandler(function () {})
+        .loadBoardMemo(CATEGORY, k);
+    }
+    // 먼저 이 회차의 색, 없으면 순번(전체) 색을 보여 줌
+    ask(key, (base && base !== key) ? function () { ask(base, null); } : null);
   }
 
   function save(color) {
@@ -136,6 +153,8 @@
       if (el) obs.observe(el, { childList: true, characterData: true, subtree: true });
     });
     load();
+    setInterval(load, 20000);   // 회차가 바뀌면 그 회차의 색으로
+    document.addEventListener('yb-trip-change', load);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
