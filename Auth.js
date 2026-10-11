@@ -196,7 +196,7 @@ function authRegisterDriver_(p) {
   const roster = authRosterNames_();
   if (roster === null) return { success: false, message: '기사 명단을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
   if (roster.indexOf(name) < 0) return { success: false, message: '기사 명단에 없는 이름입니다. 이름을 확인해 주세요.' };
-  return authUpdateUsers_(function (list) {
+  const res = authUpdateUsers_(function (list) {
     const exist = list.find(function (u) { return u && u.name === name; });
     if (exist && exist.userType === 'family') return { success: false, message: '가족 사용자로 이미 등록된 이름입니다.' };
     if (exist && /^\d{6}$/.test(String(exist.pin || '').trim())) return { success: false, message: '이미 가입된 이름입니다. 기사번호로 로그인해 주세요.' };
@@ -212,6 +212,8 @@ function authRegisterDriver_(p) {
     const me = list.find(function (u) { return u && u.name === name; });
     return { success: true, save: true, pending: me.active === false };
   });
+  if (res && res.success && res.pending) authNotifyAdminSignup_(name, '기사');
+  return res;
 }
 
 function authRegisterFamily_(p) {
@@ -223,7 +225,7 @@ function authRegisterFamily_(p) {
   // 기사번호 없이 가입하고, 관리자가 승인해야 로그인된다
   const driver = authReadUsers_().find(function (u) { return u && u.name === target && u.userType !== 'family' && u.active !== false; });
   if (!driver) return { success: false, message: '그 이름의 기사님을 찾지 못했습니다. 이름을 다시 확인해 주세요.' };
-  return authUpdateUsers_(function (list) {
+  const res = authUpdateUsers_(function (list) {
     if (list.some(function (u) { return u && u.name === name; })) return { success: false, message: '이미 등록된 이름입니다.' };
     if (list.filter(function (u) { return u && u.userType === 'family' && u.active === false; }).length >= 20) {
       return { success: false, message: '승인 대기가 너무 많습니다. 관리자에게 먼저 승인을 요청해 주세요.' };
@@ -231,6 +233,13 @@ function authRegisterFamily_(p) {
     list.push({ name: name, pin: pin, active: false, userType: 'family', targetDriver: target, registeredAt: new Date().toISOString() });
     return { success: true, save: true, pending: true };
   });
+  if (res && res.success && res.pending) authNotifyAdminSignup_(name, '가족');
+  return res;
+}
+
+// 새 가입 신청이 들어오면 관리자(유재필)에게 푸시 알림 (실패해도 가입은 그대로 진행)
+function authNotifyAdminSignup_(name, kind) {
+  try { pushNotifyAdmin_('새 가입 신청', name + ' ' + kind + '님이 가입을 신청했습니다. 사용자 관리에서 승인해 주세요.'); } catch (e) { console.warn('가입 알림 실패', e); }
 }
 
 // ---------- 로그인 후 사용자 관리 ----------

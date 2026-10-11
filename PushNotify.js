@@ -330,3 +330,18 @@ function pushAdminSend_(title, body, targets, sender) {
   });
   return { success: true, sent: sentDrivers, total: names.length, noToken: noToken };
 }
+
+
+// ---------------------------------------------------------------
+// 관리자(유재필) 한 명에게 푸시 알림 (새 가입 신청 등). 알림을 켜 둔 기기 모두에 보낸다.
+// ---------------------------------------------------------------
+function pushNotifyAdmin_(title, body) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('DB');
+  const rows = sheet.getDataRange().getValues();
+  const db = {};
+  for (let i = 0; i < rows.length; i++) if (rows[i][0]) db[String(rows[i][0])] = rows[i][1];
+  const tokens = pushCollectTokens_(db, AUTH_ADMIN_NAME);
+  if (tokens.length === 0) return 0;
+  const msg = { title: title, body: body, tag: 'signup-' + Date.now(), url: PropertiesService.getScriptProperties().getProperty('APP_URL') || PUSH_DEFAULT_APP_URL };
+  return pushSendToTokens_(AUTH_ADMIN_NAME, tokens, msg);
+}
