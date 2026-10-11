@@ -555,16 +555,30 @@
     if (ringOv) { ringOv.setMap(null); ringOv = null; }
   }
 
+  // 라이브 모달의 거점(도착 거점) 이름으로 지금 달리는 편도(상행/하행)를 정한다. 겹친 길에서 위치만으로는 방향이 헷갈리기 때문
+  function legByAnchor() {
+    if (!route || !parentAnchor) return null;
+    const an = (route.anchors || []).slice().sort((x, y) => x - y);
+    if (an.length < 3) return null;
+    const norm = t => String(t || '').replace(/\s+/g, '');
+    const pa = norm(parentAnchor);
+    for (let k = 0; k < an.length - 1; k++) { const nm = norm(route.stops[an[k + 1]][1]); if (nm && (nm === pa || nm.indexOf(pa) >= 0 || pa.indexOf(nm) >= 0)) return [an[k], an[k + 1]]; }
+    return null;
+  }
+
   // 내 위치로 다음 정류장 찾기
   function update() {
     if (!route || !me) return;
     const st = route.stops;
     let best = 0, bd = 1e12;
     // 지나온 곳보다 뒤로 크게 돌아가지 않게, 현재 진행 지점 근처부터 우선 탐색
-    const from = Math.max(0, route.prog - 2), to = Math.min(st.length - 1, route.prog + 12);
+    const lgF = legByAnchor();   // 거점 이름으로 편도가 정해지면 그 편도 정류장 안에서만 찾는다
+    const lo = lgF ? lgF[0] : 0, hi = lgF ? lgF[1] : st.length - 1;
+    const from = Math.max(lo, route.prog - 2), to = Math.min(hi, route.prog + 12);
+    best = lo;
     for (let i = from; i <= to; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
     if (bd > 400) { // 근처에 없으면 전체에서 다시 찾음 (노선 이탈 후 복귀 등)
-      for (let i = 0; i < st.length; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
+      for (let i = lo; i <= hi; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
     }
     let next = best;
     if (best < st.length - 1) {
@@ -572,9 +586,10 @@
       const ux = b[3] - a[3], uy = b[2] - a[2], vx = me.lon - a[3], vy = me.lat - a[2];
       if (ux * vx + uy * vy > 0 || bd < 25) next = best + 1;   // 이미 지났거나 25m 이내면 다음 정류장
     }
+    if (lgF && next > hi) next = hi;
     route.prog = Math.max(0, next - 1);
     nextIdx = next;
-    const lg = legOf(next);
+    const lg = lgF || legOf(next);
     if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); }
     const s = st[next];
     const d = distM(me.lat, me.lon, s[2], s[3]);
@@ -597,7 +612,7 @@
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
-    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; }   // 라이브 모달의 거점 이름과 똑같이
+    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, false, true); }

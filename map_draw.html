@@ -146,7 +146,7 @@
     if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
     const r = await StdCalc.loadRoute(name);
     if (!r) { $('login').style.display = 'flex'; msg('노선을 못 불러왔습니다. 이름·기사번호를 넣고 [다시 불러오기]를 눌러 보세요.\n' + (StdCalc.getLastError() || '')); return; }
-    S.stops = r.stops.filter(s => s[2] && s[3]);
+    S.stops = r.stops.filter(s => s[2] && s[3]); S.anchors = (r.anchors || []).slice().sort((a, b) => a - b);
     try { localStorage.setItem('yb_draw_route', name); } catch (e) { }
     // 기본 선: GitHub data/map/노선.json
     let file = null;
@@ -266,7 +266,11 @@
   }
   function buildList() {
     const el = $('segs'); el.innerHTML = '';
+    const an = S.anchors || [], hd = {};
+    if (an.length >= 3) for (let k = 0; k < an.length - 1; k++) hd[an[k]] = (k === 0 ? '▲ 상행' : k === 1 ? '▼ 하행' : '편도 ' + (k + 1)) + ': ' + S.stops[an[k]][1] + ' → ' + S.stops[an[k + 1]][1];
+    else hd[0] = '편도: ' + S.stops[0][1] + ' → ' + S.stops[S.stops.length - 1][1];
     for (let i = 0; i < S.nodes.length; i++) {
+      if (hd[i]) { const h = document.createElement('div'); h.style.cssText = 'padding:6px 12px;background:#1e293b;color:#7dd3fc;font-weight:700;font-size:12.5px;position:sticky;top:0'; h.textContent = hd[i]; el.appendChild(h); }
       const d = document.createElement('div'); d.className = 'sg' + (S.nodes[i].length ? ' ed' : ''); d.dataset.i = i;
       d.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="t"></span><span class="d"></span>';
       d.querySelector('.t').textContent = S.stops[i][1] + ' → ' + S.stops[i + 1][1];
