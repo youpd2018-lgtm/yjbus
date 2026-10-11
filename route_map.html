@@ -261,7 +261,21 @@
     endMarks.forEach(m => m.setMap(null)); endMarks = [];
     if (!editMode) {   // 평소 보기: 전체를 선 한 줄로 그려서 겹친 곳(상·하행)도 투명도가 똑같게
       const all = [], lg = route.leg; route.segs.forEach((sg, i) => { if (!lg || (i >= lg[0] && i < lg[1])) sg.forEach(q => all.push(new kakao.maps.LatLng(q[0], q[1]))); });
-      segLines.push(new kakao.maps.Polyline({ map, path: all, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .5, zIndex: 1 }));
+      segLines.push(new kakao.maps.Polyline({ map, path: all, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .5, zIndex: 2 }));
+      // 반대 편도: 기점 둘레(500m) 안쪽만 가늘고 연한 주황색으로 (교차로에서 곧 갈 길이 보이게)
+      const an = (route.anchors || []).slice().sort((x, y) => x - y);
+      if (lg && an.length >= 3) {
+        const legs = []; for (let k = 0; k < an.length - 1; k++) legs.push([an[k], an[k + 1]]);
+        legs.forEach(L => {
+          let bs = null;
+          if (L[1] === lg[0]) bs = route.stops[L[1]]; else if (L[0] === lg[1]) bs = route.stops[L[0]];
+          if (!bs) return;
+          let run = [];
+          const flush = () => { if (run.length > 1) segLines.push(new kakao.maps.Polyline({ map, path: run, strokeWeight: 3, strokeColor: '#f97316', strokeOpacity: .6, zIndex: 1 })); run = []; };
+          for (let i = L[0]; i < L[1]; i++) route.segs[i].forEach(q => { if (distM(q[0], q[1], bs[2], bs[3]) <= OTHER_LEG_M) run.push(new kakao.maps.LatLng(q[0], q[1])); else flush(); });
+          flush();
+        });
+      }
       return;
     }
     route.segs.forEach((seg, i) => {
@@ -555,6 +569,7 @@
     if (ringOv) { ringOv.setMap(null); ringOv = null; }
   }
 
+  const LEG_SWITCH_M = 200, OTHER_LEG_M = 500;   // 편도 선 전환 거리 / 반대 편도 선을 보여 줄 기점 둘레
   // 라이브 모달의 거점(도착 거점) 이름으로 지금 달리는 편도(상행/하행)를 정한다. 겹친 길에서 위치만으로는 방향이 헷갈리기 때문
   function legByAnchor() {
     if (!route || !parentAnchor) return null;
@@ -589,7 +604,13 @@
     if (lgF && next > hi) next = hi;
     route.prog = Math.max(0, next - 1);
     nextIdx = next;
-    const lg = lgF || legOf(next);
+    let lg = lgF || legOf(next);
+    if (route.leg) {   // 편도 선 전환: 달려온 편도의 끝(기점)에 닿았다가 200m 이상 벗어난 뒤에 다음 편도 선으로 바꾼다
+      const eN = st[route.leg[1]];
+      if (eN && distM(me.lat, me.lon, eN[2], eN[3]) >= LEG_SWITCH_M) route.legArmed = true;
+      if (lg && lg.join() !== route.leg.join() && lg[0] === route.leg[1] && route.legArmed && eN && distM(me.lat, me.lon, eN[2], eN[3]) < LEG_SWITCH_M) lg = route.leg;
+      else if (lg && lg.join() !== route.leg.join()) route.legArmed = false;
+    }
     if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); }
     const s = st[next];
     const d = distM(me.lat, me.lon, s[2], s[3]);
@@ -612,7 +633,7 @@
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
-    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
+    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, false, true); }
