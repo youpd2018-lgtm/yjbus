@@ -1,7 +1,7 @@
 // 사용 시간 기록: 앱 / 라이브 모달 / 노선지도를 화면에 켜 둔 시간을 5초 단위로 모아 두었다가 서버(시트 '사용기록')로 보낸다.
-// 화면이 꺼지거나 다른 앱으로 가 있는 시간은 세지 않는다. 가볍게: 5분마다 한 번(또는 앱을 닫을 때) 작은 요청 1번.
+// 화면이 꺼지거나 다른 앱으로 가 있는 시간은 세지 않는다. 가볍게: 15분마다 한 번(또는 앱을 닫을 때) 작은 요청 1번.
 (function () {
-  var KEY = 'yb_usage_pending', TICK = 5, FLUSH_MS = 300000;
+  var KEY = 'yb_usage_pending', TICK = 5, FLUSH_MS = 900000;
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
   function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { } }
   function liveOpen() { var m = document.getElementById('liveModal'); return !!(m && m.classList.contains('active') && m.style.display !== 'none'); }
