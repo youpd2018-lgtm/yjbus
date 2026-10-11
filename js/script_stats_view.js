@@ -318,6 +318,29 @@
     }
     window.toggleScheduleBox = toggleScheduleBox;
 
+    // 사용자 정보 삭제: 이름을 직접 써야 지워진다. 서버 사용자 목록에서 빠지고 이 폰의 로그인 정보도 지운다.
+    function deleteMyAccount() {
+        const me = window.currentDriver;
+        if (!me) { alert('로그인 후에 사용할 수 있습니다.'); return; }
+        if (me === '유재필') { alert('관리자 계정은 삭제할 수 없습니다.'); return; }
+        if (!confirm('사용자 정보를 삭제할까요?\n\n삭제하면 이 앱에 다시 로그인할 수 없고,\n다시 쓰려면 새로 가입해서 승인을 받아야 합니다.')) return;
+        const typed = prompt('삭제하려면 내 이름 "' + me + '" 을(를) 똑같이 입력하세요.');
+        if (typed === null) return;
+        if (String(typed).trim() !== me) { alert('이름이 달라서 삭제하지 않았습니다.'); return; }
+        const btn = document.getElementById('btnDeleteMe');
+        if (btn) btn.disabled = true;
+        fetch(window.GAS_WEB_APP_URL + '?action=delete_my_account')
+            .then(r => r.json())
+            .then(res => {
+                if (!res || !res.success) { if (btn) btn.disabled = false; alert((res && res.message) || '삭제하지 못했습니다. 잠시 뒤 다시 해 주세요.'); return; }
+                ['autoLoginPin', 'loggedInUser', 'yeongjong_logged_user'].forEach(k => localStorage.removeItem(k));
+                alert('사용자 정보를 삭제했습니다. 그동안 사용해 주셔서 감사합니다.');
+                location.replace(location.pathname + '?logout=1');
+            })
+            .catch(() => { if (btn) btn.disabled = false; alert('서버에 연결하지 못했습니다. 인터넷을 확인해 주세요.'); });
+    }
+    window.deleteMyAccount = deleteMyAccount;
+
     function selectSettingsView(name) {
         // 설정 화면은 근무일정등록이 맨 위에 항상 보이고, 아래에 기타 설정(알림·효과음·연락처·새로고침)이 이어진다
         // 등록 날짜에 맞는 저장된 근무기록을 자동으로 불러옴 (날짜가 비어 있으면 오늘)

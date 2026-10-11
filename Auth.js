@@ -254,6 +254,19 @@ function authAdminDeleteUser_(viewer, name) {
   });
 }
 
+// 내 계정 삭제: 앱을 더 이상 쓰지 않는 본인만 자신의 사용자 정보를 지운다 (관리자 계정은 불가)
+function authDeleteMe_(viewer) {
+  if (!viewer || !viewer.name) return { success: false, message: '로그인 정보를 확인하지 못했습니다.' };
+  if (viewer.name === AUTH_ADMIN_NAME) return { success: false, message: '관리자 계정은 삭제할 수 없습니다.' };
+  const name = viewer.name;
+  return authUpdateUsers_(function (list) {
+    const idx = list.findIndex(function (u) { return u && u.name === name; });
+    if (idx < 0) return { success: false, message: '사용자를 찾지 못했습니다.' };
+    list.splice(idx, 1);
+    return { success: true, save: true };
+  });
+}
+
 function authAdminApproveUser_(viewer, name) {
   if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
   name = String(name || '').trim();
@@ -272,6 +285,7 @@ function authHandle_(p, viewer) {
     case 'register_driver': return authRegisterDriver_(p);
     case 'register_family': return authRegisterFamily_(p);
     case 'update_my_phone': return authUpdateMyPhone_(viewer, p.phone);
+    case 'delete_my_account': return authDeleteMe_(viewer);
     case 'admin_approve_user': return authAdminApproveUser_(viewer, p.name);
     case 'admin_delete_user': return authAdminDeleteUser_(viewer, p.name);
     case 'admin_send_push': return authIsAdmin_(viewer) ? pushAdminSend_(p.title, p.body, p.targets, p.sender) : { success: false, message: '관리자만 할 수 있습니다.' };
