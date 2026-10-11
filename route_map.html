@@ -178,7 +178,8 @@
     var nm = '';
     try { var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null'); if (u && u.name) nm = u.name; } catch (e) { }
     if (!nm) { try { nm = localStorage.getItem('loggedInUser') || ''; } catch (e) { } }
-    if (String(nm).indexOf('유재필') === -1) document.body.classList.add('nonadmin'); else isAdmin = true;
+    document.body.classList.add('nonadmin');   // 수정·기록·모의주행은 앱에서 없앰(수정은 map_draw.html 에서)
+    if (String(nm).indexOf('유재필') !== -1) isAdmin = true;
   })();
 
   ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
@@ -355,7 +356,7 @@
     r.base = base; r.segs = base.slice();
     for (const k of Object.keys(r.edits)) { await applyEdit(r, +k); if (r !== route) return; }
     joinPts(r); renderSegs(); updateEditInfo();
-    if (isAdmin) {   // 관리자만: 어느 선을 쓰는지 한 줄 표시
+    if (false) {   // (관리자 안내 줄은 없앰: 모두 같은 화면)
       const ne = Object.keys(r.edits || {}).filter(k => hasEdit2(r, k)).length;
       $('msg').textContent = r.src === 'github' ? '선: GitHub 확정본(' + (function () { var n = 0; r.base.forEach(function (sg) { n += sg.length; }); var d = r.ghSavedAt > 1 ? new Date(r.ghSavedAt) : null; return n + '점' + (d ? ' · ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') : ''); })() + ')' + (ne ? ' + 이 폰 수정 ' + ne + '구간' : '') : '선: 자동생성(GitHub 파일 안 맞음 ' + (r.src || '없음') + ')';
     }
@@ -882,7 +883,7 @@
         simDist = simCum[route.stopAt[bi]]; route.prog = Math.max(0, bi - 1);
       } else if (SIM) onPos(l.getLat(), l.getLng(), 30, null);
     });
-    showRoute($('route').value).then(() => { if (route) { recLoad(route.name); try { if (isAdmin && localStorage.getItem('yb_rec_on') === route.name) recStart2(); } catch (e) { } } });
+    showRoute($('route').value).then(() => { if (route) { recLoad(route.name);  } });
     startGps();
   }).catch(e => { $('msg').textContent = String(e.message || e); });
 </script>
