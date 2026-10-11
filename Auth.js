@@ -9,7 +9,7 @@
 const AUTH_ADMIN_NAME = '유재필';
 const AUTH_USERS_KEY = 'yeongjong_users_db';
 const AUTH_DELETED_ADMIN_KEY = 'yeongjong_deleted_by_admin';   // 관리자가 지운 사용자 기록 (위와 같은 방식)
-const AUTH_NOTICE_KEY = 'yeongjong_notice_v1';   // 공지사항(관리자가 쓰면 사용자가 앱을 열 때 팝업으로 보임)
+const AUTH_NOTICE_KEY = 'yeongjong_notices_v2';   // 공지사항 목록(최신이 맨 앞). 사용자는 앱을 열 때 자기에게 해당하는 최신 공지를 팝업으로 봄
 const AUTH_DELETED_KEY = 'yeongjong_deleted_users';   // 스스로 탈퇴한 사용자 기록(DB 시트에서만 보임, 앱에는 안 내려보냄)
 const AUTH_PUBLIC_ACTIONS = { login_by_pin: true, register_driver: true, register_family: true, get_route_stops: true }; // get_route_stops: 정류장 이름·위치·구간시간(공개 정보)이라 로그인 없이 허용 (사용자 지시 2026-10-02)
 const AUTH_MAX_FAIL_PER_NAME = 15;     // 같은 이름으로 10분에 15번 틀리면 잠시 막음
@@ -258,32 +258,72 @@ function authSetHideWork_(viewer, on) {
   });
 }
 
-// 공지사항: 모든 로그인 사용자가 읽고(켜져 있을 때만), 관리자만 쓴다. 저장할 때마다 번호(id)가 바뀌어 다시 뜬다.
-function authGetNotice_() {
-  let n = null;
-  try { n = JSON.parse(String(loadKeyFromServer(AUTH_NOTICE_KEY) || 'null')); } catch (e) { n = null; }
-  if (!n || !n.on || !(n.title || n.body)) return { success: true, notice: null };
-  return { success: true, notice: { id: String(n.id || ''), title: String(n.title || ''), body: String(n.body || '') } };
+// ---------- 공지사항 ----------
+// 관리자가 [공지 배포]하면 목록 맨 앞에 쌓이고(예전 공지는 서버에 남음), 사용자는 자기에게 해당하는 가장 최근 공지 하나만 본다.
+// 삭제하면 그 순간부터 배포되지 않는다. targets: '*'(전체) 또는 이름 배열.
+function authReadNotices_() {
+  let list = [];
+  try { list = JSON.parse(String(loadKeyFromServer(AUTH_NOTICE_KEY) || '[]')); } catch (e) { list = []; }
+  return Array.isArray(list) ? list : [];
+}
+function authNoticeFor_(n, name) {
+  return n && (n.targets === '*' || (Array.isArray(n.targets) && n.targets.indexOf(name) >= 0));
 }
 
-function authAdminSetNotice_(viewer, p) {
-  if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
-  const n = {
-    id: String(new Date().getTime()),
-    on: String(p.on) === '1' || String(p.on) === 'true',
-    title: String(p.title || '').slice(0, 60),
-    body: String(p.body || '').slice(0, 2000),
-    updatedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')
-  };
-  saveToServer(AUTH_NOTICE_KEY, JSON.stringify(n));
-  return { success: true, notice: n };
+function authGetNotice_(viewer) {
+  const list = authReadNotices_();   // 최신이 맨 앞
+  const n = list.find(function (x) { return authNoticeFor_(x, viewer.name); });
+  if (!n) return { success: true, notice: null };
+  return { success: true, notice: { id: String(n.id), title: String(n.title || ''), body: String(n.body || '') } };
 }
 
-function authAdminReadNotice_(viewer) {
+function authAdminPublishNotice_(viewer, p) {
   if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
-  let n = null;
-  try { n = JSON.parse(String(loadKeyFromServer(AUTH_NOTICE_KEY) || 'null')); } catch (e) { n = null; }
-  return { success: true, notice: n };
+  const title = String(p.title || '').trim().slice(0, 60);
+  const body = String(p.body || '').trim().slice(0, 2000);
+  if (!title && !body) return { success: false, message: '제목이나 내용을 써 주세요.' };
+  let targets = '*';
+  if (p.targets && String(p.targets) !== '*') {
+    targets = String(p.targets).split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!targets.length) return { success: false, message: '받을 사람을 고르거나 전체로 보내 주세요.' };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const list = authReadNotices_();
+    list.unshift({
+      id: String(new Date().getTime()), title: title, body: body, targets: targets,
+      createdAt: Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')
+    });
+    while (list.length > 1 && JSON.stringify(list).length > AUTH_MAX_VALUE_CHARS - 200) list.pop();
+    saveToServer(AUTH_NOTICE_KEY, JSON.stringify(list));
+    return { success: true };
+  } finally { lock.releaseLock(); }
+}
+
+function authAdminListNotices_(viewer) {
+  if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
+  const list = authReadNotices_();
+  const names = authReadUsers_().filter(function (u) { return u && u.name && u.active !== false; }).map(function (u) { return u.name; });
+  const live = {};   // 누군가에게 '가장 최근 공지'인 것 = 배포중
+  names.forEach(function (nm) {
+    const n = list.find(function (x) { return authNoticeFor_(x, nm); });
+    if (n) live[n.id] = true;
+  });
+  return { success: true, notices: list.map(function (n) {
+    return { id: n.id, title: n.title, body: n.body, targets: n.targets, createdAt: n.createdAt, live: !!live[n.id] };
+  }) };
+}
+
+function authAdminDeleteNotice_(viewer, id) {
+  if (!authIsAdmin_(viewer)) return { success: false, message: '관리자만 할 수 있습니다.' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const list = authReadNotices_().filter(function (n) { return String(n.id) !== String(id); });
+    saveToServer(AUTH_NOTICE_KEY, JSON.stringify(list));
+    return { success: true };
+  } finally { lock.releaseLock(); }
 }
 
 function authAdminDeleteUser_(viewer, name) {
@@ -347,9 +387,10 @@ function authHandle_(p, viewer) {
     case 'register_driver': return authRegisterDriver_(p);
     case 'register_family': return authRegisterFamily_(p);
     case 'update_my_phone': return authUpdateMyPhone_(viewer, p.phone);
-    case 'get_notice': return authGetNotice_();
-    case 'admin_set_notice': return authAdminSetNotice_(viewer, p);
-    case 'admin_get_notice': return authAdminReadNotice_(viewer);
+    case 'get_notice': return authGetNotice_(viewer);
+    case 'admin_publish_notice': return authAdminPublishNotice_(viewer, p);
+    case 'admin_list_notices': return authAdminListNotices_(viewer);
+    case 'admin_delete_notice': return authAdminDeleteNotice_(viewer, p.id);
     case 'set_hide_work': return authSetHideWork_(viewer, p.on);
     case 'delete_my_account': return authDeleteMe_(viewer);
     case 'admin_approve_user': return authAdminApproveUser_(viewer, p.name);

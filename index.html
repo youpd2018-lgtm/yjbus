@@ -1018,17 +1018,25 @@
             <h3 style="margin-top: 0; color: #f8fafc; font-size: 15px; display: flex; align-items: center; gap: 6px;">
               <iconify-icon icon="mdi:bullhorn" style="color: #fb923c;"></iconify-icon> 공지 작성
             </h3>
-            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">저장하면 사용자가 앱을 열 때 팝업으로 보입니다. (알림 설정과 상관없이, 사용자가 [확인]을 누르면 그 공지는 다시 안 뜹니다.)</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">[공지 배포]를 누르면 사용자가 앱을 열 때 알림 설정과 상관없이 팝업으로 봅니다. 사용자는 항상 가장 최근 공지 하나만 보고, [공지 닫기]를 누르면 그 공지는 다시 안 뜹니다.</div>
             <input id="adminNoticeTitle" type="text" maxlength="60" placeholder="제목 (60자까지)"
               style="width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px;">
-            <textarea id="adminNoticeBody" maxlength="2000" rows="7" placeholder="내용"
+            <textarea id="adminNoticeBody" maxlength="2000" rows="6" placeholder="내용"
               style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 14px; resize: vertical;"></textarea>
-            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #f8fafc; font-size: 14px;">
-              <input type="checkbox" id="adminNoticeOn" checked style="width: 18px; height: 18px;"> 공지 켜기 (끄면 아무에게도 안 뜸)
-            </label>
-            <button type="button" onclick="saveAdminNotice()"
-              style="width: 100%; padding: 12px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 15px; font-weight: 900; cursor: pointer;">공지 저장</button>
+            <div class="seg-row" id="segNoticeTarget" style="margin-bottom: 8px;">
+              <button type="button" class="seg-btn active" data-value="all" onclick="setNoticeTarget('all')">전체 사용자</button>
+              <button type="button" class="seg-btn" data-value="pick" onclick="setNoticeTarget('pick')">사용자 선택</button>
+            </div>
+            <div id="adminNoticePickList" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
+            <button type="button" id="adminNoticePublishBtn" onclick="publishAdminNotice()"
+              style="width: 100%; padding: 12px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 15px; font-weight: 900; cursor: pointer;">공지 배포</button>
+            <button type="button" id="adminNoticeSaveBtn" onclick="saveAdminNoticeTemplate()"
+              style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #475569; border-radius: 10px; background: transparent; color: #cbd5e1; font-size: 14px; font-weight: 800; cursor: pointer;">이 공지 문구 저장</button>
             <div id="adminNoticeResult" style="font-size: 13px; color: #94a3b8; margin-top: 10px; white-space: pre-line;"></div>
+            <div style="margin-top: 14px; font-size: 13px; font-weight: 900; color: #f8fafc;">저장해 둔 문구</div>
+            <div id="adminNoticeSavedList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
+            <div style="margin-top: 18px; font-size: 13px; font-weight: 900; color: #f8fafc;">보낸 공지</div>
+            <div id="adminNoticeSentList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
           </div>
         </div>
 

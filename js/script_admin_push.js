@@ -14,7 +14,7 @@
         if (p) p.classList.toggle('active', which === 'push');
         var nt = document.getElementById('subPageNotice');
         if (nt) nt.classList.toggle('active', which === 'notice');
-        if (which === 'notice' && window.loadAdminNotice) window.loadAdminNotice();
+        if (which === 'notice' && window.openAdminNotice) window.openAdminNotice();
         if (which === 'push') { renderPickList(); renderSaved(); }
     };
 
