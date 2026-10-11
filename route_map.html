@@ -330,8 +330,8 @@
 
   async function loadRoad(r) {
     let base = null;
-    try {   // 1순위: GitHub에 저장된 확정 도로선 (data/route/노선.json)
-      const res = await fetch('data/route/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
+    try {   // 1순위: GitHub에 저장된 확정 도로선 (data/map/노선.json)
+      const res = await fetch('data/map/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
       if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; r.src = 'github'; } else if (o) r.src = '불일치:파일 ' + o.n + '개, 지금 ' + r.stops.length + '개'; }
     } catch (e) { }
     readEdits(r);
