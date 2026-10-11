@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>소통정보 선 그리기 수정</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: -apple-system, 'Malgun Gothic', sans-serif; background: #0f172a; color: #e2e8f0; font-size: 14px; }
+  #app { display: flex; height: 100%; }
+  #side { width: 330px; flex: none; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0f172a; }
+  #mapWrap { flex: 1; position: relative; min-width: 0; }
+  #map { position: absolute; inset: 0; }
+  .sec { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+  h1 { font-size: 16px; margin: 0 0 8px; }
+  select, input, button { font-size: 14px; padding: 7px 9px; border-radius: 7px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  button { cursor: pointer; }
+  button:hover { background: #26354d; }
+  button.on { background: #2563eb; border-color: #2563eb; }
+  button.go { background: #16a34a; border-color: #16a34a; font-weight: 700; }
+  button.warn { background: #7f1d1d; border-color: #7f1d1d; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+  .row > * { flex: none; }
+  .row select { flex: 1; min-width: 0; }
+  #msg { font-size: 12.5px; color: #fbbf24; white-space: pre-wrap; margin-top: 6px; min-height: 16px; }
+  #login input { width: 48%; }
+  #segs { flex: 1; overflow-y: auto; }
+  .sg { padding: 5px 12px; border-bottom: 1px solid #172033; cursor: pointer; display: flex; gap: 6px; line-height: 1.35; }
+  .sg:hover { background: #172033; }
+  .sg.sel { background: #3b2a06; }
+  .sg .n { width: 28px; flex: none; text-align: right; color: #94a3b8; }
+  .sg .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sg .d { width: 16px; flex: none; color: #4ade80; }
+  .sg.ed .d::after { content: '●'; }
+  #dock { position: absolute; left: 10px; right: 64px; bottom: 12px; z-index: 10; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  #tools { background: rgba(15,23,42,.93); border: 1px solid #334155; border-radius: 10px; padding: 8px; display: flex; gap: 6px; flex-wrap: wrap; max-width: 100%; }
+  #simBar { position: absolute; top: 10px; left: 10px; right: 60px; z-index: 10; background: rgba(15,23,42,.93); border: 1px solid #334155; border-radius: 10px; padding: 8px; display: flex; gap: 8px; align-items: center; }
+  #panel { background: rgba(15,23,42,.94); border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; width: 460px; max-width: 100%; }
+  #panel .h { font-weight: 800; font-size: 15px; }
+  #panel .s { color: #94a3b8; font-size: 12.5px; margin-top: 2px; }
+  #panel input[type=range] { width: 150px; padding: 0; }
+  .k { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 4px; background: #334155; color: #fff; font-size: 11px; text-align: center; }
+  .help { font-size: 12.5px; color: #94a3b8; line-height: 1.55; }
+  .stop { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #fff; border: 2px solid #475569; color: #334155; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .stop.s1 { background: #ef4444; border-color: #fff; color: #fff; z-index: 5; }
+  .stop.s2 { background: #16a34a; border-color: #fff; color: #fff; z-index: 5; }
+  .lbl { background: rgba(15,23,42,.92); color: #fff; border: 1px solid #334155; border-radius: 6px; padding: 2px 6px; font-size: 12px; white-space: nowrap; margin-top: -26px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="side">
+    <div class="sec">
+      <h1>🚦 소통정보 선 그리기 수정 (컴퓨터용)</h1>
+      <div class="row"><select id="route"></select><button id="btnReload" title="이 노선을 처음부터 다시 불러오기">다시 불러오기</button></div>
+      <div id="login" class="row" style="display:none"><input id="nm" placeholder="이름"><input id="pn" placeholder="기사번호 6자리" inputmode="numeric"></div>
+      <div id="msg"></div>
+    </div>
+    <div class="sec">
+      <div class="row" style="margin-top:0">
+        <button id="btnSave" class="go">📥 저장 파일 받기</button>
+        <button id="btnUndo">↩ 되돌리기</button><button id="btnRedo">↪ 다시</button>
+      </div>
+      <div class="help" style="margin-top:8px">
+        소통정보용 선이에요(<code>data/route/</code>). 받은 <b>노선_traffic_lines.json</b>은 라이브 모달 스레드에 올려 주세요. 노선지도(<code>data/map/</code>)와는 따로 저장돼요.
+      </div>
+    </div>
+    <div class="sec help">
+      <b>쓰는 법</b><br>
+      · 선은 정류장에서 정류장까지 <b>직선</b>이 기본이에요.<br>
+      · <span class="k">점 추가</span> 모드에서 길 위를 누르면 점이 생겨요.<br>
+      · 점을 끌어 옮기고, 점을 누르고 <span class="k">1</span> 직선 <span class="k">2</span> 굽기 <span class="k">3</span> 곡선 <span class="k">Del</span> 삭제<br>
+      · 굽기 점은 <span class="k">[</span> <span class="k">]</span> 로 둥근 정도를 조절해요.<br>
+      · <span class="k">유턴</span> 모드에서 누르면 유턴 모양 점 3개가 생겨요.<br>
+      · <span class="k">Space</span> 모의주행 시작·멈춤 · <span class="k">N</span> 다음 구간 <span class="k">P</span> 이전 구간 <span class="k">Ctrl+Z</span> 되돌리기
+    </div>
+    <div id="segs"></div>
+  </div>
+  <div id="mapWrap">
+    <div id="map"></div>
+    <div id="simBar">
+      <button id="sPlay" class="go">▶ 모의주행</button>
+      <select id="sSpeed"><option value="1">실제 속도(40km/h)</option><option value="3">3배</option><option value="8" selected>8배</option><option value="20">20배</option></select>
+      <input id="sPos" type="range" min="0" max="1000" value="0" style="flex:1;min-width:120px">
+      <label style="font-size:12.5px;white-space:nowrap"><input id="sFollow" type="checkbox" checked style="padding:0"> 따라가기</label>
+      <span id="sInfo" style="font-size:12.5px;color:#94a3b8;white-space:nowrap"></span>
+    </div>
+    <div id="dock">
+    <div id="panel"><div class="h" id="pH">구간을 고르세요</div><div class="s" id="pS"></div><div id="pN"></div></div>
+    <div id="tools">
+      <button id="gUndo" class="go">↩ 한 단계 되돌리기 (Ctrl+Z)</button>
+      <button id="gStopReset" class="warn" title="선택한 정류장 점(없으면 이 구간 양 끝)을 정류장 좌표로">정류장 점 초기화</button>
+      <button id="gClear" class="warn" title="이 구간의 점을 모두 지우고 직선으로">구간 초기화</button>
+      <button id="mV" class="on">☝ 이동·선택 (V)</button>
+      <button id="mA">＋ 점 추가 (A)</button>
+      <button id="mU">⮌ 유턴 (U)</button>
+      <button id="gSnap" title="선택한 점을 가까운 도로 위로 붙임">🧲 도로에 붙이기</button>
+      <button id="gGuide" title="길찾기 도로 모양을 점선으로 보여 줌(참고)">🛣 도로 안내선</button>
+      <button id="gAuto" title="이 구간을 도로 모양대로 자동으로 그림(되돌리기 가능)">✨ 안내선대로 그리기</button>
+      <button id="tOrig">원래 선 보기</button>
+      <button id="tTraf">노선지도 선 보기</button>
+      <button id="tAll">모든 점 보기</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script src="js/script_std_calc.js"></script>
+<script src="js/draw_geom.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const ROUTES = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
+  const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
+  const OSRM = 'https://router.project-osrm.org/';
+  const KEY = 'yb_tdraw_v1_';
+  const G = window.DrawGeom;
+  let map = null;
+  // 상태
+  const S = { name: '', stops: [], pts: [], pk: [], selStop: -1, nodes: [], res: [], sel: -1, selNode: -1, mode: 'v', undo: [], redo: [], fileAt: 0, orig: null, traf: null, showAll: false };
+  // 지도 물체
+  let mainLine = null, selLine = null, guideLine = null, origLines = [], trafLines = [], stopOv = [], markers = [], lblOv = null, dragging = false;
+
+  ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
+  try { const s = localStorage.getItem('yb_tdraw_route'); if (s && ROUTES.includes(s)) $('route').value = s; } catch (e) { }
+
+  function msg(t) { $('msg').textContent = t || ''; }
+  function ll(p) { return new kakao.maps.LatLng(p[0], p[1]); }
+  function realP(i) { return [S.stops[i][2], S.stops[i][3]]; }
+  function stopP(i) { return S.pts[i] || realP(i); }   // 선이 시작·끝나는 점(처음엔 정류장 좌표, 옮길 수 있음)
+  function snapshot() { return JSON.stringify({ n: S.nodes, p: S.pts, k: S.pk }); }
+
+  function loadKakao() {
+    return new Promise((resolve, reject) => {
+      if (window.kakao && kakao.maps && kakao.maps.Map) return resolve();
+      const s = document.createElement('script');
+      s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&autoload=false';
+      s.onload = () => kakao.maps.load(resolve);
+      s.onerror = () => reject(new Error('카카오 지도 스크립트를 불러오지 못했습니다 (사이트 도메인 등록 확인)'));
+      document.head.appendChild(s);
+    });
+  }
+
+  // ---------- 불러오기 ----------
+  async function openRoute(name) {
+    msg(name + ' 노선 불러오는 중...');
+    S.name = name; S.sel = -1; S.selNode = -1; S.undo = []; S.redo = []; S.pts = null; S.pk = null;
+    const nm = $('nm').value.trim(), pn = $('pn').value.trim();
+    if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
+    const r = await StdCalc.loadRoute(name);
+    if (!r) { $('login').style.display = 'flex'; msg('노선을 못 불러왔습니다. 이름·기사번호를 넣고 [다시 불러오기]를 눌러 보세요.\n' + (StdCalc.getLastError() || '')); return; }
+    S.stops = r.stops.filter(s => s[2] && s[3]); S.anchors = (r.anchors || []).slice().sort((a, b) => a - b);
+    try { localStorage.setItem('yb_tdraw_route', name); } catch (e) { }
+    // 기본 선: GitHub data/map/노선.json
+    let file = null;
+    try {   // 소통정보 선: data/route/노선_links.json 의 lines(없으면 data/route/노선.json 의 segs)
+      const x = await fetch('data/route/' + encodeURIComponent(name) + '_links.json', { cache: 'no-cache' });
+      if (x.ok) { const j = await x.json(); if (j.lines) file = { savedAt: j.savedAt || 1, segs: j.lines, draw: j.draw }; }
+      if (!file) { const y = await fetch('data/route/' + encodeURIComponent(name) + '.json', { cache: 'no-cache' }); if (y.ok) file = await y.json(); }
+    } catch (e) { }
+    const n = S.stops.length;
+    const fileOk = file && file.segs && file.segs.length === n - 1;
+    S.fileAt = fileOk ? (file.savedAt || 1) : 0;
+    S.orig = fileOk ? file.segs : null;
+    let note = '';
+    // 임시저장 → 파일의 draw → 파일의 선을 줄여서 → 정류장끼리 직선
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY + name)); } catch (e) { }
+    if (saved && saved.n === n && saved.nodes && saved.nodes.length === n - 1 && saved.fileAt === S.fileAt) { S.nodes = saved.nodes; S.pts = (saved.pts && saved.pts.length === n) ? saved.pts : null; S.pk = (saved.pk && saved.pk.length === n) ? saved.pk : null; note = '이 컴퓨터에 임시저장된 작업을 불러왔어요.'; }
+    else if (fileOk && file.draw && file.draw.nodes && file.draw.nodes.length === n - 1) { S.nodes = file.draw.nodes; S.pts = (file.draw.stops && file.draw.stops.length === n) ? file.draw.stops : null; S.pk = (file.draw.stopk && file.draw.stopk.length === n) ? file.draw.stopk : null; note = '저장된 그리기 파일을 불러왔어요.'; }
+    else if (fileOk) {
+      let pts = 0;
+      S.nodes = file.segs.map(sg => { const inner = G.simplify(sg, 5); pts += inner.length; return inner.map(p => ({ p: p, k: 's', r: 12 })); });
+      note = '기존 선(' + file.segs.reduce((a, s) => a + s.length, 0) + '점)을 ' + pts + '점으로 줄여서 시작해요.';
+    } else { S.nodes = S.stops.slice(1).map(() => []); note = '저장된 선이 없어서 정류장끼리 직선으로 시작해요.'; }
+    if (!S.pts) {   // 선이 시작·끝나는 점: 파일의 선 끝점(없으면 정류장 좌표)
+      S.pts = S.stops.map((s, i) => { if (fileOk) { const sg = i < n - 1 ? file.segs[i][0] : file.segs[n - 2][file.segs[n - 2].length - 1]; if (sg) return [sg[0], sg[1]]; } return [s[2], s[3]]; });
+    }
+    if (!S.pk) S.pk = S.stops.map(() => ({ k: 's', r: 12 }));
+    S.selStop = -1; S.traf = null;
+    await loadKakao();
+    ensureMap(); buildStops(); recompute(); buildList(); drawAll(); fitAll();
+    msg(note + '\n정류장 ' + n + '개, 구간 ' + (n - 1) + '개');
+    selectSeg(0);
+  }
+
+  function ensureMap() {
+    if (map) return;
+    map = new kakao.maps.Map($('map'), { center: ll(stopP(0)), level: 4 });
+    map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+    kakao.maps.event.addListener(map, 'click', e => onMapClick(e.latLng));
+  }
+
+  // ---------- 계산·그리기 ----------
+  function jointAt(i) {   // 정류장 점 i 에서 선이 꺾이는 곳을 둥글게/곡선으로 (직선이면 null)
+    if (i <= 0 || i >= S.stops.length - 1) return null;
+    const pk = S.pk[i]; if (!pk || !pk.k || pk.k === 's') return null;
+    const pv = S.nodes[i - 1].length ? S.nodes[i - 1][S.nodes[i - 1].length - 1].p : stopP(i - 1);
+    const nx = S.nodes[i].length ? S.nodes[i][0].p : stopP(i + 1);
+    return G.joint(pv, stopP(i), nx, pk.k, pk.r);
+  }
+  function recomputeSeg(i) { S.res[i] = G.resolve(stopP(i), S.nodes[i], stopP(i + 1), { a: jointAt(i), b: jointAt(i + 1) }); }
+  function recomputeAround(i, w) { for (let k = i - w; k <= i + w; k++) if (k >= 0 && k < S.nodes.length) recomputeSeg(k); }
+  function recompute() { S.res = []; for (let i = 0; i < S.nodes.length; i++) recomputeSeg(i); }
+  function fullPath() { const out = []; S.res.forEach((sg, i) => sg.forEach((p, j) => { if (i && !j) return; out.push(ll(p)); })); return out; }
+
+  function drawAll() {
+    if (mainLine) mainLine.setMap(null);
+    mainLine = new kakao.maps.Polyline({ map, path: fullPath(), strokeWeight: 7, strokeColor: '#2563eb', strokeOpacity: .5, strokeStyle: 'solid' });
+    kakao.maps.event.addListener(mainLine, 'click', e => { if (S.mode === 'v') selectSeg(nearestSeg(e.latLng)); else onMapClick(e.latLng); });
+    drawSel();
+  }
+  function drawSel() {
+    if (selLine) { selLine.setMap(null); selLine = null; }
+    if (S.sel < 0) return;
+    selLine = new kakao.maps.Polyline({ map, path: S.res[S.sel].map(ll), strokeWeight: 6, strokeColor: '#f59e0b', strokeOpacity: .95 });
+    kakao.maps.event.addListener(selLine, 'click', e => { if (S.mode !== 'v') onMapClick(e.latLng); });
+  }
+  function refreshAfterEdit(i) {
+    recomputeAround(i, 1);
+    if (mainLine) mainLine.setPath(fullPath());
+    if (selLine && S.sel >= 0) selLine.setPath(S.res[S.sel].map(ll));
+    updatePanel(); markListEdited(i); saveLocal(); SIM.pts = [];
+  }
+  function buildStops() {
+    stopOv.forEach(o => o.setMap(null)); stopOv = [];
+    S.stops.forEach((s, i) => {
+      const el = document.createElement('div'); el.className = 'stop'; el.textContent = (i + 1) % 5 === 0 || i === 0 ? (i + 1) : '';
+      el.title = (i + 1) + '. ' + s[1];
+      el.onclick = () => { selectSeg(Math.min(i, S.nodes.length - 1)); };
+      const ov = new kakao.maps.CustomOverlay({ map, position: ll(realP(i)), content: el, yAnchor: .5, xAnchor: .5, zIndex: 3 });
+      ov._el = el; stopOv.push(ov);
+    });
+  }
+  function skinStops() {
+    stopOv.forEach((o, i) => { o._el.className = 'stop' + (i === S.sel ? ' s1' : i === S.sel + 1 ? ' s2' : ''); if (i === S.sel || i === S.sel + 1) o._el.textContent = i + 1; else o._el.textContent = (i + 1) % 5 === 0 || i === 0 ? (i + 1) : ''; });
+    if (lblOv) { lblOv.setMap(null); lblOv = null; }
+    if (S.sel >= 0) {
+      const el = document.createElement('div'); el.className = 'lbl'; el.textContent = (S.sel + 1) + '. ' + S.stops[S.sel][1] + ' → ' + S.stops[S.sel + 1][1];
+      lblOv = new kakao.maps.CustomOverlay({ map, position: ll(stopP(S.sel)), content: el, yAnchor: 0, xAnchor: 0, zIndex: 9 });
+    }
+  }
+  function fitAll() { const b = new kakao.maps.LatLngBounds(); S.stops.forEach((s, i) => b.extend(ll(realP(i)))); map.setBounds(b); }
+  function fitSeg(i) { const b = new kakao.maps.LatLngBounds(); S.res[i].forEach(p => b.extend(ll(p))); map.setBounds(b, 120, 120, 150, 120); }
+
+  // ---------- 점(마커) ----------
+  const imgCache = {};
+  function dotImg(color, size, ring) {
+    const key = color + size + ring;
+    if (imgCache[key]) return imgCache[key];
+    const w = size + 4, svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + w + '"><circle cx="' + w / 2 + '" cy="' + w / 2 + '" r="' + size / 2 + '" fill="' + color + '" stroke="' + ring + '" stroke-width="2.5"/></svg>';
+    return imgCache[key] = new kakao.maps.MarkerImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), new kakao.maps.Size(w, w), { offset: new kakao.maps.Point(w / 2, w / 2) });
+  }
+  const KCOL = { s: '#38bdf8', c: '#f59e0b', m: '#22c55e' };
+  function clearMarkers() { markers.forEach(m => m.setMap(null)); markers = []; }
+  function buildMarkers() {
+    clearMarkers();
+    const segs = S.showAll ? S.nodes.map((_, i) => i) : (S.sel >= 0 ? [S.sel] : []);
+    if (S.sel >= 0) [S.sel, S.sel + 1].forEach(idx => {   // 선의 시작·끝 점(정류장 위치). 끌어서 옮길 수 있다
+      const selS = idx === S.selStop;
+      const mk = new kakao.maps.Marker({ map, position: ll(stopP(idx)), draggable: true, zIndex: 12, title: (idx + 1) + '. ' + S.stops[idx][1] + ' (선의 ' + (idx === S.sel ? '시작' : '끝') + ' 점)', image: dotImg(selS ? '#ef4444' : '#ffffff', 18, selS ? '#fff' : '#ef4444') });
+      kakao.maps.event.addListener(mk, 'click', () => { S.selStop = idx; S.selNode = -1; buildMarkers(); updatePanel(); });
+      kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); S.selStop = idx; S.selNode = -1; });
+      const mv = () => { const p = mk.getPosition(); S.pts[idx] = [p.getLat(), p.getLng()]; refreshStopPt(idx); };
+      kakao.maps.event.addListener(mk, 'drag', mv);
+      kakao.maps.event.addListener(mk, 'dragend', () => { mv(); buildMarkers(); });
+      markers.push(mk);
+    });
+    segs.forEach(i => S.nodes[i].forEach((nd, j) => {
+      const selN = i === S.sel && j === S.selNode;
+      const mk = new kakao.maps.Marker({ map, position: ll(nd.p), draggable: true, zIndex: selN ? 10 : 6, image: dotImg(selN ? '#ef4444' : KCOL[nd.k] || KCOL.s, selN ? 16 : 12, '#fff') });
+      kakao.maps.event.addListener(mk, 'click', () => { if (i !== S.sel) selectSeg(i); S.selStop = -1; S.selNode = j; buildMarkers(); updatePanel(); });
+      kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); dragging = true; if (i !== S.sel) { S.sel = i; } S.selStop = -1; S.selNode = j; });
+      kakao.maps.event.addListener(mk, 'drag', () => { const p = mk.getPosition(); nd.p = [p.getLat(), p.getLng()]; refreshAfterEdit(i); });
+      kakao.maps.event.addListener(mk, 'dragend', () => { dragging = false; const p = mk.getPosition(); nd.p = [p.getLat(), p.getLng()]; refreshAfterEdit(i); buildMarkers(); });
+      markers.push(mk);
+    }));
+  }
+
+  function refreshStopPt(idx) {   // 정류장 점을 옮기면 앞·뒤 두 구간이 같이 바뀐다
+    recomputeAround(idx - 1, 1); [idx - 1, idx].forEach(i => { if (i >= 0 && i < S.nodes.length) markListEdited(i); });
+    if (mainLine) mainLine.setPath(fullPath());
+    if (selLine && S.sel >= 0) selLine.setPath(S.res[S.sel].map(ll));
+    SIM.pts = []; updatePanel(); saveLocal();
+  }
+
+  // ---------- 선택·목록 ----------
+  function selectSeg(i) {
+    if (i < 0 || i >= S.nodes.length) return;
+    S.sel = i; S.selNode = -1; S.selStop = -1; clearGuide();
+    drawSel(); skinStops(); buildMarkers(); updatePanel(); fitSeg(i);
+    document.querySelectorAll('.sg').forEach(e => e.classList.toggle('sel', +e.dataset.i === i));
+    const el = document.querySelector('.sg[data-i="' + i + '"]'); if (el) el.scrollIntoView({ block: 'nearest' });
+  }
+  function nearestSeg(latlng) {
+    const q = [latlng.getLat(), latlng.getLng()]; let best = 0, bd = 1e18;
+    for (let i = 0; i < S.nodes.length; i++) {
+      const e = G.nearestEdge(stopP(i), S.nodes[i], stopP(i + 1), q);
+      if (e.d < bd) { bd = e.d; best = i; }
+    }
+    return best;
+  }
+  function buildList() {
+    const el = $('segs'); el.innerHTML = '';
+    const an = S.anchors || [], hd = {};
+    if (an.length >= 3) for (let k = 0; k < an.length - 1; k++) hd[an[k]] = (k === 0 ? '▲ 상행' : k === 1 ? '▼ 하행' : '편도 ' + (k + 1)) + ': ' + S.stops[an[k]][1] + ' → ' + S.stops[an[k + 1]][1];
+    else hd[0] = '편도: ' + S.stops[0][1] + ' → ' + S.stops[S.stops.length - 1][1];
+    for (let i = 0; i < S.nodes.length; i++) {
+      if (hd[i]) { const h = document.createElement('div'); h.style.cssText = 'padding:6px 12px;background:#1e293b;color:#7dd3fc;font-weight:700;font-size:12.5px;position:sticky;top:0'; h.textContent = hd[i]; el.appendChild(h); }
+      const d = document.createElement('div'); d.className = 'sg' + (S.nodes[i].length ? ' ed' : ''); d.dataset.i = i;
+      d.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="t"></span><span class="d"></span>';
+      d.querySelector('.t').textContent = S.stops[i][1] + ' → ' + S.stops[i + 1][1];
+      d.onclick = () => selectSeg(i);
+      el.appendChild(d);
+    }
+  }
+  function markListEdited(i) { const e = document.querySelector('.sg[data-i="' + i + '"]'); if (e) e.classList.toggle('ed', S.nodes[i].length > 0); }
+
+  function updatePanel() {
+    if (S.sel < 0) { $('pH').textContent = '구간을 고르세요'; $('pS').textContent = ''; $('pN').innerHTML = ''; return; }
+    const i = S.sel, len = Math.round(G.polyLen(S.res[i])), st = Math.round(G.polyLen([stopP(i), stopP(i + 1)]));
+    $('pH').textContent = '구간 ' + (i + 1) + ' / ' + S.nodes.length + '  ' + S.stops[i][1] + ' → ' + S.stops[i + 1][1];
+    $('pS').textContent = '점 ' + S.nodes[i].length + '개 · 선 길이 ' + len + 'm (정류장 직선 ' + st + 'm)';
+    if (S.selStop >= 0) {
+      const k = S.selStop, a = stopP(k), r = realP(k), off = Math.round(G.polyLen([a, r])), pk = S.pk[k] || { k: 's', r: 12 }, inner = k > 0 && k < S.stops.length - 1;
+      $('pN').innerHTML =
+        '<div class="row"><b>정류장 점 ' + (k + 1) + '. ' + S.stops[k][1] + '</b><span class="s">정류장 좌표에서 ' + off + 'm 떨어짐</span></div>' +
+        (inner ? '<div class="row">' + ['s:1 직선', 'c:2 굽기', 'm:3 곡선'].map(t => { const [q, l] = t.split(':'); return '<button data-k="' + q + '" class="' + (pk.k === q ? 'on' : '') + '">' + l + '</button>'; }).join('') + '<button data-sreset="1" class="warn">초기화</button></div>' +
+          (pk.k === 'c' ? '<div class="row">둥근 정도 <input type="range" id="rr" min="3" max="60" value="' + (pk.r || 12) + '"><span id="rv">' + (pk.r || 12) + 'm</span></div>' : '')
+          : '<div class="row"><span class="s">노선의 처음·끝 점은 꺾이지 않아서 종류가 없어요.</span><button data-sreset="1" class="warn">초기화</button></div>');
+      $('pN').querySelectorAll('button[data-k]').forEach(b => b.onclick = () => setKind(b.dataset.k));
+      $('pN').querySelector('button[data-sreset]').onclick = resetStopPts;
+      const rr = $('rr'); if (rr) { rr.oninput = () => { pushUndoOnce(); pk.r = +rr.value; $('rv').textContent = rr.value + 'm'; refreshStopPt(k); }; rr.onchange = () => { undoOnce = false; }; }
+      return;
+    }
+    const nd = S.selNode >= 0 ? S.nodes[i][S.selNode] : null;
+    if (!nd) { $('pN').innerHTML = '<div class="s" style="margin-top:6px">점을 누르면 종류(직선·굽기·곡선)를 바꿀 수 있어요.</div>'; return; }
+    $('pN').innerHTML =
+      '<div class="row"><b>선택한 점 ' + (S.selNode + 1) + '</b>' +
+      ['s:1 직선', 'c:2 굽기', 'm:3 곡선'].map(t => { const [k, l] = t.split(':'); return '<button data-k="' + k + '" class="' + (nd.k === k ? 'on' : '') + '">' + l + '</button>'; }).join('') +
+      '<button data-del="1" class="warn">삭제</button></div>' +
+      (nd.k === 'c' ? '<div class="row">둥근 정도 <input type="range" id="rr" min="3" max="60" value="' + (nd.r || 12) + '"><span id="rv">' + (nd.r || 12) + 'm</span></div>' : '');
+    $('pN').querySelectorAll('button[data-k]').forEach(b => b.onclick = () => setKind(b.dataset.k));
+    $('pN').querySelector('button[data-del]').onclick = delNode;
+    const rr = $('rr'); if (rr) { rr.oninput = () => { pushUndoOnce(); nd.r = +rr.value; $('rv').textContent = rr.value + 'm'; refreshAfterEdit(S.sel); }; rr.onchange = () => { undoOnce = false; }; }
+  }
+
+  // ---------- 편집 동작 ----------
+  let undoOnce = false;
+  function pushUndo() { S.undo.push(snapshot()); if (S.undo.length > 300) S.undo.shift(); S.redo = []; }
+  function pushUndoOnce() { if (!undoOnce) { pushUndo(); undoOnce = true; } }
+  function applySnap(s) { const o = JSON.parse(s); S.nodes = o.n; S.pts = o.p; if (o.k) S.pk = o.k; S.selStop = -1; recompute(); if (mainLine) mainLine.setPath(fullPath()); drawSel(); S.selNode = -1; buildMarkers(); updatePanel(); document.querySelectorAll('.sg').forEach(e => markListEdited(+e.dataset.i)); saveLocal(); }
+  function undo() { if (!S.undo.length) { msg('되돌릴 것이 없어요.'); return; } S.redo.push(snapshot()); applySnap(S.undo.pop()); }
+  function redo() { if (!S.redo.length) return; S.undo.push(snapshot()); applySnap(S.redo.pop()); }
+
+  function insertNode(i, latlng, kind) {
+    const q = [latlng.getLat(), latlng.getLng()], e = G.nearestEdge(stopP(i), S.nodes[i], stopP(i + 1), q);
+    const nd = { p: q, k: kind || 's', r: 12 };
+    S.nodes[i].splice(e.edge, 0, nd);
+    return { idx: e.edge, edge: e.edge };
+  }
+  function onMapClick(latlng) {
+    if (S.sel < 0) return;
+    if (S.mode === 'a') {
+      pushUndo(); const r = insertNode(S.sel, latlng, 's'); S.selStop = -1; S.selNode = r.idx;
+      refreshAfterEdit(S.sel); buildMarkers();
+    } else if (S.mode === 'u') {
+      const i = S.sel, q = [latlng.getLat(), latlng.getLng()], e = G.nearestEdge(stopP(i), S.nodes[i], stopP(i + 1), q), d = G.edgeDir(stopP(i), S.nodes[i], stopP(i + 1), e.edge);
+      const f = d.fwd, l = d.left, x = d.pr.xy(q), mk = (dx, dy) => d.pr.ll([x[0] + dx, x[1] + dy]);
+      pushUndo();
+      S.nodes[i].splice(e.edge, 0,
+        { p: q, k: 's', r: 12 },
+        { p: mk(f[0] * 22, f[1] * 22), k: 'c', r: 6 },
+        { p: mk(f[0] * 22 + l[0] * 12, f[1] * 22 + l[1] * 12), k: 'c', r: 6 });
+      S.selStop = -1; S.selNode = e.edge + 2; refreshAfterEdit(i); buildMarkers(); setMode('v');
+      msg('유턴 모양 점 3개를 만들었어요. 점을 끌어서 도로에 맞추세요.');
+    } else if (S.mode === 'v') {
+      S.selNode = -1; S.selStop = -1; buildMarkers(); updatePanel();
+    }
+  }
+  function resetStopPts() {   // 선택한 정류장 점(없으면 이 구간의 시작·끝 점)을 정류장 좌표로 되돌린다
+    if (S.sel < 0) return;
+    const ids = S.selStop >= 0 ? [S.selStop] : [S.sel, S.sel + 1];
+    pushUndo(); ids.forEach(k => { S.pts[k] = realP(k); S.pk[k] = { k: 's', r: 12 }; });
+    ids.forEach(refreshStopPt); buildMarkers();
+    msg('정류장 점을 정류장 좌표·직선으로 되돌렸어요.');
+  }
+  function clearSegNodes() {
+    if (S.sel < 0) return;
+    pushUndo(); S.nodes[S.sel] = []; S.selNode = -1; refreshAfterEdit(S.sel); buildMarkers();
+    msg('구간 ' + (S.sel + 1) + '의 점을 모두 지웠어요(정류장끼리 직선). 되돌리려면 [한 단계 되돌리기].');
+  }
+  function setKind(k) {
+    if (S.selStop >= 0) { const q = S.selStop; if (q <= 0 || q >= S.stops.length - 1) return; pushUndo(); S.pk[q] = { k: k, r: (S.pk[q] && S.pk[q].r) || 12 }; refreshStopPt(q); updatePanel(); return; }
+    if (S.sel < 0 || S.selNode < 0) return; pushUndo(); const nd = S.nodes[S.sel][S.selNode]; nd.k = k; if (k === 'c' && !nd.r) nd.r = 12; refreshAfterEdit(S.sel); buildMarkers(); }
+  function delNode() { if (S.sel < 0 || S.selNode < 0) return; pushUndo(); S.nodes[S.sel].splice(S.selNode, 1); S.selNode = -1; refreshAfterEdit(S.sel); buildMarkers(); }
+
+  function setMode(m) {
+    S.mode = m;
+    ['V', 'A', 'U'].forEach(k => $('m' + k).classList.toggle('on', k.toLowerCase() === m));
+    if (map) map.setCursor(m === 'v' ? '' : 'crosshair');
+  }
+
+  // ---------- 도로 도움 (OSRM) ----------
+  function clearGuide() { if (guideLine) { guideLine.setMap(null); guideLine = null; } $('gGuide').classList.remove('on'); }
+  async function osrmRoute(pts) {
+    const c = pts.map(p => p[1].toFixed(6) + ',' + p[0].toFixed(6)).join(';');
+    const r = await fetch(OSRM + 'route/v1/driving/' + c + '?overview=full&geometries=geojson&continue_straight=true').then(x => x.json());
+    if (!r || r.code !== 'Ok' || !r.routes.length) throw new Error('길찾기 서버가 길을 못 찾았어요');
+    return r.routes[0].geometry.coordinates.map(q => [q[1], q[0]]);
+  }
+  $('gGuide').onclick = async () => {
+    if (S.sel < 0) return;
+    if (guideLine) { clearGuide(); return; }
+    msg('도로 안내선 받는 중...');
+    try {
+      const i = S.sel, path = await osrmRoute([stopP(i)].concat(S.nodes[i].map(n => n.p), [stopP(i + 1)]));
+      guideLine = new kakao.maps.Polyline({ map, path: path.map(ll), strokeWeight: 4, strokeColor: '#ef4444', strokeOpacity: .9, strokeStyle: 'shortdash' });
+      $('gGuide').classList.add('on'); msg('빨간 점선 = 길찾기가 안내하는 도로 모양이에요(참고용). 선을 이대로 쓰려면 [안내선대로 그리기].');
+    } catch (e) { msg('실패: ' + e.message); }
+  };
+  $('gAuto').onclick = async () => {
+    if (S.sel < 0) return;
+    msg('안내선대로 그리는 중...');
+    try {
+      const i = S.sel, path = await osrmRoute([stopP(i), stopP(i + 1)]);
+      pushUndo();
+      S.nodes[i] = G.simplify([stopP(i)].concat(path, [stopP(i + 1)]), 6).map(p => ({ p: p, k: 's', r: 12 }));
+      S.selNode = -1; clearGuide(); refreshAfterEdit(i); buildMarkers();
+      msg('구간 ' + (i + 1) + '을 안내선대로 그렸어요(점 ' + S.nodes[i].length + '개). 마음에 안 들면 [되돌리기].');
+    } catch (e) { msg('실패: ' + e.message); }
+  };
+  $('gSnap').onclick = async () => {
+    if (S.sel < 0 || S.selNode < 0) { msg('먼저 점을 눌러 고르세요.'); return; }
+    const nd = S.nodes[S.sel][S.selNode];
+    try {
+      const r = await fetch(OSRM + 'nearest/v1/driving/' + nd.p[1].toFixed(6) + ',' + nd.p[0].toFixed(6) + '?number=1').then(x => x.json());
+      if (!r || r.code !== 'Ok' || !r.waypoints.length) throw new Error('가까운 도로를 못 찾았어요');
+      pushUndo(); const w = r.waypoints[0].location; nd.p = [w[1], w[0]]; refreshAfterEdit(S.sel); buildMarkers();
+      msg('점을 가까운 도로 위(' + Math.round(r.waypoints[0].distance) + 'm 이동)로 붙였어요.');
+    } catch (e) { msg('실패: ' + e.message); }
+  };
+
+  // ---------- 보기 전환 ----------
+  $('tOrig').onclick = () => {
+    const on = !origLines.length;
+    origLines.forEach(l => l.setMap(null)); origLines = [];
+    if (on && S.orig) { S.orig.forEach(sg => origLines.push(new kakao.maps.Polyline({ map, path: sg.map(ll), strokeWeight: 3, strokeColor: '#a855f7', strokeOpacity: .8, strokeStyle: 'shortdash' }))); }
+    $('tOrig').classList.toggle('on', origLines.length > 0);
+    if (on && !S.orig) msg('원래 저장된 선이 없어요.');
+  };
+  $('tTraf').onclick = async () => {
+    const on = !trafLines.length;
+    trafLines.forEach(l => l.setMap(null)); trafLines = [];
+    if (on) {
+      try {
+        const lines = (await fetch('data/map/' + encodeURIComponent(S.name) + '.json', { cache: 'no-cache' }).then(x => x.json())).segs;
+        lines.forEach(sg => trafLines.push(new kakao.maps.Polyline({ map, path: sg.map(ll), strokeWeight: 3, strokeColor: '#14b8a6', strokeOpacity: .85 })));
+      } catch (e) { msg('노선지도 선을 못 불러왔어요.'); }
+    }
+    $('tTraf').classList.toggle('on', trafLines.length > 0);
+  };
+  $('tAll').onclick = () => { S.showAll = !S.showAll; $('tAll').classList.toggle('on', S.showAll); buildMarkers(); };
+
+  // ---------- 저장 ----------
+  let saveT = null;
+  function saveLocal() {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => { try { localStorage.setItem(KEY + S.name, JSON.stringify({ n: S.stops.length, fileAt: S.fileAt, t: Date.now(), nodes: S.nodes, pts: S.pts, pk: S.pk })); } catch (e) { } }, 400);
+  }
+  $('btnSave').onclick = () => {
+    const r6 = v => Math.round(v * 1e6) / 1e6;
+    const segs = S.res.map(sg => sg.map(p => [r6(p[0]), r6(p[1])]));
+    const draw = { v: 1, stops: S.pts.map(q => [r6(q[0]), r6(q[1])]), stopk: S.pk, nodes: S.nodes.map(a => a.map(n => ({ p: [r6(n.p[0]), r6(n.p[1])], k: n.k, r: n.r }))) };
+    const out = { v: 1, kind: 'traffic-lines', route: S.name, n: S.stops.length, savedAt: Date.now(), lines: segs, draw: draw };   // lines = 구간별 선(소통정보 _links.json 의 lines 와 같은 형식)
+    // 검사: 구간 양 끝이 정류장과 같아야 한다
+    for (let i = 0; i < segs.length; i++) {
+      const ja = jointAt(i), jb = jointAt(i + 1), a = segs[i][0], b = segs[i][segs[i].length - 1], A = ja ? ja.after[0] : stopP(i), B = jb ? jb.before[jb.before.length - 1] : stopP(i + 1);
+      if (Math.abs(a[0] - A[0]) > 2e-6 || Math.abs(a[1] - A[1]) > 2e-6 || Math.abs(b[0] - B[0]) > 2e-6 || Math.abs(b[1] - B[1]) > 2e-6) { msg('구간 ' + (i + 1) + '의 끝이 정류장 점과 안 맞아 저장하지 않았어요.'); return; }
+    }
+    const blob = new Blob([JSON.stringify(out)], { type: 'application/json' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = S.name + '_traffic_lines.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    msg(S.name + '_traffic_lines.json 을 받았어요(점 ' + segs.reduce((s, g) => s + g.length, 0) + '개). 소통정보(라이브 모달) 스레드에 올려 주세요.');
+  };
+
+
+  // ---------- 모의주행 (그린 선을 따라 버스가 달려 봄) ----------
+  const SIM = { on: false, d: 0, total: 0, cum: [], pts: [], last: 0, ov: null, el: null };
+  function simBuild() {
+    const out = []; S.res.forEach((sg, i) => sg.forEach((p, j) => { if (i && !j) return; out.push(p); }));
+    SIM.pts = out; SIM.cum = [0];
+    for (let i = 1; i < out.length; i++) { const pr = new G.Proj(out[i - 1][0], out[i - 1][1]); SIM.cum.push(SIM.cum[i - 1] + Math.hypot.apply(null, pr.xy(out[i]))); }
+    SIM.total = SIM.cum[SIM.cum.length - 1] || 1;
+  }
+  function simPos(d) {
+    const c = SIM.cum; let lo = 0, hi = c.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= d) lo = m; else hi = m; }
+    const t = c[hi] > c[lo] ? Math.min(1, Math.max(0, (d - c[lo]) / (c[hi] - c[lo]))) : 0, a = SIM.pts[lo], b = SIM.pts[hi];
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, lo];
+  }
+  function simShow() {
+    if (!SIM.pts.length) simBuild();
+    const q = simPos(SIM.d);
+    if (!SIM.ov) { SIM.el = document.createElement('div'); SIM.el.style.cssText = 'width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 0 0 5px rgba(239,68,68,.35)'; SIM.ov = new kakao.maps.CustomOverlay({ map, position: ll(q), content: SIM.el, zIndex: 20 }); }
+    SIM.ov.setPosition(ll(q)); SIM.ov.setMap(map);
+    if ($('sFollow').checked && SIM.on) map.setCenter(ll(q));
+    $('sPos').value = Math.round(SIM.d / SIM.total * 1000);
+    // 지금 어느 구간인지
+    let seg = 0, acc = 0; for (let i = 0; i < S.res.length; i++) { acc += S.res[i].length - (i ? 1 : 0); if (q[2] < acc) { seg = i; break; } seg = i; }
+    $('sInfo').textContent = (seg + 1) + '번 구간 · ' + (SIM.d / 1000).toFixed(1) + '/' + (SIM.total / 1000).toFixed(1) + 'km';
+  }
+  function simTick(now) {
+    if (!SIM.on) return;
+    const dt = Math.min(0.2, (now - SIM.last) / 1000); SIM.last = now;
+    SIM.d += dt * (40 / 3.6) * (+$('sSpeed').value);
+    if (SIM.d >= SIM.total) { SIM.d = SIM.total; simStop(); }
+    simShow(); if (SIM.on) requestAnimationFrame(simTick);
+  }
+  function simStart() { simBuild(); if (SIM.d >= SIM.total) SIM.d = 0; SIM.on = true; SIM.last = performance.now(); $('sPlay').textContent = '⏸ 멈춤'; requestAnimationFrame(simTick); }
+  function simStop() { SIM.on = false; $('sPlay').textContent = '▶ 모의주행'; }
+  $('sPlay').onclick = () => SIM.on ? simStop() : simStart();
+  $('sPos').oninput = () => { simBuild(); SIM.d = $('sPos').value / 1000 * SIM.total; simShow(); };
+
+  // ---------- 이벤트 ----------
+  $('mV').onclick = () => setMode('v'); $('mA').onclick = () => setMode('a'); $('mU').onclick = () => setMode('u');
+  $('gUndo').onclick = undo; $('gStopReset').onclick = resetStopPts; $('gClear').onclick = clearSegNodes;
+  $('btnUndo').onclick = undo; $('btnRedo').onclick = redo;
+  $('route').onchange = () => {
+    openRoute($('route').value).catch(e => msg('실패: ' + (e && e.message || e)));
+  };
+  $('btnReload').onclick = () => {
+    if (S.undo.length && !confirm('이 노선의 임시저장을 지우고 저장된 파일에서 다시 시작할까요? (받은 파일은 그대로예요)')) return;
+    try { localStorage.removeItem(KEY + $('route').value); } catch (e) { }
+    openRoute($('route').value).catch(e => msg('실패: ' + (e && e.message || e)));
+  };
+  document.addEventListener('keydown', e => {
+    if (/INPUT|SELECT|TEXTAREA/.test((e.target.tagName || ''))) return;
+    const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); redo(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (k === ' ') { e.preventDefault(); SIM.on ? simStop() : simStart(); return; }
+    if (k === 'v') setMode('v'); else if (k === 'a') setMode('a'); else if (k === 'u') setMode('u');
+    else if (k === 'n') selectSeg(S.sel + 1); else if (k === 'p') selectSeg(S.sel - 1);
+    else if (k === '1') setKind('s'); else if (k === '2') setKind('c'); else if (k === '3') setKind('m');
+    else if (k === 'delete' || k === 'backspace') { e.preventDefault(); delNode(); }
+    else if (k === '[' || k === ']') { if (S.selStop >= 0 && S.pk[S.selStop] && S.pk[S.selStop].k === 'c') { const pk = S.pk[S.selStop]; pushUndo(); pk.r = Math.max(3, Math.min(60, (pk.r || 12) + (k === ']' ? 3 : -3))); refreshStopPt(S.selStop); } else if (S.sel >= 0 && S.selNode >= 0) { const nd = S.nodes[S.sel][S.selNode]; if (nd.k === 'c') { pushUndo(); nd.r = Math.max(3, Math.min(60, (nd.r || 12) + (k === ']' ? 3 : -3))); refreshAfterEdit(S.sel); } } }
+    else if (k === 'escape') { setMode('v'); S.selNode = -1; S.selStop = -1; buildMarkers(); updatePanel(); }
+  });
+  window.addEventListener('beforeunload', () => { try { if (S.name) localStorage.setItem(KEY + S.name, JSON.stringify({ n: S.stops.length, fileAt: S.fileAt, t: Date.now(), nodes: S.nodes, pts: S.pts, pk: S.pk })); } catch (e) { } });
+
+  openRoute($('route').value).catch(e => msg('실패: ' + (e && e.message || e)));
+})();
+</script>
+</body>
+</html>
