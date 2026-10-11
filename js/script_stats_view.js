@@ -975,11 +975,11 @@ function renderEditRouteOptions() {
                 infoHtml = `
                     <div style="display:flex; gap:2px 12px; align-items:baseline; white-space:nowrap;">
                         <span style="color: #38bdf8; font-size: 18px; font-weight: 900;">${route}</span>
-                        <span style="color: #22c55e; font-size: 18px; font-weight: bold;">${seqTime}</span>
+                        <span style="color: #fbbf24; font-size: 18px; font-weight: bold;">${busNo}</span>
                     </div>
                     <div style="display:flex; gap:2px 8px; align-items:baseline; white-space:nowrap; letter-spacing:-0.3px;">
-                        <span style="color: #fbbf24; font-size: 18px; font-weight: bold;">${busNo}</span>
-                        <span style="color: #cbd5e1; font-size: 17px;">${startEnd}</span>
+                        <span style="color: #22c55e; font-size: 18px; font-weight: bold;">${seqTime}</span>
+                        <span style="color: #cbd5e1; font-size: 16px;">${String(startEnd).replace(/\s*\/\s*/g, '/')}</span>
                     </div>
                 `;
             }
