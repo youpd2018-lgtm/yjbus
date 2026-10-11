@@ -260,8 +260,8 @@
     segs.forEach(i => S.nodes[i].forEach((nd, j) => {
       const selN = i === S.sel && j === S.selNode;
       const mk = new kakao.maps.Marker({ map, position: ll(nd.p), draggable: true, zIndex: selN ? 10 : 6, image: dotImg(selN ? '#ef4444' : KCOL[nd.k] || KCOL.s, selN ? 16 : 12, '#fff') });
-      kakao.maps.event.addListener(mk, 'click', () => { if (i !== S.sel) selectSeg(i); S.selNode = j; buildMarkers(); updatePanel(); });
-      kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); dragging = true; if (i !== S.sel) { S.sel = i; } S.selNode = j; });
+      kakao.maps.event.addListener(mk, 'click', () => { if (i !== S.sel) selectSeg(i); S.selStop = -1; S.selNode = j; buildMarkers(); updatePanel(); });
+      kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); dragging = true; if (i !== S.sel) { S.sel = i; } S.selStop = -1; S.selNode = j; });
       kakao.maps.event.addListener(mk, 'drag', () => { const p = mk.getPosition(); nd.p = [p.getLat(), p.getLng()]; refreshAfterEdit(i); });
       kakao.maps.event.addListener(mk, 'dragend', () => { dragging = false; const p = mk.getPosition(); nd.p = [p.getLat(), p.getLng()]; refreshAfterEdit(i); buildMarkers(); });
       markers.push(mk);
@@ -347,7 +347,7 @@
   function onMapClick(latlng) {
     if (S.sel < 0) return;
     if (S.mode === 'a') {
-      pushUndo(); const r = insertNode(S.sel, latlng, 's'); S.selNode = r.idx;
+      pushUndo(); const r = insertNode(S.sel, latlng, 's'); S.selStop = -1; S.selNode = r.idx;
       refreshAfterEdit(S.sel); buildMarkers();
     } else if (S.mode === 'u') {
       const i = S.sel, q = [latlng.getLat(), latlng.getLng()], e = G.nearestEdge(stopP(i), S.nodes[i], stopP(i + 1), q), d = G.edgeDir(stopP(i), S.nodes[i], stopP(i + 1), e.edge);
@@ -357,10 +357,10 @@
         { p: q, k: 's', r: 12 },
         { p: mk(f[0] * 22, f[1] * 22), k: 'c', r: 6 },
         { p: mk(f[0] * 22 + l[0] * 12, f[1] * 22 + l[1] * 12), k: 'c', r: 6 });
-      S.selNode = e.edge + 2; refreshAfterEdit(i); buildMarkers(); setMode('v');
+      S.selStop = -1; S.selNode = e.edge + 2; refreshAfterEdit(i); buildMarkers(); setMode('v');
       msg('유턴 모양 점 3개를 만들었어요. 점을 끌어서 도로에 맞추세요.');
     } else if (S.mode === 'v') {
-      S.selNode = -1; buildMarkers(); updatePanel();
+      S.selNode = -1; S.selStop = -1; buildMarkers(); updatePanel();
     }
   }
   function resetStopPts() {   // 선택한 정류장 점(없으면 이 구간의 시작·끝 점)을 정류장 좌표로 되돌린다
@@ -530,7 +530,7 @@
     else if (k === '1') setKind('s'); else if (k === '2') setKind('c'); else if (k === '3') setKind('m');
     else if (k === 'delete' || k === 'backspace') { e.preventDefault(); delNode(); }
     else if (k === '[' || k === ']') { if (S.sel >= 0 && S.selNode >= 0) { const nd = S.nodes[S.sel][S.selNode]; if (nd.k === 'c') { pushUndo(); nd.r = Math.max(3, Math.min(60, (nd.r || 12) + (k === ']' ? 3 : -3))); refreshAfterEdit(S.sel); } } }
-    else if (k === 'escape') { setMode('v'); S.selNode = -1; buildMarkers(); updatePanel(); }
+    else if (k === 'escape') { setMode('v'); S.selNode = -1; S.selStop = -1; buildMarkers(); updatePanel(); }
   });
   window.addEventListener('beforeunload', () => { try { if (S.name) localStorage.setItem(KEY + S.name, JSON.stringify({ n: S.stops.length, fileAt: S.fileAt, t: Date.now(), nodes: S.nodes, pts: S.pts })); } catch (e) { } });
 
