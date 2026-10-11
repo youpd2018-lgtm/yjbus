@@ -83,7 +83,12 @@
   // ── 공유 저장소(서버) ──────────────────────────────────────────
   // 서버에 10분짜리 소통·돌발정보가 있으면 그것을 읽는다. 10분이 지났으면 운행 중인 폰 한 대만 국토부에서 영종·청라 전체를 받아 서버에 올린다.
   var AREA = { minX: 126.36, maxX: 126.70, minY: 37.42, maxY: 37.57 };   // 영종·청라·인천 노선 전체
-  var FRESH = 600000, STALE = 2400000;                                   // 10분 / 40분
+  var FRESH = 420000, STALE = 2400000;                                   // 소통정보 7분 / 40분
+  var COLLECT_EVENTS = false;                                            // 돌발정보 받기는 쉬는 중(국토부 월 한도 때문, 사용자 지시 2026-10-11)
+  function inServiceHours() {   // 운행시간 04:30~00:30 (한국 시각)에만 국토부에서 새로 받는다
+    var d = new Date(Date.now() + 9 * 3600000), m = d.getUTCHours() * 60 + d.getUTCMinutes();
+    return m >= 270 || m < 30;
+  }
   var shared = { t: null, e: null }, sharedAt = 0, collecting = false, allIds = null;
 
   async function gasGet(q) { return fetch(window.GAS_WEB_APP_URL + '?' + q).then(function (x) { return x.json(); }); }
@@ -127,9 +132,9 @@
       try { var r = await gasGet('action=get_traffic_shared'); if (r && r.success) { if (r.t) shared.t = r.t; if (r.e) shared.e = r.e; sharedAt = Date.now(); } } catch (e) { }
     }
     var driving = (g.speedKmh || 0) >= 5;
-    if (driving) {   // 달리는 폰만 새로 받는다
+    if (driving && inServiceHours()) {   // 달리는 폰만, 운행시간 안에만 새로 받는다
       if (!shared.t || Date.now() - shared.t.at >= FRESH) await collect('t');
-      if (!shared.e || Date.now() - shared.e.at >= FRESH) await collect('e');
+      if (COLLECT_EVENTS && (!shared.e || Date.now() - shared.e.at >= FRESH)) await collect('e');
     }
   }
 
