@@ -747,10 +747,14 @@ function renderEditRouteOptions() {
                 `;
             } else {
                 infoHtml = `
-                                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900; white-space: nowrap;">${route}</span>
-                    <span style="color: #22c55e; font-size: 18px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
-                    <span style="color: #fbbf24; font-size: 18px; font-weight: bold; white-space: nowrap;">${busNo}</span>
-                    <span style="color: #cbd5e1; font-size: 17px; white-space: nowrap;">${startEnd}</span>
+                    <div style="display:flex; gap:2px 12px; align-items:baseline; white-space:nowrap;">
+                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900;">${route}</span>
+                        <span style="color: #fbbf24; font-size: 18px; font-weight: bold;">${busNo}</span>
+                    </div>
+                    <div style="display:flex; gap:2px 8px; align-items:baseline; white-space:nowrap; letter-spacing:-0.3px;">
+                        <span style="color: #22c55e; font-size: 18px; font-weight: bold;">${seqTime}</span>
+                        <span style="color: #cbd5e1; font-size: 16px;">${String(startEnd).replace(/\s*\/\s*/g, '/')}</span>
+                    </div>
                 `;
             }
 
@@ -771,7 +775,7 @@ function renderEditRouteOptions() {
                     <iconify-icon icon="${starIcon}" style="font-size: 24px; color: ${starColor};" onclick="event.stopPropagation(); window.toggleFavorite('${u.name}')"></iconify-icon>
                     <span style="font-size: 18px; font-weight: bold; color: ${nameColor};">${nameDisplay}</span>
                 </div>
-                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 14px; padding: 8px 6px;">
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 6px;">
                     ${infoHtml}
                 </div>
                 ${callBtnHtml}
@@ -946,10 +950,14 @@ function renderEditRouteOptions() {
             } else {
                 // 4개의 정보 각각 분리된 묶음(배지) 디자인 (크기 20% 업그레이드)
                 infoHtml = `
-                                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900; white-space: nowrap;">${route}</span>
-                    <span style="color: #22c55e; font-size: 18px; font-weight: bold; white-space: nowrap;">${seqTime}</span>
-                    <span style="color: #fbbf24; font-size: 18px; font-weight: bold; white-space: nowrap;">${busNo}</span>
-                    <span style="color: #cbd5e1; font-size: 17px; white-space: nowrap;">${startEnd}</span>
+                    <div style="display:flex; gap:2px 12px; align-items:baseline; white-space:nowrap;">
+                        <span style="color: #38bdf8; font-size: 18px; font-weight: 900;">${route}</span>
+                        <span style="color: #22c55e; font-size: 18px; font-weight: bold;">${seqTime}</span>
+                    </div>
+                    <div style="display:flex; gap:2px 8px; align-items:baseline; white-space:nowrap; letter-spacing:-0.3px;">
+                        <span style="color: #fbbf24; font-size: 18px; font-weight: bold;">${busNo}</span>
+                        <span style="color: #cbd5e1; font-size: 17px;">${startEnd}</span>
+                    </div>
                 `;
             }
 
@@ -958,7 +966,7 @@ function renderEditRouteOptions() {
                 <div style="width: 104px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 10px 0;">
                     <span style="font-size: 18px; font-weight: bold; color: ${dateColor};">${dayLabel}</span>
                 </div>
-                <div style="flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 2px 14px; padding: 8px 6px;">
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 6px;">
                     ${infoHtml}
                 </div>
             `;
