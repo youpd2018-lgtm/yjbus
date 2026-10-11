@@ -128,12 +128,14 @@
         var cells = box.querySelectorAll('.yb4-st');
         var picked = null;
         try {
-            var now = new Date(), inp = $('searchDate'), hm = toMin(txt('yb2Hand'));
+            var now = new Date(), inp = $('searchDate');
             var isToday = false;
             if (inp && inp.value) { var p = inp.value.split('-'); isToday = +p[0] === now.getFullYear() && +p[1] === now.getMonth() + 1 && +p[2] === now.getDate(); }
-            if (isToday && hm !== null && now.getHours() * 60 + now.getMinutes() >= hm) {
+            // 오전 근무는 교대 시간이 퇴근 시간이고 오후 근무는 교대 시간이 출근 시간이라, 교대 시간이 아니라
+            // '내 첫 운행(첫 정류장 시간)이 시작된 뒤'부터 라이브 모달 거점처럼 움직임. 그 전에는 시작·종료·교대.
+            if (isToday) {
                 var stops = todayStops();
-                if (stops && stops.length) {
+                if (stops && stops.length && now >= stops[0].date) {
                     var ni = -1;
                     for (var i = 0; i < stops.length; i++) if (stops[i].date > now) { ni = i; break; }
                     if (ni < 0) ni = stops.length - 1;   // 정류장이 다 끝나면 마지막 정류장까지 마지막 칸에 그대로 보여 줌
