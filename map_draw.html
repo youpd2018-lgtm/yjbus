@@ -258,7 +258,7 @@
     const segs = S.showAll ? S.nodes.map((_, i) => i) : (S.sel >= 0 ? [S.sel] : []);
     if (S.sel >= 0) [S.sel, S.sel + 1].forEach(idx => {   // 선의 시작·끝 점(정류장 위치). 끌어서 옮길 수 있다
       const selS = idx === S.selStop;
-      const mk = new kakao.maps.Marker({ map, position: ll(stopP(idx)), draggable: true, zIndex: 12, title: (idx + 1) + '. ' + S.stops[idx][1] + ' (선의 ' + (idx === S.sel ? '시작' : '끝') + ' 점)', image: dotImg(selS ? '#ef4444' : '#ffffff', 18, selS ? '#fff' : '#ef4444') });
+      const mk = new kakao.maps.Marker({ map, position: ll(stopP(idx)), draggable: true, zIndex: 12, title: (idx + 1) + '. ' + S.stops[idx][1] + ' (선의 ' + (idx === S.sel ? '시작' : '끝') + ' 점)', image: dotImg(selS ? '#ef4444' : '#ffffff', 22, selS ? '#fff' : '#ef4444') });
       kakao.maps.event.addListener(mk, 'click', () => { S.selStop = idx; S.selNode = -1; buildMarkers(); updatePanel(); });
       kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); S.selStop = idx; S.selNode = -1; });
       const mv = () => { const p = mk.getPosition(); S.pts[idx] = [p.getLat(), p.getLng()]; refreshStopPt(idx); };
@@ -268,7 +268,7 @@
     });
     segs.forEach(i => S.nodes[i].forEach((nd, j) => {
       const selN = i === S.sel && j === S.selNode;
-      const mk = new kakao.maps.Marker({ map, position: ll(nd.p), draggable: true, zIndex: selN ? 10 : 6, image: dotImg(selN ? '#ef4444' : KCOL[nd.k] || KCOL.s, selN ? 16 : 12, '#fff') });
+      const mk = new kakao.maps.Marker({ map, position: ll(nd.p), draggable: true, zIndex: selN ? 10 : 6, image: dotImg(selN ? '#ef4444' : KCOL[nd.k] || KCOL.s, selN ? 22 : 18, '#fff') });
       kakao.maps.event.addListener(mk, 'click', () => { if (i !== S.sel) selectSeg(i); S.selStop = -1; S.selNode = j; buildMarkers(); updatePanel(); });
       kakao.maps.event.addListener(mk, 'dragstart', () => { pushUndo(); dragging = true; if (i !== S.sel) { S.sel = i; } S.selStop = -1; S.selNode = j; });
       kakao.maps.event.addListener(mk, 'drag', () => { const p = mk.getPosition(); nd.p = [p.getLat(), p.getLng()]; refreshAfterEdit(i); });
