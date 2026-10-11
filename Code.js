@@ -73,7 +73,7 @@ function doGet(e) {
     let result;
     try {
       result = typeof getRouteStopsForApp === 'function'
-        ? getRouteStopsForApp(e.parameter.route || "")
+        ? getRouteStopsForApp(e.parameter.route || "", e.parameter.nocache === "1")
         : { success: false, error: "getRouteStopsForApp 함수 미정의" };
     } catch(err) {
       result = { success: false, error: err.toString() };

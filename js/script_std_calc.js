@@ -48,10 +48,10 @@
         return null;
     }
 
-    function loadRoute(name) {
+    function loadRoute(name, fresh) {
         name = String(name || '').trim();
         if (!name) return Promise.resolve(null);
-        const cached = readRouteCache(name);
+        const cached = fresh ? null : readRouteCache(name);
         if (cached) return Promise.resolve(cached);
         if (inflight[name]) return inflight[name];
         const url = window.GAS_WEB_APP_URL;
@@ -59,7 +59,7 @@
 
         const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
-        inflight[name] = fetch(url + '?action=get_route_stops&route=' + encodeURIComponent(name), ctrl ? { signal: ctrl.signal } : undefined)
+        inflight[name] = fetch(url + '?action=get_route_stops&route=' + encodeURIComponent(name) + (fresh ? '&nocache=1' : ''), ctrl ? { signal: ctrl.signal } : undefined)
             .then(r => r.text().then(text => ({ status: r.status, text })))
             .then(({ status, text }) => {
                 if (timer) clearTimeout(timer);

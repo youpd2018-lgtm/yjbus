@@ -21,13 +21,13 @@ function isAnchorBackground_(bg) {
   return (r - g >= 60) && (r - b >= 60);   // 붉은 계열 배경 (색상 코드 오차 대비)
 }
 
-function getRouteStopsForApp(routeName) {
+function getRouteStopsForApp(routeName, fresh) {
   try {
     var name = String(routeName || '').trim();
     if (!name) return { success: false, error: 'route 누락' };
 
     var cache = CacheService.getScriptCache();
-    var cached = cache.get(ROUTE_STOPS_CACHE_PREFIX + name);
+    var cached = fresh ? null : cache.get(ROUTE_STOPS_CACHE_PREFIX + name);   // fresh=수정 페이지: 저장분을 쓰지 않고 시트에서 새로 읽음
     if (cached) return JSON.parse(cached);
 
     var ss = (typeof SHEET_ID !== 'undefined' && SHEET_ID)

@@ -151,8 +151,7 @@
     S.name = name; S.sel = -1; S.selNode = -1; S.undo = []; S.redo = []; S.pts = null; S.pk = null;
     const nm = $('nm').value.trim(), pn = $('pn').value.trim();
     if (nm && pn) { try { localStorage.setItem('loggedInUser', nm); localStorage.setItem('autoLoginPin', pn); } catch (e) { } }
-    try { StdCalc.clearRouteCache(name); } catch (e) { }
-    const r = await StdCalc.loadRoute(name);
+    const r = await StdCalc.loadRoute(name, true);
     if (!r) { $('login').style.display = 'flex'; msg('노선을 못 불러왔습니다. 이름·기사번호를 넣고 [다시 불러오기]를 눌러 보세요.\n' + (StdCalc.getLastError() || '')); return; }
     S.stops = r.stops.filter(s => s[2] && s[3]); S.anchors = (r.anchors || []).slice().sort((a, b) => a - b);
     try { localStorage.setItem('yb_draw_route', name); } catch (e) { }
