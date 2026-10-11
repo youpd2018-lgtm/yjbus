@@ -8,6 +8,7 @@
 
 const AUTH_ADMIN_NAME = '유재필';
 const AUTH_USERS_KEY = 'yeongjong_users_db';
+const AUTH_DELETED_KEY = 'yeongjong_deleted_users';   // 스스로 탈퇴한 사용자 기록(DB 시트에서만 보임, 앱에는 안 내려보냄)
 const AUTH_PUBLIC_ACTIONS = { login_by_pin: true, register_driver: true, register_family: true, get_route_stops: true }; // get_route_stops: 정류장 이름·위치·구간시간(공개 정보)이라 로그인 없이 허용 (사용자 지시 2026-10-02)
 const AUTH_MAX_FAIL_PER_NAME = 15;     // 같은 이름으로 10분에 15번 틀리면 잠시 막음
 const AUTH_MAX_FAIL_GLOBAL = 20;       // 기사번호만으로 찾는 로그인은 10분에 20번 틀리면 잠시 막음
@@ -262,9 +263,25 @@ function authDeleteMe_(viewer) {
   return authUpdateUsers_(function (list) {
     const idx = list.findIndex(function (u) { return u && u.name === name; });
     if (idx < 0) return { success: false, message: '사용자를 찾지 못했습니다.' };
-    list.splice(idx, 1);
+    const gone = list.splice(idx, 1)[0] || {};
+    authLogDeleted_(gone);
     return { success: true, save: true };
   });
+}
+
+// 탈퇴 기록 한 줄 추가 (기사번호는 남기지 않음, 오래된 것은 밀려남)
+function authLogDeleted_(u) {
+  try {
+    let arr = [];
+    try { arr = JSON.parse(String(loadKeyFromServer(AUTH_DELETED_KEY) || '[]')); } catch (e) { arr = []; }
+    if (!Array.isArray(arr)) arr = [];
+    arr.push({
+      name: u.name || '', userType: u.userType || 'driver', phone: u.phone || '',
+      targetDriver: u.targetDriver || '', deletedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')
+    });
+    while (JSON.stringify(arr).length > AUTH_MAX_VALUE_CHARS - 500) arr.shift();
+    saveToServer(AUTH_DELETED_KEY, JSON.stringify(arr));
+  } catch (e) { }
 }
 
 function authAdminApproveUser_(viewer, name) {
