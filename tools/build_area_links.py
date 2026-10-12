@@ -12,6 +12,7 @@ t2 = Transformer.from_crs('EPSG:4326', 'EPSG:5186', always_xy=True)
 K = 111320 * math.cos(math.radians(37.5)); R = 250
 pts = []
 for f in glob.glob('data/route/*_links.json'):
+    if f.endswith('area_links.json'): continue
     d = json.load(open(f))
     for sg in (d.get('lines') or d.get('base') or []):
         for i in range(len(sg) - 1):
