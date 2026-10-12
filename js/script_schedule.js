@@ -659,6 +659,12 @@ function pushRouteMapLive() {
     var tb = document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target .ios-seq-name');
     if (tb && tb.innerText.trim() && tb.innerText.trim() !== '-') msg.anchor = tb.innerText.trim();
   } catch (e) { }
+  // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
+  try {
+    var ne = document.getElementById('trafficStopNameAfter');
+    var nt = ne ? ne.innerText.trim() : '';
+    if (nt && nt !== '-' && nt !== '다음 정류장') msg.next = nt;
+  } catch (e) { }
   var g = window.lastGpsPosition;
   if (g && window._gpsLastFixAt && Date.now() - window._gpsLastFixAt < 5000) msg.gps = { lat: g.lat, lon: g.lon, spd: g.speedKmh, hd: g.heading, at: window._gpsLastFixAt };
   try { _rm.frame.contentWindow.postMessage(msg, location.origin); } catch (e) { }
