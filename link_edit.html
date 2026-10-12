@@ -40,7 +40,7 @@
 <body>
 <h1>🛠 노선 링크 수정 (시험)</h1>
 <div class="box">
-  노선의 구간을 출발지부터 돌아올 때까지 순서대로 보여 줍니다. 구간 제목을 누르면 위 지도에 그 구간 선만 나오고, 지도의 초록·주황 선을 직접 눌러도 그 선을 뺄 수 있고(확인창이 떠요), 후보 링크가 아래에 나옵니다. 틀린 링크는 [빼기], 추천 링크는 [이 구간에 넣기], 교량·터널·고가·지하차도는 후보 위의 체크칸으로 골라 넣습니다. 고친 내용은 이 기기에 임시 저장되고, 끝나면 [최종 저장 파일 받기]로 받은 파일을 채팅에 올려 주세요. 앱 본 화면과 무관합니다.
+  노선의 구간을 출발지부터 돌아올 때까지 순서대로 보여 줍니다. 구간 제목을 누르면 위 지도에 그 구간 선만 나오고, 지도의 초록·주황 선을 직접 눌러도 그 선을 뺄 수 있고(확인창이 떠요), 회색 추천선을 누르면 그 구간에 바로 들어가고, 후보 링크가 아래에 나옵니다. 틀린 링크는 [빼기], 추천 링크는 [이 구간에 넣기], 교량·터널·고가·지하차도는 후보 위의 체크칸으로 골라 넣습니다. 고친 내용은 이 기기에 임시 저장되고, 끝나면 [최종 저장 파일 받기]로 받은 파일을 채팅에 올려 주세요. 앱 본 화면과 무관합니다.
   <input id="ik" placeholder="국토교통부 ITS 키 붙여넣기 (저장하지 않음)">
 </div>
 <div class="row">
@@ -249,6 +249,10 @@ function drawMap(fit) {
   var LL = function (pts) { return pts.map(function (p) { return new kakao.maps.LatLng(p[0], p[1]); }); };
   (S.cand[S.cur] || []).forEach(function (r) {
     var pl = new kakao.maps.Polyline({ path: LL(S.area.links[r.id][3]), strokeWeight: 5, strokeColor: '#94a3b8', strokeOpacity: 0.6, map: S.map }); S.layers.push(pl);
+    // 회색 추천선을 누르면 이 구간에 넣기
+    kakao.maps.event.addListener(pl, 'mouseover', function () { pl.setOptions({ strokeWeight: 9, strokeColor: '#38bdf8', strokeOpacity: 0.9 }); S.map.getNode().style.cursor = 'pointer'; });
+    kakao.maps.event.addListener(pl, 'mouseout', function () { pl.setOptions({ strokeWeight: 5, strokeColor: '#94a3b8', strokeOpacity: 0.6 }); S.map.getNode().style.cursor = ''; });
+    kakao.maps.event.addListener(pl, 'click', function () { op('add', S.cur, r.id); });
   });
   S.segs[S.cur].forEach(function (id) {
     var g = S.area.links[id]; if (!g) return;
