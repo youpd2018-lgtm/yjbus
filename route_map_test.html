@@ -342,9 +342,11 @@
     if (d.dc) { bd.style.color = d.dc; bd.style.background = d.db; bd.style.borderColor = d.dbd; }
   });
 
+  let pendingFix = null;
   let lastOwnFix = 0, lastParentFix = 0, gpsWatchId = null;
   function onPos(lat, lon, speedKmh, hd, fromParent) {
     if (!fromParent) lastOwnFix = Date.now();
+    if (!map) { me = { lat, lon, speed: speedKmh }; pendingFix = [lat, lon, speedKmh, hd]; return; }   // 지도가 아직 안 떴으면 위치만 기억(지도 뜬 뒤 다시 처리)
     const prev = me;
     me = { lat, lon, speed: speedKmh };
     if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
@@ -491,6 +493,7 @@
       if (SIM) onPos(l.getLat(), l.getLng(), 30, null);
     });
     showRoute($('route').value);
+    if (pendingFix) { const p = pendingFix; pendingFix = null; onPos(p[0], p[1], p[2], p[3], true); }
     startGps();
   }).catch(e => { $('msg').textContent = String(e.message || e); });
 </script>
