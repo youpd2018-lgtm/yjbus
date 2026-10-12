@@ -26,10 +26,11 @@
   td.r2 { text-align: right; white-space: nowrap; }
   .sub { color: #94a3b8; font-size: 12px; }
 
-  #wrap { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; align-items: start; margin-top: 10px; }
+  #wrap { display: grid; grid-template-columns: 2.2fr 1fr; gap: 14px; align-items: start; margin-top: 10px; }
   #mapwrap { position: sticky; top: 8px; background: #0f172a; }
   #map { height: calc(100vh - 150px); min-height: 300px; margin-top: 0; }
-  @media (max-width: 800px) { #wrap { grid-template-columns: 1fr; } #mapwrap { top: 0; z-index: 5; padding-bottom: 6px; } #map { height: 230px; min-height: 0; } }
+  body.bigmap #wrap { grid-template-columns: 1fr; } body.bigmap #map { height: 82vh; }
+  @media (max-width: 800px) { #wrap { grid-template-columns: 1fr; } #mapwrap { top: 0; z-index: 5; padding-bottom: 6px; } #map { height: 52vh; min-height: 0; } body.bigmap #map { height: 78vh; } }
   .blk { background: #1e293b; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 2px solid transparent; }
   .blk.sel { border-color: #3b82f6; }
   .bh { display: flex; align-items: center; gap: 8px; padding: 9px 10px; font-size: 13px; cursor: pointer; background: #243247; }
@@ -51,7 +52,7 @@
 <div id="msg"></div>
 <div id="wrap">
   <div id="mapwrap"><div id="map"></div><div class="sub" id="info" style="margin:4px 0;"></div>
-    <div class="row"><button id="reset" class="gray">선택한 구간 처음 상태로</button><button id="save" class="green">최종 저장 파일 받기</button></div></div>
+    <div class="row"><button id="big" class="gray">지도 아주 크게/작게</button><button id="reset" class="gray">선택한 구간 처음 상태로</button><button id="save" class="green">최종 저장 파일 받기</button></div></div>
   <div id="all"></div>
 </div>
 <script>
@@ -268,7 +269,6 @@ function drawMap(fit) {
     });
   });
   var c = compose(S.cur);
-  S.layers.push(new kakao.maps.Polyline({ path: LL(seg), strokeWeight: 1, strokeColor: '#60a5fa', strokeOpacity: 0.6, strokeStyle: 'shortdot', map: S.map }));   // 원래 노선지도 선(얇은 점선)
   var runs = [], from = 0;
   c.gaps.forEach(function (g) { if (g[0] > from) runs.push([from, g[0], false]); runs.push([g[0], g[1], true]); from = g[1]; });
   if (from < c.pts.length - 1) runs.push([from, c.pts.length - 1, false]);
@@ -317,6 +317,7 @@ document.getElementById('go').onclick = async function () {
     if (S.map) setTimeout(function () { S.map.relayout(); select(0, false); }, 200); else select(0, false);
   } catch (e) { msg.textContent = '실패: ' + (e && e.message || e); }
 };
+document.getElementById('big').onclick = function () { document.body.classList.toggle('bigmap'); if (S.map) setTimeout(function () { S.map.relayout(); drawMap(true); }, 100); };
 document.getElementById('flt').onchange = function () { if (S.segs) renderAll(); };
 document.getElementById('reset').onclick = function () { if (!S.segs || S.cur < 0) return; S.segs[S.cur] = S.orig[S.cur].slice(); S.removed[S.cur] = []; saveDraft(); renderAll(); drawMap(false); };
 document.getElementById('save').onclick = function () {
