@@ -27,8 +27,9 @@
     var state = null;            // { trips: {key: trip}, serial: {}, cur: key }
     var rawPrev = null;          // 속도값이 안 올 때 위치 차이로 속도를 구하기 위한 직전 위치
     var diag = { fix: 0, noSpeed: 0, derived: 0, off: 0, noMaster: 0, lowAcc: 0, stops: 0, why: '' };   // 점검용 (화면 맨 아래에 작게 표시)
-    function saveDiag() { lsSet(KEY_PREFIX + 'diag', JSON.stringify(diag)); }
-    function loadDiag() { try { var o = JSON.parse(lsGet(KEY_PREFIX + 'diag') || 'null'); if (o) diag = Object.assign(diag, o); } catch (e) { } }
+    function resetDiag() { diag = { fix: 0, noSpeed: 0, derived: 0, off: 0, noMaster: 0, lowAcc: 0, stops: 0, why: '', day: todayStr() }; }
+    function saveDiag() { diag.day = todayStr(); lsSet(KEY_PREFIX + 'diag', JSON.stringify(diag)); }
+    function loadDiag() { try { var o = JSON.parse(lsGet(KEY_PREFIX + 'diag') || 'null'); if (o && o.day === todayStr()) diag = Object.assign(diag, o); } catch (e) { } }   // 점검 숫자는 오늘 것만 센다
     loadDiag();
 
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -144,6 +145,7 @@
             if (window.simState && window.simState.active) return;
             var pos = window.lastGpsPosition;
             if (!pos || !pos.lat) return;
+            if (diag.day && diag.day !== todayStr()) resetDiag();
             diag.fix++;
             // 속도값이 안 오는 폰(서 있을 때 등)은 직전 위치와의 거리로 속도를 구함
             var nowMs = Date.now();
