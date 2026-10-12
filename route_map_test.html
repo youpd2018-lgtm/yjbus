@@ -923,5 +923,18 @@
     startGps();
   }).catch(e => { $('msg').textContent = String(e.message || e); });
 </script>
+<script>
+/* 확인용 가짜 데이터(이 테스트 페이지에만 있음): 앱이 1초마다 보내 주는 시간 카운트·오차 배지·거점 이름을 흉내 냄 */
+(function () {
+  var t0 = Date.now(), N = 600;
+  setInterval(function () {
+    var left = N - Math.floor((Date.now() - t0) / 1000) % N, mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(left % 60).padStart(2, '0');
+    var late = Math.floor(Date.now() / 20000) % 2 === 0;
+    window.dispatchEvent(new MessageEvent('message', { origin: location.origin, data: {
+      type: 'rm-live', time: '00:' + mm + ':' + ss, delay: late ? '+1:20' : '-0:40',
+      dc: late ? 'rgb(239,68,68)' : 'rgb(52,199,89)', db: late ? 'rgba(239,68,68,.15)' : 'rgba(52,199,89,.15)', dbd: late ? 'rgb(239,68,68)' : 'rgb(52,199,89)', anchor: '석남역' } }));
+  }, 1000);
+})();
+</script>
 </body>
 </html>
