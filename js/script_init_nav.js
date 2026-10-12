@@ -547,38 +547,38 @@
         let users = getUsersList();
 
         users.forEach((u, index) => {
+            // 모든사용자 화면과 같은 방식: 박스 없이 가는 줄, 큰 글자 (이름·종류 / 번호·연락처)
             let div = document.createElement('div');
             div.style.display = 'flex';
             div.style.justifyContent = 'space-between';
             div.style.alignItems = 'center';
-            div.style.background = 'var(--container-bg)';
-            div.style.padding = '8px 10px';
-            div.style.borderRadius = '6px';
-            div.style.border = '1px solid var(--border-color)';
+            div.style.gap = '8px';
+            div.style.padding = '10px 6px';
+            div.style.borderBottom = '1px solid #475569';
 
-            let userTypeBadge = u.userType === 'family' ? `<span style="color:#d97706; font-size:11px;">[가족: ${u.targetDriver}]</span>` : '<span style="color:var(--primary); font-size:11px;">[기사]</span>';
-            let infoText = `<div><strong>${u.name}</strong>${u.active === false ? ' <span style="color:#ef4444; font-size:11px;">[승인 대기]</span>' : ''} <span style="font-size:12px; color:var(--sub-text);">(번호: ${u.pin}${u.phone ? ' · ' + u.phone : ''})</span> ${userTypeBadge}${(u.userType !== 'family' && !isDriverV2(u)) ? ' <span style="color:#ef4444; font-size:11px;">[재가입 필요]</span>' : ''}</div>`;
+            let kind = u.userType === 'family' ? `<span style="color:#fbbf24; font-size:16px; font-weight:bold;">가족(${u.targetDriver || ''})</span>` : '<span style="color:#38bdf8; font-size:16px; font-weight:bold;">기사</span>';
+            let flags = '';
+            if (u.active === false) flags += ' <span style="color:#ef4444; font-size:16px; font-weight:bold; white-space:nowrap;">승인 대기</span>';
+            if (u.userType !== 'family' && !isDriverV2(u)) flags += ' <span style="color:#ef4444; font-size:16px; font-weight:bold; white-space:nowrap;">재가입 필요</span>';
+            let infoText = `<div style="min-width:0;">` +
+                `<div style="font-size:22px; font-weight:900; color:#f1f5f9; line-height:1.3;">${u.name} ${kind}${flags}</div>` +
+                `<div style="font-size:17px; color:#94a3b8; line-height:1.4;">번호 ${u.pin}${u.phone ? ' · ' + u.phone : ''}</div></div>`;
 
             let btnArea = document.createElement('div');
             btnArea.style.display = 'flex';
-            btnArea.style.gap = '4px';
+            btnArea.style.gap = '6px';
+            btnArea.style.flexShrink = '0';
 
-            if (u.active === false) {
-                let okBtn = document.createElement('button');
-                okBtn.type = 'button';
-                okBtn.className = 'mini-btn';
-                okBtn.innerText = '승인';
-                okBtn.onclick = function () { adminApproveUser(index); };
-                btnArea.appendChild(okBtn);
-            }
-            if (u.name !== ADMIN_DRIVER) {
-                let delBtn = document.createElement('button');
-                delBtn.type = 'button';
-                delBtn.className = 'mini-btn danger';
-                delBtn.innerText = '삭제';
-                delBtn.onclick = function () { adminDeleteUser(index); };
-                btnArea.appendChild(delBtn);
-            }
+            const mkBtn = (label, bg, handler) => {
+                let b = document.createElement('button');
+                b.type = 'button';
+                b.innerText = label;
+                b.style.cssText = `padding: 10px 14px; border: none; border-radius: 10px; background: ${bg}; color: #fff; font-size: 17px; font-weight: 900; cursor: pointer;`;
+                b.onclick = handler;
+                return b;
+            };
+            if (u.active === false) btnArea.appendChild(mkBtn('승인', '#16a34a', function () { adminApproveUser(index); }));
+            if (u.name !== ADMIN_DRIVER) btnArea.appendChild(mkBtn('삭제', '#ef4444', function () { adminDeleteUser(index); }));
 
             div.innerHTML = infoText;
             div.appendChild(btnArea);
