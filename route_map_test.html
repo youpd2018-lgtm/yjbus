@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>노선 지도</title>
+<style>
+  /* 앱 전체 글꼴과 동일: 글자=서울알림체, 숫자=G마켓 산스 */
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-ExtraBold.woff2') format('woff2');
+    font-weight: 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SeoulNotice';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2505-1@1.0/SeoulAlrimTTF-Heavy.woff2') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'GmarketNum';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+    font-weight: 100 900;
+    unicode-range: U+0030-0039;
+    font-display: swap;
+}
+
+  :root { --app-font: 'GmarketNum', 'SeoulNotice', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+  #card, #card button, #card input, #card select { font-family: var(--app-font); }
+  :root { --sat: max(env(safe-area-inset-top), 40px); }   /* 폰 맨 위 상태표시줄 아래로 내림 */
+  html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: -apple-system, 'Malgun Gothic', sans-serif; overflow: hidden; }
+  #top { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 8px; padding-top: calc(8px + var(--sat)); display: flex; gap: 6px; background: rgba(15,23,42,.92); }
+  #top select, #top button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  #top button.on { background: #2563eb; border-color: #2563eb; }
+  #top select { flex: 1; min-width: 0; }
+  #sim { position: absolute; top: calc(52px + var(--sat)); left: 0; right: 0; z-index: 20; padding: 0 8px 8px; display: flex; gap: 6px; background: rgba(15,23,42,.92); }
+  #sim select, #sim button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  #sim button.on { background: #dc2626; border-color: #dc2626; }
+  #sim select { flex: 1; min-width: 0; }
+  #sim button { padding: 8px 8px; white-space: nowrap; }
+  #tip { display: none; position: absolute; left: 12px; right: 12px; top: calc(110px + var(--sat)); z-index: 40; background: rgba(15,23,42,.92); border: 1.5px solid rgba(56,189,248,.6); border-radius: 14px; padding: 14px; box-shadow: 0 6px 22px rgba(0,0,0,.6); text-align: center; }
+  body.nonadmin #tip { top: calc(70px + var(--sat)); }
+  #tip .tt { font-size: 18px; font-weight: 800; line-height: 1.4; color: #fff; }
+  #tip .tb { display: flex; gap: 8px; margin-top: 12px; }
+  #tip button { flex: 1; font-size: 15px; font-weight: 700; padding: 10px 6px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; }
+  #tip button#tipNever { background: #0369a1; border-color: #0369a1; }
+  #rot { display: none; position: fixed; inset: 0; z-index: 99; background: #0f172a; color: #fff; font-size: 20px; font-weight: 800; align-items: center; justify-content: center; }
+  @media (orientation: landscape) and (max-height: 520px) { #rot { display: flex; } }
+  body.nonadmin #sim { display: none; }
+  body.nonadmin #view { top: calc(52px + var(--sat)); }
+  body.nonadmin #msg { top: calc(62px + var(--sat)); }
+  #view { position: absolute; top: calc(96px + var(--sat)); bottom: 0; left: 0; right: 0; overflow: hidden; }
+  #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .9s linear; will-change: transform; transform-origin: 50% 50%; }
+  #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: rgba(15,23,42,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1.5px solid rgba(56,189,248,.5); box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); border-radius: 14px; padding: 10px 14px; }
+  #card .lb { font-size: 12px; color: #94a3b8; }
+  #rowA { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }   /* 2026-10-12: 거리 위, 정류장 이름 아래 두 줄로 오른쪽 끝 */
+  #rowA .nm { font-size: 21px; line-height: 27px; max-width: 100%; font-weight: 800; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #rowA .ds { font-size: 26px; line-height: 32px; text-align: right; min-width: 4.2em; color: #38bdf8; font-weight: 800; white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
+  #rowB { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-height: 40px; }
+  #cdTime { font-size: 42px !important; line-height: 46px; flex: 0 0 auto; text-align: left; white-space: nowrap; }
+  #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #cdBadge { flex: 0 0 auto; white-space: nowrap; min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
+  #anchorName { flex: 1 1 0; min-width: 0; font-size: 18px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body.standalone #cdTime, body.standalone #cdBadge { display: none; }
+  #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  #msg { position: absolute; top: calc(106px + var(--sat)); left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
+  #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
+  #eRow button, #eRow2 button { flex: 1; font-size: 14px; font-weight: 700; padding: 10px 2px; border-radius: 10px; border: 0; background: #334155; color: #fff; }
+  #eRow3 { display: flex; gap: 6px; margin-top: 8px; }
+  #eDel.act { background: #dc2626 !important; }
+  #eRow3 { flex-wrap: wrap; }
+  #eRow3 button { flex: 1; font-size: 13px; font-weight: 700; padding: 9px 2px; border-radius: 10px; border: 0; background: #1e293b; color: #cbd5e1; }
+  #eRow button, #eRow2 button { font-size: 15px; padding: 13px 2px; }
+  #eVia { background: #2563eb !important; } #eVia.act, #eOnly.act { background: #f59e0b !important; color: #111 !important; }
+  .tag { padding: 3px 8px; border-radius: 8px; font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; border: 2px solid #fff; }
+  .tag.ta { background: #16a34a; } .tag.tb { background: #dc2626; }
+  .via { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #f59e0b; color: #111; font-size: 12px; font-weight: 800; text-align: center; line-height: 22px; border: 2px solid #fff; }
+  #card { max-height: 55%; overflow: visible; }
+  /* 2026-10-12: 시간 카운트 = 화면 왼쪽 맨 아래 끝(두 줄: 시간 / 오차 배지+거점 이름), 다음 정류장 = 화면 세로 가운데의 오른쪽 끝(두 줄: 거리 / 이름) */
+  #card { right: auto; max-width: calc(100% - 16px); left: 8px; bottom: calc(6px + env(safe-area-inset-bottom)); }
+  #card.ed { right: 8px; }
+  #card #rowB { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; row-gap: 4px; align-items: center; margin-top: 0; min-height: 0; }
+  #cdTime { grid-column: 1 / -1; }
+  #rowA { position: fixed; right: 8px; top: 50%; transform: translateY(-50%); z-index: 20; max-width: 55vw; background: rgba(15,23,42,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 1.5px solid rgba(56,189,248,.5); border-radius: 14px; padding: 8px 12px; box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); }
+  #card.ed { overflow-y: auto; }
+  .mebus { width: 50px; height: 50px; margin: -25px 0 0 -25px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); transition: transform .3s linear; }
+  .mebus svg { width: 100%; height: 100%; display: block; }
+  .me { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.35); }
+  .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2px solid #475569; }
+  .dot.past { background: #94a3b8; border-color: #64748b; }
+  .ring { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(239,68,68,.8); box-sizing: border-box; pointer-events: none; }   /* 다음 정류장: 속이 빈 빨간 테두리 원 */
+  .dot.anchor { background: #ef4444; border-color: #fff; }
+</style>
+</head>
+<body>
+<div id="rot">폰을 세로로 돌려 주세요</div>
+<div id="top">
+  <button id="btnBack" onclick="if (window.parent !== window) parent.postMessage({ type: 'rm-close' }, location.origin); else location.href = 'index.html';">← 앱</button>
+  <select id="route"></select>
+  <button id="btnPan"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>지도 이동</button>
+</div>
+<div id="sim">
+  <button id="btnSim">▶ 모의주행</button>
+  <button id="btnEdit">✏ 수정</button>
+  <button id="btnRec">● 기록</button><button id="btnRecSec" style="display:none">✎ 구간</button><button id="btnRecView">비교</button><button id="btnRecSave">📥</button>
+  <select id="simSpeed"><option value="1">실제 속도(40km/h)</option><option value="3">3배</option><option value="8" selected>8배</option><option value="20">20배</option></select>
+</div>
+<div id="msg"></div>
+<div id="tip">
+  <div class="tt">두 손가락을 벌리면<br>지도가 내 중심으로 확대돼요</div>
+  <div class="tb"><button id="tipClose">닫기</button><button id="tipNever">다음부터 알리지 않기</button></div>
+</div>
+<div id="view"><div id="map"></div></div>
+<div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
+<div id="card">
+  <div id="rowB">
+    <span id="cdTime" class="big">--:--:--</span>
+    <span id="cdBadge" class="big badge">0</span>
+    <span id="anchorName"></span>
+  </div>
+  <div class="sub" id="sub" style="display:none"></div>
+  <div id="editBox" style="display:none;margin-top:10px;">
+    <div id="eHead" style="font-size:20px;font-weight:800;"></div>
+    <div id="eName" style="font-size:17px;font-weight:700;margin-top:2px;"></div>
+    <div id="eDir" class="sub" style="color:#38bdf8;font-weight:700;"></div>
+    <div id="eStat" class="sub" style="white-space:pre-wrap;color:#e2e8f0;"></div>
+    <div id="eSaved" class="sub" style="color:#4ade80;"></div>
+    <div id="eRow">
+      <button id="ePrev">◀ 이전</button><button id="eNext" style="background:#16a34a;">✔ 맞아요, 다음 ▶</button>
+    </div>
+    <div id="eRow2">
+      <button id="eUndo">↩ 되돌리기</button><button id="eDel">🗑 지우기: 꺼짐</button><button id="eReset">원래대로</button>
+    </div>
+    <div id="eRow3">
+      <button id="eThin">✨ 점 줄이기</button><button id="eClear">🧹 점 전부 지우기</button><button id="eFirst">⏮ 처음(출발)부터</button><button id="eOnly">의심 구간만: 꺼짐</button><button id="eSave">📥 노선 저장 파일 받기</button><button id="eCopy">📋 수정내용 복사</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app-config.js"></script>
+<script src="js/gas-polyfill.js"></script>
+<script src="js/script_std_calc.js"></script>
+<script>
+  // 카카오 JavaScript 키 (사이트 주소 제한이 걸려 있어 코드에 있어도 안전)
+  const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
+  const ROUTES = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
+  const $ = (id) => document.getElementById(id);
+  const EMBED = /[?&]embed=1/.test(location.search);
+  if (!EMBED) document.body.classList.add('standalone');
+  const SIM = /[?&]sim=1/.test(location.search);   // 책상에서 시험: 지도를 누르면 그 곳이 내 위치
+
+  let map, route = null, segLines = [], dots = [], meOv = null, ringOv = null;
+  let editMode = false, editSel = null, pendingVia = false;
+  let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
+  let parentAnchor = '', parentNext = '';
+  let me = null, heading = 0, lastMe = null, nextIdx = 0;
+
+  try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
+  let isAdmin = false;
+  // 오류가 나면 관리자 화면 위쪽 글자 줄에 보여 준다(원인 찾기용)
+  function showErr(m) { try { if (isAdmin || /[?&]debug=1/.test(location.search)) $('msg').textContent = '오류: ' + m; } catch (e) { } }
+  window.addEventListener('error', e => showErr(e.message + (e.lineno ? ' (줄 ' + e.lineno + ')' : '')));
+  window.addEventListener('unhandledrejection', e => showErr(String(e.reason && e.reason.message || e.reason)));
+  // 모의주행·수정은 관리자(유재필)에게만 보인다 (수정 내용은 어차피 그 폰에만 저장됨)
+  (function () {
+    var nm = '';
+    try { var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null'); if (u && u.name) nm = u.name; } catch (e) { }
+    if (!nm) { try { nm = localStorage.getItem('loggedInUser') || ''; } catch (e) { } }
+    document.body.classList.add('nonadmin');   // 수정·기록·모의주행은 앱에서 없앰(수정은 map_draw.html 에서)
+    if (String(nm).indexOf('유재필') !== -1) isAdmin = true;
+  })();
+
+  ROUTES.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; $('route').appendChild(o); });
+  try { const s = localStorage.getItem('yb_map_route'); if (s && ROUTES.includes(s)) $('route').value = s; } catch (e) { }
+  try { const q = new URLSearchParams(location.search).get('route'); if (q && ROUTES.includes(q)) $('route').value = q; } catch (e) { }   // 앱의 [노선지도] 버튼: 오늘 근무 노선
+
+  function loadKakao() {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&autoload=false';
+      s.onload = () => kakao.maps.load(resolve);
+      s.onerror = () => reject(new Error('카카오 지도 스크립트를 불러오지 못했습니다 (키 또는 사이트 도메인 등록 확인)'));
+      document.head.appendChild(s);
+    });
+  }
+
+  function distM(la1, lo1, la2, lo2) {
+    const R = 6371000, d2r = Math.PI / 180;
+    const dla = (la2 - la1) * d2r, dlo = (lo2 - lo1) * d2r;
+    const a = Math.sin(dla / 2) ** 2 + Math.cos(la1 * d2r) * Math.cos(la2 * d2r) * Math.sin(dlo / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function bearing(la1, lo1, la2, lo2) {
+    const d2r = Math.PI / 180, y = Math.sin((lo2 - lo1) * d2r) * Math.cos(la2 * d2r);
+    const x = Math.cos(la1 * d2r) * Math.sin(la2 * d2r) - Math.sin(la1 * d2r) * Math.cos(la2 * d2r) * Math.cos((lo2 - lo1) * d2r);
+    return (Math.atan2(y, x) / d2r + 360) % 360;
+  }
+
+  async function showRoute(name) {
+    $('msg').textContent = name + ' 노선 불러오는 중...';
+    const res = await StdCalc.loadRoute(name);
+    if (!res) { $('msg').textContent = '노선을 못 불러왔습니다: ' + (StdCalc.getLastError() || '로그인/네트워크 확인'); return; }
+    $('msg').textContent = '';
+    try { localStorage.setItem('yb_map_route', name); } catch (e) { }
+    route = { name, stops: res.stops.filter(s => s[2] && s[3]), anchors: res.anchors || [] };
+    route.prog = 0; route.leg = legOf(1);
+    editSel = null; pendingVia = false;
+    segLines.forEach(l => l.setMap(null)); segLines = [];
+    dots.forEach(d => d.setMap(null)); dots = [];
+    if (ringOv) { ringOv.setMap(null); ringOv = null; }
+    const path = route.stops.map(s => new kakao.maps.LatLng(s[2], s[3]));
+    route.segs = route.stops.slice(1).map((x, i) => [[route.stops[i][2], route.stops[i][3]], [x[2], x[3]]]);
+    joinPts(route); renderSegs();
+    route.stops.forEach((s, i) => {
+      const el = document.createElement('div'); el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '');
+      const ov = new kakao.maps.CustomOverlay({ map, position: path[i], content: el, yAnchor: .5, xAnchor: .5 });
+      ov._el = el; dots.push(ov);
+    });
+    applyLegDots();
+    const b = new kakao.maps.LatLngBounds(); path.forEach((p, i) => { if (!route.leg || (i >= route.leg[0] && i <= route.leg[1])) b.extend(p); }); map.setBounds(b);
+    update();
+    loadRoad(route);
+  }
+
+
+  // ---- 도로를 따라가는 노선선 ----
+  // 정류장 좌표를 OSRM(무료 도로 길찾기)에 넣어 정류장 사이(구간)마다 도로 모양을 받아 이 폰에 저장.
+  // 정류장에 "도로 오른쪽 가장자리로 접근"(curb)하게 해서 골목으로 돌아 들어가는 현상을 줄임.
+  // 그래도 이상한 구간은 [수정] 버튼으로 직선으로 바꾸거나 지나갈 곳을 직접 찍어 고침.
+  const ROAD_KEY = 'yb_road_v2_', EDIT_KEY = 'yb_roadedit_v2_';
+  const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
+  const r5 = (q) => [+q[0].toFixed(5), +q[1].toFixed(5)];
+  let onlySus = false, viaMarks = [], endMarks = [];
+  function segLen(seg) { let d = 0; for (let i = 1; i < seg.length; i++) d += distM(seg[i - 1][0], seg[i - 1][1], seg[i][0], seg[i][1]); return d; }
+  function segStraight(i) { const a = route.stops[i], b = route.stops[i + 1]; return distM(a[2], a[3], b[2], b[3]); }
+  function segSuspect(i) { const st = segStraight(i), len = segLen(route.segs[i]); return len > st * 1.8 && len - st > 150; }
+  
+  function joinPts(r) {
+    const pts = [], at = [];
+    r.segs.forEach((seg, i) => { at.push(pts.length); pts.push(...(i ? seg.slice(1) : seg)); });
+    at.push(pts.length - 1);
+    r.pts = pts; r.stopAt = at;
+    if (r === route && simTimer) simBuild();
+  }
+
+  function renderSegs() {
+    segLines.forEach(l => l.setMap(null)); segLines = [];
+    viaMarks.forEach(m => m.setMap(null)); viaMarks = [];
+    endMarks.forEach(m => m.setMap(null)); endMarks = [];
+    if (!editMode) {   // 평소 보기: 전체를 선 한 줄로 그려서 겹친 곳(상·하행)도 투명도가 똑같게
+      const all = [], lg = route.leg; route.segs.forEach((sg, i) => { if (!lg || (i >= lg[0] && i < lg[1])) sg.forEach(q => all.push(new kakao.maps.LatLng(q[0], q[1]))); });
+      segLines.push(new kakao.maps.Polyline({ map, path: all, strokeWeight: 5, strokeColor: '#2563eb', strokeOpacity: .5, zIndex: 2 }));
+      // 반대 편도: 기점 둘레(500m) 안쪽만 가늘고 연한 주황색으로 (교차로에서 곧 갈 길이 보이게)
+      const an = (route.anchors || []).slice().sort((x, y) => x - y);
+      if (lg && an.length >= 3) {
+        const legs = []; for (let k = 0; k < an.length - 1; k++) legs.push([an[k], an[k + 1]]);
+        legs.forEach(L => {
+          let bs = null;
+          if (L[1] === lg[0]) bs = route.stops[L[1]]; else if (L[0] === lg[1]) bs = route.stops[L[0]];
+          if (!bs) return;
+          let run = [];
+          const flush = () => { if (run.length > 1) segLines.push(new kakao.maps.Polyline({ map, path: run, strokeWeight: 3, strokeColor: '#f97316', strokeOpacity: .6, zIndex: 1 })); run = []; };
+          for (let i = L[0]; i < L[1]; i++) route.segs[i].forEach(q => { if (distM(q[0], q[1], bs[2], bs[3]) <= OTHER_LEG_M) run.push(new kakao.maps.LatLng(q[0], q[1])); else flush(); });
+          flush();
+        });
+      }
+      return;
+    }
+    route.segs.forEach((seg, i) => {
+      const sel = editMode && editSel === i;
+      const path = seg.map(q => new kakao.maps.LatLng(q[0], q[1]));
+      const line = new kakao.maps.Polyline({
+        map, path,
+        strokeWeight: sel ? 10 : 5,
+        strokeColor: sel ? '#f59e0b' : (editMode && route.ok && route.ok[i]) ? '#16a34a' : '#2563eb',
+        strokeOpacity: sel ? .95 : editMode ? .3 : .4,
+        endArrow: sel, zIndex: sel ? 5 : 1
+      });
+      kakao.maps.event.addListener(line, 'click', (ev) => { if (!editMode) return; if (i === editSel && ev && ev.latLng) insertPoint(i, ev.latLng); else selectSeg(i); });
+      segLines.push(line);
+    });
+    if (editMode && editSel != null) {
+      const a = route.stops[editSel], b = route.stops[editSel + 1];
+      const tag = (txt, cls, la, lo) => { const el = document.createElement('div'); el.className = 'tag ' + cls; el.textContent = txt; endMarks.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(la, lo), content: el, yAnchor: 1.3, zIndex: 8 })); };
+      tag('출발 ' + a[1], 'ta', a[2], a[3]);
+      tag('도착 ' + b[1], 'tb', b[2], b[3]);
+      const P = handlePts(editSel), si = editSel;
+      if (!delImgObj) { delImgObj = circleImg('#dc2626', 34); delSelImgObj = circleImg('#7f1d1d', 40); }
+      P.forEach((v, k) => {
+        if (k === 0 || k === P.length - 1) return;   // 정류장 두 곳은 고정
+        const img = delMode ? (delFirst === k ? delSelImgObj : delImgObj) : handleImg();
+        const mk = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(v[0], v[1]), draggable: !delMode, image: img, zIndex: delFirst === k ? 11 : 9 });
+        kakao.maps.event.addListener(mk, 'dragend', () => { lastDrag = Date.now(); const q = mk.getPosition(); moveAnchor(si, k, [q.getLat(), q.getLng()]); });
+        kakao.maps.event.addListener(mk, 'click', () => {
+          if (!delMode || Date.now() - lastDrag < 400) return;
+          if (delFirst == null) { delFirst = k; renderSegs(); updateEditInfo(); }          // 첫 번째 점 선택(진한 빨강)
+          else { const f = delFirst; delFirst = null; deleteRange(si, f, k); }               // 두 번째 점: 둘 사이 전부 삭제 (같은 점이면 그 점만)
+        });
+        viaMarks.push(mk);
+      });
+    }
+  }
+
+  async function osrmLegs(coords, noCurb) {   // coords: [[lat,lng],...] → 구간별 점 목록(실패 시 null)
+    const pathStr = coords.map(c => c[1] + ',' + c[0]).join(';');
+    const tails = noCurb ? [''] : ['&approaches=' + coords.map(() => 'curb').join(';'), ''];   // curb 실패 시 일반 방식 재시도
+    for (const tail of tails) {
+      try {
+        const res = await (await fetch(OSRM + pathStr + '?overview=false&geometries=geojson&steps=true&continue_straight=true' + tail)).json();
+        if (res.routes && res.routes[0] && res.routes[0].legs.length === coords.length - 1) {
+          return res.routes[0].legs.map(leg => {
+            const out = [];
+            leg.steps.forEach(stp => stp.geometry.coordinates.forEach(c => { const q = [c[1], c[0]]; const l = out[out.length - 1]; if (!l || l[0] !== q[0] || l[1] !== q[1]) out.push(q); }));
+            return out.map(r5);
+          });
+        }
+      } catch (e) { }
+    }
+    return null;
+  }
+
+  function readEdits(r) {
+    try { const o = JSON.parse(localStorage.getItem(EDIT_KEY + r.name)); if (o) { r.edits = {}; r.ok = o.ok || {}; if (o.t && r.ghSavedAt && r.ghSavedAt > o.t) return;   /* 이미 GitHub 파일에 반영된 수정 */ Object.keys(o.edits || {}).forEach(k => { if (o.edits[k] && o.edits[k].anc && o.edits[k].geo) r.edits[k] = o.edits[k]; }); return; } } catch (e) { }
+    r.edits = {}; r.ok = {};
+  }
+  function saveEdits(r) { try { localStorage.setItem(EDIT_KEY + r.name, JSON.stringify({ n: r.stops.length, t: Date.now(), edits: r.edits, ok: r.ok })); } catch (e) { } }
+
+  async function applyEdit(r, i) {   // 구간 i: 직접 고친 것이 있으면 그 모양, 없으면 자동 결과
+    r.segs[i] = hasEdit2(r, i) ? joinGeo(r.edits[i].geo) : r.base[i];
+  }
+  function joinGeo(geo) { const out = []; geo.forEach((g, h) => out.push(...(h ? g.slice(1) : g))); return out; }
+  function hasEdit2(r, i) { return !!(r.edits[i] && r.edits[i].anc && r.edits[i].geo); }
+
+  async function loadRoad(r) {
+    let base = null;
+    try {   // 1순위: GitHub에 저장된 확정 도로선 (data/map/노선.json)
+      const res = await fetch('data/map/' + encodeURIComponent(r.name) + '.json', { cache: 'no-cache' });
+      if (res.ok) { const o = await res.json(); if (o && o.n === r.stops.length && o.segs && o.segs.length === r.stops.length - 1) { base = o.segs; r.ghSavedAt = o.savedAt || 1; r.src = 'github'; } else if (o) r.src = '불일치:파일 ' + o.n + '개, 지금 ' + r.stops.length + '개'; }
+    } catch (e) { }
+    // 노선선은 data/map/노선.json 하나만 쓴다(폰에 남은 옛 수정·자동 생성선은 불러오지 않고 지운다)
+    r.edits = {}; r.ok = {};
+    try { localStorage.removeItem(EDIT_KEY + r.name); localStorage.removeItem(ROAD_KEY + r.name); } catch (e) { }
+    if (!base) {   // 파일이 없거나 정류장 수가 안 맞으면 정류장끼리 직선
+      base = r.stops.slice(1).map((x, i) => [[r.stops[i][2], r.stops[i][3]], [x[2], x[3]]]);
+      if (r.src === 'github' || !r.src) r.src = '없음';
+    }
+    r.base = base; r.segs = base.slice();
+    joinPts(r); renderSegs(); updateEditInfo();
+    if (false) {   // (관리자 안내 줄은 없앰: 모두 같은 화면)
+      const ne = Object.keys(r.edits || {}).filter(k => hasEdit2(r, k)).length;
+      $('msg').textContent = r.src === 'github' ? '선: GitHub 확정본(' + (function () { var n = 0; r.base.forEach(function (sg) { n += sg.length; }); var d = r.ghSavedAt > 1 ? new Date(r.ghSavedAt) : null; return n + '점' + (d ? ' · ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') : ''); })() + ')' + (ne ? ' + 이 폰 수정 ' + ne + '구간' : '') : '선: 자동생성(GitHub 파일 안 맞음 ' + (r.src || '없음') + ')';
+    }
+  }
+
+  // ---- 수정 화면: 정류장 구간을 하나씩 따라가며 확인 ----
+  function dirLabel(i) {
+    const an = route.anchors || [];
+    for (let k = 0; k < an.length - 1; k++) if (i >= an[k] && i < an[k + 1]) return `${route.stops[an[k]][1]} → ${route.stops[an[k + 1]][1]} 방향`;
+    return '';
+  }
+  function updateEditInfo() {
+    if (!editMode || !route || !route.segs) return;
+    const total = route.segs.length, ok = Object.keys(route.ok || {}).length, ed = Object.keys(route.edits || {}).filter(k => hasEdit2(route, k)).length;
+    $('eSaved').textContent = `✔ 자동 저장됨 (이 폰) · 확인 ${ok}/${total} · 고친 구간 ${ed}`;
+    $('eOnly').textContent = onlySus ? '의심 구간만: 켜짐' : '의심 구간만: 꺼짐';
+    $('eOnly').classList.toggle('act', onlySus);
+        if (editSel == null) { $('eHead').textContent = '시작하려면 [다음 ▶] 을 누르세요'; $('eName').textContent = ''; $('eDir').textContent = ''; $('eStat').textContent = ''; return; }
+    const a = route.stops[editSel], b = route.stops[editSel + 1];
+    const len = segLen(route.segs[editSel]), st = segStraight(editSel);
+    $('eHead').textContent = `구간 ${editSel + 1} / ${total}` + (route.ok && route.ok[editSel] ? '  ✔확인함' : '');
+    $('eName').textContent = `${a[1]}  →  ${b[1]}`;
+    $('eDir').textContent = dirLabel(editSel);
+    $('eStat').textContent = `도로선 ${Math.round(len)}m / 직선 ${Math.round(st)}m (${(len / Math.max(st, 1)).toFixed(1)}배)` + (segSuspect(editSel) ? '  ⚠ 많이 돌아감' : '') + (hasEdit2(route, editSel) ? '  ✎ 고침' : '')
+      + (delMode ? (delFirst == null ? '\n🗑 지우기 켜짐: 지울 점을 누르세요. 점 하나만 지우려면 같은 점을 한 번 더, 여러 개는 끝 점을 누르면 둘 사이가 모두 지워집니다' : '\n🗑 이제 마지막 점을 누르세요 (같은 점이면 그 점만 지워짐)') : '\n🟠 점: 끌면 길을 따라 이동 · 선을 누르면 새 점 · 지우려면 🗑 지우기 켜기');
+  }
+  function selectSeg(i) {
+    i = Math.max(0, Math.min(route.segs.length - 1, i));
+    editSel = i; pendingVia = false; delFirst = null; renderSegs(); updateEditInfo();
+    const a = route.stops[i], b = route.stops[i + 1], bd = new kakao.maps.LatLngBounds();
+    route.segs[i].forEach(q => bd.extend(new kakao.maps.LatLng(q[0], q[1])));
+    map.setBounds(bd, 90, 40, 260, 40);
+  }
+  function stepSeg(dir) {
+    let i = editSel == null ? (dir > 0 ? -1 : route.segs.length) : editSel;
+    for (let k = 0; k < route.segs.length; k++) {
+      i += dir; if (i < 0 || i >= route.segs.length) break;
+      if (!onlySus || (segSuspect(i) && !(route.ok && route.ok[i])) || hasEdit2(route, i)) { selectSeg(i); return; }
+    }
+    $('msg').textContent = dir > 0 ? '마지막 구간입니다.' : '첫 구간입니다.';
+  }
+  // ---- 점 편집: 원래 선 위의 점(주황 동그라미)을 끌면 점이 도로를 따라 붙고 앞뒤 선이 따라온다 ----
+  // 한 구간 = 점(anc)들과, 점 사이 도로 모양(geo[h] = anc[h]→anc[h+1])
+  let lastDrag = 0, handleImgObj = null, delImgObj = null, delSelImgObj = null, busy = false, delMode = false, delFirst = null;
+  const undoStack = {};
+  function handleImg() {
+    if (!handleImgObj) {
+      const svg = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='10' fill='#f59e0b' stroke='#fff' stroke-width='3'/></svg>");
+      handleImgObj = new kakao.maps.MarkerImage(svg, new kakao.maps.Size(28, 28), { offset: new kakao.maps.Point(14, 14) });
+    }
+    return handleImgObj;
+  }
+  function circleImg(color, size) {
+    const svg = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 3}' fill='${color}' stroke='#fff' stroke-width='3'/></svg>`);
+    return new kakao.maps.MarkerImage(svg, new kakao.maps.Size(size, size), { offset: new kakao.maps.Point(size / 2, size / 2) });
+  }
+  function simplifyIdx(pts, tol) {   // 모양을 유지하며 점을 솎아 남길 번호 목록을 돌려줌 (Douglas-Peucker)
+    const k = Math.cos(pts[0][0] * Math.PI / 180);
+    const xy = pts.map(q => [q[1] * 111320 * k, q[0] * 110540]);
+    const keep = new Array(pts.length).fill(false); keep[0] = keep[pts.length - 1] = true;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length) {
+      const [a, b] = stack.pop(); let md = 0, mi = -1;
+      const [ax, ay] = xy[a], [bx, by] = xy[b], dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1;
+      for (let i = a + 1; i < b; i++) {
+        let t = ((xy[i][0] - ax) * dx + (xy[i][1] - ay) * dy) / L; t = Math.max(0, Math.min(1, t));
+        const d = Math.hypot(xy[i][0] - (ax + t * dx), xy[i][1] - (ay + t * dy));
+        if (d > md) { md = d; mi = i; }
+      }
+      if (mi >= 0 && md > tol) { keep[mi] = true; stack.push([a, mi], [mi, b]); }
+    }
+    const idx = []; keep.forEach((v, i) => { if (v) idx.push(i); });
+    return idx;
+  }
+  function initModel(i) {   // 아직 안 고친 구간: 자동 선을 솎아 점(anc)과 점 사이 모양(geo)으로 나눔
+    const seg = route.segs[i];
+    let idx, tol = 10;
+    do { idx = simplifyIdx(seg, tol); tol *= 1.6; } while (idx.length > 15 && tol < 400);
+    const anc = idx.map(j => seg[j].slice()), geo = [];
+    for (let h = 0; h < idx.length - 1; h++) geo.push(seg.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
+    return { anc, geo };
+  }
+  function model(i) {
+    const m = hasEdit2(route, i) ? { anc: route.edits[i].anc.map(x => x.slice()), geo: route.edits[i].geo.map(g => g.map(x => x.slice())) } : initModel(i);
+    const a = route.stops[i], b = route.stops[i + 1];
+    m.anc[0] = [a[2], a[3]]; m.anc[m.anc.length - 1] = [b[2], b[3]];
+    return m;
+  }
+  function handlePts(i) { return model(i).anc; }
+
+  async function hopRoute(p, q, edge) {   // 두 점 사이를 도로를 따라 잇기. 정류장 쪽 끝이 빙 돌면 곧게
+    const straight = distM(p[0], p[1], q[0], q[1]);
+    if (straight < 8) return [p, q];
+    const legs = await osrmLegs([p, q], true);
+    if (!legs) return [p, q];
+    const l = legs[0], len = segLen(l);
+    if (edge && (straight < 60 || (len > straight * 1.6 && len - straight > 40))) return [p, q];
+    return l;
+  }
+  function commitModel(i, m) {
+    (undoStack[i] = undoStack[i] || []).push(hasEdit2(route, i) ? { anc: route.edits[i].anc, geo: route.edits[i].geo } : null);
+    route.edits[i] = { anc: m.anc, geo: m.geo };
+    saveEdits(route); route.segs[i] = joinGeo(m.geo); joinPts(route); renderSegs(); updateEditInfo();
+  }
+  async function moveAnchor(i, k, pos) {
+    if (busy) return; busy = true; $('msg').textContent = '길에 맞추는 중...';
+    try {
+      const m = model(i), last = m.anc.length - 1;
+      m.anc[k] = r5(pos);
+      m.geo[k - 1] = await hopRoute(m.anc[k - 1], m.anc[k], k - 1 === 0 || k - 1 === last - 1);
+      m.geo[k] = await hopRoute(m.anc[k], m.anc[k + 1], k === 0 || k === last - 1);
+      const g = m.geo[k]; if (g.length > 2 || distM(g[0][0], g[0][1], m.anc[k][0], m.anc[k][1]) < 60) m.anc[k] = g[0].slice();   // 점을 도로 위로
+      commitModel(i, m);
+    } finally { busy = false; $('msg').textContent = ''; }
+  }
+  async function deleteRange(i, k1, k2) {   // 점 k1~k2(번호 순서 상관없음)를 모두 지우고 앞뒤 점을 도로로 잇기
+    if (busy) return; busy = true; $('msg').textContent = '길에 맞추는 중...';
+    try {
+      const lo = Math.min(k1, k2), hi = Math.max(k1, k2), m = model(i);
+      m.anc.splice(lo, hi - lo + 1);
+      const nh = await hopRoute(m.anc[lo - 1], m.anc[lo], lo - 1 === 0 || lo === m.anc.length - 1);
+      m.geo.splice(lo - 1, hi - lo + 2, nh);
+      commitModel(i, m);
+    } finally { busy = false; $('msg').textContent = ''; }
+  }
+  function thinAnchors(i) {   // 점을 절반쯤으로 줄임 (선 모양은 그대로, 남은 점 사이는 원래 선을 그대로 사용)
+    const m = model(i), line = joinGeo(m.geo);
+    if (m.anc.length <= 3) { $('msg').textContent = '더 줄일 점이 없습니다.'; return; }
+    const target = Math.max(2, Math.ceil(m.anc.length / 2));
+    let idx, tol = 5;
+    do { idx = simplifyIdx(line, tol); tol *= 1.5; } while (idx.length > target && tol < 500);
+    const anc = idx.map(j => line[j].slice()), geo = [];
+    for (let h = 0; h < idx.length - 1; h++) geo.push(line.slice(idx[h], idx[h + 1] + 1).map(x => x.slice()));
+    commitModel(i, { anc, geo });
+  }
+  function clearAnchors(i) {   // 이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 연결 (그 위 선을 눌러 점을 다시 만들며 고침)
+    const m = model(i), a = m.anc[0], b = m.anc[m.anc.length - 1];
+    commitModel(i, { anc: [a, b], geo: [[a, b]] });
+  }
+  function insertPoint(i, latlng) {   // 선을 누르면 누른 곳에서 가장 가까운 선 위 지점에 새 점 (선 모양은 그대로)
+    if (busy) return;
+    const m = model(i), q = [latlng.getLat(), latlng.getLng()];
+    let bh = 0, bj = 0, bd = 1e12;
+    m.geo.forEach((g, h) => g.forEach((x, j) => { const d = distM(q[0], q[1], x[0], x[1]); if (d < bd) { bd = d; bh = h; bj = j; } }));
+    const g = m.geo[bh];
+    if (bj === 0 || bj === g.length - 1) { $('msg').textContent = '이미 점이 있는 곳입니다. 다른 곳을 눌러 보세요.'; return; }
+    m.anc.splice(bh + 1, 0, g[bj].slice());
+    m.geo.splice(bh, 1, g.slice(0, bj + 1), g.slice(bj));
+    commitModel(i, m);
+  }
+  $('btnEdit').onclick = () => {
+    editMode = !editMode; $('btnEdit').classList.toggle('on', editMode);
+    $('editBox').style.display = editMode ? 'block' : 'none'; $('card').classList.toggle('ed', editMode);
+    if (editMode) { setNav(false); } else { editSel = null; pendingVia = false; setNav(true); }
+    if (route && route.segs) {
+      renderSegs(); applyLegDots(); updateEditInfo();
+      if (editMode) {   // 켜자마자 출발 정류장 쪽(아직 확인 안 한 첫 구간)부터 시작
+        let k = 0; while (k < route.segs.length - 1 && route.ok && route.ok[k]) k++;
+        selectSeg(k);
+      }
+    }
+  };
+  $('eDel').onclick = () => { delMode = !delMode; delFirst = null; $('eDel').classList.toggle('act', delMode); $('eDel').textContent = '🗑 지우기: ' + (delMode ? '켜짐' : '꺼짐'); if (route && route.segs) { renderSegs(); updateEditInfo(); } };
+  $('eThin').onclick = () => { if (editSel != null) thinAnchors(editSel); };
+  $('eClear').onclick = () => { if (editSel == null) return; if (confirm('이 구간의 점을 전부 지우고 정류장 두 곳만 곧게 이을까요? (되돌리기 가능)')) clearAnchors(editSel); };
+  $('eFirst').onclick = () => { if (route && route.segs) selectSeg(0); };
+  $('ePrev').onclick = () => stepSeg(-1);
+  $('eNext').onclick = () => { if (editSel != null) { route.ok[editSel] = 1; saveEdits(route); } stepSeg(1); };
+  $('eUndo').onclick = () => { const st = undoStack[editSel]; if (!st || !st.length) { $('msg').textContent = '되돌릴 것이 없습니다.'; return; } const prev = st.pop(); if (prev) route.edits[editSel] = prev; else delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = prev ? joinGeo(prev.geo) : route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); };
+  $('eReset').onclick = () => { if (editSel != null && route.edits[editSel]) { (undoStack[editSel] = undoStack[editSel] || []).push(route.edits[editSel]); delete route.edits[editSel]; saveEdits(route); route.segs[editSel] = route.base[editSel]; joinPts(route); renderSegs(); updateEditInfo(); } };
+  $('eOnly').onclick = () => { onlySus = !onlySus; updateEditInfo(); };
+  $('eSave').onclick = () => {   // 이 노선의 현재 도로선 전체를 파일로 내려받기 → 채팅에 첨부하면 GitHub에 영구 저장
+    if (!route || !route.segs) return;
+    const out = JSON.stringify({ v: 1, route: route.name, n: route.stops.length, savedAt: Date.now(), segs: route.segs.map(sg => simplifyIdx(sg, 3).map(j => r5(sg[j]))) });   // 3m 이내 차이는 솎아 파일을 작게
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
+    a.download = 'route_' + route.name + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    $('msg').textContent = `route_${route.name}.json 파일을 내려받았습니다. 채팅에 이 파일을 첨부해 주세요. (${Math.round(out.length / 1024)}KB)`;
+  };
+  $('eCopy').onclick = async () => {
+    const out = JSON.stringify({ route: route.name, n: route.stops.length, edits: route.edits });
+    try { await navigator.clipboard.writeText(out); $('msg').textContent = '수정 내용을 복사했습니다. 채팅에 붙여 넣어 주세요.'; }
+    catch (e) { prompt('아래를 전체 복사해 채팅에 붙여 넣어 주세요', out); }
+  };
+
+  // 편도만 보기: 앵커(출발·기점·도착) 사이 한 방향 구간만 그린다. 지금 가는 구간이 바뀌면 자동 전환
+  function legOf(idx) {
+    const an = (route.anchors || []).slice().sort((x, y) => x - y);
+    if (an.length < 3) return null;                       // 왕복 구분이 없으면 전체
+    for (let k = 0; k < an.length - 1; k++) if (idx > an[k] && idx <= an[k + 1]) return [an[k], an[k + 1]];
+    return [an[0], an[1]];
+  }
+  function applyLegDots() {   // 정류장 점: 평소에는 숨김(깔끔하게), 수정 화면에서만 표시
+    dots.forEach(ov => ov.setMap(editMode ? map : null));
+    if (ringOv) { ringOv.setMap(null); ringOv = null; }
+  }
+
+  const LEG_SWITCH_M = 200, OTHER_LEG_M = 500;   // 편도 선 전환 거리 / 반대 편도 선을 보여 줄 기점 둘레
+  // 라이브 모달의 거점(도착 거점) 이름으로 지금 달리는 편도(상행/하행)를 정한다. 겹친 길에서 위치만으로는 방향이 헷갈리기 때문
+  function legByAnchor() {
+    if (!route || !parentAnchor) return null;
+    const an = (route.anchors || []).slice().sort((x, y) => x - y);
+    if (an.length < 3) return null;
+    const norm = t => String(t || '').replace(/\s+/g, '');
+    const pa = norm(parentAnchor);
+    for (let k = 0; k < an.length - 1; k++) { const nm = norm(route.stops[an[k + 1]][1]); if (nm && (nm === pa || nm.indexOf(pa) >= 0 || pa.indexOf(nm) >= 0)) return [an[k], an[k + 1]]; }
+    return null;
+  }
+
+  // 내 위치로 다음 정류장 찾기
+  function update() {
+    if (!route || !me) return;
+    const st = route.stops;
+    let best = 0, bd = 1e12;
+    // 지나온 곳보다 뒤로 크게 돌아가지 않게, 현재 진행 지점 근처부터 우선 탐색
+    const lgF = legByAnchor();   // 거점 이름으로 편도가 정해지면 그 편도 정류장 안에서만 찾는다
+    const lo = lgF ? lgF[0] : 0, hi = lgF ? lgF[1] : st.length - 1;
+    const from = Math.max(lo, route.prog - 2), to = Math.min(hi, route.prog + 12);
+    best = lo;
+    for (let i = from; i <= to; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
+    if (bd > 400) { // 근처에 없으면 전체에서 다시 찾음 (노선 이탈 후 복귀 등)
+      for (let i = lo; i <= hi; i++) { const d = distM(me.lat, me.lon, st[i][2], st[i][3]); if (d < bd) { bd = d; best = i; } }
+    }
+    let next = best;
+    if (best < st.length - 1) {
+      const a = st[best], b = st[best + 1];
+      const ux = b[3] - a[3], uy = b[2] - a[2], vx = me.lon - a[3], vy = me.lat - a[2];
+      if (ux * vx + uy * vy > 0 || bd < 25) next = best + 1;   // 이미 지났거나 25m 이내면 다음 정류장
+    }
+    if (lgF && next > hi) next = hi;
+    if (parentNext) {   // 라이브 모달의 '다음 정류장' 이름과 똑같이 맞춘다(같은 이름이 둘이면 내 위치로 계산한 곳에 가까운 쪽)
+      let bi = -1, bg = 1e9;
+      for (let i = lo; i <= hi; i++) if (String(st[i][1]).trim() === parentNext) { const g = Math.abs(i - next); if (g < bg) { bg = g; bi = i; } }
+      if (bi >= 0) next = bi;
+    }
+    route.prog = Math.max(0, next - 1);
+    nextIdx = next;
+    let lg = lgF || legOf(next);
+    if (route.leg) {   // 편도 선 전환: 달려온 편도의 끝(기점)에 닿았다가 200m 이상 벗어난 뒤에 다음 편도 선으로 바꾼다
+      const eN = st[route.leg[1]];
+      if (eN && distM(me.lat, me.lon, eN[2], eN[3]) >= LEG_SWITCH_M) route.legArmed = true;
+      if (lg && lg.join() !== route.leg.join() && lg[0] === route.leg[1] && route.legArmed && eN && distM(me.lat, me.lon, eN[2], eN[3]) < LEG_SWITCH_M) lg = route.leg;
+      else if (lg && lg.join() !== route.leg.join()) route.legArmed = false;
+    }
+    if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); }
+    const s = st[next];
+    const d = distM(me.lat, me.lon, s[2], s[3]);
+    $('nextName').textContent = s[1];
+    $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+    const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
+    $('anchorName').textContent = parentAnchor || st[anc != null ? anc : st.length - 1][1];
+    $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
+    dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
+  }
+
+  // 내 위치 = 파란 원 + 앞쪽 화살표. 화살표가 가는 방향
+  const BUS_SVG = '<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" overflow="visible">'
+    + '<circle cx="22" cy="22" r="19" fill="#2563eb" fill-opacity=".25"/>'
+    + '<path d="M22 -6 L33 10 L11 10 Z" fill="#2563eb" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>'
+    + '<circle cx="22" cy="22" r="11" fill="#2563eb" stroke="#fff" stroke-width="3.4"/></svg>';
+
+  // 앱(부모 화면)이 1초마다 보내 주는 시간카운트·오차배지를 표시
+  window.addEventListener('message', (ev) => {
+    if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
+    const d = ev.data;
+    if (d.time) $('cdTime').textContent = d.time;
+    if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
+    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
+    const bd = $('cdBadge'); bd.textContent = d.delay || '0';
+    // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
+    if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, false, true); }
+    if (d.dc) { bd.style.color = d.dc; bd.style.background = d.db; bd.style.borderColor = d.dbd; }
+  });
+
+  let lastOwnFix = 0, lastParentFix = 0, gpsWatchId = null;
+  // ---- 운행 기록(관리자): 첫 출발지에서 [기록] 시작 → 바꿀 곳에서 [구간] 시작/끝 → 도착지에서 [종료]. 구간 안만 새 선, 나머지는 기존 선 ----
+  const REC_KEY = 'yb_recs_v2_';
+  let recOn = false, recPts = [], recSecs = [], recMarks = [], recLines = [], recShow = false, recDot = null;
+  function recLoad(name) {
+    recPts = []; recSecs = [];
+    try { const o = JSON.parse(localStorage.getItem(REC_KEY + name) || 'null'); if (o) { recPts = o.pts || []; recSecs = o.secs || []; } } catch (e) { }
+  }
+  function recSave() { try { if (route) localStorage.setItem(REC_KEY + route.name, JSON.stringify({ pts: recPts, secs: recSecs })); } catch (e) { } }
+  function recLabels() {
+    const open = recSecs.length && recSecs[recSecs.length - 1].b == null;
+    $('btnRec').textContent = recOn ? '■ 종료' : '● 기록';
+    $('btnRec').classList.toggle('on', recOn);
+    $('btnRecSec').textContent = open ? '구간 끝' : '✎ 구간';
+    $('btnRecSec').classList.toggle('on', !!open);
+    $('btnRecSec').style.display = recOn ? '' : 'none';
+  }
+  function recAdd(lat, lon) {
+    const q = recPts[recPts.length - 1];
+    if (q && distM(q[0], q[1], lat, lon) < 3) return;   // 제자리 점은 건너뜀
+    recPts.push([+lat.toFixed(6), +lon.toFixed(6), Math.round(Date.now() / 1000)]);
+    if (recPts.length % 5 === 0) recSave();
+  }
+  function recClear() { recMarks.forEach(m => m.setMap(null)); recMarks = []; recLines.forEach(l => l.setMap(null)); recLines = []; }
+  function nearStopIdx(p) { let bi = 0, bd = 1e12; route.stops.forEach((x, i) => { const d = distM(p[0], p[1], x[2], x[3]); if (d < bd) { bd = d; bi = i; } }); return bi; }
+  // 기존 선 + 구간 기록 합치기: 구간 시작·끝은 누른 곳에서 가장 가까운 정류장, 그 사이 정류장 구간만 새 기록으로 바꾼다
+  function recBuild() {
+    const segs = route.segs.map(sg => sg.slice()), changed = [], notes = [];
+    recSecs.forEach((sc, n) => {
+      const a = sc.a, b = sc.b == null ? recPts.length - 1 : sc.b;
+      if (b - a < 2) { notes.push((n + 1) + '번 구간: 기록이 너무 짧아 건너뜀'); return; }
+      const sa = nearStopIdx(recPts[a]), sb = nearStopIdx(recPts[b]);
+      if (sb <= sa) { notes.push((n + 1) + '번 구간: 시작·끝 정류장이 같아 건너뜀'); return; }
+      let prev = Math.max(0, a - 30); const idx = [];
+      for (let k = sa; k <= sb; k++) {
+        const st = route.stops[k]; let found = null, best = -1, j = prev;
+        while (j <= b && j < recPts.length) {
+          if (distM(recPts[j][0], recPts[j][1], st[2], st[3]) < 40) {
+            let bj = j; while (j <= b && distM(recPts[j][0], recPts[j][1], st[2], st[3]) < 40) { if (distM(recPts[j][0], recPts[j][1], st[2], st[3]) < distM(recPts[bj][0], recPts[bj][1], st[2], st[3])) bj = j; j++; }
+            found = bj; break;
+          }
+          j++;
+        }
+        if (found != null) { idx.push(found); prev = found; } else idx.push(null);
+      }
+      for (let k = sa; k < sb; k++) {
+        const i0 = idx[k - sa], i1 = idx[k - sa + 1];
+        if (i0 == null || i1 == null || i1 <= i0) { notes.push(`${k + 1}번째 정류장 구간은 기록이 안 잡혀 기존 선 유지`); continue; }
+        const P = recPts.slice(i0, i1 + 1).map(q => [q[0], q[1]]);
+        P[0] = [route.stops[k][2], route.stops[k][3]]; P[P.length - 1] = [route.stops[k + 1][2], route.stops[k + 1][3]];
+        segs[k] = simplifyIdx(P, 1.5).map(q => r5(P[q])); changed.push(k);
+      }
+    });
+    return { segs, changed, notes };
+  }
+  function recDraw() {
+    recClear();
+    if (!recShow || !map || !route || !route.segs) return;
+    if (!recSecs.length) { $('msg').textContent = '구간 기록을 누른 곳이 없습니다(기존 선 그대로).'; return; }
+    const r = recBuild();
+    if (!recDot) recDot = circleImg('#dc2626', 16);
+    r.changed.forEach(k => {
+      const sg = r.segs[k];
+      recLines.push(new kakao.maps.Polyline({ map, path: sg.map(q => new kakao.maps.LatLng(q[0], q[1])), strokeWeight: 4, strokeColor: '#dc2626', strokeOpacity: .85, zIndex: 3 }));
+      sg.forEach(q => recMarks.push(new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(q[0], q[1]), image: recDot, zIndex: 4 })));
+    });
+    $('msg').textContent = `바뀐 정류장 구간 ${r.changed.length}개` + (r.notes.length ? ' · ' + r.notes.join(' / ') : '');
+  }
+  function recStop() {
+    recOn = false;
+    const last = recSecs[recSecs.length - 1]; if (last && last.b == null) last.b = recPts.length - 1;   // 열린 구간은 종료 때 닫음
+    recSave(); try { localStorage.removeItem('yb_rec_on'); } catch (e) { } recLabels();
+  }
+  function recStart() {
+    if (!route) return;
+    if ((recPts.length || recSecs.length) && !confirm('저장된 기록 ' + recPts.length + '점이 있습니다. [확인]=이어서 기록, [취소]=새로 시작')) { recPts = []; recSecs = []; recSave(); recClear(); }
+    recOn = true; recSave(); try { localStorage.setItem('yb_rec_on', route.name); } catch (e) { }
+    recLabels();
+    $('msg').textContent = route.name + ' 기록 중: 바꿀 곳에서 [구간]을 누르세요. 첫 출발지에서 시작해 도착지에서 [종료]. 지도를 닫으면 멈춥니다.';
+  }
+  function recStart2() { recOn = true; recLabels(); }
+  $('btnRec').onclick = () => { if (recOn) { recStop(); recDraw(); } else recStart(); };
+  $('btnRecSec').onclick = () => {
+    const last = recSecs[recSecs.length - 1];
+    if (last && last.b == null) { last.b = Math.max(0, recPts.length - 1); $('msg').textContent = '구간 끝을 저장했습니다.'; }
+    else { recSecs.push({ a: Math.max(0, recPts.length - 1), b: null }); $('msg').textContent = '구간 기록 시작: 여기서부터 새 선으로 저장합니다.'; }
+    recSave(); recLabels();
+  };
+  $('btnRecView').onclick = () => { recShow = !recShow; $('btnRecView').classList.toggle('on', recShow); if (recShow) recDraw(); else recClear(); };
+  $('btnRecSave').onclick = () => {
+    if (!route || !route.segs || !recSecs.length) { $('msg').textContent = '저장할 구간 기록이 없습니다.'; return; }
+    const r = recBuild();
+    const out = JSON.stringify({ v: 1, kind: 'partial', route: route.name, n: route.stops.length, recAt: Date.now(), changed: r.changed, notes: r.notes, secs: recSecs, segs: r.segs, raw: recPts });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
+    a.download = 'rec_' + route.name + '_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    $('msg').textContent = a.download + ' 파일을 내려받았습니다(바뀐 구간 ' + r.changed.length + '개). 채팅에 첨부해 주세요. (' + Math.round(out.length / 1024) + 'KB)';
+  };
+  function onPos(lat, lon, speedKmh, hd, fromSim, fromParent) {
+    if (simTimer && !fromSim) return;
+    if (!fromParent && !fromSim) lastOwnFix = Date.now();
+    if (recOn && !fromSim && route) recAdd(lat, lon);
+    const prev = me;
+    me = { lat, lon, speed: speedKmh };
+    if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
+    else if (prev && distM(prev.lat, prev.lon, lat, lon) > 5) heading = bearing(prev.lat, prev.lon, lat, lon);
+    const ll = new kakao.maps.LatLng(lat, lon);
+    const firstFix = !meOv;
+    if (!meOv) { const el = document.createElement('div'); el.className = 'mebus'; el.innerHTML = BUS_SVG; meOv = new kakao.maps.CustomOverlay({ map, position: ll, content: el, zIndex: 9 }); disp = { lat, lon }; }
+    else glideTo(lat, lon);                     // 1초마다 뚝뚝 옮기지 않고 부드럽게 미끄러지듯 이동
+    const dd = ((heading - curAng + 540) % 360) - 180; curAng += dd;   // 359°→1° 처럼 넘어가도 짧은 쪽으로만 회전
+    const bel = meOv.getContent(); if (bel && bel.style) bel.style.transform = `rotate(${curAng}deg)`;
+    if (follow) { map.setDraggable(false); followView(firstFix); }   // 내 위치가 잡히면 끌기 잠금(확대/축소는 가능)
+    else applyRotate();
+    update();
+  }
+
+  // 지도 전체를 CSS로 돌리고 밀어서(회전+이동) 움직임을 부드럽게 한다. 카카오 지도 중심은 많이 벗어날 때만 다시 잡는다.
+  const LIMIT = 70;                       // 이만큼(px) 밀리면 지도 중심을 다시 잡음
+  let panX = 0, panY = 0;
+  function applyRotate() {
+    $('map').style.transform = headUp ? `rotate(${-curAng}deg) translate(${-panX}px, ${-panY}px)` : '';
+  }
+  // 내 위치가 화면 가운데보다 아래(약 60% 지점, 2026-10-12 70%에서 조정)에 오도록, 가는 방향 앞쪽을 화면 중심으로 삼는다
+  function followView(force) {
+    if (!map || !me) return;
+    const proj = map.getProjection(), m = $('map');
+    const W = m.clientWidth, H = m.clientHeight;
+    const bus = proj.containerPointFromCoords(new kakao.maps.LatLng(me.lat, me.lon));
+    const off = $('view').clientHeight * 0.1, a = (headUp ? curAng : 0) * Math.PI / 180;
+    const tx = bus.x + off * Math.sin(a), ty = bus.y - off * Math.cos(a);
+    let dx = tx - W / 2, dy = ty - H / 2;
+    if (force || Math.hypot(dx, dy) > LIMIT) {
+      m.style.transition = 'none';
+      map.setCenter(proj.coordsFromContainerPoint(new kakao.maps.Point(tx, ty)));
+      panX = 0; panY = 0; applyRotate();
+      void m.offsetWidth; m.style.transition = '';
+      return;
+    }
+    panX = dx; panY = dy; applyRotate();
+  }
+  // 지도를 손으로 옮겨 보기 전에, 지금 화면에 보이는 자리를 카카오 지도 중심으로 확정
+  function bakePan() {
+    if (!map || (!panX && !panY)) return;
+    const proj = map.getProjection(), m = $('map');
+    m.style.transition = 'none';
+    map.setCenter(proj.coordsFromContainerPoint(new kakao.maps.Point(m.clientWidth / 2 + panX, m.clientHeight / 2 + panY)));
+    panX = 0; panY = 0;
+  }
+  // 지도 조각 크기: 어느 방향으로 돌려도 화면이 비지 않을 만큼만(정사각형) 만든다
+  function sizeMap() {
+    const v = $('view'), vw = v.clientWidth, vh = v.clientHeight;
+    const S = Math.ceil(Math.hypot(vw, vh)) + 2 * LIMIT, m = $('map');
+    m.style.width = S + 'px'; m.style.height = S + 'px';
+    m.style.left = ((vw - S) / 2) + 'px'; m.style.top = ((vh - S) / 2) + 'px';
+    if (map) { map.relayout(); if (follow && me) followView(true); }
+  }
+  window.addEventListener('resize', sizeMap);
+  let curAng = 0, disp = null, glideRaf = null;
+  function glideTo(lat, lon) {   // 표시 위치를 새 GPS 값까지 0.9초 동안 이동
+    if (!disp) { disp = { lat, lon }; return; }
+    if (glideRaf) cancelAnimationFrame(glideRaf);
+    const from = { lat: disp.lat, lon: disp.lon }, t0 = performance.now();
+    const step = (t) => {
+      const f = Math.min(1, (t - t0) / 900);
+      disp = { lat: from.lat + (lat - from.lat) * f, lon: from.lon + (lon - from.lon) * f };
+      const ll = new kakao.maps.LatLng(disp.lat, disp.lon);
+      if (meOv) meOv.setPosition(ll);
+      glideRaf = f < 1 ? requestAnimationFrame(step) : null;
+    };
+    glideRaf = requestAnimationFrame(step);
+  }
+
+  function startGps() {
+    if (SIM) { $('msg').textContent = '시험 모드: 지도를 누르면 그 곳이 내 위치가 됩니다.'; return; }
+    if (!navigator.geolocation) { $('msg').textContent = '이 기기는 GPS를 지원하지 않습니다.'; return; }
+    const begin = () => {
+      if (gpsWatchId != null) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch (e) { } }
+      gpsWatchId = navigator.geolocation.watchPosition(
+        p => onPos(p.coords.latitude, p.coords.longitude, p.coords.speed != null && p.coords.speed >= 0 ? Math.round(p.coords.speed * 3.6) : null, p.coords.heading),
+        e => { if (e.code === 1) $('nextDist').textContent = '위치 권한을 허용해 주세요'; else if (!me) $('nextDist').textContent = 'GPS 신호 찾는 중...'; },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+    };
+    begin();
+    // 위치가 8초 넘게 안 들어오면 GPS 받기를 새로 시작(휴대폰이 조용히 끊는 경우 대비)
+    let restartAt = 0;
+    setInterval(() => {
+      if (simTimer || document.hidden) return;
+      const base = Math.max(lastOwnFix, restartAt);
+      if (Date.now() - base > 8000) { restartAt = Date.now(); begin(); }
+    }, 3000);
+  }
+
+  // 평소에는 내 위치·진행 방향에 고정(끌기 잠금, 확대/축소만 가능). [지도 이동]을 누르면 잠시 자유롭게 끌어 볼 수 있고,
+  // 다시 누르거나 손을 뗀 지 10초가 지나면 자동으로 내 위치로 돌아온다
+  const PAN_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>';
+  let panTimer = null;
+  function setNav(on) {
+    follow = on; headUp = on;
+    if (panTimer) { clearTimeout(panTimer); panTimer = null; }
+    $('btnPan').innerHTML = PAN_ICON + (on ? '지도 이동' : '내 위치로');
+    $('btnPan').classList.toggle('on', !on);
+    if (map) map.setDraggable(!(on && me));
+    if (!on) { bakePan(); applyRotate(); void $('map').offsetWidth; $('map').style.transition = ''; }
+    else if (me && map) followView(true);
+    else applyRotate();
+  }
+  function panLater() { if (follow || editMode) return; if (panTimer) clearTimeout(panTimer); panTimer = setTimeout(() => setNav(true), 10000); }
+  $('btnPan').onclick = () => { if (follow) { setNav(false); panLater(); } else setNav(true); };
+  // ---- 모의주행: 노선선을 따라 가짜 GPS가 움직임 (책상에서 시험용) ----
+  let simTimer = null, simDist = 0, simCum = null;
+  function simBuild() {
+    const P = route.pts; simCum = [0];
+    for (let i = 1; i < P.length; i++) simCum.push(simCum[i - 1] + distM(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1]));
+  }
+  function simPoint(d) {
+    const P = route.pts; let i = 1;
+    while (i < P.length - 1 && simCum[i] < d) i++;
+    const seg = simCum[i] - simCum[i - 1] || 1, f = Math.min(1, Math.max(0, (d - simCum[i - 1]) / seg));
+    return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * f, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * f];
+  }
+  function simStop() { if (simTimer) clearInterval(simTimer); simTimer = null; $('btnSim').classList.remove('on'); $('btnSim').textContent = '▶ 모의주행'; }
+  $('btnSim').onclick = () => {
+    if (simTimer) { simStop(); return; }
+    if (!route) return;
+    simBuild(); if (simDist >= simCum[simCum.length - 1]) simDist = 0;
+    $('btnSim').classList.add('on'); $('btnSim').textContent = '■ 멈춤';
+    setNav(true);
+    simTimer = setInterval(() => {
+      const mult = +$('simSpeed').value;
+      simDist += (40 / 3.6) * mult;
+      if (simDist >= simCum[simCum.length - 1]) { simStop(); return; }
+      const p = simPoint(simDist);
+      onPos(p[0], p[1], 40, null, true);
+    }, 1000);
+  };
+  $('route').onchange = () => { simStop(); simDist = 0; me = null; if (recOn) recStop(); recClear(); showRoute($('route').value).then(() => { if (route) recLoad(route.name); }); };
+
+  // 둘째 줄이 숫자 폭 때문에 흔들리지 않게: 시간카운트·오차배지 칸 너비를 가장 넓은 숫자 기준으로 고정(글꼴이 뜬 뒤에 한 번 잰다)
+  function lockRowB() {
+    const meas = (el, txts) => {
+      const c = getComputedStyle(el), sp = document.createElement('span');
+      sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';padding:0;border:0;';
+      document.body.appendChild(sp); let w = 0;
+      txts.forEach(t => { sp.textContent = t; w = Math.max(w, sp.getBoundingClientRect().width); });
+      sp.remove(); return Math.ceil(w) + 2;
+    };
+    try {
+      $('cdTime').style.minWidth = meas($('cdTime'), ['00:00:00', '88:88:88', '00:00:00'.replace(/0/g, '0')]) + 'px';
+      const b = $('cdBadge'), cs = getComputedStyle(b);
+      b.style.minWidth = Math.max(52, meas(b, ['+88', '-88', '88']) + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 4) + 'px';
+    } catch (e) { }
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(lockRowB);
+  setTimeout(lockRowB, 3000);   // 느린 통신에서 글꼴이 늦게 떠도 한 번 더
+
+  // 처음 켰을 때 안내 배너 (다음부터 알리지 않기를 누르면 다시 안 나옴)
+  (function () {
+    var off = false; try { off = localStorage.getItem('yb_map_tip_off') === '1'; } catch (e) { }
+    if (off) return;
+    $('tip').style.display = 'block';
+    $('tipClose').onclick = () => { $('tip').style.display = 'none'; };
+    $('tipNever').onclick = () => { try { localStorage.setItem('yb_map_tip_off', '1'); } catch (e) { } $('tip').style.display = 'none'; };
+  })();
+
+  loadKakao().then(() => {
+    map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.4563, 126.7052), level: 5 });
+    kakao.maps.event.addListener(map, 'dragend', panLater);
+    kakao.maps.event.addListener(map, 'zoom_changed', () => { panLater(); if (follow && me) followView(true); });
+    sizeMap();
+    kakao.maps.event.addListener(map, 'click', (ev) => {
+      const l = ev.latLng;
+      if (simTimer && route) {   // 모의주행 중: 누른 곳에서 가장 가까운 정류장으로 건너뜀
+        let bi = 0, bd = 1e12;
+        route.stops.forEach((x, i) => { const d = distM(l.getLat(), l.getLng(), x[2], x[3]); if (d < bd) { bd = d; bi = i; } });
+        simDist = simCum[route.stopAt[bi]]; route.prog = Math.max(0, bi - 1);
+      } else if (SIM) onPos(l.getLat(), l.getLng(), 30, null);
+    });
+    showRoute($('route').value).then(() => { if (route) { recLoad(route.name);  } });
+    startGps();
+  }).catch(e => { $('msg').textContent = String(e.message || e); });
+</script>
+</body>
+</html>
