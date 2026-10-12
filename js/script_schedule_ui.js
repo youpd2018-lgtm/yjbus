@@ -945,7 +945,7 @@
         let searchDateStr = searchDateEl.value;
 
         let now = new Date();
-        let todayStr = typeof getFormattedDate === 'function' ? getFormattedDate(now) : '';
+        let todayStr = typeof getFormattedDate === 'function' ? getFormattedDate(window.ybWorkNow ? window.ybWorkNow() : now) : '';   // 근무일 기준(01시까지 전날)
 
         let saved = localStorage.getItem(getDriverKey(`sched_${searchDateStr}`));
         let schedData = null;

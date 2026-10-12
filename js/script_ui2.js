@@ -66,7 +66,7 @@
         md.textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
         var dow = document.getElementById('yb2DateDow');
         if (dow) dow.textContent = DOW[d.getDay()] + '요일';
-        var t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        var t = window.ybWorkNow ? window.ybWorkNow() : new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
         var diff = Math.round((d - t) / 86400000);
         var rel = '';
         if (diff === 0) rel = '오늘';

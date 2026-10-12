@@ -248,7 +248,7 @@
         } catch (e) { console.warn('한마디 초기 로드 실패:', e); }
 
         // 1. 오늘 날짜를 YYYY-MM-DD 형식으로 안전하게 생성
-        let now = new Date();
+        let now = window.ybWorkNow ? window.ybWorkNow() : new Date();   // 근무일 기준(01시까지 전날)
         let y = now.getFullYear();
         let m = String(now.getMonth() + 1).padStart(2, '0');
         let d = String(now.getDate()).padStart(2, '0');

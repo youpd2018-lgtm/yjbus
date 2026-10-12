@@ -1072,7 +1072,7 @@
         // 1. 날짜 입력창에 오늘 날짜 우선 강제 주입
         let searchDateEl = document.getElementById('searchDate');
         if (searchDateEl && !searchDateEl.value) {
-            let now = new Date();
+            let now = window.ybWorkNow ? window.ybWorkNow() : new Date();
             let y = now.getFullYear();
             let m = String(now.getMonth() + 1).padStart(2, '0');
             let d = String(now.getDate()).padStart(2, '0');
@@ -1251,7 +1251,7 @@
     // 💡 한국 시간 기준 YYYY-MM-DD 및 요어 구하기
     // ==========================================
     function getTodayString() {
-        const today = new Date();
+        const today = window.ybWorkNow ? window.ybWorkNow() : new Date();   // 근무일 기준
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');

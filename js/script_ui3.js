@@ -200,7 +200,7 @@
                 var p = inp.value.split('-');
                 var d = new Date(+p[0], +p[1] - 1, +p[2]);
                 var now = new Date();
-                var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                var wn = window.ybWorkNow ? window.ybWorkNow() : now, t0 = new Date(wn.getFullYear(), wn.getMonth(), wn.getDate());
                 if (d < t0) frac = 1;
                 else if (d > t0) frac = 0;
                 else {
@@ -227,7 +227,7 @@
     window.yb4GoToday = function () {
         var s = $('searchDate');
         if (!s) return;
-        var t = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+        var t = window.ybWorkNow ? window.ybWorkNow() : new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
         s.value = t.getFullYear() + '-' + p(t.getMonth() + 1) + '-' + p(t.getDate());
         if (typeof onDateInputChange === 'function') onDateInputChange();
     };

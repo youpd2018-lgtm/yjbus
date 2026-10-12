@@ -85,9 +85,9 @@
   var AREA = { minX: 126.36, maxX: 126.70, minY: 37.42, maxY: 37.57 };   // 영종·청라·인천 노선 전체
   var FRESH = 420000, STALE = 2400000;                                   // 소통정보 7분 / 40분
   var COLLECT_EVENTS = false;                                            // 돌발정보 받기는 쉬는 중(국토부 월 한도 때문, 사용자 지시 2026-10-11)
-  function inServiceHours() {   // 운행시간 04:30~00:30 (한국 시각)에만 국토부에서 새로 받는다
+  function inServiceHours() {   // 운행시간 04:30~01:00 (한국 시각)에만 국토부에서 새로 받는다
     var d = new Date(Date.now() + 9 * 3600000), m = d.getUTCHours() * 60 + d.getUTCMinutes();
-    return m >= 270 || m < 30;
+    return m >= 270 || m < 60;
   }
   var shared = { t: null, e: null }, sharedAt = 0, skew = 0, collecting = false, allIds = null;
   function nowS() { return Date.now() + skew; }   // 서버 시각 기준(폰 시계가 틀려도 '몇 분 지났나'를 정확히 판단)
