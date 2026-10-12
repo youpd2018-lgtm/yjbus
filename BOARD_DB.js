@@ -19,7 +19,11 @@ function getOrCreateBoardSheet() {
 // ================================================================
 function loadBoardMemo(category, targetKey) {
   try {
-    if (String(category || '').trim().toUpperCase() === 'DIFFICULTY' && typeof colorRolloverIfNeeded_ === 'function') colorRolloverIfNeeded_();  // 하루 바뀜 → 어제 최다 색 반영
+    // 🎨 난이도 색은 '색선택' 시트에서만 읽음 (BOARD_DB 사용 안 함)
+    if (String(category || '').trim().toUpperCase() === 'DIFFICULTY' && typeof colorCurrent_ === 'function') {
+      const cur = colorCurrent_(targetKey);
+      return { success: true, content: cur.color, writer: cur.writer };
+    }
     const sheet = getOrCreateBoardSheet();
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return { success: true, content: "", writer: "" };
@@ -59,21 +63,22 @@ function loadBoardMemo(category, targetKey) {
 // ================================================================
 function saveBoardMemo(category, targetKey, content, writer) {
   try {
+    const cleanCategory = String(category || '').trim().toUpperCase();
+    const cleanKey = String(targetKey || '').trim();
+
+    // 🎨 난이도 색: '색선택' 시트에만 기록하고 BOARD_DB 에는 쓰지 않음
+    if (cleanCategory === 'DIFFICULTY' && typeof colorLogAppend_ === 'function') {
+      colorLogAppend_(cleanKey, String(content || ''), writer);
+      return { success: true };
+    }
+
     const sheet = getOrCreateBoardSheet();
     const data = sheet.getDataRange().getValues();
 
-    const cleanCategory = String(category || '').trim().toUpperCase();
-    const cleanKey = String(targetKey || '').trim();
     const isAnonymousCat = (cleanCategory === 'ROUTE' || cleanCategory === 'SHIFT');
     const cleanWriter = isAnonymousCat ? '' : (String(writer || '').trim() || '동료기사');
     const cleanContent = String(content || '');
     const nowTime = Utilities.formatDate(new Date(), "GMT+9", "yyyy-MM-dd HH:mm");
-
-    // 🎨 난이도 색: 사람이 고른 것만 '색선택' 시트에 기록 (자동집계는 기록하지 않음)
-    if (cleanCategory === 'DIFFICULTY' && String(writer || '').trim() !== '자동집계' && typeof colorLogAppend_ === 'function') {
-      if (typeof colorRolloverIfNeeded_ === 'function') colorRolloverIfNeeded_();
-      colorLogAppend_(cleanKey, cleanContent, writer);
-    }
 
     let targetRowIndex = -1;
     for (let i = 1; i < data.length; i++) {

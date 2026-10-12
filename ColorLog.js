@@ -5,14 +5,12 @@
 //         날짜 | 노선+순번 | 이름 | 색 | 시각
 //         (노선+순번 예: 202평일16대1순번 — 이 묶음이 한 단위)
 //  [표시 규칙]
-//    1) 하루 중에는 '마지막에 고른 사람의 색'이 앱에 보입니다. (BOARD_DB의 DIFFICULTY 줄)
-//    2) 하루가 바뀌면, 전날 그 묶음에서 가장 많이 선택된 색으로 바뀝니다.
+//    1) 하루 중에는 '마지막에 고른 사람의 색'이 앱에 보입니다.
+//    2) 하루가 바뀌면, 가장 최근 기록 날의 최다 색이 보입니다.
 //       (동점이면 동점 색들 중 가장 나중에 고른 색)
-//       전날 아무도 안 골랐으면 색은 그대로 둡니다.
+//  [저장 위치] 색은 이 '색선택' 시트에만 저장됩니다. (BOARD_DB 에는 쓰지 않음)
 //  [하루가 바뀌는 시간] COLOR_DAY_START_HOUR (0 = 자정, 4 = 새벽 4시)
-//  [작동 방식] 별도 트리거 설정 없음. 하루가 바뀐 뒤 누군가 색을 읽거나 고르는
-//              첫 순간에 어제(밀린 날 포함) 집계를 한 번만 실행합니다.
-//  BOARD_DB.js 의 loadBoardMemo / saveBoardMemo 맨 앞에서 호출됩니다.
+//  BOARD_DB.js 의 loadBoardMemo / saveBoardMemo 가 DIFFICULTY 일 때 여기로 넘깁니다.
 // ================================================================
 var COLOR_DAY_START_HOUR = 0;
 var COLOR_SHEET_NAME = '색선택';
@@ -58,63 +56,40 @@ function colorLogAppend_(key, colorEn, writer) {
   }
 }
 
-// 하루가 바뀌었으면 밀린 날짜를 하나씩 집계해서 '가장 많이 고른 색'으로 바꿈
-function colorRolloverIfNeeded_() {
+// 현재 보여 줄 색 (색선택 시트만 읽음)
+//  - 오늘(하루 시작 시각 기준) 기록이 있으면 마지막에 고른 색
+//  - 없으면 기록이 있는 가장 최근 날의 최다 색 (동점이면 동점 색 중 가장 나중에 고른 색)
+function colorCurrent_(key) {
   try {
-    var props = PropertiesService.getScriptProperties();
+    key = String(key || '').trim();
+    if (!key) return { color: '', writer: '' };
+    var sheet = getOrCreateColorSheet_();
+    var data = sheet.getDataRange().getValues();
     var today = colorDayString_(new Date());
-    var last = props.getProperty('COLOR_ROLLOVER_DONE');   // 집계를 마친 마지막 날짜
-    var yesterday = colorDayString_(new Date(Date.now() - 24 * 3600 * 1000));
-    if (!last) { props.setProperty('COLOR_ROLLOVER_DONE', yesterday); return; }  // 처음 설치: 과거는 건드리지 않음
-    if (last >= yesterday) return;                          // 이미 오늘 처리함
-
-    var lock = LockService.getScriptLock();
-    if (!lock.tryLock(8000)) return;                        // 동시에 실행 중이면 이번엔 건너뜀
-    try {
-      last = props.getProperty('COLOR_ROLLOVER_DONE');
-      if (last >= yesterday) return;
-      var sheet = getOrCreateColorSheet_();
-      var data = sheet.getDataRange().getValues();
-      var d = colorNextDay_(last);
-      while (d <= yesterday) {
-        colorTallyDay_(data, d);
-        props.setProperty('COLOR_ROLLOVER_DONE', d);
-        d = colorNextDay_(d);
-      }
-    } finally {
-      lock.releaseLock();
+    var perDay = {};   // 날짜 → { counts, lastIdx }
+    var latestPrev = '';
+    for (var i = data.length - 1; i >= 1; i--) {
+      if (String(data[i][1] || '').trim() !== key) continue;
+      var en = COLOR_EN[String(data[i][3] || '').trim()];
+      if (!en) continue;
+      var rawDay = data[i][0];
+      var day = (rawDay instanceof Date) ? Utilities.formatDate(rawDay, 'GMT+9', 'yyyy-MM-dd') : String(rawDay || '').trim();
+      if (day === today) return { color: en, writer: String(data[i][2] || '') };   // 가장 아래 = 마지막 선택
+      if (day > today) continue;
+      if (!latestPrev || day > latestPrev) latestPrev = day;
+      var d = perDay[day] || (perDay[day] = { counts: {}, lastIdx: {} });
+      d.counts[en] = (d.counts[en] || 0) + 1;
+      if (d.lastIdx[en] === undefined) d.lastIdx[en] = i;   // 아래에서 위로 읽으므로 처음 만난 것이 가장 나중
     }
-  } catch (err) {
-    Logger.log('❌ colorRolloverIfNeeded_ 오류: ' + err.toString());
-  }
-}
-
-function colorNextDay_(dayStr) {
-  var p = dayStr.split('-');
-  var dt = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + 1));
-  return Utilities.formatDate(dt, 'UTC', 'yyyy-MM-dd');
-}
-
-// 한 날짜의 기록에서 묶음(노선+순번)마다 1등 색을 찾아 BOARD_DB 에 반영
-function colorTallyDay_(data, dayStr) {
-  var perKey = {};   // key → { counts:{색:횟수}, lastIdx:{색:마지막 줄 번호} }
-  for (var i = 1; i < data.length; i++) {
-    var rawDay = data[i][0];
-    var day = (rawDay instanceof Date) ? Utilities.formatDate(rawDay, 'GMT+9', 'yyyy-MM-dd') : String(rawDay || '').trim();
-    if (day !== dayStr) continue;
-    var key = String(data[i][1] || '').trim();
-    var en = COLOR_EN[String(data[i][3] || '').trim()];
-    if (!key || !en) continue;
-    if (!perKey[key]) perKey[key] = { counts: {}, lastIdx: {} };
-    perKey[key].counts[en] = (perKey[key].counts[en] || 0) + 1;
-    perKey[key].lastIdx[en] = i;
-  }
-  Object.keys(perKey).forEach(function (key) {
-    var info = perKey[key], best = '', bestN = -1, bestIdx = -1;
+    if (!latestPrev) return { color: '', writer: '' };
+    var info = perDay[latestPrev], best = '', bestN = -1, bestIdx = -1;
     Object.keys(info.counts).forEach(function (c) {
       var n = info.counts[c], idx = info.lastIdx[c];
       if (n > bestN || (n === bestN && idx > bestIdx)) { best = c; bestN = n; bestIdx = idx; }
     });
-    if (best) saveBoardMemo('DIFFICULTY', key, best, COLOR_AUTO_WRITER);
-  });
+    return { color: best, writer: COLOR_AUTO_WRITER };
+  } catch (err) {
+    Logger.log('❌ colorCurrent_ 오류: ' + err.toString());
+    return { color: '', writer: '' };
+  }
 }
