@@ -752,13 +752,13 @@
   function applyRotate() {
     $('map').style.transform = headUp ? `rotate(${-curAng}deg) translate(${-panX}px, ${-panY}px)` : '';
   }
-  // 내 위치가 화면 가운데보다 아래(약 70% 지점)에 오도록, 가는 방향 앞쪽을 화면 중심으로 삼는다
+  // 내 위치가 화면 가운데보다 아래(약 60% 지점, 2026-10-12 70%에서 조정)에 오도록, 가는 방향 앞쪽을 화면 중심으로 삼는다
   function followView(force) {
     if (!map || !me) return;
     const proj = map.getProjection(), m = $('map');
     const W = m.clientWidth, H = m.clientHeight;
     const bus = proj.containerPointFromCoords(new kakao.maps.LatLng(me.lat, me.lon));
-    const off = $('view').clientHeight * 0.2, a = (headUp ? curAng : 0) * Math.PI / 180;
+    const off = $('view').clientHeight * 0.1, a = (headUp ? curAng : 0) * Math.PI / 180;
     const tx = bus.x + off * Math.sin(a), ty = bus.y - off * Math.cos(a);
     let dx = tx - W / 2, dy = ty - H / 2;
     if (force || Math.hypot(dx, dy) > LIMIT) {
