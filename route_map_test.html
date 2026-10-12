@@ -79,7 +79,7 @@
   #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
   #cdBadge { flex: 0 0 auto; white-space: nowrap; min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
   #anchorName { flex: 1 1 0; min-width: 0; font-size: 18px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  body.standalone #cdTime, body.standalone #cdBadge { display: none; }
+  body.standalone #cdTime, body.standalone #cdBadge { display: block; }   /* 테스트 페이지만: 앱 밖에서도 시간 카운트를 보여 줌 */
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   #msg { position: absolute; top: calc(106px + var(--sat)); left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
   #eRow, #eRow2 { display: flex; gap: 6px; margin-top: 8px; }
