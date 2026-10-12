@@ -74,7 +74,7 @@
       · 점을 끌어 옮기고, 점을 누르고 <span class="k">1</span> 직선 <span class="k">2</span> 굽기 <span class="k">3</span> 곡선 <span class="k">Del</span> 삭제<br>
       · 굽기 점은 <span class="k">[</span> <span class="k">]</span> 로 둥근 정도를 조절해요.<br>
       · <span class="k">유턴</span> 모드에서 누르면 유턴 모양 점 3개가 생겨요.<br>
-      · <span class="k">Space</span> 모의주행 시작·멈춤 · <span class="k">N</span> 다음 구간 <span class="k">P</span> 이전 구간 <span class="k">Ctrl+Z</span> 되돌리기
+      · <span class="k">Space</span> 모의주행 시작·멈춤 · <span class="k">N</span> 다음 구간 <span class="k">P</span> 이전 구간 <span class="k">← ↑ ↓ →</span> 선택한 점 1m씩(Shift 5m) <span class="k">Ctrl+Z</span> 되돌리기
     </div>
     <div id="segs"></div>
   </div>
@@ -542,6 +542,16 @@
     if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); redo(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (k === ' ') { e.preventDefault(); SIM.on ? simStop() : simStart(); return; }
+    if (k.indexOf('arrow') === 0 && (S.selStop >= 0 || (S.sel >= 0 && S.selNode >= 0))) {   // 선택한 점을 화살표로 1m씩(Shift는 5m) 옮김
+      e.preventDefault();
+      const m = e.shiftKey ? 5 : 1, dx = k === 'arrowright' ? m : k === 'arrowleft' ? -m : 0, dy = k === 'arrowup' ? m : k === 'arrowdown' ? -m : 0;
+      if (Date.now() - (window.__arrowAt || 0) > 800) pushUndo();   // 연속으로 누르는 건 되돌리기 한 번으로 묶음
+      window.__arrowAt = Date.now();
+      const mv = p => [p[0] + dy / 110540, p[1] + dx / (111320 * Math.cos(p[0] * Math.PI / 180))];
+      if (S.selStop >= 0) { const q = S.selStop; S.pts[q] = mv(stopP(q)); refreshStopPt(q); }
+      else { const nd = S.nodes[S.sel][S.selNode]; nd.p = mv(nd.p); refreshAfterEdit(S.sel); }
+      buildMarkers(); return;
+    }
     if (k === 'v') setMode('v'); else if (k === 'a') setMode('a'); else if (k === 'u') setMode('u');
     else if (k === 'n') selectSeg(S.sel + 1); else if (k === 'p') selectSeg(S.sel - 1);
     else if (k === '1') setKind('s'); else if (k === '2') setKind('c'); else if (k === '3') setKind('m');
