@@ -31,6 +31,7 @@
       var x = await fetch('data/route/' + r + '_links.json', { cache: 'no-cache' });
       if (x.ok) {
         var j = await x.json();
+        if (j && j.segs && j.links && !j.lines && j.base && j.base.length === j.segs.length) j.lines = j.base;   // 선 모양도 이 파일 한 개에 들어 있음
         if (j && j.segs && j.links && !j.lines) {   // 아직 사람이 안 고친(v2) 노선: 노선지도 선을 구간 선으로 씀
           var m = await fetch('data/route/' + r + '.json', { cache: 'no-cache' }).then(function (y) { return y.ok ? y.json() : null; });
           if (m && m.segs && m.segs.length === j.segs.length) j.lines = m.segs;

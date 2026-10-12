@@ -300,8 +300,8 @@ document.getElementById('go').onclick = async function () {
   msg.textContent = '노선 파일 불러오는 중...';
   try {
     var q = function (u) { return fetch(u, { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(u + ' (' + x.status + ')'); return x.json(); }); };
-    S.line = await q('data/route/' + S.route + '.json');
     var lk = await q('data/route/' + S.route + '_links.json');
+    S.line = { segs: lk.base || (await q('data/route/' + S.route + '.json')).segs };   // 선 모양은 _links.json 한 파일에 들어 있음(base)
     S.orig = lk.segs; S.links = lk.links || {};
     if (!S.area) { msg.textContent = '주변 도로 좌표 불러오는 중(1.1MB)...'; S.area = await q('data/route/area_links.json'); }
     S.segs = lk.segs.map(function (a) { return a.slice(); });
@@ -324,7 +324,7 @@ document.getElementById('save').onclick = function () {
   var links = {}; S.segs.forEach(function (a) { a.forEach(function (id) { links[id] = info(id); }); });
   var lines = [], gaps = [], worst = 0;
   S.segs.forEach(function (_, i) { var c = compose(i), pk = packLine(c); lines.push(pk.line); gaps.push(pk.gaps); worst = Math.max(worst, c.maxMove); });
-  var out = { v: 3, route: S.route, source: 'MOCT_LINK', edited: true, savedAt: Date.now(), segs: S.segs, links: links, lines: lines, gaps: gaps };
+  var out = { v: 3, route: S.route, source: 'MOCT_LINK', edited: true, savedAt: Date.now(), base: S.line.segs, segs: S.segs, links: links, lines: lines, gaps: gaps };
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
   a.download = S.route + '_links.json';

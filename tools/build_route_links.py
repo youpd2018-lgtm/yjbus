@@ -77,6 +77,6 @@ for seg in line['segs']:
         if i not in ids: ids.append(i)
     segs.append(ids)
 info = {l['id']: [l['spd'], l['len'], l['name'], l['typ']] for l in L}
-json.dump({'v': 2, 'route': route, 'source': 'MOCT_LINK', 'segs': segs, 'links': {i: info[i] for s in segs for i in s}},
+json.dump({'v': 2, 'route': route, 'source': 'MOCT_LINK', 'base': line['segs'], 'segs': segs, 'links': {i: info[i] for s in segs for i in s}},
           open('data/route/%s_links.json' % route, 'w'), ensure_ascii=False, separators=(',', ':'))
 print(route, '구간', len(segs), '링크', sum(map(len, segs)), '못 찾은 점', miss, '/', tot)
