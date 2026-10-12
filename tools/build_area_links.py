@@ -11,10 +11,9 @@ t = Transformer.from_crs('EPSG:5186', 'EPSG:4326', always_xy=True)
 t2 = Transformer.from_crs('EPSG:4326', 'EPSG:5186', always_xy=True)
 K = 111320 * math.cos(math.radians(37.5)); R = 250
 pts = []
-for f in glob.glob('data/route/*.json'):
-    if f.endswith('_links.json') or f.endswith('_roads.json') or f.endswith('area_links.json'): continue
+for f in glob.glob('data/route/*_links.json'):
     d = json.load(open(f))
-    for sg in d.get('segs', []):
+    for sg in (d.get('lines') or d.get('base') or []):
         for i in range(len(sg) - 1):
             a, b = sg[i], sg[i + 1]; n = max(1, int(math.hypot((a[0] - b[0]) * 110540, (a[1] - b[1]) * K) / 50))
             pts += [(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n) for k in range(n)]

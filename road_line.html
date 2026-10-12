@@ -92,7 +92,7 @@ document.getElementById('go').onclick = async function () {
   out.innerHTML = ''; document.getElementById('dl').style.display = 'none'; result = null;
   msg.textContent = '노선선 불러오는 중...';
   try {
-    var line = await fetch('data/route/' + encodeURIComponent(route) + '.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error('파일 없음 (HTTP ' + x.status + ')'); return x.json(); });
+    var line = await fetch('data/route/' + encodeURIComponent(route) + '_links.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error('파일 없음 (HTTP ' + x.status + ')'); return x.json(); }).then(function (j) { return { segs: j.lines || j.base }; });
     var detail = [], failed = 0, noname = 0;
     for (var i = 0; i < line.segs.length; i++) {
       msg.textContent = '도로명 찾는 중... ' + (i + 1) + ' / ' + line.segs.length + ' 구간 (창을 닫지 마세요)';

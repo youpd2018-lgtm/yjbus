@@ -125,8 +125,8 @@ document.getElementById('go').onclick = async function () {
   if (timer) clearInterval(timer); if (gpsTimer !== null && navigator.geolocation) navigator.geolocation.clearWatch(gpsTimer);
   traffic = {}; trafficAt = 0; curSeg = -1; msg.textContent = '노선 정보 불러오는 중...';
   try {
-    R.line = await fetch('data/route/' + route + '.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
     R.links = await fetch('data/route/' + route + '_links.json', { cache: 'no-cache' }).then(function (x) { if (!x.ok) throw new Error(x.status); return x.json(); });
+    R.line = { segs: R.links.lines || R.links.base };
   } catch (e) { msg.textContent = '노선 파일을 못 받았습니다: ' + e; return; }
   if (parseInt(document.getElementById('man').value, 10) >= 1) { timer = setInterval(tick, 15000); tick(); return; }   // 구간 번호 직접 입력 모드
   if (!navigator.geolocation) { msg.textContent = '이 폰에서는 GPS를 쓸 수 없습니다.'; return; }

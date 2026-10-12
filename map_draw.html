@@ -455,7 +455,7 @@
     if (on) {
       try {
         const j = await fetch('data/route/' + encodeURIComponent(S.name) + '_links.json', { cache: 'no-cache' }).then(x => x.json());
-        const lines = j.lines || (await fetch('data/route/' + encodeURIComponent(S.name) + '.json', { cache: 'no-cache' }).then(x => x.json())).segs;
+        const lines = j.lines || j.base;
         lines.forEach(sg => trafLines.push(new kakao.maps.Polyline({ map, path: sg.map(ll), strokeWeight: 3, strokeColor: '#14b8a6', strokeOpacity: .85 })));
       } catch (e) { msg('소통정보 선을 못 불러왔어요.'); }
     }

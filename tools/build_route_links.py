@@ -13,7 +13,7 @@ route = sys.argv[1]
 base = sys.argv[2] if len(sys.argv) > 2 else '/mnt/project-files/MOCT_LINK'
 t = Transformer.from_crs('EPSG:5186', 'EPSG:4326', always_xy=True)
 t2 = Transformer.from_crs('EPSG:4326', 'EPSG:5186', always_xy=True)
-line = json.load(open('data/route/%s.json' % route))
+line = {'segs': json.load(open('data/route/%s_links.json' % route)).get('base')} if len(sys.argv) < 4 else json.load(open(sys.argv[3]))   # 선 모양은 _links.json 의 base, 새 노선은 3번째 인자로 선 파일 지정
 _p = [q for sg in line['segs'] for q in sg]
 _x, _y = t2.transform([q[1] for q in _p], [q[0] for q in _p])
 BX0, BX1, BY0, BY1 = min(_x) - 1000, max(_x) + 1000, min(_y) - 1000, max(_y) + 1000
