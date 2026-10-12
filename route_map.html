@@ -164,7 +164,7 @@
   let map, route = null, segLines = [], dots = [], meOv = null, ringOv = null;
   let editMode = false, editSel = null, pendingVia = false;
   let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
-  let parentAnchor = '';
+  let parentAnchor = '', parentNext = '';
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
   try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
@@ -590,6 +590,11 @@
       if (ux * vx + uy * vy > 0 || bd < 25) next = best + 1;   // 이미 지났거나 25m 이내면 다음 정류장
     }
     if (lgF && next > hi) next = hi;
+    if (parentNext) {   // 라이브 모달의 '다음 정류장' 이름과 똑같이 맞춘다(같은 이름이 둘이면 내 위치로 계산한 곳에 가까운 쪽)
+      let bi = -1, bg = 1e9;
+      for (let i = lo; i <= hi; i++) if (String(st[i][1]).trim() === parentNext) { const g = Math.abs(i - next); if (g < bg) { bg = g; bi = i; } }
+      if (bi >= 0) next = bi;
+    }
     route.prog = Math.max(0, next - 1);
     nextIdx = next;
     let lg = lgF || legOf(next);
@@ -621,6 +626,7 @@
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
+    if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
