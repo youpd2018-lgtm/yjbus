@@ -677,14 +677,8 @@ function routeMapMessage(ev) {
   // 구차장 마이크는 다른 화면과 똑같이(원래 크기, 손가락으로 옮길 수 있음) 앱 위에 그대로 떠 있다
 }
 
-// 노선지도 버튼: 테스트가 끝날 때까지 관리자(유재필)에게만 보인다 (2026-10-10 재필씨 지시)
+// 노선지도 버튼: 2026-10-12부터 모든 사용자에게 보인다 (재필씨 지시; 모의주행·수정 기능은 지도 화면에서 이미 관리자 전용으로 숨겨져 있음)
 function updateRouteMapButtonVisibility() {
   var btn = document.querySelector('.nav-map-btn');
-  if (!btn) return;
-  var nm = '';
-  try { var u = JSON.parse(localStorage.getItem('yeongjong_logged_user') || 'null'); if (u && u.name) nm = u.name; } catch (e) { }
-  if (!nm) { try { nm = localStorage.getItem('loggedInUser') || ''; if (nm.charAt(0) === '{') nm = (JSON.parse(nm) || {}).name || ''; } catch (e) { } }
-  btn.style.display = String(nm).indexOf('유재필') !== -1 ? '' : 'none';
+  if (btn && btn.style.display === 'none') btn.style.display = '';
 }
-document.addEventListener('DOMContentLoaded', updateRouteMapButtonVisibility);
-setInterval(updateRouteMapButtonVisibility, 2000);
