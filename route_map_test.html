@@ -934,6 +934,14 @@
       type: 'rm-live', time: '00:' + mm + ':' + ss, delay: late ? '+1:20' : '-0:40',
       dc: late ? 'rgb(239,68,68)' : 'rgb(52,199,89)', db: late ? 'rgba(239,68,68,.15)' : 'rgba(52,199,89,.15)', dbd: late ? 'rgb(239,68,68)' : 'rgb(52,199,89)', anchor: '석남역' } }));
   }, 1000);
+  // 다음 정류장 이름·거리도 가짜: 거리가 줄다가 0이 되면 다음 정류장으로 넘어감
+  var names = ['청라하늘대교입구', '청라복합문화센터', '청라호수공원(남측)', '해찬나래사거리(환승정류소)'];
+  setInterval(function () {
+    var el = Math.floor((Date.now() - t0) / 1000), seg = Math.floor(el / 60), d = 1250 - (el % 60) * 20;
+    var n = document.getElementById('nextName'), ds = document.getElementById('nextDist');
+    if (n) n.textContent = names[seg % names.length];
+    if (ds) ds.textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m';
+  }, 500);
 })();
 </script>
 </body>
