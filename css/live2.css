@@ -239,3 +239,11 @@ html.lv2 .yb3-gap-val { color: #94a3b8; }
     html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-right { gap: 14px; justify-content: flex-end; align-self: end; }
     html.lv2 #yb3Gap:not([hidden]) { grid-column: 2; grid-row: 4; align-self: start; margin: 4px 0 0; }
 }
+
+/* 가로 화면(재수정): 배차 간격 박스를 오른쪽 묶음 안으로 넣고, 묶음 전체를 가운데에 두며 줄 간격을 넉넉히 */
+@media (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #yb3 .yb3-gauge { grid-row: 3; }
+    html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-right { gap: 22px; justify-content: center; align-self: stretch; }
+    html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-seq { gap: 12px; }
+    html.lv2 #yb3 .yb3-right #yb3Gap:not([hidden]) { grid-column: auto; grid-row: auto; align-self: auto; margin: 0; }
+}
