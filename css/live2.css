@@ -187,3 +187,6 @@ html.lv2 .yb3-gap-role { display: flex; flex-direction: column; align-items: fle
 html.lv2 .yb3-gap-role i { font-style: normal; font-size: 13px; font-weight: 800; color: #94a3b8; }
 html.lv2 .yb3-gap-role b { margin-left: 0; font-size: 15px; font-weight: 800; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 5.5em; }
 html.lv2 .yb3-gap-val { font-size: 38px; font-weight: 900; line-height: 1; }
+/* 앞차 이름 20분 | 21분 이름 뒷차 : 오른쪽 칸은 좌우를 뒤집어 분이 가운데 선 쪽에 오게 함 */
+html.lv2 .yb3-gap-side + .yb3-gap-side { flex-direction: row-reverse; }
+html.lv2 .yb3-gap-side + .yb3-gap-side .yb3-gap-role { align-items: flex-end; text-align: right; }
