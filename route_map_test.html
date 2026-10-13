@@ -343,8 +343,8 @@
     if (d.time) $('cdTime').textContent = d.time;
     if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
-    $('anchorName').textContent = d.anchor || ''; $('anchorTime').textContent = d.anchorTime || '';
-    $('anchorCard').classList.toggle('on', !!(d.anchor && d.anchorTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
+    $('anchorName').textContent = d.midName || ''; $('anchorTime').textContent = d.midTime || '';
+    $('anchorCard').classList.toggle('on', !!(d.midName && d.midTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, true); }
@@ -516,7 +516,7 @@
     var late = ['+2','-1','+7','0'][Math.floor(Date.now() / 5000) % 4] === '+7';
     window.dispatchEvent(new MessageEvent('message', { origin: location.origin, data: {
       type: 'rm-live', time: '00:' + mm + ':' + ss, delay: ['+2','-1','+7','0'][Math.floor(Date.now() / 5000) % 4],
-      dc: '#fff', db: late ? 'rgba(245,158,11,.2)' : 'rgba(52,199,89,.2)', dbd: late ? '#f59e0b' : '#34c759', anchor: '석남역', anchorTime: '08:45' } }));
+      dc: '#fff', db: late ? 'rgba(245,158,11,.2)' : 'rgba(52,199,89,.2)', dbd: late ? '#f59e0b' : '#34c759', anchor: '석남역', midName: '석남역', midTime: '08:45' } }));
   }, 1000);
   // 다음 정류장 이름·거리도 가짜: 거리가 줄다가 0이 되면 다음 정류장으로 넘어감
   var names = ['청라하늘대교입구', '청라복합문화센터', '청라호수공원(남측)', '해찬나래사거리(환승정류소)'];

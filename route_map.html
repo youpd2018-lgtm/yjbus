@@ -343,8 +343,8 @@
     if (d.time) $('cdTime').textContent = d.time;
     if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
-    $('anchorName').textContent = d.anchor || ''; $('anchorTime').textContent = d.anchorTime || '';
-    $('anchorCard').classList.toggle('on', !!(d.anchor && d.anchorTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
+    $('anchorName').textContent = d.midName || ''; $('anchorTime').textContent = d.midTime || '';
+    $('anchorCard').classList.toggle('on', !!(d.midName && d.midTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, true); }
