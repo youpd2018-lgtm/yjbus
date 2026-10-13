@@ -52,15 +52,15 @@
   #top button.on { background: #2563eb; border-color: #2563eb; }
   #top select { flex: 1; min-width: 0; }
   #tip { display: none; position: absolute; left: 12px; right: 12px; top: calc(110px + var(--sat)); z-index: 40; background: rgba(15,23,42,.92); border: 1.5px solid rgba(56,189,248,.6); border-radius: 14px; padding: 14px; box-shadow: 0 6px 22px rgba(0,0,0,.6); text-align: center; }
-  body.nonadmin #tip { top: calc(70px + var(--sat)); }
+  body.nonadmin #tip { top: calc(86px + var(--sat)); }
   #tip .tt { font-size: 18px; font-weight: 800; line-height: 1.4; color: #fff; }
   #tip .tb { display: flex; gap: 8px; margin-top: 12px; }
   #tip button { flex: 1; font-size: 15px; font-weight: 700; padding: 10px 6px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; }
   #tip button#tipNever { background: #0369a1; border-color: #0369a1; }
   #rot { display: none; position: fixed; inset: 0; z-index: 99; background: #0f172a; color: #fff; font-size: 20px; font-weight: 800; align-items: center; justify-content: center; }
   @media (orientation: landscape) and (max-height: 520px) { #rot { display: flex; } }
-  body.nonadmin #view { top: calc(52px + var(--sat)); }
-  body.nonadmin #msg { top: calc(62px + var(--sat)); }
+  body.nonadmin #view { top: calc(68px + var(--sat)); }
+  body.nonadmin #msg { top: calc(78px + var(--sat)); }
   #view { position: absolute; top: calc(96px + var(--sat)); bottom: 0; left: 0; right: 0; overflow: hidden; }
   #map { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; transition: transform .9s linear; will-change: transform; transform-origin: 50% 50%; }
   #card { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 20; background: linear-gradient(180deg, rgba(6,78,59,.9) 0%, rgba(2,44,34,.92) 100%); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 2px solid rgba(110,231,183,.55); box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); border-radius: 14px; padding: 10px 14px; }
@@ -86,11 +86,11 @@
   #card #rowB { display: flex; align-items: center; gap: 10px; margin-top: 0; min-height: 0; flex-wrap: nowrap; }
   #card #cdTime { font-size: 38px !important; line-height: 44px; }
   #rowA { position: fixed; right: 8px; top: calc(96px + var(--sat) + (100vh - 96px - var(--sat)) * 0.6 + 44px); z-index: 20; box-sizing: border-box; width: max-content; max-width: calc(100vw - 16px); align-items: flex-start; text-align: left; padding: 6px 12px 8px; border-radius: 14px; background: linear-gradient(180deg, rgba(6,78,59,.92) 0%, rgba(2,44,34,.94) 100%); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 2px solid rgba(110,231,183,.55); box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); }   /* 2026-10-12: 아래 시간 박스와 같은 초록 카드, 거리·이름 가운데 정렬 */
-  body.nonadmin #rowA { top: calc(52px + var(--sat) + (100vh - 52px - var(--sat)) * 0.6 + 44px); }
+  body.nonadmin #rowA { top: calc(68px + var(--sat) + (100vh - 68px - var(--sat)) * 0.6 + 44px); }
   #rowA .nm { box-sizing: border-box; padding: 0; text-align: left; }   /* 글자 테두리·번짐이 박스 끝에서 칼같이 잘리지 않게 안쪽 여백 */
   #rowA .ds { padding: 0; text-align: left; }
   #spd { position: fixed; left: 12px; top: calc(96px + var(--sat) + (100vh - 96px - var(--sat)) * 0.4 - 10px); transform: translateY(-50%); z-index: 20; background: none; border: 0; padding: 0; box-shadow: none; font-family: var(--app-font); color: #e2e8f0; -webkit-text-stroke: 2px #022C22; paint-order: stroke fill; text-shadow: 0 0 3px #022C22, 0 0 6px #064E3B, 0 1px 3px #022C22; }   /* 2026-10-13: 박스·km/h 없이 숫자만 */
-  body.nonadmin #spd { top: calc(52px + var(--sat) + (100vh - 52px - var(--sat)) * 0.4 - 10px); }
+  body.nonadmin #spd { top: calc(68px + var(--sat) + (100vh - 68px - var(--sat)) * 0.4 - 10px); }
   #spd b { font-size: 29px; line-height: 34px; font-weight: 800; min-width: 2.2em; text-align: left; font-variant-numeric: tabular-nums; }
   .mebus { width: 50px; height: 50px; margin: -25px 0 0 -25px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); transition: transform .3s linear; }
   .mebus svg { width: 100%; height: 100%; display: block; }
@@ -121,6 +121,12 @@
   #rowA { right: auto; left: calc(100vw - 8px - 205px); }   /* 글자가 줄면 왼쪽 끝은 고정, 오른쪽이 줄어듦 */
   #cdTime { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; text-align: left; }
   #card #rowB { gap: 24px; }
+
+  /* 2026-10-13: 노선 선택 칸은 없애고(오늘 근무 노선이 자동으로 열림), 위쪽 버튼 두 개를 양쪽에 크게 */
+  #route { display: none; }
+  #top { padding: 6px 8px 8px; padding-top: calc(6px + var(--sat)); gap: 10px; }
+  #top button { flex: 1 1 0; font-size: 20px; font-weight: 800; padding: 14px 6px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  #top button svg { width: 22px; height: 22px; margin: 0 !important; vertical-align: 0 !important; }
 </style>
 </head>
 <body>
