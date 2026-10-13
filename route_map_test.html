@@ -402,10 +402,13 @@
     $('spdNum').textContent = speedKmh != null ? Math.round(speedKmh) : '-';
     if (!fromParent) lastOwnFix = Date.now();
     if (!map) { me = { lat, lon, speed: speedKmh }; pendingFix = [lat, lon, speedKmh, hd]; return; }   // 지도가 아직 안 떴으면 위치만 기억(지도 뜬 뒤 다시 처리)
+    // 서 있을 때(속도 4km/h 미만) GPS가 조금씩 흔들려도 내 위치는 그 자리에 고정: 20m 넘게 움직여야 새 위치로 인정
+    if (me && meOv && (speedKmh == null || speedKmh < 4) && distM(me.lat, me.lon, lat, lon) < 20) { me.speed = speedKmh; return; }
     const prev = me;
     me = { lat, lon, speed: speedKmh };
-    if (hd != null && !isNaN(hd) && (speedKmh == null || speedKmh > 3)) heading = hd;
-    else if (prev && distM(prev.lat, prev.lon, lat, lon) > 5) heading = bearing(prev.lat, prev.lon, lat, lon);
+    // 방향도 달릴 때(5km/h 이상)만 바꿔서, 서 있을 때 지도가 빙글빙글 돌지 않게
+    if (hd != null && !isNaN(hd) && speedKmh != null && speedKmh >= 5) heading = hd;
+    else if (prev && (speedKmh == null || speedKmh >= 5) && distM(prev.lat, prev.lon, lat, lon) > 10) heading = bearing(prev.lat, prev.lon, lat, lon);
     const ll = new kakao.maps.LatLng(lat, lon);
     const firstFix = !meOv;
     if (!meOv) { const el = document.createElement('div'); el.className = 'mebus'; el.innerHTML = BUS_SVG; meOv = new kakao.maps.CustomOverlay({ map, position: ll, content: el, zIndex: 9 }); disp = { lat, lon }; }
