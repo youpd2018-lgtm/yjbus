@@ -134,8 +134,7 @@
 <div id="top">
   <button id="btnBack" onclick="if (window.parent !== window) parent.postMessage({ type: 'rm-close' }, location.origin); else location.href = 'index.html';">← 앱</button>
   <select id="route"></select>
-  <button id="btnFree">지도 이동</button>
-  <button id="btnPan">내 위치</button>
+  <button id="btnPan">지도 이동</button>
 </div>
 <div id="msg"></div>
 <div id="tip">
@@ -483,17 +482,15 @@
   function setNav(on) {
     follow = on; headUp = on;
     if (panTimer) { clearTimeout(panTimer); panTimer = null; }
-    $('btnFree').classList.toggle('on', !on);   // 지도 이동 중이면 [지도 이동]이 켜짐
-    $('btnPan').classList.toggle('on', on);     // 내 위치를 따라가는 중이면 [내 위치]가 켜짐
+    $('btnPan').textContent = on ? '지도 이동' : '내 위치';   // 같은 버튼: 따라가는 중이면 [지도 이동], 지도를 옮기는 중이면 [내 위치]
+    $('btnPan').classList.toggle('on', !on);
     if (map) map.setDraggable(!(on && me));
     if (!on) { bakePan(); applyRotate(); void $('map').offsetWidth; $('map').style.transition = ''; }
     else if (me && map) followView(true);
     else applyRotate();
   }
   function panLater() { if (follow) return; if (panTimer) clearTimeout(panTimer); panTimer = setTimeout(() => setNav(true), 10000); }
-  $('btnFree').onclick = () => { setNav(false); panLater(); };
-  $('btnPan').onclick = () => setNav(true);
-  $('btnPan').classList.add('on');   // 처음에는 내 위치를 따라가는 상태
+  $('btnPan').onclick = () => { if (follow) { setNav(false); panLater(); } else setNav(true); };
   $('route').onchange = () => { me = null; showRoute($('route').value); };
 
   // 둘째 줄이 숫자 폭 때문에 흔들리지 않게: 시간카운트·오차배지 칸 너비를 가장 넓은 숫자 기준으로 고정(글꼴이 뜬 뒤에 한 번 잰다)
