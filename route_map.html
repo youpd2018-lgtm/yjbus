@@ -72,7 +72,10 @@
   #cdTime { font-size: 42px !important; line-height: 46px; flex: 0 0 auto; text-align: left; white-space: nowrap; }
   #card .big { font-size: 24px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
   #cdBadge { flex: 0 0 auto; white-space: nowrap; min-width: 52px; text-align: center; padding: 2px 10px; border-radius: 12px; border: 2px solid #34c759; background: rgba(52,199,89,.15); color: #34c759; }
-  #anchorName { flex: 1 1 0; min-width: 0; font-size: 18px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #anchorCard { display: none; position: absolute; left: 0; bottom: calc(100% + 6px); max-width: 60%; flex-direction: column; align-items: flex-start; padding: 5px 12px 6px; border-radius: 14px; background: linear-gradient(180deg, rgba(6,78,59,.92) 0%, rgba(2,44,34,.94) 100%); border: 2px solid rgba(110,231,183,.55); box-shadow: 0 4px 18px rgba(0,0,0,.55); font-family: var(--app-font); }
+  #anchorCard.on { display: flex; }
+  #anchorName { max-width: 100%; font-size: 15px; line-height: 20px; font-weight: 700; color: #fed7aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #anchorTime { font-size: 26px; line-height: 30px; font-weight: 800; color: #FDE047; font-variant-numeric: tabular-nums; }
   body.standalone #cdTime, body.standalone #cdBadge { display: none; }
   #card .sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   #msg { position: absolute; top: calc(106px + var(--sat)); left: 8px; right: 8px; z-index: 20; font-size: 13px; color: #fbbf24; white-space: pre-wrap; }
@@ -82,7 +85,6 @@
   #card { left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 12px); max-width: 560px; bottom: calc(16px + env(safe-area-inset-bottom)); padding: 10px 8px; box-sizing: border-box; }
   #card #rowB { display: flex; align-items: center; gap: 10px; margin-top: 0; min-height: 0; flex-wrap: nowrap; }
   #card #cdTime { font-size: 38px !important; line-height: 44px; }
-  #card #anchorName { flex: 1 1 0; min-width: 5.6em; max-width: none; }
   #rowA { position: fixed; right: 8px; top: calc(96px + var(--sat) + (100vh - 96px - var(--sat)) * 0.6 + 24px); z-index: 20; box-sizing: border-box; width: max-content; max-width: calc(100vw - 16px); align-items: flex-start; text-align: left; padding: 6px 12px 8px; border-radius: 14px; background: linear-gradient(180deg, rgba(6,78,59,.92) 0%, rgba(2,44,34,.94) 100%); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border: 2px solid rgba(110,231,183,.55); box-shadow: 0 4px 18px rgba(0,0,0,.55); text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.75); }   /* 2026-10-12: 아래 시간 박스와 같은 초록 카드, 거리·이름 가운데 정렬 */
   body.nonadmin #rowA { top: calc(52px + var(--sat) + (100vh - 52px - var(--sat)) * 0.6 + 24px); }
   #rowA .nm { box-sizing: border-box; padding: 0; text-align: left; }   /* 글자 테두리·번짐이 박스 끝에서 칼같이 잘리지 않게 안쪽 여백 */
@@ -116,10 +118,10 @@
 <div id="spd"><b id="spdNum">-</b><small>km/h</small></div>
 <div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
 <div id="card">
+  <div id="anchorCard"><span id="anchorName"></span><b id="anchorTime"></b></div>
   <div id="rowB">
     <span id="cdTime" class="big">--:--:--</span>
     <span id="cdBadge" class="big badge">0</span>
-    <span id="anchorName"></span>
   </div>
   <div class="sub" id="sub" style="display:none"></div>
 </div>
@@ -324,7 +326,6 @@
     $('nextName').textContent = name6(s[1]);
     $('nextDist').textContent = d >= 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const anc = (route.anchors || []).slice().sort((x, y) => x - y).find(a => a > 0 && a >= next);
-    $('anchorName').textContent = parentAnchor || st[anc != null ? anc : st.length - 1][1];
     $('sub').textContent = `${route.name}  ·  ${next + 1} / ${st.length}번째 정류장` + (me.speed != null ? `  ·  ${me.speed} km/h` : '');
     dots.forEach((ov, i) => { ov._el.className = 'dot' + (route.anchors.includes(i) ? ' anchor' : '') + (i < next ? ' past' : '') + (i === next ? ' next' : ''); });
   }
@@ -341,7 +342,9 @@
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
     if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
-    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; $('anchorName').textContent = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
+    if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
+    $('anchorName').textContent = d.anchor || ''; $('anchorTime').textContent = d.anchorTime || '';
+    $('anchorCard').classList.toggle('on', !!(d.anchor && d.anchorTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
     const bd = $('cdBadge'); bd.textContent = d.delay || '0';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다
     if (d.gps && d.gps.at !== lastParentFix && Date.now() - lastOwnFix > 3000) { lastParentFix = d.gps.at; onPos(d.gps.lat, d.gps.lon, d.gps.spd, d.gps.hd, true); }

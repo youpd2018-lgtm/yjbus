@@ -658,6 +658,8 @@ function pushRouteMapLive() {
   try {
     var tb = document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target .ios-seq-name');
     if (tb && tb.innerText.trim() && tb.innerText.trim() !== '-') msg.anchor = tb.innerText.trim();
+    var tt = document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target .ios-seq-time');
+    if (tt && /\d{1,2}:\d{2}/.test(tt.innerText)) msg.anchorTime = tt.innerText.match(/\d{1,2}:\d{2}/)[0];   // 거점 시간은 시:분만
   } catch (e) { }
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
   try {
