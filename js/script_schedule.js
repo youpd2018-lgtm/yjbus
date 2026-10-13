@@ -686,7 +686,7 @@ function pushRouteMapLive() {
       var an = ab ? ab.querySelector('.ios-seq-name') : null, at = ab ? ab.querySelector('.ios-seq-time') : null;
       var anT = an ? an.innerText.trim() : '', atM = at ? at.innerText.match(/\d{1,2}:\d{2}/) : null;
       var ac = at ? (at.style.color || '').replace(/\s+/g, '') : '';
-      anc.push({ n: (anT && anT !== '-') ? anT : '', t: atM ? atM[0] : '', c: (ac === 'rgb(251,191,36)' || ac === 'rgb(239,68,68)' || ac === 'rgb(56,189,248)') ? ac : '' });
+      anc.push({ n: (anT && anT !== '-') ? anT : '', t: atM ? atM[0] : '', on: !!(ab && ab.classList.contains('active-target')), c: (ac === 'rgb(251,191,36)' || ac === 'rgb(239,68,68)' || ac === 'rgb(56,189,248)') ? ac : '' });
     }
     msg.anc = anc;
   } catch (e) { }
