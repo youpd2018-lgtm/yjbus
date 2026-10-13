@@ -226,3 +226,8 @@ html.lv2 .yb3-gap-val { color: #94a3b8; }
     html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-right { gap: 10px; }
     html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-seq { gap: 8px; }
 }
+
+/* 가로 화면: 오른쪽 단추 3개를 더 오른쪽으로, 위아래 간격 2배 (잘못 눌림 방지) */
+@media (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #liveModal .ios-footer { gap: 20px !important; margin-right: -14px !important; }
+}
