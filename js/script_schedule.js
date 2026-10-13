@@ -648,6 +648,15 @@ function closeRouteMap() {
 function pushRouteMapLive() {
   if (!_rm || !_rm.frame.contentWindow) return;
   var t = document.getElementById('liveCardTimeLeft'), b = document.getElementById('bisDelayBadge');
+  // 오차 배지가 비어 있으면(값을 못 가져온 상태) 모달의 현재 정류장 시간으로 다시 계산해 채운다: 지도를 껐다 켜지 않아도 자동으로 나오게
+  try {
+    var bt = b ? b.innerText.trim() : '';
+    if (b && (bt === '' || bt === '-') && typeof syncLiveDelayBadgeWithTargetTime === 'function') {
+      var ct = document.getElementById('trafficStopTimeNext'), cn = document.getElementById('trafficStopNameNext');
+      var ctx = ct ? ct.innerText.replace(/\s+/g, '').trim() : '';
+      if (/^\d{1,2}:\d{2}/.test(ctx)) syncLiveDelayBadgeWithTargetTime(ctx, cn ? cn.innerText.trim() : '');
+    }
+  } catch (e) { }
   var msg = { type: 'rm-live', time: t ? t.innerText.trim() : '', delay: '', dc: '', db: '', dbd: '' };
   if (b) {
     var cs = getComputedStyle(b);
