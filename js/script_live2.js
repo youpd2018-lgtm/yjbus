@@ -164,6 +164,21 @@
     for (var i = 1; i <= 3; i++) { var m = toMin(r['time' + i]); if (m !== null) return { t: m, place: (r.places || [])[i - 1] || '', s: String(r['time' + i]) }; }
     return null;
   }
+  // 그 순번의 그 회차를 오전/오후 중 누가 운전하는지: 교대(노란색) 회차까지가 오전, 그 뒤가 오후 (기존 근무 계산과 같은 규칙)
+  function driverName(route, seqNum, roundIdx, rounds, date) {
+    try {
+      var yi = -1;
+      for (var i = 0; i < rounds.length && yi < 0; i++) for (var c = 1; c <= 3; c++) if (rounds[i]['c' + c] === 'yellow') { yi = i; break; }
+      var cut = yi !== -1 ? yi : Math.min(2, rounds.length - 1);
+      var part = roundIdx <= cut ? '오전' : '오후';
+      var rows = (JSON.parse(localStorage.getItem('yb_daily_roster') || 'null') || {}).rows || [];
+      for (var j = 0; j < rows.length; j++) {
+        var r = rows[j];   // [날짜, 이름, 근무형태, 노선, 차량, 순번, 근무시간]
+        if (r[0] === date && r[3] === route && r[5] === seqNum + '순번' && r[6] === part) return r[1];
+      }
+    } catch (e) { }
+    return '';
+  }
   function syncGap() {
     var box = $('yb3Gap'); if (!box) return;
     var hide = function () { if (!box.hidden) box.hidden = true; gapKey = ''; };
@@ -175,7 +190,8 @@
       var trip = (typeof window.ybCurrentTrip === 'function' && window.ybCurrentTrip()) || 0;
       var mm = String(window.currentTripRoundNumber || '').match(/(\d+)\s*회차/); if (mm) trip = +mm[1];
       if (!trip) return hide();
-      var key = [inp.value, sd.route, sd.seq, trip].join('|');
+      var rosterAt = 0; try { rosterAt = (JSON.parse(localStorage.getItem('yb_daily_roster') || 'null') || {}).fetchedAt || 0; } catch (e) { }
+      var key = [inp.value, sd.route, sd.seq, trip, rosterAt].join('|');
       if (key === gapKey) return;
       var mine = (window.ytTimetableRounds(sd.route, sd.seq) || [])[trip - 1];
       var md = mine && depOf(mine); if (!md) return hide();
@@ -183,17 +199,23 @@
       var front = null, back = null;
       for (var k = 1; k <= n; k++) {
         if (String(k) === mySeq) continue;
-        (window.ytTimetableRounds(sd.route, k) || []).forEach(function (r) {
+        var rounds = window.ytTimetableRounds(sd.route, k) || [];
+        rounds.forEach(function (r, ri) {
           var d = depOf(r); if (!d || d.place !== md.place) return;
-          if (d.t <= md.t) { if (front === null || d.t > front) front = d.t; }
-          else if (back === null || d.t < back) back = d.t;
+          var who = { t: d.t, seq: k, ri: ri, rounds: rounds };
+          if (d.t <= md.t) { if (!front || d.t > front.t) front = who; }
+          else if (!back || d.t < back.t) back = who;
         });
       }
-      if (front === null && back === null) return hide();
+      if (!front && !back) return hide();
       gapKey = key;
-      setText($('yb3GapFront'), front === null ? '-' : (md.t - front) + '분 전');
-      setText($('yb3GapBack'), back === null ? '-' : (back - md.t) + '분 후');
-      setText($('yb3GapMe'), md.s.slice(0, 5));
+      var show = function (o, valId, nmId, diff) {
+        if (!o) { setText($(valId), '-'); setText($(nmId), ''); return; }
+        setText($(valId), diff(o.t) + '분');
+        setText($(nmId), driverName(sd.route, o.seq, o.ri, o.rounds, inp.value) || (o.seq + '순번'));
+      };
+      show(front, 'yb3GapFront', 'yb3GapFrontNm', function (t) { return md.t - t; });
+      show(back, 'yb3GapBack', 'yb3GapBackNm', function (t) { return t - md.t; });
       box.hidden = false;
     } catch (e) { }
   }

@@ -177,3 +177,4 @@ html.lv2 .yb3-gap-val { font-size: 26px; font-weight: 900; color: #fff; font-var
 html.lv2 .yb3-gap-me { display: flex; flex-direction: column; align-items: center; color: #38bdf8; font-size: 15px; font-weight: 800; }
 html.lv2 .yb3-gap-me iconify-icon { font-size: 30px; }
 @media (orientation: landscape) and (max-height: 520px) { html.lv2 #yb3Gap { display: none !important; } }
+html.lv2 .yb3-gap-role b { color: #fff; font-weight: 900; margin-left: 4px; }
