@@ -127,6 +127,13 @@
   #top { padding: 6px 8px 8px; padding-top: calc(6px + var(--sat)); gap: 10px; }
   #top button { flex: 1 1 0; font-size: 20px; font-weight: 800; padding: 14px 6px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
   #top button svg { width: 22px; height: 22px; margin: 0 !important; vertical-align: 0 !important; }
+
+  /* 2026-10-13(3): 거점 박스는 아래 카운트 박스와 분리(10px 간격), 이름 색은 라이브 모달과 같게(가리키는 거점이면 흰색 굵게, 아니면 흐린 흰색) */
+  #card.tab { border-top-left-radius: 14px; }
+  #anchorCard { bottom: calc(100% + 10px); border-bottom: 2px solid rgba(110,231,183,.55); border-radius: 14px; background: linear-gradient(180deg, rgb(6,78,59) 0%, rgb(2,44,34) 100%); box-shadow: 0 4px 18px rgba(0,0,0,.55); }
+  #anchorCard::after { display: none; }
+  #anchorName { color: rgba(255,255,255,.65); font-weight: 700; }
+  #anchorCard.act #anchorName { color: #fff; font-weight: 800; }
 </style>
 </head>
 <body>
@@ -372,6 +379,7 @@
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
     $('anchorName').textContent = d.midName || ''; $('anchorTime').textContent = d.midTime || '';
     $('anchorCard').classList.toggle('on', !!(d.midName && d.midTime));
+    $('anchorCard').classList.toggle('act', !!d.midOn);
     $('card').classList.toggle('tab', !!(d.midName && d.midTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
     const bd = $('cdBadge'); bd.textContent = d.delay || '-';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다

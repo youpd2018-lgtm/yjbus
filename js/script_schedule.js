@@ -664,7 +664,7 @@ function pushRouteMapLive() {
     if (mBox) {
       var mn = mBox.querySelector('.ios-seq-name'), mt = mBox.querySelector('.ios-seq-time');
       var mnT = mn ? mn.innerText.trim() : '', mtM = mt ? mt.innerText.match(/\d{1,2}:\d{2}/) : null;
-      if (mnT && mnT !== '-' && mtM) { msg.midName = mnT; msg.midTime = mtM[0]; }
+      if (mnT && mnT !== '-' && mtM) { msg.midName = mnT; msg.midTime = mtM[0]; msg.midOn = mBox.classList.contains('active-target'); }
     }
   } catch (e) { }
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
