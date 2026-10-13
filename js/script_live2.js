@@ -191,15 +191,13 @@
       var mm = String(window.currentTripRoundNumber || '').match(/(\d+)\s*회차/); if (mm) trip = +mm[1];
       if (!trip) return hide();
       var rosterAt = 0; try { rosterAt = (JSON.parse(localStorage.getItem('yb_daily_roster') || 'null') || {}).fetchedAt || 0; } catch (e) { }
-      var _t2 = null; try { var _m = ((window.ytTimetableRounds(sd.route, sd.seq) || [])[trip - 1] || {}).time2; _t2 = toMin(_m); } catch (e) { }
-      var key = [inp.value, sd.route, sd.seq, trip, rosterAt, (trip === 1 || (_t2 !== null && new Date().getHours() * 60 + new Date().getMinutes() >= _t2)) ? 'b' : 'd'].join('|');
+      var key = [inp.value, sd.route, sd.seq, trip, rosterAt, trip === 1 ? 'b' : 'd'].join('|');
       if (key === gapKey) return;
       var mine = (window.ytTimetableRounds(sd.route, sd.seq) || [])[trip - 1];
       var md = mine && depOf(mine); if (!md) return hide();
       // 1회차만: 출발지(차고지 등)가 서로 달라도(예: 11순번 1회차는 서희스타옆문 출발) 기점(time2) 통과 시각으로 앞·뒷차를 본다
-      // 2회차 이후도 내 기점 시각이 지나면 기점 기준으로 한 번 다시 계산
-      var base1 = false, nowM = new Date().getHours() * 60 + new Date().getMinutes();
-      if (toMin(mine.time2) !== null && (mine.places || [])[1] && (trip === 1 || nowM >= toMin(mine.time2))) { md = { t: toMin(mine.time2), place: mine.places[1] }; base1 = true; }
+      var base1 = false;
+      if (toMin(mine.time2) !== null && (mine.places || [])[1] && trip === 1) { md = { t: toMin(mine.time2), place: mine.places[1] }; base1 = true; }
       var mySeq = String(sd.seq).replace(/\D/g, ''), n = typeof window.ytTimetableSeqCount === 'function' ? window.ytTimetableSeqCount(sd.route) : 0;
       var front = null, back = null;
       for (var k = 1; k <= n; k++) {
