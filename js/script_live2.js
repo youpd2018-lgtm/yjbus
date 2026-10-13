@@ -157,6 +157,47 @@
     o.observe(el, cfg);
   }
 
+  // ---- 앞차·뒷차 출발 간격: 같은 노선·대수의 다른 순번 시간표에서, 내 지금 회차와 같은 출발지의 출발 시각을 비교 ----
+  var gapKey = '';
+  function toMin(t) { var m = String(t || '').match(/^(\d+):(\d+)/); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function depOf(r) {   // 회차의 출발 = 시간이 있는 첫 칸(출발→기점→도착 순)과 그 칸의 장소
+    for (var i = 1; i <= 3; i++) { var m = toMin(r['time' + i]); if (m !== null) return { t: m, place: (r.places || [])[i - 1] || '', s: String(r['time' + i]) }; }
+    return null;
+  }
+  function syncGap() {
+    var box = $('yb3Gap'); if (!box) return;
+    var hide = function () { if (!box.hidden) box.hidden = true; gapKey = ''; };
+    try {
+      var inp = $('searchDate'); if (!inp || !inp.value || typeof getDriverKey !== 'function' || typeof window.ytTimetableRounds !== 'function') return hide();
+      var sv = localStorage.getItem(getDriverKey('sched_' + inp.value)); if (!sv) return hide();
+      var sd = JSON.parse(sv);
+      if (!sd || !sd.route || !sd.seq || sd.workType === '휴무' || sd.workType === '미등록') return hide();
+      var trip = (typeof window.ybCurrentTrip === 'function' && window.ybCurrentTrip()) || 0;
+      var mm = String(window.currentTripRoundNumber || '').match(/(\d+)\s*회차/); if (mm) trip = +mm[1];
+      if (!trip) return hide();
+      var key = [inp.value, sd.route, sd.seq, trip].join('|');
+      if (key === gapKey) return;
+      var mine = (window.ytTimetableRounds(sd.route, sd.seq) || [])[trip - 1];
+      var md = mine && depOf(mine); if (!md) return hide();
+      var mySeq = String(sd.seq).replace(/\D/g, ''), n = typeof window.ytTimetableSeqCount === 'function' ? window.ytTimetableSeqCount(sd.route) : 0;
+      var front = null, back = null;
+      for (var k = 1; k <= n; k++) {
+        if (String(k) === mySeq) continue;
+        (window.ytTimetableRounds(sd.route, k) || []).forEach(function (r) {
+          var d = depOf(r); if (!d || d.place !== md.place) return;
+          if (d.t <= md.t) { if (front === null || d.t > front) front = d.t; }
+          else if (back === null || d.t < back) back = d.t;
+        });
+      }
+      if (front === null && back === null) return hide();
+      gapKey = key;
+      setText($('yb3GapFront'), front === null ? '-' : (md.t - front) + '분 전');
+      setText($('yb3GapBack'), back === null ? '-' : (back - md.t) + '분 후');
+      setText($('yb3GapMe'), md.s.slice(0, 5));
+      box.hidden = false;
+    } catch (e) { }
+  }
+
   function init() {
     if (!window.ybLv2On && !document.documentElement.classList.contains('lv2')) return;
     var gps = $('gpsAdminTrigger'), slot = $('yb3GpsSlot'), gauge = $('yb3Gauge');
@@ -180,9 +221,9 @@
     var flow = document.querySelector('#liveTrafficStopBox .tf-flow');
     if (flow) watch(flow, syncPill, ['data-s']);
 
-    syncTop(); syncMain(); syncSeq(); syncStops(); syncPill();
+    syncTop(); syncMain(); syncSeq(); syncStops(); syncPill(); syncGap(); setInterval(syncGap, 5000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  window.ybLv2Refresh = function () { syncTop(); syncMain(); syncSeq(); syncStops(); syncPill(); };
+  window.ybLv2Refresh = function () { syncTop(); syncMain(); syncSeq(); syncStops(); syncPill(); syncGap(); };
 })();

@@ -277,6 +277,20 @@ function loadLatestColleagueMessage() {
         }
     }
     setInterval(checkGpsStale, 3000);
+    // 위치는 잡혔는데 정류장이 아직 안 잡힌 채(점선 --:--:--)로 남는 경우를 막는다:
+    // 위치가 움직이지 않으면 새 위치 알림이 안 오므로, 2초마다 마지막 위치로 정류장 찾기를 다시 해 본다
+    setInterval(function () {
+        try {
+            if ((window.simState && window.simState.active) || !isLiveModalOpen()) return;
+            const g = window.lastGpsPosition;
+            if (!g || Date.now() - new Date(g.time).getTime() > 20000) return;
+            if (typeof window.lastPassedStopIndex === 'number' && window.lastPassedStopIndex >= 0) return;   // 이미 정류장을 잡았으면 할 일 없음
+            const mc = window.standardMasterCache || window.currentTripMasterCache || [];
+            if (!mc.length) return;
+            window._ybCatchUp = true;
+            try { onGpsLocationUpdate(g.lat, g.lon, g.speedKmh, window._gpsDuty); } finally { window._ybCatchUp = false; }
+        } catch (e) { }
+    }, 2000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkGpsStale(); });
 
     // GPS 버튼을 눌렀을 때: 재연결 창
@@ -377,7 +391,7 @@ function loadLatestColleagueMessage() {
 
     // 🎯 [핵심] GPS 위치 수신 시 정류장 통과 판정 및 오차시간 확정 잠금(Lock)
     function onGpsLocationUpdate(lat, lon, speedKmh, duty) {
-        if (window.DrivingHabit && window.lastGpsPosition) window.DrivingHabit.onFix(speedKmh, window.lastGpsPosition.accuracy, window.lastGpsPosition.heading, duty);
+        if (window.DrivingHabit && window.lastGpsPosition && !window._ybCatchUp) window.DrivingHabit.onFix(speedKmh, window.lastGpsPosition.accuracy, window.lastGpsPosition.heading, duty);
         const masterCache = window.standardMasterCache || window.currentTripMasterCache || [];
         if (!masterCache || masterCache.length === 0) return;
         updateTravelHeading(lat, lon, speedKmh);
