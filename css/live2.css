@@ -231,3 +231,11 @@ html.lv2 .yb3-gap-val { color: #94a3b8; }
 @media (orientation: landscape) and (max-height: 520px) {
     html.lv2 #liveModal .ios-footer { gap: 20px !important; margin-right: -14px !important; }
 }
+
+/* 가로 화면(수정): 배차 간격 박스를 오른쪽 칸 맨 아래(거점·현재·다음 정류장 바로 아랫줄)에 같은 간격으로 */
+@media (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #yb3 .yb3-gauge { grid-row: 3 / span 2; }
+    html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-gauge { width: min(100%, calc(100dvh - 78px)); }
+    html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-right { gap: 14px; justify-content: flex-end; align-self: end; }
+    html.lv2 #yb3Gap:not([hidden]) { grid-column: 2; grid-row: 4; align-self: start; margin: 4px 0 0; }
+}
