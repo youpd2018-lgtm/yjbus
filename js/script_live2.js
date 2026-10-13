@@ -201,7 +201,13 @@
         if (String(k) === mySeq) continue;
         var rounds = window.ytTimetableRounds(sd.route, k) || [];
         rounds.forEach(function (r, ri) {
-          var d = depOf(r); if (!d || d.place !== md.place) return;
+          var d = depOf(r);
+          // 1회차만: 마지막 순번의 편도(203A 등)처럼 다른 곳에서 출발해 내 출발지(기점)를 지나가는 차도, 그 기점 시각을 출발로 보고 앞·뒷차에 넣는다
+          if (trip === 1 && ri === 0 && !(d && d.place === md.place)) {
+            d = null;
+            for (var si = 1; si <= 3 && !d; si++) { var sm = toMin(r['time' + si]); if (sm !== null && (r.places || [])[si - 1] === md.place) d = { t: sm, place: md.place }; }
+          }
+          if (!d || d.place !== md.place) return;
           var who = { t: d.t, seq: k, ri: ri, rounds: rounds };
           if (d.t <= md.t) { if (!front || d.t > front.t) front = who; }
           else if (!back || d.t < back.t) back = who;
