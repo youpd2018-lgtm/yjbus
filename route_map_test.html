@@ -191,7 +191,21 @@
   /* 2026-10-13(11): 앱 버튼과 하단 카운트 줄은 같은 초록 계열에서 한 단계 더 진하게 */
   #top #btnBack { background: linear-gradient(180deg, #035c43 0%, #01372a 100%); border-color: rgba(110,231,183,.55); }
   #bot #card { background: linear-gradient(180deg, rgba(1,32,25,.96) 0%, rgba(0,22,17,.98) 100%); }
+
+  /* 2026-10-13(12): 앞차·뒷차 출발 간격 줄 (라이브 모달 박스와 같은 모양: 가운데 음각 버스, 왼쪽 뒷차 · 오른쪽 앞차) */
+  #gap { display: none; align-items: stretch; min-height: 58px; background: rgba(0,0,0,.28); box-shadow: inset 0 3px 8px rgba(0,0,0,.55); border-bottom: 2px solid rgba(110,231,183,.55); }
+  body.hasGap #gap { display: flex; }
+  #gap .gs { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 6px; }
+  #gap .gs.r { flex-direction: row-reverse; }
+  #gap .gr { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+  #gap .gs.r .gr { align-items: flex-end; text-align: right; }
+  #gap .gr i { font-style: normal; font-size: 13px; font-weight: 800; color: #fff; }
+  #gap .gr b { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 5.5em; }
+  #gap .gv { font-size: 38px; font-weight: 900; line-height: 1; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #gap .gm { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+  #gap .gm iconify-icon { font-size: 34px; color: rgba(56,189,248,.42); filter: drop-shadow(0 1px 0 rgba(255,255,255,.2)) drop-shadow(0 -1px 0 rgba(0,0,0,.55)); }
 </style>
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
 <body>
 <div id="rot">폰을 세로로 돌려 주세요</div>
@@ -209,6 +223,7 @@
 <div id="view"><div id="map"></div></div>
 <div id="spd"><b id="spdNum">-</b></div>
 <div id="bot">
+<div id="gap"><div class="gs"><span class="gr"><i>뒷차</i><b id="gapBn"></b></span><span class="gv" id="gapBv">-</span></div><div class="gm"><iconify-icon icon="lucide:bus"></iconify-icon></div><div class="gs r"><span class="gr"><i>앞차</i><b id="gapFn"></b></span><span class="gv" id="gapFv">-</span></div></div>
 <div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
 <div id="card">
   <div id="anchorCard"><span id="anchorName"></span><b id="anchorTime"></b></div>
@@ -437,6 +452,8 @@
     if (d.time) $('cdTime').textContent = d.time;
     if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
+    if (d.gap) { $('gapBv').textContent = d.gap.bv || '-'; $('gapBn').textContent = d.gap.bn || ''; $('gapFv').textContent = d.gap.fv || '-'; $('gapFn').textContent = d.gap.fn || ''; }
+    document.body.classList.toggle('hasGap', !!d.gap);
     if (d.anc) { const cs = document.querySelectorAll('#anc .c'); let any = false; d.anc.forEach((a, i) => { if (!cs[i]) return; cs[i].children[0].textContent = a.n; const t = cs[i].children[1]; t.textContent = a.t; t.style.color = a.c || '#fff'; if (a.n && a.t) any = true; });
       let ai = d.anc.findIndex(a => a.on); if (ai < 0) ai = 1; cs.forEach((c, i) => c.classList.toggle('mid', i === ai)); document.body.classList.toggle('hasAnc', any); }
     $('anchorName').textContent = d.midName || ''; $('anchorTime').textContent = d.midTime || '';
@@ -621,7 +638,7 @@
     var late = ['+2','-1','+7','0'][Math.floor(Date.now() / 5000) % 4] === '+7';
     window.dispatchEvent(new MessageEvent('message', { origin: location.origin, data: {
       type: 'rm-live', time: '00:' + mm + ':' + ss, delay: ['+2','-1','+7','0'][Math.floor(Date.now() / 5000) % 4],
-      dc: '#fff', db: late ? 'rgba(245,158,11,.2)' : 'rgba(52,199,89,.2)', dbd: late ? '#f59e0b' : '#34c759', anchor: '석남역', midName: '석남역', midTime: '08:45', midOn: true, midTc: 'rgb(251,191,36)', anc: [{n:'부평역',t:'08:10',c:''},{n:'석남역',t:'08:45',c:'rgb(251,191,36)',on:true},{n:'인천공항',t:'09:20',c:'rgb(56,189,248)'}] } }));
+      dc: '#fff', db: late ? 'rgba(245,158,11,.2)' : 'rgba(52,199,89,.2)', dbd: late ? '#f59e0b' : '#34c759', anchor: '석남역', midName: '석남역', midTime: '08:45', midOn: true, midTc: 'rgb(251,191,36)', gap: {bv:'21분',bn:'김철수',fv:'20분',fn:'박영희'}, anc: [{n:'부평역',t:'08:10',c:''},{n:'석남역',t:'08:45',c:'rgb(251,191,36)',on:true},{n:'인천공항',t:'09:20',c:'rgb(56,189,248)'}] } }));
   }, 1000);
   // 다음 정류장 이름·거리도 가짜: 거리가 줄다가 0이 되면 다음 정류장으로 넘어감
   var names = ['청라하늘대교입구', '청라복합문화센터', '청라호수공원(남측)', '해찬나래사거리(환승정류소)'];

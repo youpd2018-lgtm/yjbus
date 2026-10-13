@@ -709,6 +709,14 @@ function pushRouteMapLive() {
     }
     msg.anc = anc;
   } catch (e) { }
+  // 앞차·뒷차 출발 간격: 라이브 모달 박스(yb3Gap)가 계산해 둔 값을 그대로 지도에 넘김 (숨겨져 있으면 안 보냄)
+  try {
+    var gb = document.getElementById('yb3Gap');
+    if (gb && !gb.hidden) {
+      var gt = function (id) { var e = document.getElementById(id); return e ? e.textContent.trim() : ''; };
+      msg.gap = { bv: gt('yb3GapBack'), bn: gt('yb3GapBackNm'), fv: gt('yb3GapFront'), fn: gt('yb3GapFrontNm') };
+    }
+  } catch (e) { }
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
   try {
     var ne = document.getElementById('trafficStopNameAfter');
