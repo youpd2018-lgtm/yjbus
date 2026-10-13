@@ -10,6 +10,7 @@
   const CHECK_MS = 15 * 1000;        // 확인 주기
   const WORK_TYPES = ['정상', '대타']; // 알림 대상 근무 형태
   let timerId = null;
+  const firedKeys = new Set();       // 이번 실행에서 이미 울린 알림
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function dateStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
@@ -219,6 +220,9 @@
     const due = info.trips.filter(t => nowMin >= t.mins - LEAD_MIN && nowMin < t.mins - LEAD_MIN + GRACE_MIN);
     due.forEach(trip => {
       const doneKey = `yb_local_alarm_${info.today}_${info.driver}_${trip.idx}_${trip.text}`;
+      // 이미 울렸는지: 메모리(이번 실행)와 저장소 둘 다 확인. 저장소가 막혀도 15초마다 반복되지 않게 메모리 기록을 먼저 남김
+      if (firedKeys.has(doneKey)) return;
+      firedKeys.add(doneKey);
       try { if (localStorage.getItem(doneKey)) return; localStorage.setItem(doneKey, String(Date.now())); } catch (e) { }
       notify(info, trip);
     });
