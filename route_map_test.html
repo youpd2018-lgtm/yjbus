@@ -204,6 +204,15 @@
   #gap .gv { font-size: 38px; font-weight: 900; line-height: 1; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
   #gap .gm { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
   #gap .gm iconify-icon { font-size: 34px; color: rgba(56,189,248,.42); filter: drop-shadow(0 1px 0 rgba(255,255,255,.2)) drop-shadow(0 -1px 0 rgba(0,0,0,.55)); }
+
+  /* 2026-10-13(13): 앞차·뒷차 줄은 화면 맨 위로 (앱 버튼 위). 그만큼 위쪽 버튼·거점 줄·지도가 아래로 */
+  body { --gh: 0px; --ah: 0px; }
+  body.hasGap { --gh: 58px; }
+  body.hasAnc { --ah: 82px; }
+  body, body.hasAnc, body.hasGap { --th: calc(68px + var(--gh) + var(--ah)); }
+  #gap { position: fixed; left: 0; right: 0; top: 0; z-index: 21; box-sizing: content-box; padding-top: var(--sat); min-height: 58px; background: #022c22; box-shadow: inset 0 3px 8px rgba(0,0,0,.55); border-bottom: 2px solid rgba(110,231,183,.55); }
+  body.hasGap #top { top: calc(58px + var(--sat)); padding-top: 6px; }
+  #anc { top: calc(68px + var(--gh) + var(--sat)); }
 </style>
 <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
@@ -219,11 +228,11 @@
   <div class="tt">두 손가락을 벌리면<br>지도가 내 중심으로 확대돼요</div>
   <div class="tb"><button id="tipClose">닫기</button><button id="tipNever">다음부터 알리지 않기</button></div>
 </div>
+<div id="gap"><div class="gs"><span class="gr"><i>뒷차</i><b id="gapBn"></b></span><span class="gv" id="gapBv">-</span></div><div class="gm"><iconify-icon icon="lucide:bus"></iconify-icon></div><div class="gs r"><span class="gr"><i>앞차</i><b id="gapFn"></b></span><span class="gv" id="gapFv">-</span></div></div>
 <div id="anc"><div class="c"><span class="n"></span><b class="t"></b></div><div class="c mid"><span class="n"></span><b class="t"></b></div><div class="c"><span class="n"></span><b class="t"></b></div></div>
 <div id="view"><div id="map"></div></div>
 <div id="spd"><b id="spdNum">-</b></div>
 <div id="bot">
-<div id="gap"><div class="gs"><span class="gr"><i>뒷차</i><b id="gapBn"></b></span><span class="gv" id="gapBv">-</span></div><div class="gm"><iconify-icon icon="lucide:bus"></iconify-icon></div><div class="gs r"><span class="gr"><i>앞차</i><b id="gapFn"></b></span><span class="gv" id="gapFv">-</span></div></div>
 <div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
 <div id="card">
   <div id="anchorCard"><span id="anchorName"></span><b id="anchorTime"></b></div>
