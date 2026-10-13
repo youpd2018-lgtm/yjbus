@@ -388,6 +388,7 @@
     $('anchorName').textContent = d.midName || ''; $('anchorTime').textContent = d.midTime || '';
     $('anchorCard').classList.toggle('on', !!(d.midName && d.midTime));
     $('anchorCard').classList.toggle('act', !!d.midOn);
+    $('anchorTime').style.color = d.midTc || '#fff';   // 라이브 모달과 같은 시간 색 규칙(노랑·빨강·파랑 외에는 흰색)
     $('card').classList.toggle('tab', !!(d.midName && d.midTime));   // 모달의 거점 이름·시간이 둘 다 있을 때만 표시
     const bd = $('cdBadge'); bd.textContent = d.delay || '-';
     // 지도 쪽 GPS가 3초 넘게 조용하면 앱이 받은 GPS로 대신 움직인다

@@ -673,7 +673,9 @@ function pushRouteMapLive() {
     if (mBox) {
       var mn = mBox.querySelector('.ios-seq-name'), mt = mBox.querySelector('.ios-seq-time');
       var mnT = mn ? mn.innerText.trim() : '', mtM = mt ? mt.innerText.match(/\d{1,2}:\d{2}/) : null;
-      if (mnT && mnT !== '-' && mtM) { msg.midName = mnT; msg.midTime = mtM[0]; msg.midOn = mBox.classList.contains('active-target'); }
+      if (mnT && mnT !== '-' && mtM) { msg.midName = mnT; msg.midTime = mtM[0]; msg.midOn = mBox.classList.contains('active-target');
+        var mc = (mt.style.color || '').replace(/\s+/g, '');   // 모달의 시간 색 규칙: 노랑·빨강·파랑만 그대로, 나머지는 흰색
+        msg.midTc = (mc === 'rgb(251,191,36)' || mc === 'rgb(239,68,68)' || mc === 'rgb(56,189,248)') ? mc : ''; }
     }
   } catch (e) { }
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
