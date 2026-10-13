@@ -180,7 +180,7 @@ function authLoginByPin_(pin) {
 function authRosterNames_() {
   try {
     const j = ghFetchJson_('data/roster/all.json');
-    return (j && Array.isArray(j.drivers)) ? j.drivers : null;
+    return (j && Array.isArray(j.drivers)) ? j.drivers.concat(Array.isArray(j.extra) ? j.extra : []) : null;   // extra = 가입만 허용하는 예외 명단
   } catch (e) { return null; }
 }
 

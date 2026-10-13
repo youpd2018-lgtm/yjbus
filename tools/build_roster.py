@@ -80,6 +80,9 @@ if new:
     print('새 기사 명단에 추가:', ', '.join(new))
 body = json.dumps(days, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 rev = hashlib.md5(body.encode()).hexdigest()[:8]
-open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","drivers":%s,"days":%s}' % (rev, json.dumps(drivers, ensure_ascii=False, separators=(',', ':')), body))
+# 가입만 허용하는 예외 명단(운행은 안 하는 관리자 등). 근무표 휴무 처리에는 쓰지 않는다 (signup_extra.txt, 한 줄에 한 명)
+EXTRA = os.path.join(ROOT, 'signup_extra.txt')
+extra = [l.strip() for l in open(EXTRA, encoding='utf-8-sig') if l.strip() and not l.startswith('#')] if os.path.exists(EXTRA) else []
+open(os.path.join(ROOT, 'all.json'), 'w', encoding='utf-8').write('{"rev":"%s","drivers":%s,"extra":%s,"days":%s}' % (rev, json.dumps(drivers, ensure_ascii=False, separators=(',', ':')), json.dumps(extra, ensure_ascii=False, separators=(',', ':')), body))
 print('ok', len(days), '일', len(rows), '행', 'rev', rev)
 
