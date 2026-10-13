@@ -212,3 +212,6 @@ html.lv2 .yb3-gap-me iconify-icon { color: rgba(56,189,248,0.42); filter: drop-s
     html.lv2 #yb3Gap:not([hidden]) { margin-top: 16px; }
     html.lv2 #liveModal .ios-footer .ios-close-btn { margin-bottom: 22px !important; margin-top: 8px; }
 }
+/* 앞차·뒷차 박스 색: 앞차/뒷차·기사 이름은 흰색, 분 숫자는 배경과 비슷한 어두운 하늘빛 톤 */
+html.lv2 .yb3-gap-role i, html.lv2 .yb3-gap-role b { color: #fff; }
+html.lv2 .yb3-gap-val { color: #56708f; }
