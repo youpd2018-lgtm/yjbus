@@ -119,6 +119,8 @@
   #spd { left: 22px; -webkit-text-stroke: 1px #022C22; text-shadow: 0 0 2px #022C22, 0 1px 2px #022C22; }
   #spd b { font-size: 39px; line-height: 44px; }
   #rowA { right: auto; left: calc(100vw - 8px - 205px); }   /* 글자가 줄면 왼쪽 끝은 고정, 오른쪽이 줄어듦 */
+  #cdTime { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; text-align: left; }
+  #card #rowB { gap: 24px; }
 </style>
 </head>
 <body>
@@ -490,18 +492,21 @@
   function lockRowB() {
     const meas = (el, txts) => {
       const c = getComputedStyle(el), sp = document.createElement('span');
-      sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + c.font + ';padding:0;border:0;';
+      sp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;padding:0;border:0;';
+      sp.style.fontFamily = c.fontFamily; sp.style.fontSize = c.fontSize; sp.style.fontWeight = c.fontWeight; sp.style.fontStyle = c.fontStyle; sp.style.fontVariantNumeric = c.fontVariantNumeric; sp.style.letterSpacing = c.letterSpacing;
       document.body.appendChild(sp); let w = 0;
       txts.forEach(t => { sp.textContent = t; w = Math.max(w, sp.getBoundingClientRect().width); });
       sp.remove(); return Math.ceil(w) + 2;
     };
     try {
-      $('cdTime').style.minWidth = meas($('cdTime'), ['00:00:00', '88:88:88', '00:00:00'.replace(/0/g, '0')]) + 'px';
+      const ds = []; for (let d = 0; d < 10; d++) ds.push(`${d}${d}:${d}${d}:${d}${d}`);   // 숫자마다 폭이 달라도 가장 넓은 값으로 고정
+      const tw = meas($('cdTime'), ds) + 'px'; if (parseFloat(tw) < 60) return; $('cdTime').style.minWidth = tw; $('cdTime').style.width = tw;
       const b = $('cdBadge'), cs = getComputedStyle(b);
       b.style.minWidth = Math.max(52, meas(b, ['+88', '-88', '88']) + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 4) + 'px';
     } catch (e) { }
   }
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(lockRowB);
+  setTimeout(lockRowB, 8000);
   setTimeout(lockRowB, 3000);   // 느린 통신에서 글꼴이 늦게 떠도 한 번 더
 
   // 처음 켰을 때 안내 배너 (다음부터 알리지 않기를 누르면 다시 안 나옴)
