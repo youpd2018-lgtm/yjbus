@@ -172,6 +172,10 @@
   #bot #card #rowB { gap: 0; align-items: stretch; }
   #bot #card #cdTime { flex: 0 0 62%; width: 62% !important; min-width: 0 !important; box-sizing: border-box; padding: 8px 4px; text-align: center; border-right: 2px solid rgba(110,231,183,.55); font-size: 44px !important; line-height: 50px; }
   #bot #card #cdBadge { flex: 1 1 0; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; min-width: 0; font-size: 30px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+
+  /* 2026-10-13(8): 거리·이름 글자를 칸에 최대한 꽉 차게(안 들어가면 한 단계씩 줄임) */
+  #bot #rowA .ds { font-size: 40px; line-height: 46px; padding: 6px 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  #bot #rowA .nm { font-size: 32px; line-height: 40px; padding: 6px 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 </style>
 </head>
 <body>
@@ -592,6 +596,17 @@
     if (pendingFix) { const p = pendingFix; pendingFix = null; onPos(p[0], p[1], p[2], p[3], true); }
     startGps();
   }).catch(e => { $('msg').textContent = String(e.message || e); });
+
+  // 거리·이름 글자 크기를 칸 폭에 맞춰 최대한 크게
+  function fitText(el, max, min) {
+    if (!el) return;
+    let s = max; el.style.fontSize = s + 'px';
+    const avail = () => el.clientWidth - 8;
+    const w = () => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().width; };
+    while (s > min && w() > avail()) { s -= 1; el.style.fontSize = s + 'px'; }
+  }
+  function fitRowA() { fitText($('nextDist'), 44, 18); fitText($('nextName'), 36, 16); }
+  { const mo = new MutationObserver(() => { mo.disconnect(); fitRowA(); obs(); }); const obs = () => ['nextDist', 'nextName'].forEach(i => mo.observe($(i), { childList: true, characterData: true, subtree: true })); obs(); fitRowA(); window.addEventListener('resize', fitRowA); setTimeout(fitRowA, 1500); }
 </script>
 </body>
 </html>
