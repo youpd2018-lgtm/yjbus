@@ -650,29 +650,29 @@ function pushRouteMapLive() {
   var t = document.getElementById('liveCardTimeLeft'), b = document.getElementById('bisDelayBadge');
   // 오차 배지가 비어 있으면(값을 못 가져온 상태) 모달의 현재 정류장 시간으로 다시 계산해 채운다: 지도를 껐다 켜지 않아도 자동으로 나오게
   try {
-    var bt = b ? b.innerText.trim() : '';
+    var bt = b ? b.textContent.trim() : '';
     if (b && (bt === '' || bt === '-') && typeof syncLiveDelayBadgeWithTargetTime === 'function') {
       var ct = document.getElementById('trafficStopTimeNext'), cn = document.getElementById('trafficStopNameNext');
-      var ctx = ct ? ct.innerText.replace(/\s+/g, '').trim() : '';
-      if (/^\d{1,2}:\d{2}/.test(ctx)) syncLiveDelayBadgeWithTargetTime(ctx, cn ? cn.innerText.trim() : '');
+      var ctx = ct ? ct.textContent.replace(/\s+/g, '').trim() : '';
+      if (/^\d{1,2}:\d{2}/.test(ctx)) syncLiveDelayBadgeWithTargetTime(ctx, cn ? cn.textContent.trim() : '');
     }
   } catch (e) { }
-  var msg = { type: 'rm-live', time: t ? t.innerText.trim() : '', delay: '', dc: '', db: '', dbd: '' };
+  var msg = { type: 'rm-live', time: t ? t.textContent.trim() : '', delay: '', dc: '', db: '', dbd: '' };
   if (b) {
     var cs = getComputedStyle(b);
-    msg.delay = b.innerText.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
+    msg.delay = b.textContent.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
   }
   // 앱(라이브 모달)이 받은 GPS도 같이 보내 준다: 지도 쪽 GPS가 멈춰도 내 위치가 멈추지 않게 하는 예비 경로
   // 라이브 모달 거점 시퀀스에서 지금 가리키는(active-target) 거점 이름: 지도 하단 박스의 거점 이름과 똑같이 보이도록 같이 보낸다
   try {
     var tb = document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target .ios-seq-name');
-    if (tb && tb.innerText.trim() && tb.innerText.trim() !== '-') msg.anchor = tb.innerText.trim();
+    if (tb && tb.textContent.trim() && tb.textContent.trim() !== '-') msg.anchor = tb.textContent.trim();
     // 지도 아래 작은 카드: 라이브 모달 거점 3개 중 가운데 거점의 이름·시간(시:분) 한 쌍 (가운데 칸이 없으면 가리키는 거점)
     var mb = document.getElementById('seqBoxContainer2');
     var mBox = (mb && mb.style.display !== 'none') ? mb : document.querySelector('#iosSeqGridContainer .ios-seq-item.active-target');
     if (mBox) {
       var mn = mBox.querySelector('.ios-seq-name'), mt = mBox.querySelector('.ios-seq-time');
-      var mnT = mn ? mn.innerText.trim() : '', mtM = mt ? mt.innerText.match(/\d{1,2}:\d{2}/) : null;
+      var mnT = mn ? mn.textContent.trim() : '', mtM = mt ? mt.textContent.match(/\d{1,2}:\d{2}/) : null;
       if (mnT && mnT !== '-' && mtM) { msg.midName = mnT; msg.midTime = mtM[0]; msg.midOn = mBox.classList.contains('active-target');
         var mc = (mt.style.color || '').replace(/\s+/g, '');   // 모달의 시간 색 규칙: 노랑·빨강·파랑만 그대로, 나머지는 흰색
         msg.midTc = (mc === 'rgb(251,191,36)' || mc === 'rgb(239,68,68)' || mc === 'rgb(56,189,248)') ? mc : ''; }
@@ -684,7 +684,7 @@ function pushRouteMapLive() {
     for (var ai = 1; ai <= 3; ai++) {
       var ab = document.getElementById('seqBoxContainer' + ai);
       var an = ab ? ab.querySelector('.ios-seq-name') : null, at = ab ? ab.querySelector('.ios-seq-time') : null;
-      var anT = an ? an.innerText.trim() : '', atM = at ? at.innerText.match(/\d{1,2}:\d{2}/) : null;
+      var anT = an ? an.textContent.trim() : '', atM = at ? at.textContent.match(/\d{1,2}:\d{2}/) : null;
       var ac = at ? (at.style.color || '').replace(/\s+/g, '') : '';
       anc.push({ n: (anT && anT !== '-') ? anT : '', t: atM ? atM[0] : '', on: !!(ab && ab.classList.contains('active-target')), c: (ac === 'rgb(251,191,36)' || ac === 'rgb(239,68,68)' || ac === 'rgb(56,189,248)') ? ac : '' });
     }
@@ -693,7 +693,7 @@ function pushRouteMapLive() {
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
   try {
     var ne = document.getElementById('trafficStopNameAfter');
-    var nt = ne ? ne.innerText.trim() : '';
+    var nt = ne ? ne.textContent.trim() : '';
     if (nt && nt !== '-' && nt !== '다음 정류장') msg.next = nt;
   } catch (e) { }
   var g = window.lastGpsPosition;
