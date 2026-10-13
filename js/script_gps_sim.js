@@ -134,6 +134,16 @@ function loadLatestColleagueMessage() {
                 window.curBusGpsLat = lat;
                 window.curBusGpsLon = lon;
                 window.curBusSpeed = speedKmh;
+                // 📡 GPS가 한동안(12초 이상) 끊겼다가 다시 잡힌 경우: 끊긴 동안 화면은 마지막 정류장 기록을 그대로 두었다가,
+                //    돌아온 첫 위치로 정류장을 다시 찾는다 (라이브 모달을 껐다 켠 것과 같은 효과, 표시는 새 정류장을 찾을 때까지 그대로)
+                const _nowTs = Date.now();
+                if (window._ybPrevFixTs && _nowTs - window._ybPrevFixTs > 12000 && !(window.simState && window.simState.active)) {
+                    window.lastPassedStopIndex = null;
+                    window.lastMatchedMasterIndex = null;
+                    window._stopPendingJump = null;
+                    if (window.bisStopLockState) window.bisStopLockState.lockedStopKey = null;
+                }
+                window._ybPrevFixTs = _nowTs;
                 window.lastGpsPosition = { lat, lon, speedKmh, accuracy, heading: pos.coords.heading, time: new Date() };
                 window._gpsLastFixAt = Date.now();
 
