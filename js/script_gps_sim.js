@@ -415,6 +415,20 @@ function loadLatestColleagueMessage() {
         const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
         const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
 
+        // 🔄 지금 잡고 있는 정류장의 표준시간이 현재 시각과 30분 넘게 다르면(엉뚱한 정류장에 걸린 것) 놓아 주고 GPS로 다시 찾는다.
+        //    그동안 화면은 그대로 두고, 제 정류장 근처에 오면 자동으로 정상 표시로 돌아온다 (라이브 모달을 껐다 켤 필요 없음)
+        try {
+            const _li = window.lastPassedStopIndex;
+            if (typeof _li === 'number' && _li >= 0 && _li < masterCache.length) {
+                const _ss = parseTimeToSeconds(getRowTime(masterCache[_li]));
+                if (_ss > 0) {
+                    let _df = curWallSec - _ss;
+                    if (_df > 43200) _df -= 86400; else if (_df < -43200) _df += 86400;
+                    if (Math.abs(_df) > 1800) { window.lastPassedStopIndex = null; window.lastMatchedMasterIndex = null; window._stopPendingJump = null; }
+                }
+            }
+        } catch (eS) { }
+
         // 1. 기준 정류장 앵커 산출 (이전 통과 정류장 기준 또는 시각 기준)
         let anchorIdx = 0;
         if (window.lastPassedStopIndex !== null && window.lastPassedStopIndex >= 0) {
@@ -441,6 +455,20 @@ function loadLatestColleagueMessage() {
             });
             // 내 진행 방향과 반대인(마주 오는 차선) 정류장은 후보에서 제외
             dists.forEach((d, i) => { if (d !== Infinity && !dirOk(masterCache, i)) dists[i] = Infinity; });
+            // 왕복에서 같은 자리를 두 번 지나는 정류장(가는 길/오는 길)을 헷갈리지 않도록:
+            // 지금 시각과 표준시간이 30분 넘게 차이 나는 정류장은 후보에서 뺀다 (후보가 하나도 안 남으면 그대로 둠)
+            try {
+                const okIdx = [];
+                dists.forEach((d, i) => {
+                    if (d === Infinity) return;
+                    const sSec = parseTimeToSeconds(getRowTime(masterCache[i]));
+                    if (!(sSec > 0)) { okIdx.push(i); return; }
+                    let df = curWallSec - sSec;
+                    if (df > 43200) df -= 86400; else if (df < -43200) df += 86400;
+                    if (Math.abs(df) <= 1800) okIdx.push(i);
+                });
+                if (okIdx.length) { const keep = new Set(okIdx); dists.forEach((d, i) => { if (!keep.has(i)) dists[i] = Infinity; }); }
+            } catch (eT) { }
             let best = -1, bestD = Infinity;
             dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
             // 다리 위·정류장이 멀리 남은 곳에서도 최대한 찾는다(반경 6km). 그래도 못 찾으면 임의로 정류장을 넣지 않고 그대로 둔다
