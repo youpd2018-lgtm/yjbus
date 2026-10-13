@@ -195,6 +195,9 @@
       if (key === gapKey) return;
       var mine = (window.ytTimetableRounds(sd.route, sd.seq) || [])[trip - 1];
       var md = mine && depOf(mine); if (!md) return hide();
+      // 1회차만: 출발지(차고지 등)가 서로 달라도(예: 11순번 1회차는 서희스타옆문 출발) 기점(time2) 통과 시각으로 앞·뒷차를 본다
+      var base1 = false;
+      if (trip === 1 && toMin(mine.time2) !== null && (mine.places || [])[1]) { md = { t: toMin(mine.time2), place: mine.places[1] }; base1 = true; }
       var mySeq = String(sd.seq).replace(/\D/g, ''), n = typeof window.ytTimetableSeqCount === 'function' ? window.ytTimetableSeqCount(sd.route) : 0;
       var front = null, back = null;
       for (var k = 1; k <= n; k++) {
@@ -202,11 +205,7 @@
         var rounds = window.ytTimetableRounds(sd.route, k) || [];
         rounds.forEach(function (r, ri) {
           var d = depOf(r);
-          // 1회차만: 마지막 순번의 편도(203A 등)처럼 다른 곳에서 출발해 내 출발지(기점)를 지나가는 차도, 그 기점 시각을 출발로 보고 앞·뒷차에 넣는다
-          if (trip === 1 && ri === 0 && !(d && d.place === md.place)) {
-            d = null;
-            for (var si = 1; si <= 3 && !d; si++) { var sm = toMin(r['time' + si]); if (sm !== null && (r.places || [])[si - 1] === md.place) d = { t: sm, place: md.place }; }
-          }
+          if (base1) { d = (ri === 0 && toMin(r.time2) !== null) ? { t: toMin(r.time2), place: (r.places || [])[1] || '' } : null; }
           if (!d || d.place !== md.place) return;
           var who = { t: d.t, seq: k, ri: ri, rounds: rounds };
           if (d.t <= md.t) { if (!front || d.t > front.t) front = who; }
