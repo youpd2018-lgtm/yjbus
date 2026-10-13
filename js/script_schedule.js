@@ -682,6 +682,7 @@ function routeMapMessage(ev) {
   if (!_rm || ev.origin !== location.origin || !ev.data) return;
   var d = ev.data;
   if (d.type === 'rm-close') closeRouteMap();
+  if (d.type === 'rm-ready') pushRouteMapLive();   // 지도가 막 열렸으면 1초 기다리지 않고 바로 값을 보내 준다
   // 구차장 마이크는 다른 화면과 똑같이(원래 크기, 손가락으로 옮길 수 있음) 앱 위에 그대로 떠 있다
 }
 
