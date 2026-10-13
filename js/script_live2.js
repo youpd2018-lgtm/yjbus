@@ -31,7 +31,7 @@
     if (ic) {
       var i = document.createElement('iconify-icon');
       i.setAttribute('icon', ic[0]);
-      i.style.cssText = 'color:' + ic[1] + ';font-size:1.2em;vertical-align:-0.2em;margin-left:6px;';
+      i.style.cssText = 'color:' + ic[1] + ';font-size:34px;vertical-align:-0.2em;margin-left:6px;';
       el.appendChild(i);
     }
   }
