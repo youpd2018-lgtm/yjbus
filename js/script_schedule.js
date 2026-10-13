@@ -678,6 +678,18 @@ function pushRouteMapLive() {
         msg.midTc = (mc === 'rgb(251,191,36)' || mc === 'rgb(239,68,68)' || mc === 'rgb(56,189,248)') ? mc : ''; }
     }
   } catch (e) { }
+  // 지도 맨 위 거점 3칸: 라이브 모달 거점 3개(출발·가운데·도착)의 이름·시간(시:분)·시간 색
+  try {
+    var anc = [];
+    for (var ai = 1; ai <= 3; ai++) {
+      var ab = document.getElementById('seqBoxContainer' + ai);
+      var an = ab ? ab.querySelector('.ios-seq-name') : null, at = ab ? ab.querySelector('.ios-seq-time') : null;
+      var anT = an ? an.innerText.trim() : '', atM = at ? at.innerText.match(/\d{1,2}:\d{2}/) : null;
+      var ac = at ? (at.style.color || '').replace(/\s+/g, '') : '';
+      anc.push({ n: (anT && anT !== '-') ? anT : '', t: atM ? atM[0] : '', c: (ac === 'rgb(251,191,36)' || ac === 'rgb(239,68,68)' || ac === 'rgb(56,189,248)') ? ac : '' });
+    }
+    msg.anc = anc;
+  } catch (e) { }
   // 라이브 모달 3번째 카드의 '다음 정류장' 이름: 지도의 다음 정류장도 이것과 똑같이 맞춘다
   try {
     var ne = document.getElementById('trafficStopNameAfter');
