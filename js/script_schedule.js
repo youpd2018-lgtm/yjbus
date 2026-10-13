@@ -662,6 +662,25 @@ function pushRouteMapLive() {
     var cs = getComputedStyle(b);
     msg.delay = b.textContent.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
   }
+  // 그래도 비어 있거나 '-'면 라이브 모달의 현재 정류장 표준시간(todayStopSeq)으로 직접 계산해서 보낸다 (모달과 같은 규칙: ±5분 초록, 그 밖 주황)
+  try {
+    if (!msg.delay || msg.delay === '-') {
+      var sq = window.todayStopSeq, qi = window.todayStopNext;
+      if (sq && sq.length && typeof qi === 'number') {
+        var cur = sq[Math.max(0, qi - 1)], tm = cur && /^(\d{1,2}):(\d{2})/.exec(String(cur.time || ''));
+        if (tm) {
+          var nw = new Date(), df = nw.getHours() * 3600 + nw.getMinutes() * 60 + nw.getSeconds() - (+tm[1] * 3600 + +tm[2] * 60);
+          if (df > 43200) df -= 86400; else if (df < -43200) df += 86400;
+          var dm = Math.round(df / 60);
+          if (Math.abs(dm) <= 60) {
+            var okc = Math.abs(dm) <= 5;
+            msg.delay = dm === 0 ? '0' : (dm > 0 ? '+' + dm : '-' + Math.abs(dm));
+            msg.dc = '#ffffff'; msg.db = okc ? 'rgba(52,199,89,0.2)' : 'rgba(245,158,11,0.2)'; msg.dbd = okc ? '#34c759' : '#f59e0b';
+          }
+        }
+      }
+    }
+  } catch (e) { }
   // 앱(라이브 모달)이 받은 GPS도 같이 보내 준다: 지도 쪽 GPS가 멈춰도 내 위치가 멈추지 않게 하는 예비 경로
   // 라이브 모달 거점 시퀀스에서 지금 가리키는(active-target) 거점 이름: 지도 하단 박스의 거점 이름과 똑같이 보이도록 같이 보낸다
   try {
