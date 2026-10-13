@@ -205,3 +205,10 @@ html.lv2 .yb3-gap-me { display: flex; align-items: center; justify-content: cent
 html.lv2 .yb3-gap-me iconify-icon { font-size: 34px; color: rgba(2,6,23,0.75); filter: drop-shadow(0 1px 0 rgba(255,255,255,0.16)) drop-shadow(0 -1px 0 rgba(0,0,0,0.5)); }
 html.lv2 .yb3-gap-role i { color: #64748b; }
 html.lv2 .yb3-gap-role b, html.lv2 .yb3-gap-val { color: #94a3b8; }
+/* 가운데 버스: 은은한 하늘색으로 보이게(음각 느낌은 유지) */
+html.lv2 .yb3-gap-me iconify-icon { color: rgba(56,189,248,0.42); filter: drop-shadow(0 1px 0 rgba(255,255,255,0.20)) drop-shadow(0 -1px 0 rgba(0,0,0,0.55)); }
+/* 세로 화면: 배차 간격 박스와 닫기 버튼을 아래로 조금 내림 */
+@media not all and (orientation: landscape) and (max-height: 520px) {
+    html.lv2 #yb3Gap:not([hidden]) { margin-top: 16px; }
+    html.lv2 #liveModal .ios-footer .ios-close-btn { margin-bottom: 22px !important; margin-top: 8px; }
+}
