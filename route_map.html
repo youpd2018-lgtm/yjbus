@@ -161,6 +161,17 @@
   body.nonadmin #view { top: calc(var(--th) + var(--sat)); }
   body.nonadmin #rowA { top: calc(var(--th) + var(--sat) + (100vh - var(--th) - var(--sat)) * 0.6 + 44px); }
   body.nonadmin #spd { top: calc(var(--th) + var(--sat) + (100vh - var(--th) - var(--sat)) * 0.4 - 10px); }
+
+  /* 2026-10-13(7): 하단도 상단처럼 한 덩어리 초록 바탕 + 가는 선으로만 구분. 윗줄 = 다음 정류장 거리 | 정류장 이름, 아랫줄 = 시간 카운트 | 오차 */
+  #bot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); background: linear-gradient(180deg, rgb(6,78,59) 0%, rgb(2,44,34) 100%); border-top: 2px solid rgba(110,231,183,.55); font-family: var(--app-font); text-shadow: none; }
+  #bot #rowA { position: static; display: flex; flex-direction: row; align-items: stretch; width: auto; max-width: none; left: auto; right: auto; top: auto; padding: 0; margin: 0; background: none; border: 0; border-bottom: 2px solid rgba(110,231,183,.55); border-radius: 0; box-shadow: none; filter: none; }
+  #bot #rowA .ds { flex: 0 0 38%; margin: 0; padding: 8px 6px; background: none; border: 0; border-right: 2px solid rgba(110,231,183,.55); border-radius: 0; text-align: center; font-size: 28px; line-height: 34px; }
+  #bot #rowA .ds::after { display: none; }
+  #bot #rowA .nm { flex: 1 1 0; width: auto; max-width: none; margin: 0; padding: 8px 8px; background: none; border: 0; border-radius: 0; text-align: center; align-self: center; font-size: 22px; line-height: 28px; }
+  #bot #card { position: static; transform: none; width: auto; max-width: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; filter: none; overflow: visible; }
+  #bot #card #rowB { gap: 0; align-items: stretch; }
+  #bot #card #cdTime { flex: 0 0 62%; width: 62% !important; min-width: 0 !important; box-sizing: border-box; padding: 8px 4px; text-align: center; border-right: 2px solid rgba(110,231,183,.55); font-size: 44px !important; line-height: 50px; }
+  #bot #card #cdBadge { flex: 1 1 0; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0; min-width: 0; font-size: 30px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 </style>
 </head>
 <body>
@@ -178,6 +189,7 @@
 <div id="anc"><div class="c"><span class="n"></span><b class="t"></b></div><div class="c mid"><span class="n"></span><b class="t"></b></div><div class="c"><span class="n"></span><b class="t"></b></div></div>
 <div id="view"><div id="map"></div></div>
 <div id="spd"><b id="spdNum">-</b></div>
+<div id="bot">
 <div id="rowA"><span class="ds" id="nextDist">GPS 대기 중</span><span class="nm" id="nextName">-</span></div>
 <div id="card">
   <div id="anchorCard"><span id="anchorName"></span><b id="anchorTime"></b></div>
@@ -186,6 +198,7 @@
     <span id="cdBadge" class="big badge">-</span>
   </div>
   <div class="sub" id="sub" style="display:none"></div>
+</div>
 </div>
 
 <script src="js/app-config.js"></script>
