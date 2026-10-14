@@ -435,9 +435,9 @@ function loadLatestColleagueMessage() {
             dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
             // 다리 위·정류장이 멀리 남은 곳에서도 최대한 찾는다(반경 6km). 그래도 못 찾으면 임의로 정류장을 넣지 않고 그대로 둔다
             if (best !== -1 && bestD <= 6000) {
-                // 기점·종점이 같은 장소인 순환 노선: 비슷한 거리(30m 차이 이내)면 시각상 가까운 정류장을 택함
+                // 가는 길/오는 길·기점=종점처럼 같은 자리를 지나는 정류장: 비슷한 거리면 시각상 가까운 정류장을 택함
                 let pick = best;
-                dists.forEach((d, i) => { if (d <= bestD + 30 && Math.abs(i - anchorIdx) < Math.abs(pick - anchorIdx)) pick = i; });
+                dists.forEach((d, i) => { if (d <= bestD + 150 && Math.abs(i - anchorIdx) < Math.abs(pick - anchorIdx)) pick = i; });   // 앱을 새로 켠 첫 판정만: 거리가 비슷하면(150m 이내) 지금 시각과 표준시간이 가까운 정류장을 우선
                 if (bestD <= 55) {
                     anchorGpsHit = true;
                     anchorIdx = pick; // 아래 통과 판정에서 이 정류장을 통과한 것으로 확정
