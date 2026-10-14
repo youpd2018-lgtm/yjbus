@@ -3623,3 +3623,8 @@ html.senior #statsPage { padding-bottom: calc(130px + env(safe-area-inset-bottom
 .schedule-table.tt-main.cols-5 td { font-size: 19px; letter-spacing: -1px; }
 .schedule-table.tt-main.cols-6 td, .schedule-table.tt-main.cols-7 td, .schedule-table.tt-main.cols-8 td { font-size: 16px; letter-spacing: -1px; }
 .schedule-table.tt-main.cols-5 th, .schedule-table.tt-main.cols-6 th, .schedule-table.tt-main.cols-7 th, .schedule-table.tt-main.cols-8 th { font-size: 12px; }
+
+/* 메인 화면 시간표: 색 있는 시간은 박스 없이 글자색만 (2026-10-14 사용자 지시) */
+html .yb2-trip-t.y, html.ui2.senior .yb2-trip-t.y { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #FDE047 !important; }
+html .yb2-trip-t.r, html.ui2.senior .yb2-trip-t.r { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #FF5A5A !important; }
+html .yb2-trip-t.b, html.ui2.senior .yb2-trip-t.b { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #60a5fa !important; }
