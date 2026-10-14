@@ -652,7 +652,7 @@ function renderEditRouteOptions() {
             return;
         }
 
-        let html = `<table class="schedule-table"><thead>`;
+        let html = `<table class="schedule-table tt-main cols-${commonHeaders.length}"><thead>`;
         if (firstHeaderInfo.enabled && firstHeaderInfo.headers && firstHeaderInfo.headers.length > 0) {
             html += `<tr style="background:var(--header-bg); color:var(--primary);"><th>회</th>`;
             firstHeaderInfo.headers.forEach(h => html += `<th>${h || '-'}</th>`);

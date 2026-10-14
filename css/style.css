@@ -3605,3 +3605,21 @@ html.ui2.senior #yb2CdV { justify-content: flex-start; }
 /* 모든사용자·주간일정처럼 길어지는 화면: 맨 끝까지 스크롤하면 마지막 줄이 하단 메뉴 위로 완전히 보이게 여유 공간을 둠 */
 #statsPage { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
 html.senior #statsPage { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
+
+/* 근무정보 > 노선시간표: 메인 화면 시간표 톤 (흰 격자 없이 가는 가로줄, 굵고 큰 숫자, 빨강·노랑은 박스 없이 글자색만) */
+.schedule-table.tt-main { border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.schedule-table.tt-main th, .schedule-table.tt-main td { border: 0; overflow: visible; text-overflow: clip; }
+.schedule-table.tt-main th { background: transparent !important; color: rgba(255,255,255,0.75); font-size: 15px; font-weight: 800; padding: 6px 2px 8px; border-bottom: 1px solid #475569; white-space: normal; line-height: 1.2; }
+.schedule-table.tt-main td { padding: 11px 2px; font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 27px; font-weight: 700; color: #fff; letter-spacing: -0.5px; border-bottom: 1px solid rgba(255,255,255,0.18); }
+.schedule-table.tt-main tr:last-child td { border-bottom: 0; }
+.schedule-table.tt-main th:first-child, .schedule-table.tt-main td:first-child { width: 34px !important; max-width: 34px !important; min-width: 34px !important; font-size: 18px !important; font-weight: 900; color: #94a3b8; background: transparent !important; padding: 11px 0 !important; }
+.schedule-table.tt-main th:first-child { padding: 6px 0 8px !important; font-size: 15px !important; }
+.schedule-table.tt-main .effect-red, .schedule-table.tt-main .effect-yellow, .schedule-table.tt-main .effect-blue, .schedule-table.tt-main .effect-black { display: inline; border: 0; background: transparent; padding: 0; border-radius: 0; font-weight: inherit; color: inherit; }
+.schedule-table.tt-main .effect-red { color: #FF5A5A; }
+.schedule-table.tt-main .effect-yellow { color: #FDE047; }
+.schedule-table.tt-main .effect-blue { color: #60a5fa; }
+/* 칸이 많은 노선은 글자를 줄여 한 줄에 맞춤 */
+.schedule-table.tt-main.cols-4 td { font-size: 23px; }
+.schedule-table.tt-main.cols-5 td { font-size: 19px; letter-spacing: -1px; }
+.schedule-table.tt-main.cols-6 td, .schedule-table.tt-main.cols-7 td, .schedule-table.tt-main.cols-8 td { font-size: 16px; letter-spacing: -1px; }
+.schedule-table.tt-main.cols-5 th, .schedule-table.tt-main.cols-6 th, .schedule-table.tt-main.cols-7 th, .schedule-table.tt-main.cols-8 th { font-size: 12px; }
