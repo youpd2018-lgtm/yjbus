@@ -78,7 +78,7 @@
 
   // ---------- 강영걸(테스트 계정)은 테스트 중이 아니어도 항상: 서버 저장 막기, 저장은 이 폰(로컬)에만 ----------
   (function installWriteBlock() {
-    var WRITE = /(?:action=|"action"\s*:\s*")(save_|admin_(?!list_)|register_|update_my_|set_|delete_|put_|claim_|log_|report_)/;
+    var WRITE = /(?:action=|"action"\s*:\s*")(save_(?!usage)|admin_(?!list_)|register_|update_my_|set_|delete_|put_|claim_|log_|report_)/;
     function blocked() { return on || isAdminName(); }
     var origFetch = window.fetch ? window.fetch.bind(window) : null;
     if (origFetch) {
