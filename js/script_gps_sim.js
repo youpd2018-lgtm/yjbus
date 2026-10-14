@@ -134,16 +134,6 @@ function loadLatestColleagueMessage() {
                 window.curBusGpsLat = lat;
                 window.curBusGpsLon = lon;
                 window.curBusSpeed = speedKmh;
-                // 📡 GPS가 한동안(12초 이상) 끊겼다가 다시 잡힌 경우: 끊긴 동안 화면은 마지막 정류장 기록을 그대로 두었다가,
-                //    돌아온 첫 위치로 정류장을 다시 찾는다 (라이브 모달을 껐다 켠 것과 같은 효과, 표시는 새 정류장을 찾을 때까지 그대로)
-                const _nowTs = Date.now();
-                if (window._ybPrevFixTs && _nowTs - window._ybPrevFixTs > 12000 && !(window.simState && window.simState.active)) {
-                    window.lastPassedStopIndex = null;
-                    window.lastMatchedMasterIndex = null;
-                    window._stopPendingJump = null;
-                    if (window.bisStopLockState) window.bisStopLockState.lockedStopKey = null;
-                }
-                window._ybPrevFixTs = _nowTs;
                 window.lastGpsPosition = { lat, lon, speedKmh, accuracy, heading: pos.coords.heading, time: new Date() };
                 window._gpsLastFixAt = Date.now();
 
@@ -415,20 +405,6 @@ function loadLatestColleagueMessage() {
         const getRowName = (r) => r ? String(Array.isArray(r) ? r[5] : (r.name || r.stopName || r[5] || '')).trim() : '';
         const getRowTime = (r) => r ? String(Array.isArray(r) ? r[6] : (r.stdTime || r.time || r[6] || '')).trim() : '';
 
-        // 🔄 지금 잡고 있는 정류장의 표준시간이 현재 시각과 30분 넘게 다르면(엉뚱한 정류장에 걸린 것) 놓아 주고 GPS로 다시 찾는다.
-        //    그동안 화면은 그대로 두고, 제 정류장 근처에 오면 자동으로 정상 표시로 돌아온다 (라이브 모달을 껐다 켤 필요 없음)
-        try {
-            const _li = window.lastPassedStopIndex;
-            if (typeof _li === 'number' && _li >= 0 && _li < masterCache.length) {
-                const _ss = parseTimeToSeconds(getRowTime(masterCache[_li]));
-                if (_ss > 0) {
-                    let _df = curWallSec - _ss;
-                    if (_df > 43200) _df -= 86400; else if (_df < -43200) _df += 86400;
-                    if (Math.abs(_df) > 1800) { window.lastPassedStopIndex = null; window.lastMatchedMasterIndex = null; window._stopPendingJump = null; }
-                }
-            }
-        } catch (eS) { }
-
         // 1. 기준 정류장 앵커 산출 (이전 통과 정류장 기준 또는 시각 기준)
         let anchorIdx = 0;
         if (window.lastPassedStopIndex !== null && window.lastPassedStopIndex >= 0) {
@@ -455,20 +431,6 @@ function loadLatestColleagueMessage() {
             });
             // 내 진행 방향과 반대인(마주 오는 차선) 정류장은 후보에서 제외
             dists.forEach((d, i) => { if (d !== Infinity && !dirOk(masterCache, i)) dists[i] = Infinity; });
-            // 왕복에서 같은 자리를 두 번 지나는 정류장(가는 길/오는 길)을 헷갈리지 않도록:
-            // 지금 시각과 표준시간이 30분 넘게 차이 나는 정류장은 후보에서 뺀다 (후보가 하나도 안 남으면 그대로 둠)
-            try {
-                const okIdx = [];
-                dists.forEach((d, i) => {
-                    if (d === Infinity) return;
-                    const sSec = parseTimeToSeconds(getRowTime(masterCache[i]));
-                    if (!(sSec > 0)) { okIdx.push(i); return; }
-                    let df = curWallSec - sSec;
-                    if (df > 43200) df -= 86400; else if (df < -43200) df += 86400;
-                    if (Math.abs(df) <= 1800) okIdx.push(i);
-                });
-                if (okIdx.length) { const keep = new Set(okIdx); dists.forEach((d, i) => { if (!keep.has(i)) dists[i] = Infinity; }); }
-            } catch (eT) { }
             let best = -1, bestD = Infinity;
             dists.forEach((d, i) => { if (d < bestD) { bestD = d; best = i; } });
             // 다리 위·정류장이 멀리 남은 곳에서도 최대한 찾는다(반경 6km). 그래도 못 찾으면 임의로 정류장을 넣지 않고 그대로 둔다
@@ -496,67 +458,58 @@ function loadLatestColleagueMessage() {
             return;
         }
 
-        // 2. 전방 및 주변 정류장 탐색 (앞뒤 5개 정류장 슬라이딩 윈도우)
-        // 한 번 통과한 정류장보다 뒤(이전 정류장)로는 되돌아가지 않는다 (GPS 흔들림·인접 정류장 때문에 현재 정류장이 왔다 갔다 하는 것 방지)
+        // 2~3. 정류장 통과 판정 — 원칙: '회차 정류장 목록의 순서'가 기준이고 GPS는 그 순서를 확인해 줄 뿐이다.
+        //   · 지금 시각은 정류장을 고르는 데 쓰지 않는다. GPS 확인이 없으면 정류장은 움직이지 않는다 (끊겨도 마지막 정류장 유지).
+        //   · 이미 통과한 정류장 뒤로는 가지 않고, 순서상 바로 다음 두 정류장(+1, +2) 중 55m 안에 들어온 것만 바로 인정한다.
+        //   · 그보다 멀리 앞(옆 도로에서 스친 먼 정류장 등)은 한 번 가리켰다고 믿지 않고,
+        //     그 정류장과 이어지는 다음 정류장(1~3칸 뒤)이 순서대로 연달아 확인될 때만 인정한다.
         const hasPassed = (typeof window.lastPassedStopIndex === 'number' && window.lastPassedStopIndex >= 0);
-        let winStart = hasPassed ? anchorIdx + 1 : Math.max(0, anchorIdx - 1);   // 이미 통과한 정류장은 제외하고 앞쪽만 본다
-        let winEnd = Math.min(masterCache.length - 1, anchorIdx + 4);
-
+        const stopLL = (r) => {
+            const la = parseFloat(r.lat !== undefined ? r.lat : (Array.isArray(r) ? r[8] : null));
+            const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
+            return (la && lo) ? [la, lo] : null;
+        };
         let closestIdx = -1;
         let minDistance = Infinity;
-
-        for (let i = winStart; i <= winEnd; i++) {
-            let row = masterCache[i];
-            let stopLat = parseFloat(row.lat !== undefined ? row.lat : (Array.isArray(row) ? row[8] : null));
-            let stopLng = parseFloat(row.lng !== undefined ? row.lng : (Array.isArray(row) ? row[9] : null));
-
-            if (stopLat && stopLng && dirOk(masterCache, i)) {
-                let dist = calculateGpsDistanceMeters(lat, lon, stopLat, stopLng);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    closestIdx = i;
-                }
+        let acceptPass = false;
+        if (!hasPassed) {
+            // 첫 판정(통과 기록 없음): GPS가 55m 안에서 확인한 정류장
+            for (let i = Math.max(0, anchorIdx - 1); i <= Math.min(masterCache.length - 1, anchorIdx + 4); i++) {
+                const ll = stopLL(masterCache[i]);
+                if (!ll || !dirOk(masterCache, i)) continue;
+                const d = calculateGpsDistanceMeters(lat, lon, ll[0], ll[1]);
+                if (d < minDistance) { minDistance = d; closestIdx = i; }
             }
-        }
-
-        // 3. 정류장 통과 판정 (반경 50m 이내 진입 시)
-        // 멀리 앞(창 밖)으로 건너뛴 경우(터널·GPS 끊김 후 복귀)도 3번 연속 같은 정류장이 잡히면 인정
-        if (hasPassed && !(closestIdx !== -1 && minDistance <= 55)) {
-            let farIdx = -1, farD = Infinity;
-            for (let i = winEnd + 1; i < masterCache.length; i++) {
-                const r = masterCache[i];
-                const la = parseFloat(r.lat !== undefined ? r.lat : (Array.isArray(r) ? r[8] : null));
-                const lo = parseFloat(r.lng !== undefined ? r.lng : (Array.isArray(r) ? r[9] : null));
-                if (!la || !lo || !dirOk(masterCache, i)) continue;
-                const d = calculateGpsDistanceMeters(lat, lon, la, lo);
-                if (d >= farD) continue;
-                // 이미 지나온 정류장과 같은 자리(기점·종점이 같은 노선, 왕복 같은 위치 정류장)는 '건너뜀'으로 보지 않는다
-                let sameAsPassed = false;
-                for (let k = 0; k <= window.lastPassedStopIndex && !sameAsPassed; k++) {
-                    const q = masterCache[k];
-                    const qa = parseFloat(q.lat !== undefined ? q.lat : (Array.isArray(q) ? q[8] : null));
-                    const qo = parseFloat(q.lng !== undefined ? q.lng : (Array.isArray(q) ? q[9] : null));
-                    if (qa && qo && calculateGpsDistanceMeters(la, lo, qa, qo) < 120) sameAsPassed = true;
-                }
-                if (sameAsPassed) continue;
-                farD = d; farIdx = i;
-            }
-            if (farIdx !== -1 && farD <= 55) { closestIdx = farIdx; minDistance = farD; }
-        }
-        let acceptPass = closestIdx !== -1 && minDistance <= 55;
-        if (acceptPass && hasPassed) {
+            acceptPass = closestIdx !== -1 && minDistance <= 55;
+        } else {
             const last = window.lastPassedStopIndex;
-            if (closestIdx <= last) {
-                acceptPass = false;                                   // 같은 정류장·뒤쪽 정류장은 무시 (되돌아가지 않음)
-            } else {
-                const need = (closestIdx - last) <= 1 ? 1 : ((closestIdx - last) <= 4 ? 2 : 3);   // 한 칸=바로, 건너뛰면 연속 확인
-                const pj = window._stopPendingJump || {};
-                const cnt = (pj.idx === closestIdx) ? pj.n + 1 : 1;
-                window._stopPendingJump = { idx: closestIdx, n: cnt };
-                if (cnt < need) acceptPass = false; else window._stopPendingJump = null;
+            // 순서상 앞쪽 정류장 중 55m 안에 들어온 가장 앞(번호가 작은) 정류장 = 순서대로 확인
+            let hit = -1, hitD = Infinity;
+            for (let i = last + 1; i < masterCache.length; i++) {
+                const ll = stopLL(masterCache[i]);
+                if (!ll || !dirOk(masterCache, i)) continue;
+                const d = calculateGpsDistanceMeters(lat, lon, ll[0], ll[1]);
+                if (d > 55) continue;
+                // 이미 지나온 정류장과 같은 자리(왕복 같은 위치)는 '건너뜀'으로 보지 않는다
+                if (i - last > 2) {
+                    let same = false;
+                    for (let k = 0; k <= last && !same; k++) { const q = stopLL(masterCache[k]); if (q && calculateGpsDistanceMeters(ll[0], ll[1], q[0], q[1]) < 120) same = true; }
+                    if (same) continue;
+                }
+                hit = i; hitD = d; break;
             }
-        } else if (!acceptPass) {
-            // 정류장 근처가 아니면 '연속 확인' 횟수는 유지 (한 번 못 잡았다고 처음부터 다시 세지 않음)
+            if (hit !== -1) {
+                if (hit - last <= 2) {
+                    closestIdx = hit; minDistance = hitD; acceptPass = true; window._stopPendingJump = null;
+                } else {
+                    const pj = window._stopPendingJump;
+                    if (pj && Date.now() - pj.at < 600000 && hit > pj.idx && hit - pj.idx <= 3) {
+                        closestIdx = hit; minDistance = hitD; acceptPass = true; window._stopPendingJump = null;   // 순서대로 이어져 확인됨
+                    } else {
+                        window._stopPendingJump = { idx: hit, at: Date.now() };   // 일단 보류: 다음 정류장이 이어서 확인되면 인정
+                    }
+                }
+            }
         }
         if (acceptPass) {
             if (window.lastPassedStopIndex !== closestIdx) {
@@ -1095,7 +1048,7 @@ function loadLatestColleagueMessage() {
                 const n = new Date();
                 let df = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds() - sec;
                 if (df > 43200) df -= 86400; else if (df < -43200) df += 86400;
-                return Math.abs(df) > 7200 ? '--:--:--' : str;
+                return str;   // 정류장은 회차 순서가 기준이라 시각이 달라도 점점(--:--:--)으로 바꾸지 않는다
             };
             nextTime = _plaus(nextTime); afterTime = _plaus(afterTime); curTime = _plaus(curTime);
             // 좌측 = 현재 정류장, 우측 = 다음 정류장 (ID는 기존 호환 유지: Next=좌측, After=우측)
