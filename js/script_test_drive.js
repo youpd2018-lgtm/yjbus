@@ -201,12 +201,6 @@
   }
   function ui() {
     installRestart();
-    if (on) {
-      var b = document.createElement('div');
-      b.textContent = '🧪 테스트 운행 중 (가상 · 5배속)';
-      b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 34px);left:50%;transform:translateX(-50%);z-index:2147483000;background:rgba(253,224,71,.95);color:#1f2937;font-weight:800;font-size:12px;padding:3px 12px;border-radius:999px;pointer-events:none;white-space:nowrap';
-      document.body.appendChild(b);
-    }
     var btns = [];
     function mk(anchor, after) {
       if (!anchor || !anchor.parentNode) return;
@@ -220,7 +214,6 @@
       if (wrap && getComputedStyle(wrap).display === 'flex' && getComputedStyle(wrap).flexDirection === 'column') btn.style.alignSelf = 'center';
       btns.push(btn);
     }
-    mk(document.querySelector('.live-map-btn'), false);   // 라이브 모달 하단
     mk(document.querySelector('.yb2-btns'), true);        // 메인 메뉴 아래
     if (!btns.length) return;
     function sync() { var v = isAdminName() ? 'block' : 'none'; btns.forEach(function (x) { x.style.display = v; }); }
