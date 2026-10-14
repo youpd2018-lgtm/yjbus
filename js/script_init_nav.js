@@ -648,6 +648,9 @@
             if (p.id !== 'gatewayPage') p.classList.remove('active');
         });
 
+        // 정류장 운행 습관 카드는 페이지를 옮길 때마다 접음
+        if (typeof window.collapseHabitCard === 'function') window.collapseHabitCard();
+
         // 모든 네비게이션 탭 버튼 비활성화
         document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
 

@@ -304,6 +304,18 @@
     }
     window.toggleHabitCard = toggleHabitCard;
 
+    // 페이지를 나갈 때 접고, 다시 들어오면 이번 회차부터 (접힌 상태)
+    function collapseHabitCard() {
+        const card = document.getElementById('habitCard');
+        const btn = document.getElementById('habitToggleBtn');
+        const arrow = document.getElementById('habitToggleArrow');
+        if (card) card.style.display = 'none';
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        if (arrow) arrow.textContent = '▼';
+        setHabitPage('cur');
+    }
+    window.collapseHabitCard = collapseHabitCard;
+
     // ================================================================
     // 📅 [모든사용자 날짜 좌우 이동]
     // ================================================================
