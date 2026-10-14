@@ -280,16 +280,15 @@
     function setHabitPage(which) {
         ['cur', 'month'].forEach(k => {
             const list = document.getElementById('habitList_' + k);
-            const tab = document.getElementById('habitTab_' + k);
-            const on = k === which;
-            if (list) list.style.display = on ? 'block' : 'none';
-            if (tab) {
-                tab.style.background = on ? '#0c4a6e' : '#1e293b';
-                tab.style.borderColor = on ? '#38bdf8' : '#334155';
-                tab.style.color = on ? '#7dd3fc' : '#94a3b8';
-            }
+            if (list) list.style.display = k === which ? 'block' : 'none';
         });
+        window._habitPage = which;
+        // 버튼 글자는 "눌렀을 때 바뀔 쪽"
+        const btn = document.getElementById('habitSwitchBtn');
+        if (btn) btn.textContent = which === 'cur' ? '월별누적' : '이번회차';
     }
+    function switchHabitPage() { setHabitPage(window._habitPage === 'month' ? 'cur' : 'month'); }
+    window.switchHabitPage = switchHabitPage;
     window.setHabitPage = setHabitPage;
 
     // 근무통계 아래 [정류장 운행 습관] 단추: 누르면 펼치고 다시 누르면 숨김
