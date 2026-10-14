@@ -3,7 +3,7 @@
 // - 라이브 모달 아래 [테스트하기] 버튼 → 202 평일16대 1순번 실제 시간표·정류장으로 5분 운행(5배속)을 가상으로 돌린다.
 // - 바뀌는 것: 시계(5배속)·GPS(정류장을 따라 이동)·오늘 근무(테스트용 202 1순번으로 대신 보임).
 // - 서버에는 아무것도 저장하지 않는다(저장 요청은 가짜 성공으로 막음). 읽기만 실제 서버를 쓴다.
-// - 라이브 모달을 껐다 다시 열면 운행이 처음부터 다시 시작한다(installRestart).
+// - 시작하면 1회차 출발 30초 전 카운트 → 운행 중, 라이브 모달을 열면 운행 시작, 껐다 다시 열면 처음부터(installRestart).
 // - 이 탭 안에서만 켜지고(sessionStorage), [테스트 끝내기]를 누르거나 탭을 닫으면 사라진다.
 // - 노선지도(route_map.html)도 같은 가짜 GPS를 받아 지도가 정류장을 따라간다.
 // ================================================================
@@ -19,14 +19,23 @@
   var on = !!(state && state.on);
 
   var SAMPLE_ROUTE = '202', SAMPLE_TT = '202평일(16대)_1순번';
-  var SAMPLE_SCHED = JSON.stringify({ workType: '정상', busNo: '0000', route: '202평일(16대)', seq: '1순번', time: '오전' });
+  var SAMPLE_SCHED = JSON.stringify({ workType: '정상', busNo: '1234', route: '202평일(16대)', seq: '1순번', time: '오전' });
   var BASE_RATE = 5;
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function dayStr(ms) { var d = new RealDate(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 
   // ---------- 켜져 있을 때만: 가짜 시계 · 가짜 GPS · 근무 대체 · 저장 막기 ----------
-  function vnow() { return state.base + (RealDate.now() - state.ref) * state.rate; }
+  // 가상 시계: 시작하면 1회차 출발(t0) 30초 전부터 실시간으로 카운트다운 → 출발 시각에 '운행 중'으로 바뀌어 멈춰 있다가,
+  // 라이브 모달(또는 노선지도)을 열면 운행 시작 지점으로 옮겨 5배속으로 달린다.
+  var CD_MS = 30000;
+  function vnow() {
+    var r = RealDate.now(), cd = Math.min(state.t0 - CD_MS + (r - state.E), state.t0);
+    if (!state.opened) return cd;
+    var rs = Math.max(state.opened, state.E + CD_MS);
+    if (r < rs) return cd;
+    return state.base + (r - rs) * state.rate;
+  }
 
   function installShims() {
     // 1) 시계
@@ -142,7 +151,7 @@
       var tot = L[L.length - 1] || 1, ta = P[i2], tb = P[i2 + 1];
       for (var q2 = (i2 === k ? 0 : 1); q2 < poly.length; q2++) pts.push([Math.round(d0 + (ta + (tb - ta) * (L[q2] / tot)) * 1000), +poly[q2][0].toFixed(6), +poly[q2][1].toFixed(6)]);
     }
-    return { pts: pts, startMs: d0 + P[k] * 1000, startStop: stops[k][1] };
+    return { pts: pts, t0Ms: d0 + t0 * 1000, startMs: d0 + P[k] * 1000, startStop: stops[k][1] };
   }
 
   var starting = false;
@@ -152,7 +161,7 @@
       var r = await buildPath();
       ssSet(SS_PATH, JSON.stringify(r.pts));
       var nowMs = RealDate.now();
-      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, ref: nowMs, rate: BASE_RATE, today: dayStr(nowMs), openLive: !!openLive, fresh: true }));
+      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, t0: r.t0Ms, E: nowMs, opened: 0, rate: BASE_RATE, today: dayStr(nowMs), openLive: !!openLive }));
       location.reload();
     } catch (e) {
       starting = false;
@@ -171,23 +180,22 @@
     return TEST_USERS.some(function (n) { return String(nm).indexOf(n) !== -1; });
   }
 
-  // ---------- 라이브 모달을 열 때마다 운행을 처음부터 다시 시작 ----------
-  // 처음 여는 순간: 그 시각부터 시작. 껐다가 다시 열면: 처음 상태로 새로 불러와(모달 자동 열림) 처음부터.
+  // ---------- 라이브 모달을 처음 열 때 운행 시작, 껐다 다시 열면 처음(30초 카운트)부터 ----------
   function installRestart() {
     if (!on || typeof window.openLiveModal !== 'function') return;
     var origOpen = window.openLiveModal, inMap = false;
-    function resetNow() { state.ref = RealDate.now(); state.fresh = false; ssSet(SS, JSON.stringify(state)); }
+    function markOpened() { state.opened = RealDate.now(); ssSet(SS, JSON.stringify(state)); }
     window.openLiveModal = function () {
-      if (state.fresh) { resetNow(); return origOpen.apply(this, arguments); }
+      if (!state.opened) { markOpened(); return origOpen.apply(this, arguments); }
       if (inMap) return origOpen.apply(this, arguments);   // 노선지도가 밑에 켜 두는 경우는 그대로 이어서
-      state.ref = RealDate.now(); state.fresh = true; state.openLive = true; ssSet(SS, JSON.stringify(state));
+      state.E = RealDate.now(); state.opened = 0; state.openLive = true; ssSet(SS, JSON.stringify(state));
       location.reload();
     };
     if (typeof window.openRouteMap === 'function') {
       var origMap = window.openRouteMap;
       window.openRouteMap = function () {
         inMap = true;
-        try { if (state.fresh) resetNow(); return origMap.apply(this, arguments); } finally { inMap = false; }
+        try { if (!state.opened) markOpened(); return origMap.apply(this, arguments); } finally { inMap = false; }
       };
     }
   }
