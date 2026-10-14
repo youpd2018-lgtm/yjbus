@@ -169,18 +169,24 @@
       b.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 34px);left:50%;transform:translateX(-50%);z-index:2147483000;background:rgba(253,224,71,.95);color:#1f2937;font-weight:800;font-size:12px;padding:3px 12px;border-radius:999px;pointer-events:none;white-space:nowrap';
       document.body.appendChild(b);
     }
-    var anchor = document.querySelector('.live-map-btn');
-    if (!anchor || !anchor.parentNode) return;
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.id = 'ybTestBtn';
-    btn.textContent = on ? '🧪 테스트 끝내기' : '🧪 테스트하기';
-    btn.style.cssText = 'display:none;width:52%;min-width:150px;height:44px;margin:0 auto 8px;border:none;border-radius:12px;font-weight:900;font-size:15px;cursor:pointer;background:' + (on ? '#475569;color:#fff' : '#fde047;color:#1f2937');
-    btn.addEventListener('click', function () { if (on) stop(); else { btn.disabled = true; btn.textContent = '준비 중...'; start().then(function () { }); } });
-    anchor.parentNode.insertBefore(btn, anchor);
-    var wrap = anchor.parentNode;
-    if (wrap && getComputedStyle(wrap).display === 'flex' && getComputedStyle(wrap).flexDirection === 'column') btn.style.alignSelf = 'center';
-    setInterval(function () { btn.style.display = isAdminName() ? 'block' : 'none'; }, 1500);
-    btn.style.display = isAdminName() ? 'block' : 'none';
+    var btns = [];
+    function mk(anchor, after) {
+      if (!anchor || !anchor.parentNode) return;
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'ybTestBtn';
+      btn.textContent = on ? '🧪 테스트 끝내기' : '🧪 테스트하기';
+      btn.style.cssText = 'display:none;width:' + (after ? '92%' : '52%') + ';min-width:150px;height:44px;margin:' + (after ? '10px auto 0' : '0 auto 8px') + ';border:none;border-radius:12px;font-weight:900;font-size:15px;cursor:pointer;background:' + (on ? '#475569;color:#fff' : '#fde047;color:#1f2937');
+      btn.addEventListener('click', function () { if (on) stop(); else { btn.disabled = true; btn.textContent = '준비 중...'; start().then(function () { }); } });
+      anchor.parentNode.insertBefore(btn, after ? anchor.nextSibling : anchor);
+      var wrap = anchor.parentNode;
+      if (wrap && getComputedStyle(wrap).display === 'flex' && getComputedStyle(wrap).flexDirection === 'column') btn.style.alignSelf = 'center';
+      btns.push(btn);
+    }
+    mk(document.querySelector('.live-map-btn'), false);   // 라이브 모달 하단
+    mk(document.querySelector('.yb2-btns'), true);        // 메인 메뉴 아래
+    if (!btns.length) return;
+    function sync() { var v = isAdminName() ? 'block' : 'none'; btns.forEach(function (x) { x.style.display = v; }); }
+    setInterval(sync, 1500); sync();
     // 테스트가 막 켜져 다시 불러온 직후라면 라이브 모달을 자동으로 연다
     if (on && state.openLive) {
       state.openLive = false; ssSet(SS, JSON.stringify(state));
