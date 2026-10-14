@@ -73,24 +73,31 @@
     };
     try { Object.defineProperty(navigator, 'geolocation', { configurable: true, get: function () { return geo; } }); } catch (e) { }
 
-    // 4) 서버 저장 요청 막기 (읽기는 실제 서버 그대로)
+  }
+  if (on) installShims();
+
+  // ---------- 강영걸(테스트 계정)은 테스트 중이 아니어도 항상: 서버 저장 막기, 저장은 이 폰(로컬)에만 ----------
+  (function installWriteBlock() {
+    var WRITE = /(?:action=|"action"\s*:\s*")(save_|admin_(?!list_)|register_|update_my_|set_|delete_|put_|claim_|log_|report_)/;
+    function blocked() { return on || isAdminName(); }
     var origFetch = window.fetch ? window.fetch.bind(window) : null;
-    var WRITE = /(?:action=|"action"\s*:\s*")(save_|admin_|register_|update_my_|set_|delete_|log_|report_)/;
     if (origFetch) {
       window.fetch = function (input, init) {
         try {
           var url = (typeof input === 'string') ? input : (input && input.url) || '';
           var body = (init && typeof init.body === 'string') ? init.body : '';
-          if (/script\.google\.com|script\.googleusercontent\.com/.test(url) && (WRITE.test(url) || WRITE.test(body))) {
-            return Promise.resolve(new Response(JSON.stringify({ success: true, testDrive: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+          if (/script\.google\.com|script\.googleusercontent\.com/.test(url) && (WRITE.test(url) || WRITE.test(body)) && blocked()) {
+            return Promise.resolve(new Response(JSON.stringify({ success: true, localOnly: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
           }
         } catch (e) { }
         return origFetch(input, init);
       };
     }
-    if (navigator.sendBeacon) { var ob = navigator.sendBeacon.bind(navigator); navigator.sendBeacon = function (u, d) { return /script\.google/.test(u || '') ? true : ob(u, d); }; }
-  }
-  if (on) installShims();
+    if (navigator.sendBeacon) {
+      var ob = navigator.sendBeacon.bind(navigator);
+      navigator.sendBeacon = function (u, d) { return (/script\.google/.test(u || '') && blocked()) ? true : ob(u, d); };
+    }
+  })();
 
   // ---------- 경로 만들기: 202 실제 정류장·표준시간 + 길 모양 ----------
   function baseUrl() { var p = location.pathname; return p.substring(0, p.lastIndexOf('/') + 1); }
@@ -138,13 +145,13 @@
   }
 
   var starting = false;
-  async function start() {
+  async function start(openLive) {
     if (starting) return; starting = true;
     try {
       var r = await buildPath();
       ssSet(SS_PATH, JSON.stringify(r.pts));
       var nowMs = RealDate.now();
-      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, ref: nowMs, rate: BASE_RATE, today: dayStr(nowMs), openLive: true }));
+      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, ref: nowMs, rate: BASE_RATE, today: dayStr(nowMs), openLive: !!openLive }));
       location.reload();
     } catch (e) {
       starting = false;
@@ -176,7 +183,7 @@
       btn.type = 'button'; btn.className = 'ybTestBtn';
       btn.textContent = on ? '🧪 테스트 끝내기' : '🧪 테스트하기';
       btn.style.cssText = 'display:none;width:' + (after ? '92%' : '52%') + ';min-width:150px;height:44px;margin:' + (after ? '10px auto 0' : '0 auto 8px') + ';border:none;border-radius:12px;font-weight:900;font-size:15px;cursor:pointer;background:' + (on ? '#475569;color:#fff' : '#fde047;color:#1f2937');
-      btn.addEventListener('click', function () { if (on) stop(); else { btn.disabled = true; btn.textContent = '준비 중...'; start().then(function () { }); } });
+      btn.addEventListener('click', function () { if (on) stop(); else { btn.disabled = true; btn.textContent = '준비 중...'; start(!after).then(function () { }); } });
       anchor.parentNode.insertBefore(btn, after ? anchor.nextSibling : anchor);
       var wrap = anchor.parentNode;
       if (wrap && getComputedStyle(wrap).display === 'flex' && getComputedStyle(wrap).flexDirection === 'column') btn.style.alignSelf = 'center';
