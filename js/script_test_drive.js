@@ -3,6 +3,7 @@
 // - 라이브 모달 아래 [테스트하기] 버튼 → 202 평일16대 1순번 실제 시간표·정류장으로 5분 운행(5배속)을 가상으로 돌린다.
 // - 바뀌는 것: 시계(5배속)·GPS(정류장을 따라 이동)·오늘 근무(테스트용 202 1순번으로 대신 보임).
 // - 서버에는 아무것도 저장하지 않는다(저장 요청은 가짜 성공으로 막음). 읽기만 실제 서버를 쓴다.
+// - 라이브 모달을 껐다 다시 열면 운행이 처음부터 다시 시작한다(installRestart).
 // - 이 탭 안에서만 켜지고(sessionStorage), [테스트 끝내기]를 누르거나 탭을 닫으면 사라진다.
 // - 노선지도(route_map.html)도 같은 가짜 GPS를 받아 지도가 정류장을 따라간다.
 // ================================================================
@@ -151,7 +152,7 @@
       var r = await buildPath();
       ssSet(SS_PATH, JSON.stringify(r.pts));
       var nowMs = RealDate.now();
-      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, ref: nowMs, rate: BASE_RATE, today: dayStr(nowMs), openLive: !!openLive }));
+      ssSet(SS, JSON.stringify({ on: true, base: r.startMs, ref: nowMs, rate: BASE_RATE, today: dayStr(nowMs), openLive: !!openLive, fresh: true }));
       location.reload();
     } catch (e) {
       starting = false;
@@ -169,7 +170,29 @@
     if (!nm) { try { nm = window.localStorage.getItem('loggedInUser') || ''; } catch (e) { } }
     return TEST_USERS.some(function (n) { return String(nm).indexOf(n) !== -1; });
   }
+
+  // ---------- 라이브 모달을 열 때마다 운행을 처음부터 다시 시작 ----------
+  // 처음 여는 순간: 그 시각부터 시작. 껐다가 다시 열면: 처음 상태로 새로 불러와(모달 자동 열림) 처음부터.
+  function installRestart() {
+    if (!on || typeof window.openLiveModal !== 'function') return;
+    var origOpen = window.openLiveModal, inMap = false;
+    function resetNow() { state.ref = RealDate.now(); state.fresh = false; ssSet(SS, JSON.stringify(state)); }
+    window.openLiveModal = function () {
+      if (state.fresh) { resetNow(); return origOpen.apply(this, arguments); }
+      if (inMap) return origOpen.apply(this, arguments);   // 노선지도가 밑에 켜 두는 경우는 그대로 이어서
+      state.ref = RealDate.now(); state.fresh = true; state.openLive = true; ssSet(SS, JSON.stringify(state));
+      location.reload();
+    };
+    if (typeof window.openRouteMap === 'function') {
+      var origMap = window.openRouteMap;
+      window.openRouteMap = function () {
+        inMap = true;
+        try { if (state.fresh) resetNow(); return origMap.apply(this, arguments); } finally { inMap = false; }
+      };
+    }
+  }
   function ui() {
+    installRestart();
     if (on) {
       var b = document.createElement('div');
       b.textContent = '🧪 테스트 운행 중 (가상 · 5배속)';
