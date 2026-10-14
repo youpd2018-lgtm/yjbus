@@ -251,8 +251,8 @@
             const t = (x, y, size, w, fill, txt) => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="middle" font-family="inherit">${txt}</text>`;
             return t(cx, 22, 20, 800, '#94a3b8', label) +
                 `<path d="${d}" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>` +
-                `<path d="${d}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
-                t(cx, 104, 40, 900, color, c + '회') + t(cx, 140, 22, 800, '#e2e8f0', p + '%') +
+                `<path d="${d}" fill="none" stroke="${color}" stroke-opacity="0.5" stroke-width="14" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
+                t(cx, 112, 40, 900, color, c + '회') +
                 t(cx - R, 158, 12, 700, '#64748b', '0') + t(cx + R, 158, 12, 700, '#64748b', '100%');
         };
         const gauges = `<svg viewBox="0 0 360 190" style="display:block; width:100%; height:auto;">` +
