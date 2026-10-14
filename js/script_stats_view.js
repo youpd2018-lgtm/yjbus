@@ -279,6 +279,19 @@
     }
     window.setHabitPage = setHabitPage;
 
+    // 근무통계 아래 [정류장 운행 습관] 단추: 누르면 펼치고 다시 누르면 숨김
+    function toggleHabitCard() {
+        const card = document.getElementById('habitCard');
+        const btn = document.getElementById('habitToggleBtn');
+        const arrow = document.getElementById('habitToggleArrow');
+        if (!card) return;
+        const open = card.style.display === 'none';
+        card.style.display = open ? 'block' : 'none';
+        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (arrow) arrow.textContent = open ? '▲' : '▼';
+    }
+    window.toggleHabitCard = toggleHabitCard;
+
     // ================================================================
     // 📅 [모든사용자 날짜 좌우 이동]
     // ================================================================
