@@ -244,8 +244,21 @@
             return;
         }
         const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-                const row = (label, c, color, showPct) => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:9px 2px; border-bottom:1px solid #1e293b; font-weight:bold; color:#94a3b8;">` +
-            `<span style="font-size:23px;">${label}</span><span style="white-space:nowrap;"><span style="font-size:23px; color:#94a3b8; font-weight:bold;">${v.n}회 / </span><span style="color:${color}; font-weight:900; font-size:34px;">${c}회${showPct ? ` ${pct(c)}%` : ''}</span></span></div>`;
+        // 계기판 두 개 나란히(시안 A): 왼쪽 급정거, 오른쪽 급출발. 반원이 가득 차면 100%, 숫자는 모두 그래프 안에
+        const gauge = (cx, color, label, c) => {
+            const R = 66, cy = 118, len = Math.PI * R, p = pct(c), dash = Math.max(c > 0 ? 4 : 0, len * Math.min(p, 100) / 100);
+            const d = `M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`;
+            const t = (x, y, size, w, fill, txt) => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="middle" font-family="inherit">${txt}</text>`;
+            return t(cx, 22, 20, 800, '#94a3b8', label) +
+                `<path d="${d}" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>` +
+                `<path d="${d}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
+                t(cx, 104, 40, 900, color, c + '회') + t(cx, 140, 22, 800, '#e2e8f0', p + '%') +
+                t(cx - R, 158, 12, 700, '#64748b', '0') + t(cx + R, 158, 12, 700, '#64748b', '100%');
+        };
+        const gauges = `<svg viewBox="0 0 360 190" style="display:block; width:100%; height:auto;">` +
+            gauge(95, '#f87171', '급정거', v.hs) + gauge(265, '#fb923c', '급출발', v.hst) +
+            `<line x1="180" y1="20" x2="180" y2="150" stroke="#1e293b" stroke-width="2"/>` +
+            `<text x="180" y="182" font-size="16" font-weight="800" fill="#94a3b8" text-anchor="middle" font-family="inherit">측정 ${v.n}회</text></svg>`;
         const top = (title, arr, color) => (arr && arr.length)
             ? `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:${color}; margin-bottom:6px;">${title}</div>` +
               arr.map((nm, i) => {
@@ -259,7 +272,7 @@
             : '';
         const note = '';
         el.innerHTML =
-            row('급정거', v.hs, '#f87171', true) + row('급출발', v.hst, '#fb923c', true) +
+            gauges +
             top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
     }
 
