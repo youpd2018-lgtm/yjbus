@@ -213,7 +213,7 @@
       var btn = document.createElement('button');
       btn.type = 'button'; btn.className = 'ybTestBtn';
       btn.textContent = on ? '🧪 테스트 끝내기' : '🧪 테스트하기';
-      btn.style.cssText = 'display:none;width:' + (after ? '92%' : '52%') + ';min-width:150px;height:44px;margin:' + (after ? '10px auto 0' : '0 auto 8px') + ';border:none;border-radius:12px;font-weight:900;font-size:15px;cursor:pointer;background:' + (on ? '#475569;color:#fff' : '#fde047;color:#1f2937');
+      btn.style.cssText = 'display:none;width:' + (after ? '92%' : '52%') + ';min-width:150px;height:' + (after ? '72px' : '44px') + ';margin:' + (after ? '20px auto 0' : '0 auto 8px') + ';border:none;border-radius:14px;font-weight:900;font-size:' + (after ? '30px' : '15px') + ';white-space:nowrap;cursor:pointer;background:' + (on ? '#475569;color:#fff' : '#fde047;color:#1f2937');
       btn.addEventListener('click', function () { if (on) stop(); else { btn.disabled = true; btn.textContent = '준비 중...'; start(!after).then(function () { }); } });
       anchor.parentNode.insertBefore(btn, after ? anchor.nextSibling : anchor);
       var wrap = anchor.parentNode;
