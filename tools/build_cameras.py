@@ -3,7 +3,7 @@
 사용: python3 tools/build_cameras.py <전체자료.json> [노선에서 떨어진 한계 m, 기본 30]
 (전체자료.json = API 'tn_pubr_public_unmanned_traffic_camera_api' 결과 item 목록. 인증키는 파일에 저장하지 않는다.)
 """
-import json, math, os, sys
+import json, math, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KX, KY = 88000.0, 111000.0  # 위도 37.5° 부근 1도당 m
@@ -43,6 +43,34 @@ def main():
     lim = float(sys.argv[2]) if len(sys.argv) > 2 else 30.0
     data = json.load(open(src))
     routes = load_routes()
+    # 구간단속: 같은 이름·방향의 시점(1)·종점(2)을 짝지어 sections.json 으로 만든다 (시점·종점 점은 일반 카메라 목록에서 뺀다)
+    SEC_NEAR = 150.0
+    grp = {}
+    for x in data:
+        t = (x['itlpc'] or '') + ' ' + (x['roadRouteNm'] or '')
+        m = re.search(r'^(.*?)\s*(시점|종점)\b.*?(\(.*→.*\))?\s*$', (x['itlpc'] or '').strip())
+        if x['regltSe'] != '99' or not m or not x['latitude']:
+            continue
+        which = m.group(2)
+        pm = re.search(r'\(([^()]*→[^()]*)\)', x['itlpc'])
+        key = (x['roadRouteNm'], pm.group(1).strip() if pm else '')
+        grp.setdefault(key, {'시점': {}, '종점': {}, 'limit': int(x['lmttVe'] or 0)})[which][(round(float(x['latitude']), 5), round(float(x['longitude']), 5))] = 1
+    secs, secpts = [], set()
+    for (road, dr), g in grp.items():
+        if not g['시점'] or not g['종점']:
+            continue
+        a = list(g['시점'])[0]; b = list(g['종점'])[0]
+        rs = [k for k, sg in routes.items() if near(a, sg) <= SEC_NEAR or near(b, sg) <= SEC_NEAR]
+        if not rs or not (37.3 < a[0] < 37.7 and 126.3 < a[1] < 126.8):
+            continue
+        secpts |= set(g['시점']) | set(g['종점'])
+        secs.append({'name': (road + ' (' + dr + ')').strip(), 'limit': g['limit'], 'routes': rs,
+                     'start': {'lat': a[0], 'lng': a[1]}, 'end': {'lat': b[0], 'lng': b[1]}})
+    os.makedirs(os.path.join(ROOT, 'data', 'camera'), exist_ok=True)
+    json.dump({'v': 1, 'count': len(secs), 'sections': secs}, open(os.path.join(ROOT, 'data', 'camera', 'sections.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
+    print('구간단속', len(secs), '곳')
+    for sc in secs:
+        print(' ', sc['name'], sc['limit'], sc['routes'])
     seen, out = set(), []
     for x in data:
         try:
@@ -55,6 +83,8 @@ def main():
         if t not in ('speed', 'signal', 'both', 'other'):
             continue
         key = (round(c[0], 5), round(c[1], 5), t)
+        if (key[0], key[1]) in secpts:
+            continue
         if key in seen:
             continue
         rs = [k for k, s in routes.items() if near(c, s) <= lim]
