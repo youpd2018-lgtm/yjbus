@@ -40,7 +40,7 @@ var sel = document.getElementById('route'), lastSig = '';
 function getJson(path) { return fetch(path + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
 
 function render(d) {
-  var sig = JSON.stringify([d.stops.map(function (s) { return [s[1], s[4]]; }), d.incheonSec]);
+  var sig = JSON.stringify([d.stops.map(function (s) { return [s[1], s[4]]; }), d.incheonSec, d.realSec]);
   var rows = document.getElementById('rows');
   if (sig !== lastSig) {
     lastSig = sig;
@@ -53,10 +53,12 @@ function render(d) {
     rows.innerHTML = h;
   }
   var diff = d.totalSec - d.incheonSec;
+  var cmp = d.realSec
+    ? '실운행 기준 ' + fmt(d.realSec) + (d.totalSec === d.realSec ? ' <span class="ok">(일치)</span>' : ' <span class="bad">(불일치)</span>') + ' · 인가 ' + fmt(d.incheonSec) + ' (참고)'
+    : '인가 ' + fmt(d.incheonSec) + ' ' + (diff === 0 ? '<span class="ok">(일치)</span>' : '<span class="bad">(' + (diff > 0 ? '+' : '-') + fmt(Math.abs(diff)) + ')</span>');
   document.getElementById('sum').innerHTML =
     '<b>' + d.route + '</b> · 정류장 ' + d.stops.length + '개 · 앵커(★) ' + d.anchors.length + '개<br>' +
-    '노선 합계 <b>' + fmt(d.totalSec) + '</b> / 인가 ' + fmt(d.incheonSec) + ' ' +
-    (diff === 0 ? '<span class="ok">(일치)</span>' : '<span class="bad">(' + (diff > 0 ? '+' : '-') + fmt(Math.abs(diff)) + ')</span>') +
+    '노선 합계 <b>' + fmt(d.totalSec) + '</b> / ' + cmp +
     '<div class="upd">노란 글씨 = 30초 미만 구간 · 마지막 확인 ' + new Date().toLocaleTimeString('ko-KR') + ' (30초마다 자동 새로고침)</div>';
 }
 
