@@ -32,7 +32,7 @@ def near(c, segs):
     best = 1e9
     for s in segs:
         for i in range(len(s) - 1):
-            if abs(s[i][0] - c[0]) > 0.003 and abs(s[i + 1][0] - c[0]) > 0.003:
+            if min(s[i][0], s[i + 1][0]) - c[0] > 0.003 or c[0] - max(s[i][0], s[i + 1][0]) > 0.003:
                 continue
             best = min(best, seg_dist(c, s[i], s[i + 1]))
     return best
@@ -60,7 +60,7 @@ def main():
         if not g['시점'] or not g['종점']:
             continue
         a = list(g['시점'])[0]; b = list(g['종점'])[0]
-        rs = [k for k, sg in routes.items() if near(a, sg) <= SEC_NEAR or near(b, sg) <= SEC_NEAR]
+        rs = [k for k, sg in routes.items() if near(a, sg) <= SEC_NEAR and near(b, sg) <= SEC_NEAR]   # 시점·종점을 모두 지나는 노선만
         if not rs or not (37.3 < a[0] < 37.7 and 126.3 < a[1] < 126.8):
             continue
         secpts |= set(g['시점']) | set(g['종점'])
