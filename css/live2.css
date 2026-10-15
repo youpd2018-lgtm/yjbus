@@ -56,7 +56,7 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-pill-text { font-size: 22px; font-weight: 900; color: var(--pc); white-space: nowrap; line-height: 1.1; }
 
 /* 거점 3칸 + 시간·장소 아래로 깔린 선 */
-.yb3-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.yb3-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative; }
 .yb3-seq { --f: 50%; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; padding: 2px 0; }
 .yb3-seq[data-a="1"] { --f: 0%; } .yb3-seq[data-a="2"] { --f: 50%; } .yb3-seq[data-a="3"] { --f: 100%; }
 .yb3-seq::before { content: ""; position: absolute; left: 16.6%; right: 16.6%; top: 40px; height: 4px; border-radius: 2px; transform: translateY(-50%); z-index: 0; opacity: 0.55; filter: blur(0.8px);

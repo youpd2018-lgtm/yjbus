@@ -225,16 +225,29 @@
     } catch (e) { }
   }
 
-  // ---- 단속카메라 전방 알림: 오늘 근무 노선 기준, 배차간격 박스 아래 ----
+  // ---- 단속카메라 전방 알림: 평소엔 배차간격 박스가 보이다가, 카메라 앞에서만 그 박스를 덮고 메시지·소리가 나옴 ----
+  function todayRoute() {   // 오늘 내 근무 노선 번호 (노선지도 버튼과 같은 방식: '202평일16대' → '202', '203A' → '203A')
+    try {
+      var name = typeof getLoggedInDriverName === 'function' ? getLoggedInDriverName() : (window.currentDriver || localStorage.getItem('loggedInUser'));
+      var d = new Date(), today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var sd = JSON.parse(localStorage.getItem('jpil_user_' + name + '_sched_' + today) || 'null');
+      if (!sd || !sd.route || sd.route === '-' || sd.workType === '휴무' || sd.workType === '미등록') return '';
+      var m = String(sd.route).match(/(\d{3})\s*([Aa]?)/);
+      return m ? m[1] + m[2].toUpperCase() : '';
+    } catch (e) { return ''; }
+  }
+  function coverGap(el) {   // 배차간격 박스 위치·크기 그대로 그 위에 덮음 (배차간격 박스가 없으면 제자리)
+    var gap = $('yb3Gap');
+    if (el.classList.contains('on') && gap && !gap.hidden && gap.offsetWidth > 0) {
+      el.style.cssText = 'position:absolute;margin:0;z-index:6;left:' + gap.offsetLeft + 'px;top:' + gap.offsetTop + 'px;width:' + gap.offsetWidth + 'px;height:' + gap.offsetHeight + 'px;border-radius:16px;padding:0 14px;overflow:hidden';
+    } else el.style.cssText = 'margin-top:8px';
+  }
   function syncCamera() {
     var el = $('ybCamAlert'); if (!el || !window.YbCamera) return;
-    var g = window.lastGpsPosition, pos = null, route = '';
-    try {
-      var inp = $('searchDate'), sv = inp && inp.value && typeof getDriverKey === 'function' && localStorage.getItem(getDriverKey('sched_' + inp.value));
-      var sd = sv && JSON.parse(sv); if (sd && sd.workType !== '휴무' && sd.workType !== '미등록') route = sd.route || '';
-    } catch (e) { }
+    var g = window.lastGpsPosition, pos = null;
     if (g && g.time && Date.now() - new Date(g.time).getTime() < 15000) pos = { lat: g.lat, lon: g.lon, speed: typeof g.speedKmh === 'number' ? g.speedKmh : null, heading: g.heading };
-    window.YbCamera.update(pos, route, el);
+    window.YbCamera.update(pos, todayRoute(), el);
+    coverGap(el);
   }
 
   function init() {
