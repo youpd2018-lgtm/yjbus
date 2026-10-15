@@ -370,14 +370,36 @@
   let camAll = null, camOvs = [], camList = [];
   async function loadCameras() {
     if (!camAll) { try { const r = await fetch('data/camera/cameras.json', { cache: 'no-cache' }); camAll = r.ok ? (await r.json()).cameras || [] : []; } catch (e) { camAll = []; } }
-    camOvs.forEach(o => o.setMap(null)); camOvs = [];
     camList = route ? camAll.filter(c => c.routes.includes(route.name)) : [];
     if (!window.YbCamera.sections) { try { const r = await fetch('data/camera/sections.json', { cache: 'no-cache' }); window.YbCamera.sections = r.ok ? (await r.json()).sections || [] : []; } catch (e) { window.YbCamera.sections = []; } }
-    (window.YbCamera.sections || []).filter(sc => route && sc.routes.includes(route.name)).forEach(sc => [['start', '구간↘'], ['end', '구간■']].forEach(([k, t]) => {
+    drawCameras();
+  }
+  // 점(lat,lng)에서 선(점 배열) 까지 최단 거리(m)
+  function distToLine(lat, lng, pts) {
+    const k = Math.cos(lat * Math.PI / 180), X = 111320, Y = 110540; let best = 1e9;
+    for (let i = 1; i < pts.length; i++) {
+      const ax = (pts[i - 1][1] - lng) * X * k, ay = (pts[i - 1][0] - lat) * Y, bx = (pts[i][1] - lng) * X * k, by = (pts[i][0] - lat) * Y;
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy; let t = l2 ? -(ax * dx + ay * dy) / l2 : 0; t = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(ax + t * dx, ay + t * dy); if (d < best) best = d;
+    }
+    return best;
+  }
+  // 편도만 보기 중이면 보이는 편도 선에 더 가까운 카메라만 표시 (반대 방향 카메라는 숨김)
+  function camOnLeg(lat, lng) {
+    const lg = route && route.leg; if (!lg || !route.segs) return true;
+    const mine = [], other = [];
+    route.segs.forEach((sg, i) => { (i >= lg[0] && i < lg[1] ? mine : other).push(...sg); });
+    if (mine.length < 2 || other.length < 2) return true;
+    return distToLine(lat, lng, mine) <= distToLine(lat, lng, other) + 1;
+  }
+  function drawCameras() {
+    camOvs.forEach(o => o.setMap(null)); camOvs = [];
+    if (!route) return;
+    (window.YbCamera.sections || []).filter(sc => sc.routes.includes(route.name) && camOnLeg(sc.start.lat, sc.start.lng)).forEach(sc => [['start', '구간↘'], ['end', '구간■']].forEach(([k, t]) => {
       const el = document.createElement('div'); el.className = 'cam oth'; el.style.borderColor = '#7c3aed'; el.textContent = k === 'start' ? sc.limit : '끝';
       camOvs.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(sc[k].lat, sc[k].lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: 3 }));
     }));
-    camList.forEach(c => {
+    camList.filter(c => camOnLeg(c.lat, c.lng)).forEach(c => {
       const el = document.createElement('div'); el.className = 'cam' + (c.type === 'signal' ? ' sig' : c.type === 'other' ? ' oth' : '');
       el.textContent = c.limit ? c.limit : (c.type === 'signal' ? '신호' : '단속');
       camOvs.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(c.lat, c.lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: 3 }));
@@ -461,7 +483,7 @@
       if (lg && lg.join() !== route.leg.join() && lg[0] === route.leg[1] && route.legArmed && eN && distM(me.lat, me.lon, eN[2], eN[3]) < LEG_SWITCH_M) lg = route.leg;
       else if (lg && lg.join() !== route.leg.join()) route.legArmed = false;
     }
-    if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); }
+    if ((lg && lg.join()) !== (route.leg && route.leg.join())) { route.leg = lg; renderSegs(); applyLegDots(); try { drawCameras(); } catch (e) { } }
     const s = st[next];
     const d = distM(me.lat, me.lon, s[2], s[3]);
     $('nextName').textContent = name6(s[1]);
