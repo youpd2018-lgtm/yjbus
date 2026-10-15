@@ -1,7 +1,7 @@
 // 단속카메라 전방 알림: 진행 방향 앞 500m 안의 카메라를 글자로 알리고(500m 노랑, 200m 빨강 깜빡),
 // 500m와 200m에서 각각 한 번 띵동 경고음을 내고, 카메라 제한속도를 넘으면 화면 테두리가 빨갛게 깜빡인다. 노선지도·라이브 모달 공용. 데이터: data/camera/cameras.json
 (function () {
-  var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속카메라', signal: '신호위반', both: '과속·신호위반', other: '단속카메라' }, CAUTION_M = 100;
+  var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속', signal: '신호 과속', both: '신호 과속', other: '단속카메라' }, CAUTION_M = 100;
   var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, caution = null, spoken = {};
   try { spoken = JSON.parse(sessionStorage.getItem('yb_cam_spoken') || '{}'); } catch (e) { }
 
