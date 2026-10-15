@@ -113,10 +113,16 @@
   function baseUrl() { var p = location.pathname; return p.substring(0, p.lastIndexOf('/') + 1); }
   function getJson(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
   function gasStops() {
-    var u = window.GAS_WEB_APP_URL;
-    if (!u) return Promise.reject(new Error('no gas'));
-    return fetch(u + '?action=get_route_stops&route=' + SAMPLE_ROUTE).then(function (r) { return r.json(); })
-      .then(function (j) { if (j && j.success && j.stops && j.stops.length > 10 && j.anchors && j.anchors.length === 3) return j; throw new Error('bad'); });
+    var ok = function (j) { return j && j.stops && j.stops.length > 10 && j.anchors && j.anchors.length === 3; };
+    // 먼저 GitHub 노선 파일(data/routemaster/ganseon)을 읽고, 안 되면 서버(시트)에서 받는다
+    return getJson(baseUrl() + 'data/routemaster/ganseon/' + SAMPLE_ROUTE + '.json')
+      .then(function (j) { if (ok(j)) return j; throw new Error('bad'); })
+      .catch(function () {
+        var u = window.GAS_WEB_APP_URL;
+        if (!u) return Promise.reject(new Error('no gas'));
+        return fetch(u + '?action=get_route_stops&route=' + SAMPLE_ROUTE).then(function (r) { return r.json(); })
+          .then(function (j) { if (j && j.success && ok(j)) return j; throw new Error('bad'); });
+      });
   }
   function hmsToSec(s) { var m = /^(\d+):(\d+)(?::(\d+))?$/.exec(String(s || '').trim()); return m ? (+m[1]) * 3600 + (+m[2]) * 60 + (+(m[3] || 0)) : null; }
   function distM2(a, b) { var R = 6371000, d2r = Math.PI / 180, dLat = (b[0] - a[0]) * d2r, dLon = (b[1] - a[1]) * d2r; var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a[0] * d2r) * Math.cos(b[0] * d2r) * Math.sin(dLon / 2) * Math.sin(dLon / 2); return 2 * R * Math.asin(Math.sqrt(x)); }
