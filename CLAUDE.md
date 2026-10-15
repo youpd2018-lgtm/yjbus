@@ -41,7 +41,7 @@
 
 ## 노선 데이터 (GitHub, 2026-10-15 신설)
 - 정류장·앵커·구간시간의 기준은 `data/routemaster/ganseon/<노선>.json`(간선. 지선은 `jiseon/` 폴더로 늘릴 예정). 시트 `노선마스터`는 옮겨 온 원본으로만 남기고, 앱·서버(`RouteExport.js get_route_stops`)·시연 페이지는 이 파일을 먼저 읽고 못 받을 때만 시트를 쓴다. `tools/import_routemaster.py`가 시트(xlsx)를 옮기는 도구. 앵커 이름(기사 호칭)은 파일의 `anchorNames`.
-- 예외: 관리자 도로명 저장(`road_names.html`, `RoadNames.js`)은 아직 시트 O열에 쓴다.
+- 도로명은 `road_names.html`에서 [복사] → 클로드에게 붙여 넣으면 `tools/apply_road_names.py`로 노선 파일에 기록(시트에는 더 쓰지 않음). 시간·정류장을 고칠 땐 시트가 아니라 이 파일만 고친다(시트는 옛 기록).
 
 ## 다음 작업
 1. 기사들에게 소개하기 위해 **대문(첫) 페이지부터** 하나씩 고쳐 나간다.
