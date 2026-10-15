@@ -10,8 +10,8 @@ function playChimeDingDong() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'ambient'; } catch (e) { }   // 다른 앱 음악을 끊지 않게
-    const ctx = new AudioCtx();
-    if (ctx.state === 'suspended') ctx.resume();
+    const ctx = window.__ybChimeCtx || (window.__ybChimeCtx = new AudioCtx());   // 소리 장치를 부를 때마다 새로 만들면 폰이 한도(몇 개)를 넘어 소리가 막히므로 하나만 만들어 계속 씀
+    if (ctx.state !== 'running') ctx.resume();
 
     const now = ctx.currentTime;
 
