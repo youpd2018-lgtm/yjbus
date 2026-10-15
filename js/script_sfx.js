@@ -28,6 +28,20 @@
     window.addEventListener('pageshow', ambient);
     window.addEventListener('focus', ambient);
 
+    // 🩹 소리 장치 되살리기: 구차장 마이크·음성 답변·전화·다른 앱 음악 뒤에 폰이 소리 장치를 '중단/잠김' 상태로 두고 돌려주지 않는 일이 있어서,
+    //    화면이 보이는 동안 2초마다 확인해 쉬고 있으면 깨우고 '섞어 듣기'로 되돌린다(구차장 대화 중에는 건드리지 않음)
+    function heal() {
+        try {
+            if (document.hidden) return;
+            if (typeof isVoiceActive !== 'undefined' && isVoiceActive) return;
+            ambient();
+            if (ctx && ctx.state !== 'running') ctx.resume();
+        } catch (e) { }
+    }
+    window.sfxHeal = heal;
+    setInterval(heal, 2000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(heal, 300); });
+
     // ---------- 소리 재생 (WebAudio, 안 되면 Audio 태그) ----------
     var ctx = null, buffers = {}, loading = {};
     function getCtx() {
