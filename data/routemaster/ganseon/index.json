@@ -1,0 +1,52 @@
+{
+ "202": {
+  "stops": 130,
+  "totalSec": 17280,
+  "incheonSec": 17280
+ },
+ "203": {
+  "stops": 130,
+  "totalSec": 8700,
+  "incheonSec": 8700
+ },
+ "204": {
+  "stops": 98,
+  "totalSec": 13500,
+  "incheonSec": 13500
+ },
+ "205": {
+  "stops": 78,
+  "totalSec": 8640,
+  "incheonSec": 8640
+ },
+ "206": {
+  "stops": 111,
+  "totalSec": 9300,
+  "incheonSec": 9300
+ },
+ "221": {
+  "stops": 106,
+  "totalSec": 9900,
+  "incheonSec": 9900
+ },
+ "281": {
+  "stops": 85,
+  "totalSec": 11100,
+  "incheonSec": 11100
+ },
+ "282": {
+  "stops": 70,
+  "totalSec": 7500,
+  "incheonSec": 7500
+ },
+ "202A": {
+  "stops": 10,
+  "totalSec": 3300,
+  "incheonSec": 3300
+ },
+ "203A": {
+  "stops": 30,
+  "totalSec": 3000,
+  "incheonSec": 3000
+ }
+}

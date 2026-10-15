@@ -4,12 +4,13 @@
 // - 정류장별 누적 구간소요시간(L열, 초)이 앵커 구간 사이의 시간 배분 비율이 됩니다.
 // - 앵커 정류장 = 배경색이 '연한 빨강 2'(#ea9999)로 칠해진 행 (G열 기준)
 //   · 왕복 노선: 3개(출발/기점/도착)   · 편도 노선(202A/203A 등): 2개
+// - 2026-10-15: GitHub 노선 파일(data/routemaster/ganseon)을 먼저 읽고, 못 받을 때만 시트를 읽는다 (GithubData.js ghFetchJson_)
 // - 표준시간 자체는 저장하지 않습니다. 앱이 근무표 앵커시간(time1~3)으로 계산합니다.
 // ================================================================
 
 var ROUTE_MASTER_SHEET_NAME = '노선마스터';
 var ROUTE_ANCHOR_COLOR = '#ea9999';   // 구글시트 '연한 빨강 2'
-var ROUTE_STOPS_CACHE_PREFIX = 'ROUTE_STOPS_V3_';
+var ROUTE_STOPS_CACHE_PREFIX = 'ROUTE_STOPS_V4_';
 
 // 노선마스터 열 (1-based): D=순서 E=정류장ID G=정류장명 H=위도 I=경도 L=구간소요시간 N=제한속도 O=도로명
 function isAnchorBackground_(bg) {
@@ -29,6 +30,16 @@ function getRouteStopsForApp(routeName, fresh) {
     var cache = CacheService.getScriptCache();
     var cached = fresh ? null : cache.get(ROUTE_STOPS_CACHE_PREFIX + name);   // fresh=수정 페이지: 저장분을 쓰지 않고 시트에서 새로 읽음
     if (cached) return JSON.parse(cached);
+
+    // GitHub 노선 파일(data/routemaster/ganseon/<노선>.json)을 먼저 쓰고, 없을 때만 시트에서 읽는다
+    if (/^[0-9A-Za-z]+$/.test(name) && typeof ghFetchJson_ === 'function') {
+      var gh = ghFetchJson_('data/routemaster/ganseon/' + name + '.json');
+      if (gh && gh.stops && gh.stops.length && gh.anchors) {
+        var ghRes = { success: true, route: gh.route || name, totalSec: gh.totalSec, anchors: gh.anchors, stops: gh.stops, warn: '' };
+        try { cache.put(ROUTE_STOPS_CACHE_PREFIX + name, JSON.stringify(ghRes), 300); } catch (ce) {}
+        return ghRes;
+      }
+    }
 
     var ss = (typeof SHEET_ID !== 'undefined' && SHEET_ID)
       ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();

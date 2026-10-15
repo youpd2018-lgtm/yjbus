@@ -6,6 +6,8 @@
 var ROAD_NAME_COL = 15;   // O열
 
 function saveRoadNames(routeName, roads) {
+  // 2026-10-15: 노선 데이터는 GitHub(data/routemaster/ganseon)로 통합됨 — 시트와 값이 달라지지 않도록 시트에는 더 쓰지 않는다
+  return { success: false, error: '도로명은 이제 GitHub 노선 파일에 기록합니다. 클로드에게 알려 주세요. (시트에는 쓰지 않음)' };
   try {
     var name = String(routeName || '').trim();
     if (!name) return { success: false, error: 'route 누락' };
