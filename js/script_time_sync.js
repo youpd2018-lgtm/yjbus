@@ -25,8 +25,7 @@
     return fetch('manifest.json?ytc=' + t0 + Math.floor(Math.random() * 1e6), { method: 'HEAD', cache: 'no-store' }).then(function (r) {
       var t1 = Real.now(), d = r.headers.get('date'); if (!d || !r.ok || t1 - t0 > 3000) return null;
       var base = Real.parse(d); if (isNaN(base)) return null;
-      var age = parseInt(r.headers.get('age') || '0', 10); if (!(age >= 0)) age = 0;
-      base += age * 1000;
+      // Age 헤더는 더하지 않는다: GitHub Pages의 Date는 캐시에서 나와도 응답 순간의 시각이다(실제 응답으로 확인)
       return { lo: base - t1, hi: base + 1000 - t0 };   // 서버 시각이 1초 단위로 잘려 오므로 [base, base+1초) 안
     }).catch(function () { return null; });
   }
