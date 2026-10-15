@@ -4,6 +4,7 @@
 // ================================================================
 let voiceRecognition = null;
 let isVoiceActive = false;
+const VOICE_IDLE_MS = 12000;   // 이 시간(밀리초) 동안 말이 없으면 구차장 마이크를 자동으로 끔
 let isVoiceListening = false;
 let isVoiceSpeaking = false;
 let wasVoiceWidgetDragged = false;
@@ -123,6 +124,7 @@ function createFreshRecognition() {
 
     rec.onresult = function (event) {
       isVoiceListening = false;
+      window._voiceActAt = Date.now();
       try { rec.stop(); } catch (e) {}
 
       if (!event.results || event.results.length === 0) return;
@@ -243,6 +245,7 @@ function toggleVoiceAssistant(e) {
 
   // 🚀 대화 모드 시작!
   isVoiceActive = true;
+  window._voiceActAt = Date.now();
   startVoiceListeningLoop();
 }
 
@@ -252,6 +255,14 @@ function startVoiceListeningLoop() {
 
   const widget = document.getElementById('floatingVoiceWidget');
   if (widget && (widget.classList.contains('thinking') || widget.classList.contains('speaking'))) {
+    return;
+  }
+
+  // 🛑 말이 없는 채로 VOICE_IDLE_MS 가 지나면 마이크(녹음)를 자동으로 끈다: 마이크가 켜져 있는 동안은 폰이 녹음 상태가 되어
+  //    알림음·카메라 띵동·다른 앱 음악이 막히기 때문 (사용자 지시 2026-10-15)
+  if (Date.now() - (window._voiceActAt || 0) > VOICE_IDLE_MS) {
+    stopVoiceAssistant();
+    updateVoiceWidgetState('idle', '마이크를 껐어요 (다시 누르면 켜져요)');
     return;
   }
 
@@ -290,6 +301,7 @@ function startVoiceListeningLoop() {
 // 🛑 [마이크 재터치 시 대화 및 녹음 완전 종료]
 function stopVoiceAssistant() {
   isVoiceActive = false;
+  setTimeout(function () { try { if (window.sfxHeal) window.sfxHeal(); } catch (e) { } }, 400);   // 마이크를 끈 뒤 알림음 소리 장치를 되살림
   isVoiceListening = false;
   isVoiceSpeaking = false;
   clearTimeout(window._voiceLoopTimer);
@@ -345,6 +357,7 @@ function unlockAudioAndTTS() {
 // 🔄 [음성 발화 완료 후 처리] 대화 모드가 켜져 있으면 자동으로 다음 질문을 계속 듣습니다.
 function handleVoiceSpeechComplete() {
   isVoiceSpeaking = false;
+  window._voiceActAt = Date.now();   // 답변이 끝난 시점부터 다시 센다
   if (isVoiceActive) {
     updateVoiceWidgetState('listening');
     clearTimeout(window._voiceLoopTimer);
