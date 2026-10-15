@@ -1,0 +1,7 @@
+/* 단속카메라 전방 알림 (노선지도·라이브 모달 공용, js/script_camera_alert.js) */
+.yb-cam { display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; border-radius: 12px; color: #fff; background: #d97706; font: 800 18px/1.2 var(--app-font, sans-serif); box-shadow: 0 3px 10px rgba(0,0,0,.45); box-sizing: border-box; }
+.yb-cam.on { display: flex; }
+.yb-cam.near { background: #dc2626; animation: ybCamBlink .7s steps(2, jump-none) infinite; }
+.yb-cam b { font-size: 28px; font-variant-numeric: tabular-nums; }
+.yb-cam .lim { font-size: 26px; }
+@keyframes ybCamBlink { 50% { opacity: .72; } }

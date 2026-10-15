@@ -197,9 +197,8 @@
   /* 단속카메라 표시·접근 알림 */
   .cam { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid #dc2626; color: #111; font: 800 11px/20px sans-serif; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
   .cam.sig { border-color: #f59e0b; } .cam.oth { border-color: #64748b; font-size: 9px; }
-  #camAlert { position: fixed; left: 50%; top: 96px; transform: translateX(-50%); z-index: 40; display: none; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 14px; background: rgba(220,38,38,.94); color: #fff; font: 800 20px/1.2 sans-serif; box-shadow: 0 3px 10px rgba(0,0,0,.5); white-space: nowrap; }
-  #camAlert.sig { background: rgba(217,119,6,.95); } #camAlert.show { display: flex; }
-  #camAlert b { font-size: 26px; }
+  #camAlert { position: absolute; left: 8px; right: 8px; top: calc(68px + var(--sat) + 90px); z-index: 21; }
+  body:not(.hasAnc) #camAlert { top: calc(68px + var(--sat) + 8px); }
   #gap { display: none; align-items: stretch; min-height: 58px; background: rgba(0,0,0,.28); box-shadow: inset 0 3px 8px rgba(0,0,0,.55); border-top: 2px solid rgba(110,231,183,.55); }
   body.hasGap #gap { display: flex; }
   #gap .gs { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 6px; }
@@ -214,6 +213,7 @@
 
 </style>
 <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<link rel="stylesheet" href="css/camera.css">
 </head>
 <body>
 <div id="rot">폰을 세로로 돌려 주세요</div>
@@ -240,13 +240,14 @@
   </div>
   <div class="sub" id="sub" style="display:none"></div>
 </div>
-<div id="camAlert"></div>
+<div id="camAlert" class="yb-cam"></div>
 <div id="gap"><div class="gs"><span class="gr"><i>뒷차</i><b id="gapBn"></b></span><span class="gv" id="gapBv">-</span></div><div class="gm"><iconify-icon icon="lucide:bus"></iconify-icon></div><div class="gs r"><span class="gr"><i>앞차</i><b id="gapFn"></b></span><span class="gv" id="gapFv">-</span></div></div>
 </div>
 
 <script src="js/app-config.js"></script>
 <script src="js/gas-polyfill.js"></script>
 <script src="js/script_std_calc.js"></script>
+<script src="js/script_camera_alert.js"></script>
 <script>
   // 카카오 JavaScript 키 (사이트 주소 제한이 걸려 있어 코드에 있어도 안전)
   const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
@@ -366,7 +367,6 @@
 
   // ---- 단속카메라 (data/camera/cameras.json, 공공데이터포털 고정식 카메라 중 우리 노선 위 것만) ----
   let camAll = null, camOvs = [], camList = [];
-  const CAM_ALERT_M = 500, CAM_NAME = { speed: '과속카메라', signal: '신호단속', both: '과속·신호단속', other: '단속카메라' };
   async function loadCameras() {
     if (!camAll) { try { const r = await fetch('data/camera/cameras.json', { cache: 'no-cache' }); camAll = r.ok ? (await r.json()).cameras || [] : []; } catch (e) { camAll = []; } }
     camOvs.forEach(o => o.setMap(null)); camOvs = [];
@@ -377,18 +377,7 @@
       camOvs.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(c.lat, c.lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: 3 }));
     });
   }
-  function checkCamera() {   // 앞쪽(진행 방향 ±50°) 500m 안의 가장 가까운 카메라를 알린다
-    const el = $('camAlert'); if (!el) return;
-    let best = null, bd = 1e9;
-    if (me && camList.length && (me.speed == null || me.speed >= 5)) camList.forEach(c => {
-      const d = distM(me.lat, me.lon, c.lat, c.lng); if (d > CAM_ALERT_M || d >= bd) return;
-      const a = Math.abs(((bearing(me.lat, me.lon, c.lat, c.lng) - heading + 540) % 360) - 180);
-      if (a <= 50) { best = c; bd = d; }
-    });
-    if (!best) { el.classList.remove('show'); return; }
-    el.className = 'show' + (best.type === 'signal' ? ' sig' : '');
-    el.innerHTML = '<span>' + CAM_NAME[best.type] + (best.limit ? ' <b>' + best.limit + '</b>km' : '') + '</span><b>' + Math.round(bd / 10) * 10 + 'm</b>';
-  }
+  function checkCamera() { YbCamera.update(me ? { lat: me.lat, lon: me.lon, speed: me.speed, heading } : null, route && route.name, $('camAlert')); }
 
   async function loadRoad(r) {
     let base = null;
