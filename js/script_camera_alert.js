@@ -1,8 +1,8 @@
 // 단속카메라 전방 알림: 진행 방향 앞 500m 안의 카메라를 글자로 알리고(500m 노랑, 200m 빨강 깜빡),
 // 500m와 200m에서 각각 한 번 띵동 경고음을 내고, 카메라 제한속도를 넘으면 화면 테두리가 빨갛게 깜빡인다. 노선지도·라이브 모달 공용. 데이터: data/camera/cameras.json
 (function () {
-  var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속카메라', signal: '신호단속카메라', both: '과속 신호단속카메라', other: '단속카메라' };
-  var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, spoken = {};
+  var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속카메라', signal: '신호위반', both: '과속·신호위반', other: '단속카메라' }, CAUTION_M = 100;
+  var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, caution = null, spoken = {};
   try { spoken = JSON.parse(sessionStorage.getItem('yb_cam_spoken') || '{}'); } catch (e) { }
 
   function dist(a, b, c, d) {
@@ -55,6 +55,13 @@
         if (Math.abs(((bear(pos.lat, pos.lon, c.lat, c.lng) - heading + 540) % 360) - 180) <= 50) { best = c; bd = d; }
       });
     }
+    // 100m 안으로 들어오면 그 카메라를 붙잡아 두고, 지나칠 때까지 "주의하세요"를 같은 자리에 띄운다
+    if (caution && pos) {
+      var dl = dist(pos.lat, pos.lon, caution.c.lat, caution.c.lng);
+      if (dl < caution.min) caution.min = dl;
+      if (dl > caution.min + 30 || dl > 300) caution = null; else { best = caution.c; bd = dl; }
+    } else if (caution) caution = null;
+    if (!caution && best && bd <= CAUTION_M) caution = { c: best, min: bd };
     // ---- 구간단속: 시작점 접근 알림 → 구간 안 평균속도·남은 거리 → 끝점 통과 ----
     var sec = null, secD = 0, inSec = null;
     if (pos && secs && route) {
@@ -90,8 +97,8 @@
       chime({ lat: sec.start.lat, lng: sec.start.lng }, secD); over(false); return;
     }
     if (!best) { el.className = 'yb-cam'; over(false); return; }
-    el.className = 'yb-cam on' + (bd <= NEAR_M ? ' near' : '');
-    el.innerHTML = '<span>' + NAME[best.type].replace('신호단속카메라', '신호단속') + (best.limit ? ' <b class="lim">' + best.limit + '</b>km' : '') + '</span><b>' + (Math.round(bd / 10) * 10) + 'm</b>';
+    el.className = 'yb-cam on' + (bd <= NEAR_M || caution ? ' near' : '');
+    el.innerHTML = '<span>' + NAME[best.type] + (best.limit ? ' <b class="lim">' + best.limit + '</b>km' : '') + '</span><b>' + (caution ? '주의하세요' : Math.round(bd / 10) * 10 + 'm') + '</b>';
     chime(best, bd);
     over(best.limit > 0 && pos.speed != null && pos.speed > best.limit);
   }
