@@ -1,47 +1,7 @@
 // ================================================================
 // 📢 [오늘의 한마디] 메시지 포맷터 (로딩 인디케이터 & 기사/가족 색상 분기)
 // ================================================================
-// ================================================================
-// 🔔 맑고 고급스러운 "띵-동" (E5 -> C5) 알림음 (Web Audio API, 0ms 무지연)
-// ================================================================
-let lastPlayedAlertText = "";
-function playChimeDingDong() {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'ambient'; } catch (e) { }   // 다른 앱 음악을 끊지 않게
-    const ctx = window.__ybChimeCtx || (window.__ybChimeCtx = new AudioCtx());   // 소리 장치를 부를 때마다 새로 만들면 폰이 한도(몇 개)를 넘어 소리가 막히므로 하나만 만들어 계속 씀
-    if (ctx.state !== 'running') ctx.resume();
-
-    const now = ctx.currentTime;
-
-    // 1st Tone (E5 = 659.25Hz) - "띵"
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(659.25, now);
-    gain1.gain.setValueAtTime(0.28, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.55);
-
-    // 2nd Tone (C5 = 523.25Hz) - "동" (0.18초 뒤)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(523.25, now + 0.18);
-    gain2.gain.setValueAtTime(0.30, now + 0.18);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(now + 0.18);
-    osc2.stop(now + 0.95);
-  } catch(e) {
-    console.warn("오디오 알림 재생 생략:", e);
-  }
-}
+// 2026-10-15 사용자 지시: 오늘의 한마디에는 소리(띵동)를 쓰지 않는다. (옛 띵동 함수 playChimeDingDong 삭제)
 
 // ================================================================
 // 📢 [오늘의 한마디 & 돌발 속보] 메시지 포맷터
