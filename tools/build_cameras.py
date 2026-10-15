@@ -66,17 +66,11 @@ def main():
         secpts |= set(g['시점']) | set(g['종점'])
         secs.append({'name': (road + ' (' + dr + ')').strip(), 'limit': g['limit'], 'routes': rs,
                      'start': {'lat': a[0], 'lng': a[1]}, 'end': {'lat': b[0], 'lng': b[1]}})
-    # 공공데이터에 없는 구간단속은 직접 적는다 (정류장 좌표 기준, 재필씨 확인 2026-10-15)
-    # 청라하늘대교 교량 60km 왕복: 영종 쪽 '청라하늘대교입구' 정류장 ~ 청라 쪽 '청라파크자이상가' 정류장
-    def snap(c, sg):   # 노선선에서 가장 가까운 점 (정류장 좌표가 노선선과 떨어져 있어도 끝점이 노선 위에 오도록)
-        best = min((q for seg in sg for q in seg), key=lambda q: math.hypot((q[0] - c[0]) * KY, (q[1] - c[1]) * KX))
-        return best if math.hypot((best[0] - c[0]) * KY, (best[1] - c[1]) * KX) <= 300 else None
-    for rt in ('281', '282'):
-        for nm, a0, b0 in (('청라하늘대교 (영종 → 청라)', (37.502107, 126.564247), (37.521727, 126.627852)),
-                           ('청라하늘대교 (청라 → 영종)', (37.521631, 126.62747), (37.502107, 126.564247))):
-            a, b = snap(a0, routes[rt]), snap(b0, routes[rt])
-            if a and b:
-                secs.append({'name': nm, 'limit': 60, 'routes': [rt], 'start': {'lat': a[0], 'lng': a[1]}, 'end': {'lat': b[0], 'lng': b[1]}})
+    # 공공데이터에 없는 구간단속은 직접 적는다. 청라하늘대교 교량 60km 왕복: 재필씨가 camera_pick.html 에서 찍은 위치(2026-10-15)
+    for nm, a, b in (('청라하늘대교 (영종 → 청라)', (37.505910, 126.574049), (37.517228, 126.606293)),
+                     ('청라하늘대교 (청라 → 영종)', (37.517378, 126.606267), (37.505988, 126.573975))):
+        rs = [k for k in ('281', '282') if near(a, routes[k]) <= SEC_NEAR and near(b, routes[k]) <= SEC_NEAR]
+        secs.append({'name': nm, 'limit': 60, 'routes': rs, 'start': {'lat': a[0], 'lng': a[1]}, 'end': {'lat': b[0], 'lng': b[1]}})
     os.makedirs(os.path.join(ROOT, 'data', 'camera'), exist_ok=True)
     json.dump({'v': 1, 'count': len(secs), 'sections': secs}, open(os.path.join(ROOT, 'data', 'camera', 'sections.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     print('구간단속', len(secs), '곳')
