@@ -58,7 +58,11 @@
           // 도착 시각 = 이 회차에서 값이 있는 마지막 칸 (효과음용)
           let endMins = null;
           for (let e = colCount; e >= 1; e--) { const ev = list[i]['time' + e]; if (ev && String(ev).trim() !== '') { endMins = toMinutes(ev); break; } }
-          if (mins !== null) trips.push({ idx: i + 1, mins, endMins, text: String(v).trim(), place: headers[c - 1] || '' });
+          // 기점 통과 시각 = 출발·기점·도착이 모두 있는 회차의 가운데 칸 (효과음용)
+          let midMins = null;
+          { const t1 = list[i].time1, t2 = list[i].time2, t3 = list[i].time3, has = (x) => x && String(x).trim() !== '';
+            if (colCount >= 3 && has(t1) && has(t2) && has(t3)) midMins = toMinutes(t2); }
+          if (mins !== null) trips.push({ idx: i + 1, mins, endMins, midMins, text: String(v).trim(), place: headers[c - 1] || '' });
           break;
         }
       }
