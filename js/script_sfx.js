@@ -8,7 +8,7 @@
 (function () {
     var LS_ON = 'yb_sfx_on';
     var SOUNDS = { depart: 'sounds/depart_ding.mp3', arrive: 'sounds/arrive_chime.mp3', tick: 'sounds/count_tick.mp3', base: 'sounds/base_chime.mp3' };
-    var COUNT_BASE_SEC = 3;     // 기점 통과는 3초 카운트
+    var COUNT_BASE_SEC = 3;     // 기점 통과는 딩동 앞뒤로 3초 카운트씩
     var COUNT_SEC = 5;          // 출발·도착 시각 이 시간(초) 전부터 1초마다 '똑' (5,4,3,2,1) 하다가 정각에 띵동/차임
     var GRACE_SEC = 3;          // 정각부터 이 시간(초) 안에서만 울림 (늦게 앱을 켜면 울리지 않음)
     var CHECK_MS = 500;
@@ -92,6 +92,11 @@
                 if (nowSec < at && nowSec >= at - cnt) {   // 출발·도착 카운트: 남은 초마다 한 번씩
                     var ck = 'yb_sfx_' + info.today + '_' + info.driver + '_' + t.idx + '_' + kind + 'tick' + (at - nowSec);
                     try { if (sessionStorage.getItem(ck)) return; sessionStorage.setItem(ck, '1'); } catch (e) { }
+                    play('tick'); return;
+                }
+                if (kind === 'base' && nowSec > at && nowSec <= at + COUNT_BASE_SEC) {   // 기점은 도착하자마자 출발하므로 딩동 뒤에도 3초 카운트
+                    var ak = 'yb_sfx_' + info.today + '_' + info.driver + '_' + t.idx + '_basetickA' + (nowSec - at);
+                    try { if (sessionStorage.getItem(ak)) return; sessionStorage.setItem(ak, '1'); } catch (e) { }
                     play('tick'); return;
                 }
                 if (nowSec < at || nowSec >= at + GRACE_SEC) return;
