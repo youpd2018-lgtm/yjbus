@@ -301,14 +301,23 @@ function startVoiceListeningLoop() {
 // 🛑 [마이크 재터치 시 대화 및 녹음 완전 종료]
 function stopVoiceAssistant() {
   isVoiceActive = false;
-  setTimeout(function () { try { if (window.sfxHeal) window.sfxHeal(); } catch (e) { } }, 400);   // 마이크를 끈 뒤 알림음 소리 장치를 되살림
+  setTimeout(function () { try { if (window.sfxHeal) window.sfxHeal(); } catch (e) { } }, 400);
+  setTimeout(function () { try { if (window.sfxHeal) window.sfxHeal(); } catch (e) { } }, 1500);   // 마이크를 끈 뒤 알림음 소리 장치를 되살림
   isVoiceListening = false;
   isVoiceSpeaking = false;
   clearTimeout(window._voiceLoopTimer);
 
   if (voiceRecognition) {
-    try { voiceRecognition.abort(); } catch (e) {}
+    try { voiceRecognition.abort(); voiceRecognition.onend = null; voiceRecognition.onerror = null; voiceRecognition.onresult = null; } catch (e) {}
+    voiceRecognition = null;
   }
+  // 구차장 전용 소리 장치를 닫아 알림음 소리 장치와 겹치지 않게 함 (다음에 마이크를 켜면 새로 만듦)
+  if (voiceAudioCtx) {
+    try { voiceAudioCtx.close(); } catch (e) {}
+    voiceAudioCtx = null;
+  }
+  // 녹음 모드를 즉시 풀어 '섞어 듣기(ambient)'로 되돌림 (이어서 sfxHeal이 한 번 더 복구)
+  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (e) {}
   if (window.speechSynthesis) {
     try { window.speechSynthesis.cancel(); } catch (e) {}
   }
