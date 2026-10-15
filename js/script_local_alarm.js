@@ -58,7 +58,11 @@
           // 도착 시각 = 이 회차에서 값이 있는 마지막 칸 (효과음용)
           let endMins = null;
           for (let e = colCount; e >= 1; e--) { const ev = list[i]['time' + e]; if (ev && String(ev).trim() !== '') { endMins = toMinutes(ev); break; } }
-          if (mins !== null) trips.push({ idx: i + 1, mins, endMins, text: String(v).trim(), place: headers[c - 1] || '' });
+          // 기점 통과 시각 = 출발·기점·도착이 모두 있는 회차의 가운데 칸 (효과음용)
+          let midMins = null;
+          { const t1 = list[i].time1, t2 = list[i].time2, t3 = list[i].time3, has = (x) => x && String(x).trim() !== '';
+            if (colCount >= 3 && has(t1) && has(t2) && has(t3)) midMins = toMinutes(t2); }
+          if (mins !== null) trips.push({ idx: i + 1, mins, endMins, midMins, text: String(v).trim(), place: headers[c - 1] || '' });
           break;
         }
       }
@@ -175,10 +179,8 @@
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
     const body = `${trip.text} 출발` + (trip.place ? ` · ${trip.place}` : '') + ` · ${info.sched.route} ${info.sched.seq}` + (info.sched.busNo && info.sched.busNo !== '-' ? ` · 차량 ${info.sched.busNo}` : '');
     // 2026-10-10 사용자 지시: 카드는 항상 한 개만. 앱이 화면에 있으면 화면 위 알림 카드(배너), 백그라운드면 폰 알림 메시지
-    try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
-    playAlarmSound();
-    if (document.visibilityState === 'visible') showAlarmBanner(title, body);
-    else showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
+    // 2026-10-15 사용자 지시: 출발 10분 전 팝업(배너·폰 알림·진동)은 모두 없앰. 소리로만 안내(js/script_sfx.js 'pre10')
+    return;
   }
 
   // 📢 화면 위 알림 배너 (Swal 등 외부 라이브러리에 의존하지 않아 아이폰에서도 항상 표시)
