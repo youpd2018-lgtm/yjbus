@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>구간단속 위치 찍기</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1220; color: #fff; font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; }
+  #map { position: absolute; left: 0; right: 0; top: 0; bottom: 188px; }
+  #bar { position: absolute; left: 0; right: 0; bottom: 0; height: 188px; box-sizing: border-box; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: #0f172a; border-top: 2px solid #334155; overflow-y: auto; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  button { font: 800 14px/1 sans-serif; padding: 9px 10px; border-radius: 10px; border: 2px solid #475569; background: #1e293b; color: #fff; }
+  button.on { border-color: #fde047; background: #422006; }
+  .k1 { border-left: 8px solid #ef4444; } .k2 { border-left: 8px solid #f97316; } .k3 { border-left: 8px solid #3b82f6; } .k4 { border-left: 8px solid #22c55e; }
+  #info { font-size: 12px; line-height: 1.5; color: #cbd5e1; white-space: pre-wrap; word-break: break-all; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; color: #fff; font: 800 12px/16px sans-serif; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  .cam { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #dc2626; color: #111; font: 800 10px/16px sans-serif; text-align: center; opacity: .85; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="bar">
+  <div class="row" id="types"></div>
+  <div class="row">
+    <button id="btnGps">지금 내 위치를 이 점으로</button>
+    <button id="btnSat">위성/지도</button>
+    <button id="btnCopy">결과 복사</button>
+    <button id="btnClear">모두 지우기</button>
+  </div>
+  <div id="info">위에서 점 종류를 고른 뒤, 지도에서 단속 시작·끝 표지판 자리를 눌러 찍으세요. 다시 누르면 옮겨집니다. 끝나면 [결과 복사]를 눌러 채팅에 붙여 넣어 주세요.</div>
+</div>
+<script>
+  const KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';   // route_map.html 과 같은 키(사이트 주소 제한)
+  const TYPES = [
+    { id: 'a1', label: '1. 영종→청라 시작', cls: 'k1', color: '#ef4444' },
+    { id: 'a2', label: '2. 영종→청라 끝', cls: 'k2', color: '#f97316' },
+    { id: 'b1', label: '3. 청라→영종 시작', cls: 'k3', color: '#3b82f6' },
+    { id: 'b2', label: '4. 청라→영종 끝', cls: 'k4', color: '#22c55e' },
+  ];
+  const KEY = 'yb_camera_pick_v1';
+  let cur = 'a1', pts = {}, mk = {}, map, hybrid = false;
+  try { pts = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { pts = {}; }
+  const $ = (id) => document.getElementById(id);
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(pts)); } catch (e) { } }
+
+  function buildButtons() {
+    $('types').innerHTML = '';
+    TYPES.forEach(t => {
+      const b = document.createElement('button'); b.className = t.cls + (cur === t.id ? ' on' : ''); b.textContent = t.label;
+      b.onclick = () => { cur = t.id; buildButtons(); }; $('types').appendChild(b);
+    });
+  }
+  function text() {
+    const lines = ['청라하늘대교 구간단속 위치 (60km)'];
+    TYPES.forEach(t => { const p = pts[t.id]; lines.push(t.label + ': ' + (p ? p[0].toFixed(6) + ', ' + p[1].toFixed(6) : '(아직 안 찍음)')); });
+    return lines.join('\n');
+  }
+  function refresh() { $('info').textContent = text(); }
+  function place(id) {
+    const t = TYPES.find(x => x.id === id), p = pts[id];
+    if (mk[id]) { mk[id].setMap(null); delete mk[id]; }
+    if (!p) return;
+    const el = document.createElement('div'); el.className = 'dot'; el.style.background = t.color; el.textContent = id.slice(1);
+    mk[id] = new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(p[0], p[1]), content: el, xAnchor: .5, yAnchor: .5, zIndex: 9 });
+  }
+  function setPoint(lat, lng) { pts[cur] = [lat, lng]; save(); place(cur); refresh(); }
+
+  async function getJson(u) { try { const r = await fetch(u, { cache: 'no-cache' }); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+  function loadKakao() {
+    return new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY + '&autoload=false';
+      s.onload = () => kakao.maps.load(res); s.onerror = () => rej(new Error('카카오 지도를 불러오지 못했습니다')); document.head.appendChild(s);
+    });
+  }
+  (async function () {
+    buildButtons(); refresh();
+    try { await loadKakao(); } catch (e) { $('info').textContent = e.message; return; }
+    map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.5125, 126.5945), level: 6 });
+    kakao.maps.event.addListener(map, 'click', (e) => setPoint(e.latLng.getLat(), e.latLng.getLng()));
+    for (const [r, color] of [['281', '#2563eb'], ['282', '#16a34a']]) {   // 노선선 (참고용)
+      const j = await getJson('data/map/' + r + '.json'); if (!j) continue;
+      const path = []; j.segs.forEach(sg => sg.forEach(q => { if (q[1] > 126.55 && q[1] < 126.64) path.push(new kakao.maps.LatLng(q[0], q[1])); }));
+      new kakao.maps.Polyline({ map, path, strokeWeight: r === '281' ? 6 : 3, strokeColor: color, strokeOpacity: .55 });
+    }
+    const cj = await getJson('data/camera/cameras.json');   // 기존 고정식 카메라 (참고용)
+    ((cj && cj.cameras) || []).filter(c => c.lat > 37.49 && c.lat < 37.53 && c.lng > 126.55 && c.lng < 126.64).forEach(c => {
+      const el = document.createElement('div'); el.className = 'cam'; el.textContent = c.limit || '단속';
+      new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(c.lat, c.lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: 3 });
+    });
+    TYPES.forEach(t => place(t.id));
+  })();
+
+  $('btnSat').onclick = () => { if (!map) return; hybrid = !hybrid; map.setMapTypeId(hybrid ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP); };
+  $('btnGps').onclick = () => {
+    if (!navigator.geolocation) { $('info').textContent = '이 폰은 위치를 못 가져옵니다'; return; }
+    navigator.geolocation.getCurrentPosition(p => { setPoint(p.coords.latitude, p.coords.longitude); if (map) map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude)); },
+      () => { $('info').textContent = '위치 권한을 허용해 주세요'; }, { enableHighAccuracy: true, timeout: 15000 });
+  };
+  $('btnCopy').onclick = async () => {
+    const t = text();
+    try { await navigator.clipboard.writeText(t); $('info').textContent = '복사됨! 채팅에 붙여 넣으세요.\n\n' + t; }
+    catch (e) { $('info').textContent = '아래 글자를 꾹 눌러 복사하세요.\n\n' + t; }
+  };
+  $('btnClear').onclick = () => { if (!confirm('찍은 점을 모두 지울까요?')) return; pts = {}; save(); TYPES.forEach(t => place(t.id)); refresh(); };
+</script>
+</body>
+</html>
