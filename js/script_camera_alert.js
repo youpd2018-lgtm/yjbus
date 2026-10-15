@@ -55,7 +55,7 @@
         if (Math.abs(((bear(pos.lat, pos.lon, c.lat, c.lng) - heading + 540) % 360) - 180) <= 50) { best = c; bd = d; }
       });
     }
-    // 100m 안으로 들어오면 그 카메라를 붙잡아 두고, 지나칠 때까지 "주의하세요"를 같은 자리에 띄운다
+    // 100m 안으로 들어오면 그 카메라를 붙잡아 두고, 지나칠 때까지 남은 거리를 계속 줄여 보여 준다 (2026-10-15: '주의하세요' 글자는 뺌)
     if (caution && pos) {
       var dl = dist(pos.lat, pos.lon, caution.c.lat, caution.c.lng);
       if (dl < caution.min) caution.min = dl;
@@ -98,7 +98,7 @@
     }
     if (!best) { el.className = 'yb-cam'; over(false); return; }
     el.className = 'yb-cam on' + (bd <= NEAR_M || caution ? ' near' : '');
-    el.innerHTML = '<span>' + NAME[best.type] + (best.limit ? ' <b class="lim">' + best.limit + '</b>km' : '') + '</span><b>' + (caution ? '주의하세요' : Math.round(bd / 10) * 10 + 'm') + '</b>';
+    el.innerHTML = '<span>' + NAME[best.type] + (best.limit ? ' <b class="lim">' + best.limit + '</b>km' : '') + '</span><b>' + (Math.round(bd / 10) * 10 + 'm') + '</b>';
     chime(best, bd);
     over(best.limit > 0 && pos.speed != null && pos.speed > best.limit);
   }
