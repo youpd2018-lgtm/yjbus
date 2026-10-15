@@ -371,6 +371,11 @@
     if (!camAll) { try { const r = await fetch('data/camera/cameras.json', { cache: 'no-cache' }); camAll = r.ok ? (await r.json()).cameras || [] : []; } catch (e) { camAll = []; } }
     camOvs.forEach(o => o.setMap(null)); camOvs = [];
     camList = route ? camAll.filter(c => c.routes.includes(route.name)) : [];
+    if (!window.YbCamera.sections) { try { const r = await fetch('data/camera/sections.json', { cache: 'no-cache' }); window.YbCamera.sections = r.ok ? (await r.json()).sections || [] : []; } catch (e) { window.YbCamera.sections = []; } }
+    (window.YbCamera.sections || []).filter(sc => route && sc.routes.includes(route.name)).forEach(sc => [['start', '구간↘'], ['end', '구간■']].forEach(([k, t]) => {
+      const el = document.createElement('div'); el.className = 'cam oth'; el.style.borderColor = '#7c3aed'; el.textContent = k === 'start' ? sc.limit : '끝';
+      camOvs.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(sc[k].lat, sc[k].lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: 3 }));
+    }));
     camList.forEach(c => {
       const el = document.createElement('div'); el.className = 'cam' + (c.type === 'signal' ? ' sig' : c.type === 'other' ? ' oth' : '');
       el.textContent = c.limit ? c.limit : (c.type === 'signal' ? '신호' : '단속');
