@@ -225,6 +225,18 @@
     } catch (e) { }
   }
 
+  // ---- 단속카메라 전방 알림: 오늘 근무 노선 기준, 배차간격 박스 아래 ----
+  function syncCamera() {
+    var el = $('ybCamAlert'); if (!el || !window.YbCamera) return;
+    var g = window.lastGpsPosition, pos = null, route = '';
+    try {
+      var inp = $('searchDate'), sv = inp && inp.value && typeof getDriverKey === 'function' && localStorage.getItem(getDriverKey('sched_' + inp.value));
+      var sd = sv && JSON.parse(sv); if (sd && sd.workType !== '휴무' && sd.workType !== '미등록') route = sd.route || '';
+    } catch (e) { }
+    if (g && g.time && Date.now() - new Date(g.time).getTime() < 15000) pos = { lat: g.lat, lon: g.lon, speed: typeof g.speedKmh === 'number' ? g.speedKmh : null, heading: g.heading };
+    window.YbCamera.update(pos, route, el);
+  }
+
   function init() {
     if (!window.ybLv2On && !document.documentElement.classList.contains('lv2')) return;
     var gps = $('gpsAdminTrigger'), slot = $('yb3GpsSlot'), gauge = $('yb3Gauge');
@@ -249,6 +261,7 @@
     if (flow) watch(flow, syncPill, ['data-s']);
 
     syncTop(); syncMain(); syncSeq(); syncStops(); syncPill(); syncGap(); setInterval(syncGap, 5000);
+    setInterval(syncCamera, 1000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
