@@ -179,10 +179,8 @@
     const title = `🚌 ${trip.idx}회차 출발 ${LEAD_MIN}분 전`;
     const body = `${trip.text} 출발` + (trip.place ? ` · ${trip.place}` : '') + ` · ${info.sched.route} ${info.sched.seq}` + (info.sched.busNo && info.sched.busNo !== '-' ? ` · 차량 ${info.sched.busNo}` : '');
     // 2026-10-10 사용자 지시: 카드는 항상 한 개만. 앱이 화면에 있으면 화면 위 알림 카드(배너), 백그라운드면 폰 알림 메시지
-    try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
-    playAlarmSound();
-    if (document.visibilityState === 'visible') showAlarmBanner(title, body);
-    else showSystemNotification(title, body, 'local-start-alarm-' + trip.idx);
+    // 2026-10-15 사용자 지시: 출발 10분 전 팝업(배너·폰 알림·진동)은 모두 없앰. 소리로만 안내(js/script_sfx.js 'pre10')
+    return;
   }
 
   // 📢 화면 위 알림 배너 (Swal 등 외부 라이브러리에 의존하지 않아 아이폰에서도 항상 표시)
