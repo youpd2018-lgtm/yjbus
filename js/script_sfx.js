@@ -55,22 +55,25 @@
         } catch (e) { }
         loadBuffer('depart'); loadBuffer('arrive'); loadBuffer('tick'); loadBuffer('base'); loadBuffer('prestart'); loadBuffer('postend'); loadBuffer('pre10');
     }
-    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, unlock, { passive: true }); });
+    ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, unlock, { passive: true }); });
 
+    function playTag(name) {   // 대비책: 일반 소리 태그 (소리 장치가 잠겨 있을 때)
+        try { var au = new Audio(SOUNDS[name]); au.volume = 1; var p = au.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { }
+    }
     function play(name) {
         try {
             ambient();
             var c = ctx;
             if (c && buffers[name]) {
-                if (c.state !== 'running') c.resume();
-                var src = c.createBufferSource();
-                src.buffer = buffers[name]; src.connect(c.destination); src.start(0);
+                var go = function () { try { var src = c.createBufferSource(); src.buffer = buffers[name]; src.connect(c.destination); src.start(0); } catch (e) { playTag(name); } };
+                if (c.state === 'running') { go(); return; }
+                // 소리 장치가 쉬는 중(잠김·통화/마이크 사용 뒤 중단)이면 깨운 뒤 재생, 0.5초 안에 못 깨면 일반 소리 태그로 대신 재생
+                var done = false;
+                try { var r = c.resume(); if (r && r.then) r.then(function () { if (!done) { done = true; go(); } }, function () { if (!done) { done = true; playTag(name); } }); else { done = true; go(); } } catch (e) { done = true; playTag(name); }
+                setTimeout(function () { if (!done) { done = true; playTag(name); } }, 500);
                 return;
             }
-            var au = new Audio(SOUNDS[name]);
-            au.volume = 1;
-            var p = au.play();
-            if (p && p.catch) p.catch(function () { });
+            playTag(name);
         } catch (e) { }
     }
     window.sfxPlay = play;   // 점검용: sfxPlay('depart') / sfxPlay('arrive')
@@ -106,7 +109,10 @@
             });
         });
     }
-    window.addEventListener('load', function () { setTimeout(function () { setInterval(check, CHECK_MS); }, 4000); });
+    window.addEventListener('load', function () {
+        setTimeout(function () { try { Object.keys(SOUNDS).forEach(loadBuffer); } catch (e) { } }, 1500);   // 터치를 기다리지 않고 소리 파일을 미리 준비
+        setTimeout(function () { setInterval(check, CHECK_MS); }, 4000);
+    });
 
     // ---------- 설정 화면 켜기/끄기 ----------
     window.setSfx = function (on) {
