@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""노선마스터 시트(xlsx 내려받기) → data/routemaster/<노선>.json (한 번 옮길 때 쓰는 도구).
+"""노선마스터 시트(xlsx 내려받기) → data/routemaster/ganseon/<노선>.json (간선. 지선은 jiseon/ 폴더) (한 번 옮길 때 쓰는 도구).
 사용: python3 -I tools/import_routemaster.py 노선마스터.xlsx
 출력 형식은 Apps Script getRouteStopsForApp(RouteExport.js)의 결과와 같다.
  stops = [정류장ID, 정류장명, 위도, 경도, 누적구간소요시간(초), 제한속도, 도로명]
@@ -41,7 +41,7 @@ def main(path):
         n = name_of(ws.cell(r, 2).value)
         if n in ('', 'None'): continue
         routes.setdefault(n, []).append(r)
-    out = os.path.join(os.path.dirname(__file__), '..', 'data', 'routemaster')
+    out = os.path.join(os.path.dirname(__file__), '..', 'data', 'routemaster', 'ganseon')
     os.makedirs(out, exist_ok=True)
     index = {}
     for n, rows in routes.items():
@@ -56,7 +56,7 @@ def main(path):
             if f.fill_type and f.fgColor.rgb == 'FFEA9999': anchors.append(len(stops)-1)
         names = ANCHOR_NAMES[n]
         assert len(anchors) == len(names), (n, anchors)
-        data = {'route': n, 'totalSec': cum, 'incheonSec': INCHEON_MIN[n]*60,
+        data = {'route': n, 'kind': '간선', 'totalSec': cum, 'incheonSec': INCHEON_MIN[n]*60,
                 'anchors': anchors, 'anchorNames': names, 'stops': stops}
         with open(os.path.join(out, n + '.json'), 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
