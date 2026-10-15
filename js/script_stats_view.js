@@ -501,7 +501,7 @@
             const del = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const k = localStorage.key(i);
-                if (k && k.indexOf('yb_route_v1_') === 0) del.push(k);
+                if (k && (k.indexOf('yb_route_v1_') === 0 || k.indexOf('yb_route_v2_') === 0)) del.push(k);
             }
             del.forEach(k => localStorage.removeItem(k));
             sessionStorage.clear();

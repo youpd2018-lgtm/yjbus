@@ -9,8 +9,9 @@
 //                                     'legacy' (기존 방식만)
 // ================================================================
 (function () {
-    const ROUTE_CACHE_PREFIX = 'yb_route_v1_';
-    const ROUTE_CACHE_TTL_MS = 10 * 60 * 60 * 1000;
+    const ROUTE_CACHE_PREFIX = 'yb_route_v2_';   // v2 = GitHub 노선 파일 (v1은 옛 서버 값)
+    const ROUTE_CACHE_TTL_MS = 30 * 60 * 1000;
+    const ROUTE_FILE_DIR = 'data/routemaster/ganseon/';   // 간선 노선 파일 (지선은 jiseon/ 으로 늘릴 예정)
     const inflight = {};
     let lastError = '';
 
@@ -54,6 +55,31 @@
         const cached = fresh ? null : readRouteCache(name);
         if (cached) return Promise.resolve(cached);
         if (inflight[name]) return inflight[name];
+        inflight[name] = loadRouteFile(name).then(res => {
+            if (res) {
+                delete inflight[name];
+                try { localStorage.setItem(ROUTE_CACHE_PREFIX + name, JSON.stringify({ t: Date.now(), data: res })); } catch (e) { }
+                return res;
+            }
+            delete inflight[name];
+            return loadRouteFromServer(name, fresh);   // 파일을 못 받으면 옛 서버 방식으로 대신
+        });
+        return inflight[name];
+    }
+
+    // GitHub 노선 파일(data/routemaster/ganseon/<노선>.json). 못 받거나 모양이 틀리면 null
+    function loadRouteFile(name) {
+        if (!/^[0-9A-Za-z]+$/.test(name)) return Promise.resolve(null);
+        return fetch(ROUTE_FILE_DIR + name + '.json', { cache: 'no-cache' })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+                if (!d || !Array.isArray(d.stops) || d.stops.length === 0 || !Array.isArray(d.anchors)) return null;
+                return { success: true, route: d.route || name, totalSec: d.totalSec, anchors: d.anchors, stops: d.stops, warn: '' };
+            })
+            .catch(() => null);
+    }
+
+    function loadRouteFromServer(name, fresh) {
         const url = window.GAS_WEB_APP_URL;
         if (!url) return Promise.resolve(null);
 
