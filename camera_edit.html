@@ -79,12 +79,12 @@ function loadKakao() {
     document.head.appendChild(s);
   });
 }
-function mk(el, lat, lng, z) { var o = new kakao.maps.CustomOverlay({ map: map, position: new kakao.maps.LatLng(lat, lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: z || 3 }); ovs.push(o); return o; }
+function mk(el, lat, lng, z) { var o = new kakao.maps.CustomOverlay({ map: map, position: new kakao.maps.LatLng(lat, lng), content: el, xAnchor: .5, yAnchor: .5, zIndex: z || 3, clickable: true }); ovs.push(o); return o; }
 function camEl(c, cls, dir, onclick) {
   var el = document.createElement('div'); el.className = 'cam' + (c.type === 'signal' || c.type === 'both' ? ' sig' : c.type === 'other' ? ' oth' : '') + (cls ? ' ' + cls : '');
   el.textContent = c.limit ? c.limit : (c.type === 'signal' ? '신호' : '단속');
   if (dir != null) { var ar = document.createElement('div'); ar.className = 'ar'; ar.style.transform = 'rotate(' + dir + 'deg)'; ar.innerHTML = '<i></i>'; el.appendChild(ar); }
-  if (onclick) el.addEventListener('click', function (e) { e.stopPropagation(); onclick(); });
+  if (onclick) el.addEventListener('click', function (e) { e.stopPropagation(); window._camClickAt = Date.now(); onclick(); });
   return el;
 }
 var line = null;
@@ -187,7 +187,8 @@ $('route').onchange = function () { openRoute($('route').value); };
     camAll = j.cameras || [];
     await loadKakao();
     map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(37.47, 126.5), level: 7 });
-    kakao.maps.event.addListener(map, 'click', function (ev) { if (!addMode) { sel = -1; $('form').innerHTML = ''; draw(); return; } var ll = ev.latLng; startAdd(ll.getLat(), ll.getLng(), null); });
+    kakao.maps.event.addListener(map, 'click', function (ev) { if (Date.now() - (window._camClickAt || 0) < 500) return;   /* 카메라 동그라미를 누른 클릭이 지도 클릭으로 또 들어와 선택을 지우던 것 막음 */
+      if (!addMode) return;   /* 지도 빈 곳을 눌러도 선택은 그대로 둠(다른 카메라를 눌러야 바뀜) */ var ll = ev.latLng; startAdd(ll.getLat(), ll.getLng(), null); });
     var last = ''; try { last = localStorage.getItem('yb_camedit_route') || ''; } catch (e) { }
     if (ROUTES.indexOf(last) >= 0) $('route').value = last;
     $('route').addEventListener('change', function () { try { localStorage.setItem('yb_camedit_route', $('route').value); } catch (e) { } });
