@@ -47,6 +47,23 @@
     if (!o) { if (!on) return; o = document.createElement('div'); o.id = 'ybCamOver'; o.className = 'yb-cam-over'; document.body.appendChild(o); }
     o.classList.toggle('on', !!on);
   }
+  // 악천후(비·눈·안개·뇌우)에는 제한속도가 줄어드는 도로(예: 인천공항고속도로 100→80): 카메라에 wetLimit 이 있으면 날씨를 보고 고른다
+  var wxCode = null, wxAt = 0, wxFetching = false;
+  function wxBad() {
+    var code = null;
+    try { var c = window._weatherCache || (window.parent && window.parent._weatherCache); if (c && c.current && c.current.weather_code != null) code = c.current.weather_code; } catch (e) { }
+    if (code == null) {   // 노선지도처럼 앱 날씨가 없으면 영종도 날씨를 직접 받아 20분 동안 저장
+      try { var o = JSON.parse(localStorage.getItem('yb_wx') || 'null'); if (o && Date.now() - o.at < 1200000) code = o.code; } catch (e) { }
+      if (code == null && !wxFetching) {
+        wxFetching = true;
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=37.4917&longitude=126.4883&current=weather_code&timezone=Asia%2FSeoul').then(function (r) { return r.json(); })
+          .then(function (j) { try { localStorage.setItem('yb_wx', JSON.stringify({ at: Date.now(), code: j.current.weather_code })); } catch (e) { } wxFetching = false; }).catch(function () { setTimeout(function () { wxFetching = false; }, 120000); });
+      }
+    }
+    return code != null && (code === 45 || code === 48 || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 82) || code >= 95);
+  }
+  function limitOf(c) { return c.wetLimit && wxBad() ? c.wetLimit : c.limit; }
+
   // pos = { lat, lon, speed(km/h), heading }, route = 노선 이름(예: '202'), el = 알림 칸
   function update(pos, route, el) {
     if (!el) return; load();
@@ -108,9 +125,10 @@
     }
     if (!best) { el.className = 'yb-cam'; over(false); return; }
     el.className = 'yb-cam on' + (bd <= NEAR_M || caution ? ' near' : '');
-    el.innerHTML = '<span>' + NAME[best.type] + (best.limit ? ' <b class="lim">' + best.limit + '</b>km' : '') + '</span><b>' + (Math.round(bd / 10) * 10 + 'm') + '</b>';
+    var lim = limitOf(best);
+    el.innerHTML = '<span>' + NAME[best.type] + (lim ? ' <b class="lim">' + lim + '</b>km' : '') + (best.wetLimit && lim === best.wetLimit ? ' 악천후' : '') + '</span><b>' + (Math.round(bd / 10) * 10 + 'm') + '</b>';
     chime(best, bd);
-    over(best.limit > 0 && pos.speed != null && pos.speed > best.limit);
+    over(lim > 0 && pos.speed != null && pos.speed > lim);
   }
   window.YbCamera = { update: update, load: load };
 })();

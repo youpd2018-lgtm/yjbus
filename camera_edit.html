@@ -130,7 +130,7 @@ function startAdd(lat, lng, gpsHeading) {
   tmp = { lat: lat, lng: lng, dir: d }; sel = -1;
   var others = ROUTES.filter(function (x) { return x !== route; });
   var h = '<div class="h">새 카메라 설치 (' + route + ' 노선)</div><div class="s">위치: ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + (d == null ? ' · 도로선 80m 안에서 도로를 못 찾아 방향은 양방향만 가능해요' : ' · 파란 화살표가 이쪽 방향') + '</div>';
-  h += '<div class="row"><select id="fType"><option value="speed">과속</option><option value="signal">신호 과속</option></select><input id="fLim" type="number" inputmode="numeric" placeholder="제한속도(km)" value="50" style="width:140px"></div>';
+  h += '<div class="row"><select id="fType"><option value="speed">과속</option><option value="signal">신호 과속</option></select><input id="fLim" type="number" inputmode="numeric" placeholder="제한속도(km)" value="50" style="width:140px"><input id="fWet" type="number" inputmode="numeric" placeholder="악천후 시(선택)" style="width:140px"></div>';
   h += '<input id="fName" type="text" placeholder="이름(선택, 예: 공항로 ○○앞)" style="margin-top:6px">';
   h += '<label class="rd"><input type="radio" name="fd" value="this"' + (d != null ? ' checked' : ' disabled') + '><span>화살표 방향 한쪽만</span></label>';
   h += '<label class="rd"><input type="radio" name="fd" value="opp"' + (d != null ? '' : ' disabled') + '><span>반대 방향 한쪽만</span></label>';
@@ -141,10 +141,10 @@ function startAdd(lat, lng, gpsHeading) {
   $('form').innerHTML = h; draw();
   $('fNo').onclick = function () { tmp = null; addMode = false; $('bAdd').className = 'g'; $('form').innerHTML = ''; draw(); };
   $('fOk').onclick = function () {
-    var type = $('fType').value, lim = parseInt($('fLim').value, 10) || 0, nm = $('fName').value.trim();
+    var type = $('fType').value, lim = parseInt($('fLim').value, 10) || 0, wet = parseInt($('fWet').value, 10) || 0, nm = $('fName').value.trim();
     var mode = document.querySelector('input[name=fd]:checked').value, rs = [route];
     document.querySelectorAll('.fr:checked').forEach(function (x) { rs.push(x.value); });
-    var base = { lat: lat, lng: lng, type: type, limit: lim, name: nm, routes: rs };
+    var base = { lat: lat, lng: lng, type: type, limit: lim, wetLimit: wet, name: nm, routes: rs };
     function one(dir) { var o = Object.assign({}, base); o.dir = dir; adds.push(o); }
     if (mode === 'this') one(d); else if (mode === 'opp') one((d + 180) % 360); else if (mode === 'pair') { one(d); one((d + 180) % 360); } else one(null);
     tmp = null; addMode = false; $('bAdd').className = 'g'; $('form').innerHTML = ''; draw();
@@ -172,7 +172,7 @@ $('bGps').onclick = function () {
   }, function () { msg('내 위치를 못 가져왔어요. 위치 권한을 허용해 주세요.'); }, { enableHighAccuracy: true, timeout: 15000 });
 };
 $('bCopy').onclick = async function () {
-  var out = { camera_edit: 1, route: route, deletes: [], flips: [], adds: adds.map(function (a) { return { lat: a.lat, lng: a.lng, type: a.type, limit: a.limit, name: a.name, routes: a.routes, dir: a.dir }; }) };
+  var out = { camera_edit: 1, route: route, deletes: [], flips: [], adds: adds.map(function (a) { return { lat: a.lat, lng: a.lng, type: a.type, limit: a.limit, wetLimit: a.wetLimit || 0, name: a.name, routes: a.routes, dir: a.dir }; }) };
   Object.keys(dels).forEach(function (i) { var c = camAll[i]; out.deletes.push({ lat: c.lat, lng: c.lng, name: c.name }); });
   Object.keys(flips).forEach(function (i) { if (dels[i]) return; var c = camAll[i]; out.flips.push({ lat: c.lat, lng: c.lng, name: c.name, dir: flips[i].dir }); });
   var text = JSON.stringify(out);
