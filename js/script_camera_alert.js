@@ -2,8 +2,7 @@
 // 500m와 200m에서 각각 한 번 띵동 경고음을 내고, 카메라 제한속도를 넘으면 화면 테두리가 빨갛게 깜빡인다. 노선지도·라이브 모달 공용. 데이터: data/camera/cameras.json
 (function () {
   var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속', signal: '신호 과속', both: '신호 과속', other: '단속카메라' }, CAUTION_M = 100;
-  var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, caution = null, spoken = {};
-  try { spoken = JSON.parse(sessionStorage.getItem('yb_cam_spoken') || '{}'); } catch (e) { }
+  var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, caution = null;
 
   function dist(a, b, c, d) {
     var r = Math.PI / 180, x = (d - b) * r * Math.cos((a + c) / 2 * r), y = (c - a) * r;
@@ -29,10 +28,17 @@
       setTimeout(function () { try { new Audio('sounds/depart_ding.mp3').play().catch(function () { }); } catch (e) { } }, 900); } catch (e) { }
   }
   function chime(c, d) {
-    var k = c.lat + ',' + c.lng, st = d <= NEAR_M ? 2 : 1, now = Date.now(), o = spoken[k] || {};
-    if (o['s' + st] && now - o['s' + st] < 180000) return;
-    o['s' + st] = now; if (st === 2) o.s1 = o.s1 || now; spoken[k] = o;
-    try { sessionStorage.setItem('yb_cam_spoken', JSON.stringify(spoken)); } catch (e) { }
+    var st = d <= NEAR_M ? 2 : 1, now = Date.now(), sp = {};
+    // 노선지도와 라이브 모달(앱)이 각자 이 파일을 돌리므로 소리 기록은 저장소(localStorage)에서 매번 다시 읽어 서로 겹쳐 울리지 않게 한다
+    try { sp = JSON.parse(localStorage.getItem('yb_cam_spoken2') || '{}'); } catch (e) { }
+    // 가까이 붙은 카메라(상·하행 쌍, 신호+과속 등) 60m 안은 한 묶음으로 보고 같은 단계에서 한 번만 울린다
+    for (var k in sp) {
+      var o = sp[k]; if (!o || now - o.t > 180000) { delete sp[k]; continue; }
+      if (o.st >= st && dist(o.lat, o.lng, c.lat, c.lng) <= 60) return;
+    }
+    sp[c.lat + ',' + c.lng + ',' + st] = { lat: c.lat, lng: c.lng, st: st, t: now };
+    if (st === 2) sp[c.lat + ',' + c.lng + ',1'] = { lat: c.lat, lng: c.lng, st: 1, t: now };
+    try { localStorage.setItem('yb_cam_spoken2', JSON.stringify(sp)); } catch (e) { }
     ding();
   }
   // 제한속도를 넘으면 화면 전체에 은은한 빨간 테두리가 소리 없이 깜빡임
@@ -52,7 +58,11 @@
       if (heading != null) cams.forEach(function (c) {
         if (c.routes.indexOf(route) < 0) return;
         var d = dist(pos.lat, pos.lon, c.lat, c.lng); if (d > ALERT_M || d >= bd) return;
-        if (Math.abs(((bear(pos.lat, pos.lon, c.lat, c.lng) - heading + 540) % 360) - 180) <= 50) { best = c; bd = d; }
+        if (Math.abs(((bear(pos.lat, pos.lon, c.lat, c.lng) - heading + 540) % 360) - 180) > 50) return;
+        // 카메라가 걸리는 진행 방향(dirs, tools/camera_dirs.py)이 정해져 있으면 반대 방향(왕복 중 다른 편) 카메라는 무시
+        var cd = c.dirs && c.dirs[route];
+        if (cd != null && Math.abs(((cd - heading + 540) % 360) - 180) > 75) return;
+        best = c; bd = d;
       });
     }
     // 100m 안으로 들어오면 그 카메라를 붙잡아 두고, 지나칠 때까지 남은 거리를 계속 줄여 보여 준다 (2026-10-15: '주의하세요' 글자는 뺌)
@@ -88,7 +98,7 @@
       var bad = sc.limit > 0 && (avg > sc.limit || (pos.speed != null && pos.speed > sc.limit));
       el.className = 'yb-cam on' + (bad ? ' near' : '');
       el.innerHTML = '<span>구간단속 <b class="lim">' + sc.limit + '</b>km · 평균 <b class="lim">' + Math.round(avg) + '</b></span><b>' + (inSec.left >= 1000 ? (inSec.left / 1000).toFixed(1) + 'km' : Math.round(inSec.left / 10) * 10 + 'm') + '</b>';
-      if (inSec.fresh) ding();
+      if (inSec.fresh) chime({ lat: sc.start.lat, lng: sc.start.lng }, 0);
       over(bad); return;
     }
     if (sec && (!best || secD < bd)) {
