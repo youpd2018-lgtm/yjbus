@@ -50,7 +50,7 @@ var KAKAO_JS_KEY = 'e5b58be31dc1470a91e6f354662a32e6';
 var ROUTES = ['202', '202A', '203', '203A', '204', '205', '206', '221', '281', '282'];
 var $ = function (i) { return document.getElementById(i); };
 var camAll = [], roadPts = [], route = '', map = null, ovs = [], tmpOv = null;
-var dels = {}, flips = {}, adds = [], sel = -1, addMode = false, tmp = null;   // dels/flips: 카메라 번호 → true / {dir}
+var EDITS = {}, dels = {}, flips = {}, adds = [], sel = -1, addMode = false, tmp = null;   // dels/flips: 카메라 번호 → true / {dir}
 
 function msg(t) { $('msg').textContent = t || ''; }
 function bear(a, b, c, d) { var r = Math.PI / 180, y = Math.sin((d - b) * r) * Math.cos(c * r), x = Math.cos(a * r) * Math.sin(c * r) - Math.sin(a * r) * Math.cos(c * r) * Math.cos((d - b) * r); return (Math.atan2(y, x) / r + 360) % 360; }
@@ -99,7 +99,9 @@ function draw() {
   renderChg();
 }
 async function openRoute(r) {
-  route = r; sel = -1; tmp = null; addMode = false; $('bAdd').className = 'g'; $('form').innerHTML = '';
+  route = r; EDITS[r] = EDITS[r] || { dels: {}, flips: {}, adds: [] };   // 고친 것은 노선마다 따로 보관 — 노선을 바꾸면 그 노선 것만 보임
+  dels = EDITS[r].dels; flips = EDITS[r].flips; adds = EDITS[r].adds;
+  sel = -1; tmp = null; addMode = false; $('bAdd').className = 'g'; $('form').innerHTML = '';
   roadPts = [];
   if (line) { line.setMap(null); line = null; }
   try {
