@@ -43,6 +43,7 @@ def main():
     for a in e.get('adds', []):
         c = {'lat': round(a['lat'], 6), 'lng': round(a['lng'], 6), 'type': a['type'], 'limit': a.get('limit') or 0,
              'name': a.get('name') or '', 'road': '', 'routes': a['routes']}
+        if a.get('wetLimit'): c['wetLimit'] = int(a['wetLimit'])
         if a.get('dir') is not None: c['dirs'] = {r: int(a['dir']) for r in a['routes']}
         cams.append(c); na += 1
     j['count'] = len(cams)
