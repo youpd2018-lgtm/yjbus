@@ -66,9 +66,41 @@
             var t = $(p[0]), src = $(p[1]);
             if (t) t.classList.toggle('red', !!src && src.getAttribute('data-c') === 'red');
         });
-        setTxt('yb4Hand', txt('yb2Hand'));
+        setTxt('yb4Hand', showPartner ? partnerText() : txt('yb2Hand'));
         renderArc();
         renderStops();
+    }
+
+    // ---- 교대 시간을 누르면 교대자 이름 (다시 누르면 교대 시간) ----
+    //      시작·종료·교대가 보일 때만 동작(정류장 3개 모드에서는 동작 안 함). 교대자 = 같은 날·노선·순번의 반대 근무시간(오전↔오후) 기사
+    var showPartner = false;
+    function partnerText() {
+        try {
+            var inp = $('searchDate'), me = null;
+            try { me = (typeof isFamilyUser !== 'undefined' && isFamilyUser) ? targetDriverName : currentDriver; } catch (e) { }
+            if (!me) me = localStorage.getItem('loggedInUser');
+            if (!inp || !inp.value || !me) return txt('yb2Hand');
+            var mine = JSON.parse(localStorage.getItem('jpil_user_' + me + '_sched_' + inp.value) || 'null');
+            var ro = JSON.parse(localStorage.getItem('yb_roster_v1') || 'null');
+            var day = ro && ro.days && ro.days[inp.value];
+            if (!mine || !day || !mine.route || mine.route === '-') return '없음';
+            var names = Object.keys(day).filter(function (n) {
+                var r = day[n];
+                return n !== me && r && r.route === mine.route && r.seq === mine.seq && r.time !== mine.time && r.workType !== '휴무';
+            });
+            return names.length ? names.join(' ') : '없음';
+        } catch (e) { return txt('yb2Hand'); }
+    }
+    function initPartner() {
+        var h = document.querySelector('.yb4-st.hand');
+        if (!h) return;
+        h.style.cursor = 'pointer';
+        h.addEventListener('click', function () {
+            var box = document.querySelector('.yb4-stats');
+            if (!box || box.classList.contains('stops')) return;
+            showPartner = !showPartner;
+            setTxt('yb4Hand', showPartner ? partnerText() : txt('yb2Hand'));
+        });
     }
 
     // ---- 교대 시간이 지나면: 시작·종료·교대 자리에 '다음 정류장 3개'를 밀어내듯 보여 줌 (라이브 모달 거점과 같은 방식) ----
@@ -147,6 +179,7 @@
         var on = !!picked && picked.length > 0;
         var was = box.classList.contains('stops');
         box.classList.toggle('stops', on);
+        if (on) showPartner = false;
         var labels = ['시작', '종료', '교대'];
         for (var j = 0; j < 3; j++) {
             var cell = cells[j]; if (!cell) continue;
@@ -296,6 +329,7 @@
         renderBus(); renderTimes(); renderCd(); renderDateBits();
         setInterval(function () { renderArc(); renderName(); }, 30000);
         setInterval(renderStops, 5000);
+        initPartner();
         setTimeout(renderName, 1500); setTimeout(renderName, 5000);   // 로그인 직후 이름 늦게 채워질 때 대비
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
