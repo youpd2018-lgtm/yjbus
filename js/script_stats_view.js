@@ -78,18 +78,20 @@
     function selectStatsSubView(subViewName) {
         window.currentStatsSubView = subViewName;
 
-        const subViews = ['route', 'weekly', 'allUsers', 'summary'];
+        const subViews = ['route', 'weekly', 'allUsers', 'summary', 'notice'];
         const viewMap = {
             'route': 'subViewRoute',
             'weekly': 'subViewWeekly',
             'allUsers': 'subViewAllUsers',
-            'summary': 'subViewSummary'
+            'summary': 'subViewSummary',
+            'notice': 'subViewNotice'
         };
         const btnMap = {
             'route': 'btnStatsRoute',
             'weekly': 'btnStatsWeekly',
             'allUsers': 'btnStatsAllUsers',
-            'summary': 'btnStatsSummary'
+            'summary': 'btnStatsSummary',
+            'notice': 'btnStatsNotice'
         };
 
         subViews.forEach(v => {
@@ -113,6 +115,8 @@
             if (typeof renderWeeklySchedule === 'function') renderWeeklySchedule();
         } else if (subViewName === 'allUsers') {
             if (typeof renderStatsAllUsersTable === 'function') renderStatsAllUsersTable();
+        } else if (subViewName === 'notice') {
+            if (typeof renderNoticeBoard === 'function') renderNoticeBoard();
         } else if (subViewName === 'summary') {
             if (typeof renderMonthlyStatsSummary === 'function') renderMonthlyStatsSummary();
         }

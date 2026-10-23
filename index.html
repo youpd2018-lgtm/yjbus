@@ -679,6 +679,20 @@
             <iconify-icon icon="mdi:bus-marker" style="font-size: 20px; color: #38bdf8;"></iconify-icon>
             <span>노선시간표</span>
           </button>
+          <button type="button" class="stats-action-btn" id="btnStatsNotice" style="grid-column: span 2;"
+            onclick="selectStatsSubView('notice')">
+            <iconify-icon icon="lucide:megaphone" style="font-size: 20px; color: #f97316;"></iconify-icon>
+            <span>공고문</span>
+          </button>
+        </div>
+
+        <!-- [뷰 0] 공고문 (최신 날짜순, 누르면 전체 화면) -->
+        <div id="subViewNotice" class="stats-sub-view"
+          style="display: none; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 12px 10px;">
+          <h3 style="margin: 0 0 10px; font-size: 15px; color: #f97316; display: flex; align-items: center; gap: 6px; font-weight: 900; border-bottom: 1px solid #334155; padding-bottom: 6px;">
+            <iconify-icon icon="lucide:megaphone" style="font-size: 18px;"></iconify-icon> 공고문
+          </h3>
+          <div id="noticeBoardList"></div>
         </div>
 
         <!-- [뷰 1] 노선별 전체 시간표 -->
@@ -1437,6 +1451,7 @@
     <script src="js/script_emergency.js"></script>
     <script src="js/script_admin_push.js"></script>
     <script src="js/script_stats_view.js"></script>
+    <script src="js/script_notices.js"></script>
     <script src="js/script_schedule_ui.js"></script>
     <script src="js/script_gateway_memo.js"></script>
     <script src="js/script_schedule.js"></script>
