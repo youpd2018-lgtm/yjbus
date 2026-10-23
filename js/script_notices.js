@@ -6,6 +6,7 @@
   const BASE = 'data/notices/';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
+  // 전체 화면 보기: 두 손가락으로 확대·축소, 한 손가락으로 이동, 두 번 누르면 확대/원래대로. 닫기 버튼은 맨 아래.
   function openFull(src, title) {
     let wrap = document.getElementById('ybNoticeFull');
     if (wrap) wrap.remove();
@@ -13,12 +14,73 @@
     wrap.id = 'ybNoticeFull';
     wrap.style.cssText = 'position:fixed; inset:0; z-index:100001; background:#000; display:flex; flex-direction:column;';
     wrap.innerHTML =
-      '<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#0f172a; color:#f8fafc; font-weight:900; font-size:15px;">' +
-      '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(title) + '</span>' +
-      '<button type="button" id="ybNoticeFullClose" style="background:#334155; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:900; font-size:14px;">닫기</button></div>' +
-      '<div style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; text-align:center;"><img src="' + esc(src) + '" alt="' + esc(title) + '" style="max-width:100%; height:auto;"></div>';
+      '<div id="ybNoticeStage" style="flex:1; position:relative; overflow:hidden; touch-action:none;">' +
+      '<img id="ybNoticeImg" src="' + esc(src) + '" alt="' + esc(title) + '" draggable="false" style="position:absolute; left:0; top:0; transform-origin:0 0; max-width:none; user-select:none; -webkit-user-drag:none;"></div>' +
+      '<div style="padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background:#0f172a; display:flex; flex-direction:column; gap:8px;">' +
+      '<div style="color:#94a3b8; font-size:12px; font-weight:700; text-align:center;">두 손가락으로 벌리면 확대됩니다</div>' +
+      '<button type="button" id="ybNoticeFullClose" style="width:100%; background:#f97316; color:#fff; border:none; border-radius:12px; padding:14px; font-weight:900; font-size:18px;">닫기</button></div>';
     document.body.appendChild(wrap);
     document.getElementById('ybNoticeFullClose').onclick = function () { wrap.remove(); };
+
+    const stage = document.getElementById('ybNoticeStage');
+    const img = document.getElementById('ybNoticeImg');
+    let scale = 1, tx = 0, ty = 0, fit = 1;
+    const pts = new Map();
+    let startDist = 0, startScale = 1, lastTap = 0;
+
+    function apply() { img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; }
+    function clamp() {
+      const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      tx = w <= sw ? (sw - w) / 2 : Math.min(0, Math.max(sw - w, tx));
+      ty = h <= sh ? (sh - h) / 2 : Math.min(0, Math.max(sh - h, ty));
+    }
+    function reset() {
+      fit = Math.min(stage.clientWidth / img.naturalWidth, stage.clientHeight / img.naturalHeight) || 1;
+      scale = fit; tx = 0; ty = 0; clamp(); apply();
+    }
+    function zoomAt(cx, cy, ns) {
+      ns = Math.max(fit, Math.min(fit * 6, ns));
+      tx = cx - (cx - tx) * (ns / scale);
+      ty = cy - (cy - ty) * (ns / scale);
+      scale = ns; clamp(); apply();
+    }
+    function center() {
+      const r = stage.getBoundingClientRect(), a = Array.from(pts.values());
+      return { x: (a[0].x + a[1].x) / 2 - r.left, y: (a[0].y + a[1].y) / 2 - r.top };
+    }
+    function dist() { const a = Array.from(pts.values()); return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); }
+
+    if (img.complete && img.naturalWidth) reset(); else img.onload = reset;
+    stage.addEventListener('pointerdown', function (e) {
+      stage.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) { startDist = dist(); startScale = scale; }
+      if (pts.size === 1) {
+        const now = Date.now();
+        if (now - lastTap < 300) {
+          const r = stage.getBoundingClientRect();
+          if (scale > fit * 1.05) { scale = fit; clamp(); apply(); }
+          else zoomAt(e.clientX - r.left, e.clientY - r.top, fit * 2.5);
+          lastTap = 0;
+        } else lastTap = now;
+      }
+    });
+    stage.addEventListener('pointermove', function (e) {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId);
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2 && startDist) {
+        const c = center();
+        zoomAt(c.x, c.y, startScale * dist() / startDist);
+      } else if (pts.size === 1) {
+        tx += e.clientX - prev.x; ty += e.clientY - prev.y; clamp(); apply();
+      }
+    });
+    function up(e) { pts.delete(e.pointerId); startDist = 0; if (pts.size === 1) { startDist = 0; } }
+    stage.addEventListener('pointerup', up);
+    stage.addEventListener('pointercancel', up);
+    window.addEventListener('resize', reset);
   }
 
   window.renderNoticeBoard = function () {
