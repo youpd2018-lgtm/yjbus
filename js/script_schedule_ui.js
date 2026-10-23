@@ -135,6 +135,8 @@
         if (match) {
             count = parseInt(match[1], 10);
         }
+        // 새 시간표(GitHub)에 있는 노선이면 그 순번 개수를 쓴다
+        if (typeof window.ytTimetableSeqCount === 'function' && window.ytTimetableSeqCount(route) > 0) count = window.ytTimetableSeqCount(route);
 
         // 1순번부터 끝 순번까지 셀렉트 박스에 추가
         for (let i = 1; i <= count; i++) {
@@ -271,7 +273,8 @@
             let workTimeTypeEl = document.getElementById('workTimeType');
 
             if (busNoEl) busNoEl.value = '';
-            let firstRoute = Object.keys(routeDataMap || {})[0] || "202평일(16대)";
+            let ghRoutes = (typeof window.ytTimetableRoutes === 'function') ? window.ytTimetableRoutes() : [];
+            let firstRoute = (ghRoutes.length ? sortRouteList(ghRoutes)[0] : Object.keys(routeDataMap || {})[0]) || "202평일(16대)";
             if (regRouteEl) regRouteEl.value = firstRoute;
             safeSetText('schedRouteSelectedText', firstRoute);
 

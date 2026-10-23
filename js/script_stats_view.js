@@ -544,7 +544,8 @@ window.switchAdminSubTab = function(subTab) {
 function renderEditRouteOptions() {
   const editRouteSelect = document.getElementById('editRouteSelect');
   if (!editRouteSelect) return;
-  let keys = Object.keys(window.routeDataMap || (typeof routeDataMap !== 'undefined' ? routeDataMap : {}));
+  let keys = (typeof window.ytTimetableRoutes === 'function') ? window.ytTimetableRoutes() : [];
+  if (!keys.length) keys = Object.keys(window.routeDataMap || (typeof routeDataMap !== 'undefined' ? routeDataMap : {}));
   if (keys.length === 0) {
     editRouteSelect.innerHTML = '<option value="">등록된 노선 없음</option>';
   } else {
@@ -708,6 +709,7 @@ function renderEditRouteOptions() {
         if (match) {
             count = parseInt(match[1], 10);
         }
+        if (typeof window.ytTimetableSeqCount === 'function' && window.ytTimetableSeqCount(route) > 0) count = window.ytTimetableSeqCount(route);
 
         for (let i = 1; i <= count; i++) {
             seqSelect.innerHTML += `<option value="${i}순번">${i}순번</option>`;
