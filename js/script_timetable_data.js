@@ -47,9 +47,9 @@
   };
   window.ytTimetableRounds = getRounds;
   // GitHub 시간표에 있는 노선 이름 목록 / 노선별 순번 개수 (근무정보 > 노선시간표 목록용)
-  // 2026-10-23 새 시간표 이전의 옛 노선 이름: 목록에서는 숨긴다 (10/23 근무 계산용 데이터만 남겨 둠, 10/24 이후 삭제 예정)
+  // 2026-10-23 새 시간표 이전의 옛 노선 이름과 방학 노선: 목록에서는 숨긴다 (10/23 근무 계산용 데이터만 남겨 둠, 10/24 이후 삭제 예정)
   const OLD_ROUTES = ['203평일(11대)', '203휴일(9대)', '203방학(10대)', '205평일(5대)', '205휴일(4대)'];
-  window.ytTimetableRoutes = function () { return data && data.tt ? Object.keys(data.tt).filter(r => OLD_ROUTES.indexOf(r) < 0) : []; };
+  window.ytTimetableRoutes = function () { return data && data.tt ? Object.keys(data.tt).filter(r => OLD_ROUTES.indexOf(r) < 0 && r.indexOf('방학') < 0) : []; };
   window.ytTimetableSeqCount = function (route) {
     const r = data && data.tt && data.tt[route];
     return r ? Object.keys(r).length : 0;
