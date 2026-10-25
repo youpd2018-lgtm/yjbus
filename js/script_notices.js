@@ -7,7 +7,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
   // 전체 화면 보기: 두 손가락으로 확대·축소, 한 손가락으로 이동, 두 번 누르면 확대/원래대로. 닫기 버튼은 맨 아래.
-  function openFull(src, title) {
+  function openFull(srcs, title) {
+    let page = 0;
     let wrap = document.getElementById('ybNoticeFull');
     if (wrap) wrap.remove();
     wrap = document.createElement('div');
@@ -15,8 +16,12 @@
     wrap.style.cssText = 'position:fixed; inset:0; z-index:100001; background:#000; display:flex; flex-direction:column;';
     wrap.innerHTML =
       '<div id="ybNoticeStage" style="flex:1; position:relative; overflow:hidden; touch-action:none;">' +
-      '<img id="ybNoticeImg" src="' + esc(src) + '" alt="' + esc(title) + '" draggable="false" style="position:absolute; left:0; top:0; transform-origin:0 0; max-width:none; user-select:none; -webkit-user-drag:none;"></div>' +
+      '<img id="ybNoticeImg" src="' + esc(srcs[0]) + '" alt="' + esc(title) + '" draggable="false" style="position:absolute; left:0; top:0; transform-origin:0 0; max-width:none; user-select:none; -webkit-user-drag:none;"></div>' +
       '<div style="padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background:#0f172a; display:flex; flex-direction:column; gap:8px;">' +
+      '<div style="display:' + (srcs.length > 1 ? 'flex' : 'none') + '; gap:8px; align-items:center;">' +
+      '<button type="button" id="ybNoticePrev" style="flex:1; background:#334155; color:#fff; border:none; border-radius:12px; padding:12px; font-weight:900; font-size:16px;">‹ 이전</button>' +
+      '<span id="ybNoticePage" style="color:#f8fafc; font-weight:900; font-size:15px; min-width:56px; text-align:center;"></span>' +
+      '<button type="button" id="ybNoticeNext" style="flex:1; background:#334155; color:#fff; border:none; border-radius:12px; padding:12px; font-weight:900; font-size:16px;">다음 ›</button></div>' +
       '<div style="color:#94a3b8; font-size:12px; font-weight:700; text-align:center;">두 손가락으로 벌리면 확대됩니다</div>' +
       '<button type="button" id="ybNoticeFullClose" style="width:100%; background:#f97316; color:#fff; border:none; border-radius:12px; padding:14px; font-weight:900; font-size:18px;">닫기</button></div>';
     document.body.appendChild(wrap);
@@ -51,7 +56,19 @@
     }
     function dist() { const a = Array.from(pts.values()); return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); }
 
-    if (img.complete && img.naturalWidth) reset(); else img.onload = reset;
+    img.onload = reset;
+    if (img.complete && img.naturalWidth) reset();
+    function show(n) {
+      page = (n + srcs.length) % srcs.length;
+      img.src = srcs[page];
+      const pg = document.getElementById('ybNoticePage');
+      if (pg) pg.textContent = (page + 1) + ' / ' + srcs.length;
+    }
+    if (srcs.length > 1) {
+      show(0);
+      document.getElementById('ybNoticePrev').onclick = function () { show(page - 1); };
+      document.getElementById('ybNoticeNext').onclick = function () { show(page + 1); };
+    }
     stage.addEventListener('pointerdown', function (e) {
       stage.setPointerCapture(e.pointerId);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -90,20 +107,21 @@
     fetch(BASE + 'index.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
       .then(d => {
-        const items = (d && d.items || []).slice().sort((a, b) => (b.date + b.image).localeCompare(a.date + a.image));
+        const items = (d && d.items || []).map(it => Object.assign({}, it, { images: it.images || (it.image ? [it.image] : []) }))
+          .filter(it => it.images.length).sort((a, b) => (b.date + b.images[0]).localeCompare(a.date + a.images[0]));
         if (!items.length) {
           box.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center; margin:12px 0;">등록된 공고문이 없습니다.</p>';
           return;
         }
         box.innerHTML = items.map((it, i) =>
           '<button type="button" class="yb-notice-item" data-i="' + i + '" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:#0f172a; border:1.5px solid #334155; border-radius:12px; padding:8px; margin-bottom:8px; color:#f8fafc; cursor:pointer;">' +
-          '<img src="' + esc(BASE + it.image) + '" alt="" loading="lazy" style="width:72px; height:72px; object-fit:cover; border-radius:8px; background:#1e293b; flex-shrink:0;">' +
+          '<img src="' + esc(BASE + it.images[0]) + '" alt="" loading="lazy" style="width:72px; height:72px; object-fit:cover; border-radius:8px; background:#1e293b; flex-shrink:0;">' +
           '<span style="display:flex; flex-direction:column; gap:4px; min-width:0;">' +
           '<span style="font-size:15px; font-weight:900; line-height:1.3;">' + esc(it.title) + '</span>' +
-          '<span style="font-size:12px; color:#94a3b8; font-weight:700;">' + esc(it.date) + '</span></span></button>'
+          '<span style="font-size:12px; color:#94a3b8; font-weight:700;">' + esc(it.date) + (it.images.length > 1 ? ' · ' + it.images.length + '장' : '') + '</span></span></button>'
         ).join('');
         box.querySelectorAll('.yb-notice-item').forEach(b => {
-          b.onclick = function () { const it = items[+b.getAttribute('data-i')]; openFull(BASE + it.image, it.title); };
+          b.onclick = function () { const it = items[+b.getAttribute('data-i')]; openFull(it.images.map(x => BASE + x), it.title); };
         });
       })
       .catch(() => {
