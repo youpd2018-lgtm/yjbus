@@ -7,6 +7,39 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
   // 전체 화면 보기: 두 손가락으로 확대·축소, 한 손가락으로 이동, 두 번 누르면 확대/원래대로. 닫기 버튼은 맨 아래.
+  // 새 공고 표시: 이 폰에서 아직 안 열어 본 공고(최근 14일 안)는 NEW. 열어 보면 NEW가 사라진다.
+  const SEEN_KEY = 'yb_notice_seen_v1', NEW_DAYS = 14;
+  function seenList() { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch (e) { return []; } }
+  function markSeen(id) { try { const a = seenList(); if (a.indexOf(id) < 0) { a.push(id); localStorage.setItem(SEEN_KEY, JSON.stringify(a.slice(-200))); } } catch (e) { } }
+  function nid(it) { return it.date + '|' + it.title; }
+  function isNew(it) {
+    if (seenList().indexOf(nid(it)) >= 0) return false;
+    const t = Date.parse(it.date + 'T00:00:00+09:00');
+    return !t || (Date.now() - t) <= NEW_DAYS * 86400000;
+  }
+  const BADGE = '<span style="background:#ef4444; color:#fff; font-size:11px; font-weight:900; padding:2px 7px; border-radius:999px; letter-spacing:.5px;">NEW</span>';
+  function normalize(d) {
+    return (d && d.items || []).map(it => Object.assign({}, it, { images: it.images || (it.image ? [it.image] : []) }))
+      .filter(it => it.images.length).sort((a, b) => (b.date + b.images[0]).localeCompare(a.date + a.images[0]));
+  }
+  // 근무정보 탭과 [공고문] 버튼에 새 공고 표시
+  function paintBadges(items) {
+    const n = items.filter(isNew).length;
+    const btn = document.querySelector('#btnStatsNotice span');
+    const tab = document.querySelector('#tabStats span');
+    [[btn, 'ybNoticeBtnNew'], [tab, 'ybNoticeTabNew']].forEach(function (x) {
+      if (!x[0]) return;
+      let b = document.getElementById(x[1]);
+      if (b) b.remove();
+      if (n > 0) { b = document.createElement('span'); b.id = x[1]; b.innerHTML = BADGE; b.style.marginLeft = '5px'; x[0].appendChild(b); }
+    });
+  }
+  window.checkNewNotice = function () {
+    fetch(BASE + 'index.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(d => { if (d) paintBadges(normalize(d)); }).catch(function () { });
+  };
+  setTimeout(window.checkNewNotice, 2500);
+  setInterval(window.checkNewNotice, 30 * 60 * 1000);
+
   function openFull(srcs, title) {
     let page = 0;
     let wrap = document.getElementById('ybNoticeFull');
@@ -107,8 +140,8 @@
     fetch(BASE + 'index.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
       .then(d => {
-        const items = (d && d.items || []).map(it => Object.assign({}, it, { images: it.images || (it.image ? [it.image] : []) }))
-          .filter(it => it.images.length).sort((a, b) => (b.date + b.images[0]).localeCompare(a.date + a.images[0]));
+        const items = normalize(d);
+        paintBadges(items);
         if (!items.length) {
           box.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center; margin:12px 0;">등록된 공고문이 없습니다.</p>';
           return;
@@ -117,11 +150,11 @@
           '<button type="button" class="yb-notice-item" data-i="' + i + '" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:#0f172a; border:1.5px solid #334155; border-radius:12px; padding:8px; margin-bottom:8px; color:#f8fafc; cursor:pointer;">' +
           '<img src="' + esc(BASE + it.images[0]) + '" alt="" loading="lazy" style="width:72px; height:72px; object-fit:cover; border-radius:8px; background:#1e293b; flex-shrink:0;">' +
           '<span style="display:flex; flex-direction:column; gap:4px; min-width:0;">' +
-          '<span style="font-size:15px; font-weight:900; line-height:1.3;">' + esc(it.title) + '</span>' +
+          '<span style="font-size:15px; font-weight:900; line-height:1.3;">' + (isNew(it) ? BADGE + ' ' : '') + esc(it.title) + '</span>' +
           '<span style="font-size:12px; color:#94a3b8; font-weight:700;">' + esc(it.date) + (it.images.length > 1 ? ' · ' + it.images.length + '장' : '') + '</span></span></button>'
         ).join('');
         box.querySelectorAll('.yb-notice-item').forEach(b => {
-          b.onclick = function () { const it = items[+b.getAttribute('data-i')]; openFull(it.images.map(x => BASE + x), it.title); };
+          b.onclick = function () { const it = items[+b.getAttribute('data-i')]; markSeen(nid(it)); paintBadges(items); b.querySelectorAll('span span').forEach(function (e) { if (e.textContent === 'NEW') e.remove(); }); openFull(it.images.map(x => BASE + x), it.title); };
         });
       })
       .catch(() => {
