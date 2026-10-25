@@ -7,16 +7,12 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
   // 전체 화면 보기: 두 손가락으로 확대·축소, 한 손가락으로 이동, 두 번 누르면 확대/원래대로. 닫기 버튼은 맨 아래.
-  // 새 공고 표시: 이 폰에서 아직 안 열어 본 공고(최근 14일 안)는 NEW. 열어 보면 NEW가 사라진다.
-  const SEEN_KEY = 'yb_notice_seen_v1', NEW_DAYS = 14;
+  // 새 공고 표시: 이 폰에서 아직 안 열어 본 공고는 기간과 상관없이 계속 NEW. 한 번 열어 보면 NEW가 사라진다.
+  const SEEN_KEY = 'yb_notice_seen_v1';
   function seenList() { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch (e) { return []; } }
   function markSeen(id) { try { const a = seenList(); if (a.indexOf(id) < 0) { a.push(id); localStorage.setItem(SEEN_KEY, JSON.stringify(a.slice(-200))); } } catch (e) { } }
   function nid(it) { return it.date + '|' + it.title; }
-  function isNew(it) {
-    if (seenList().indexOf(nid(it)) >= 0) return false;
-    const t = Date.parse(it.date + 'T00:00:00+09:00');
-    return !t || (Date.now() - t) <= NEW_DAYS * 86400000;
-  }
+  function isNew(it) { return seenList().indexOf(nid(it)) < 0; }
   const BADGE = '<span style="background:#ef4444; color:#fff; font-size:11px; font-weight:900; padding:2px 7px; border-radius:999px; letter-spacing:.5px;">NEW</span>';
   function normalize(d) {
     return (d && d.items || []).map(it => Object.assign({}, it, { images: it.images || (it.image ? [it.image] : []) }))
