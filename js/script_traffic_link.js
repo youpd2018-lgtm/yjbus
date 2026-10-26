@@ -239,6 +239,7 @@
       curSeg = s;
       await syncShared(g);
       lamp = checkAhead(R, pos);
+      if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();   // 모달을 늦게 연 경우에도 아직 못 알린 빨간 알림을 한 번 알림
       if (lamp && typeof setTrafficLamp === 'function') setTrafficLamp(lamp.state, lamp.label);
     } catch (e) { }
   }

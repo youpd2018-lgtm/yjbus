@@ -1116,19 +1116,14 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 // 🚨 새 돌발·교통 정보 자동 알림: 팝업 + 음성 안내 + 신호등 빨간불 깜빡임 (신호등을 눌렀을 때와 같은 동작)
 //  - 라이브 모달이 열려 있을 때만 알림 (열려 있지 않으면 다음 갱신 때 다시 확인)
 //  - 같은 돌발은 한 번만 알림
-//  - 버스에서 NEAR_KM 이내(또는 거리를 알 수 없는 것)만 알림. 여러 건이면 9초 간격으로 차례로
+//  - 지금 앞쪽에 있는 알림(window._aheadAlertText)만 알림. 여러 건이면 9초 간격으로 차례로
 // ================================================================
 (function () {
-    var NEAR_KM = 6;   // 앞쪽 돌발·정체 알림(약 5km 앞까지)을 음성으로 알림
     var GAP_MS = 9000;
     var seen = {};
     var queue = [];
     var busy = false;
 
-    function distOf(text) {
-        var m = /\(([\d.]+)km 전방\)/.exec(text);
-        return m ? parseFloat(m[1]) : null;
-    }
     function next() {
         var text = queue.shift();
         if (!text) { busy = false; return; }
@@ -1140,12 +1135,13 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
     window.renderLiveModalAlerts = function () {
         var modal = document.getElementById('liveModal');
         var open = !!(modal && modal.classList.contains('active'));
-        if (!open) return;
+        if (!open) return;   // 라이브 모달이 닫혀 있으면 기다렸다가, 열릴 때 알림 (TrafficLink 가 10초마다 다시 부름)
         (window.liveTrafficAlerts || []).forEach(function (t) {
             if (seen[t]) return;
-            seen[t] = true;   // 멀어서 알리지 않는 것도 다시 검사하지 않음
-            var d = distOf(t);
-            if (d === null || d <= NEAR_KM) queue.push(t);
+            if (!/^(🚨|🚦)/.test(String(t))) return;   // 앞쪽 돌발(🚨)·정체(🚦) 알림만 카드+음성으로
+            if (t !== window._aheadAlertText) return;   // 이미 지나간(지금 앞쪽에 없는) 알림은 늦게 알리지 않음
+            seen[t] = true;   // 빨간 알림은 한 번은 꼭 카드+음성 (2026-10-26 사용자 지시: 거리로 거르지 않음, 앞쪽 판단은 TrafficLink 가 함)
+            queue.push(t);
         });
         if (!busy && queue.length > 0) next();
     };
