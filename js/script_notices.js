@@ -167,7 +167,7 @@
         const h5 = els.length > 5 ? Math.round(els[5].getBoundingClientRect().top - box.getBoundingClientRect().top - 4) : 0;
         box.style.maxHeight = els.length > 5 ? (h5 > 0 ? h5 : 480) + 'px' : '';
         box.scrollTop = 0;
-                box.querySelectorAll('.yb-notice-item').forEach(b => {
+        box.querySelectorAll('.yb-notice-item').forEach(b => {
           b.onclick = function () { const it = items[+b.getAttribute('data-i')]; markSeen(nid(it)); paintBadges(items); b.querySelectorAll('span span').forEach(function (e) { if (e.textContent === 'NEW') e.remove(); }); openFull(it.images.map(x => BASE + x), it.title); };
         });
       })
