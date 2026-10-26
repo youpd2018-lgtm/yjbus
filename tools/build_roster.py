@@ -44,11 +44,14 @@ if old:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
     print(f'{keep_from} 이전 {len(old)}행 삭제 (앱 사용자 {len(users)}명의 근무는 history/drivers/ 에 보관)')
 days, bad, seen = {}, [], set()
+FIX = os.path.join(ROOT, 'fixed_cars.txt')
+fixed = dict(l.split()[:2] for l in open(FIX, encoding='utf-8') if l.strip() and not l.startswith('#')) if os.path.exists(FIX) else {}
 for i, r in enumerate(rows, 2):
     d, n = r['근무일자'].strip(), r['기사명'].strip()
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', d) or not n: bad.append(f'{i}행: 날짜/이름 이상'); continue
     if (d, n) in seen: bad.append(f'{i}행: {d} {n} 중복'); continue
     seen.add((d, n))
+    if n in fixed and r['근무형태'].strip() != '휴무' and r['차량번호'].strip() != fixed[n]: bad.append(f'{i}행: {d} {n}는 항상 {fixed[n]}번 차인데 {r["차량번호"]}번으로 적힘 (이름을 잘못 읽었는지 확인)'); continue
     if r['근무형태'].strip() == '휴무': continue  # 휴무는 적지 않는다 (이름이 없으면 휴무)
     days.setdefault(d, {})[n] = {'workType': r['근무형태'], 'busNo': r['차량번호'],
         'route': r['노선명'], 'seq': r['순번'], 'time': r['근무시간']}
