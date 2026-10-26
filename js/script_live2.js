@@ -157,7 +157,7 @@
     var n = L ? L.over : 0;
     if (box.getAttribute('data-st') !== st) box.setAttribute('data-st', st);
     box.classList.toggle('has-over', n > 0);
-    setText($('yb3PassN'), n + '회');
+    setText($('yb3PassN'), String(n));
   }
   window.addEventListener('yb-stoppass', syncPass);
   setInterval(syncPass, 2000);
