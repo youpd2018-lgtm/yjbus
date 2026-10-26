@@ -261,7 +261,7 @@
             t(cx, 140, 52, 900, color, ov + '회') +
             t(cx - R, 182, 13, 700, '#64748b', '0') + t(cx + R, 182, 13, 700, '#64748b', '100%') +
             t(cx, 192, 17, 800, '#cbd5e1', `통과한 정류장 ${v.n}회 · ${p}%`) + `</svg>`;
-        // Top3 는 항상 보임 (없으면 '없음')
+        // 정류장 목록은 항상 보임 (이번 회차=최근 통과 순 5곳, 월별=많이 통과한 순 5곳) (없으면 '없음')
         const list = (v.topOver && v.topOver.length) ? v.topOver : [];
         const rows = list.length ? list.map((nm, i) => {
             const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
@@ -271,7 +271,7 @@
                 (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
         }).join('') : `<div style="font-size:20px; color:#4ade80; font-weight:800;">없음 (모두 ${lim}km 아래로 통과)</div>`;
         el.innerHTML = gauges +
-            `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#f87171; margin-bottom:6px;">${lim}km 이상 많이 통과한 정류장</div>${rows}</div>`;
+            `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#f87171; margin-bottom:6px;">${lim}km 이상 ${scope === 'cur' ? '최근' : '많이'} 통과한 정류장</div>${rows}</div>`;
     }
 
     // 나의 정류장 운행 2페이지 전환 (이번 회차 / 월별 누적)

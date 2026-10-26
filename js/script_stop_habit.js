@@ -4,11 +4,12 @@
 //   · GPS가 노선 정류장 50m 안으로 들어갔다가(정류장 전 50m) 지나서 50m 밖으로 나가면(정류장 후 50m) 그 정류장을 '통과'한 것으로 센다.
 //   · 그 100m 구간에서 가장 느린 속도가 20km/h 이상이면 '20km 이상 통과'(서행하지 않고 지나감)로 센다.
 // - 한 회차에서 통과한 정류장이 1곳 이상이면 기록한다. (모달을 껐다 켜도 이어서 모음)
-// - 서버(정류장습관 시트)에는 회차마다 한 줄: 측정횟수=통과 횟수, 급정거횟수 칸=20km 이상 통과 횟수, 급정거 Top3 칸=20km 이상 통과 정류장 이름들.
+// - 서버(정류장습관 시트)에는 회차마다 한 줄: 측정횟수=통과 횟수, 급정거횟수 칸=20km 이상 통과 횟수, 급정거 Top3 칸=이번 회차 최근 20km 이상 통과 5곳, 급출발 Top3 칸=20km 이상 통과 정류장 전체 목록(월별 집계용).
 //   새 방식 줄은 키 끝에 |p20 이 붙고, 옛 급정거·급출발 줄은 화면에서 쓰지 않는다.
-// - 화면: 이번 회차(폰 값) / 이달(서버 값 + 아직 못 올린 이 폰 값), 20km 이상 많이 통과한 정류장 Top3 는 항상 보임
+// - 화면: 이번 회차(폰 값) / 이달(서버 값 + 아직 못 올린 이 폰 값), 정류장 목록(이번 회차=최근 통과 순 5곳, 이달=많이 통과한 순 5곳)은 항상 보임
 // ================================================================
 (function () {
+    var TOP_N = 5;   // 이번 회차: 최근 통과 순 5곳, 월별: 많이 통과한 순 5곳
     var KEY_PREFIX = 'yb_stoppass_';   // 옛 급정거·급출발 기록(yb_stophab_)과 섞이지 않게 새 저장소
     var KEY_TAG = '|p20';        // 서버 줄 키 끝 표시 (새 방식)
     var MIN_STOPS = 1;           // 통계로 인정하는 최소 통과 정류장 수
@@ -205,7 +206,7 @@
     function summarize(trip) {
         var pass = trip.pass || [], over = [];
         pass.forEach(function (p) { if (p[1] > LIMIT_KMH) over.push(p[0]); });
-        return { n: pass.length, ov: over.length, ok: pass.length >= MIN_STOPS, overNames: over, topOver: countTop([over]) };
+        return { n: pass.length, ov: over.length, ok: pass.length >= MIN_STOPS, overNames: over, topOver: recentTop(over) };
     }
 
     function getCurrent() {
@@ -240,7 +241,8 @@
                     action: 'save_stop_habit', driver: driver(), key: item.t.key, date: item.t.date,
                     route: item.t.route, seq: item.t.seq, turn: item.t.turn,
                     n: item.s.n, hardStop: item.s.ov, hardStart: 0,
-                    topStop: item.s.overNames.join('|'), topStart: ''
+                    // I칸(급정거 Top3 칸) = 이번 회차 최근 통과 5곳(화면과 같음), J칸 = 전체 목록(월별 집계용)
+                    topStop: item.s.topOver.join('|'), topStart: item.s.overNames.join('|')
                 })
             }).then(function (r) { return r.json(); })
                 .then(function (res) {
@@ -264,7 +266,17 @@
             });
         });
         order.sort(function (a, b) { return (cnt[b] - cnt[a]) || (last[b] - last[a]); });
-        return order.slice(0, 3).map(function (nm) { return nm + ' ' + cnt[nm] + '회'; });
+        return order.slice(0, TOP_N).map(function (nm) { return nm + ' ' + cnt[nm] + '회'; });
+    }
+    // 이번 회차: 새로 추가된(가장 나중에 통과한) 정류장 먼저 5곳 (2026-10-26 사용자 지시)
+    function recentTop(names) {
+        var cnt = {}, out = [];
+        names.forEach(function (nm) { if (nm) cnt[nm] = (cnt[nm] || 0) + 1; });
+        for (var i = names.length - 1; i >= 0 && out.length < TOP_N; i--) {
+            var nm = names[i];
+            if (nm && out.indexOf(nm) < 0) out.push(nm);
+        }
+        return out.map(function (nm) { return nm + ' ' + cnt[nm] + '회'; });
     }
     function fetchMonth(year, month) {
         ensureState();
@@ -289,7 +301,7 @@
                 if (res && res.success) {
                     (res.rows || []).forEach(function (r) {
                         if (String(r[0]).slice(-KEY_TAG.length) !== KEY_TAG) return;   // 옛 급정거·급출발 줄은 제외
-                        rows[r[0]] = { n: Number(r[1]) || 0, ov: Number(r[2]) || 0, names: String(r[4] || '').split('|').filter(Boolean) };
+                        rows[r[0]] = { n: Number(r[1]) || 0, ov: Number(r[2]) || 0, names: String(r[5] || r[4] || '').split('|').filter(Boolean) };   // J칸(전체 목록)이 있으면 그걸로
                     });
                 }
                 return finish();
