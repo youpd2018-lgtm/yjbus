@@ -14,7 +14,7 @@
     var MIN_STOPS = 1;           // 통계로 인정하는 최소 통과 정류장 수
     var ZONE_M = 50;             // 정류장 50m 전부터 지나는 중으로 잰다 (2026-10-26 사용자 지시: 앞 50m + 뒤 50m = 100m)
     var EXIT_M = 50;             // 정류장을 지나 50m 밖으로 나가면 통과로 확정
-    var LIMIT_KMH = 20;          // 정류장 안 최저 속도가 이 이상이면 '20km 이상 통과'
+    var LIMIT_KMH = 20;          // 정류장 안 최저 속도가 20km 이하로 한 번도 낮추지 않으면(20 초과) 통과(무정차)로 잼, 사용자 지시 2026-10-26
     var MAX_ACC_M = 40;
     var MAX_GAP_S = 6;           // GPS가 이 시간 넘게 끊기면 그 구간은 판정 안 함 (폰이 2~3초 간격으로 줄 때도 이어지게)
 
@@ -126,8 +126,8 @@
         var mv = Math.round(z.minV);
         trip.pass.push([z.nm, mv]);
         diag.stops++;
-        if (mv >= LIMIT_KMH) diag.over++;
-        lastResult = mv >= LIMIT_KMH ? 'over' : 'ok';
+        if (mv > LIMIT_KMH) diag.over++;
+        lastResult = mv > LIMIT_KMH ? 'over' : 'ok';
         if (lastResult === 'over' && typeof window.sfxPlay === 'function') window.sfxPlay('shutter');   // 20km 이상 통과: 찰칵
         trip.ver++;
         saveState(); saveDiag();
@@ -190,7 +190,7 @@
     // ---- 집계 ----
     function summarize(trip) {
         var pass = trip.pass || [], over = [];
-        pass.forEach(function (p) { if (p[1] >= LIMIT_KMH) over.push(p[0]); });
+        pass.forEach(function (p) { if (p[1] > LIMIT_KMH) over.push(p[0]); });
         return { n: pass.length, ov: over.length, ok: pass.length >= MIN_STOPS, overNames: over, topOver: countTop([over]) };
     }
 
