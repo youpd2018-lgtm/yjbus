@@ -132,7 +132,8 @@
     }
   }
 
-  // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체, 0.55 아래면 서행.
+  // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체.
+  // 서행은 알리지 않는다(완전 정체만, 사용자 지시 2026-10-26).
   // 시내 도로는 원래 신호·정류장 때문에 느리므로 300m 넘게 이어진 구간만 본다.
   function aheadJam(R, pos) {
     var m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
@@ -146,8 +147,8 @@
       });
       if (sumLen < 300) continue;
       var ratio = sumSp / sumLim, avg = sumSp / sumLen;
-      var st = (ratio < 0.35 || avg < 15) ? 'jam' : (ratio < 0.55 ? 'slow' : null);
-      if (!st) continue;
+      if (!(ratio < 0.35 || avg < 15)) continue;
+      var st = 'jam';
       var p0 = R.lines[i] && R.lines[i][0], km = p0 ? dist(pos, p0) / 1000 : 0;
       return { state: st, seg: i, road: road, avg: Math.round(avg), km: km };
     }
@@ -205,12 +206,12 @@
       return { state: 'jam', label: ev.kind };
     }
     if (jam) {
-      var k = jam.seg + '|' + jam.state;
+      var k = String(jam.seg);
       if (!jamSaid[k] || Date.now() - jamSaid[k] > 1200000) {
         jamSaid[k] = Date.now();
-        announce('🚦 [' + (jam.state === 'jam' ? '정체' : '서행') + '] ' + (jam.road ? jam.road + ' ' : '') + '평균 ' + jam.avg + 'km/h (' + jam.km.toFixed(1) + 'km 전방)');
+        announce('🚦 [정체] ' + (jam.road ? jam.road + ' ' : '') + '평균 ' + jam.avg + 'km/h (' + jam.km.toFixed(1) + 'km 전방)');
       }
-      return { state: jam.state, label: jam.state === 'jam' ? '정체' : '서행' };
+      return { state: 'jam', label: '정체' };
     }
     window._aheadAlertText = '';
     return { state: 'ok', label: '앞쪽 이상 없음' };
