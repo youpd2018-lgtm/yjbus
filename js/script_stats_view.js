@@ -225,11 +225,11 @@
         }
     }
 
-    // 측정 N회 / 급정거 N회 / 급출발 N회, 급한 정류장이 생기면 Top3가 아래로 이어서 늘어남 (이번 회차 / 월별 누적 공통)
+    // 정류장 통과 N회 / 20km 이상 통과 N회 + 20km 이상 많이 통과한 정류장 Top3(항상 보임) (이번 회차 / 월별 누적 공통)
     function stopHabitDiag() {
         const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
         if (!d || !d.fix) return '<div style="font-size:15px; color:#64748b; margin-top:14px;">점검: GPS 수신 기록 없음</div>';
-        return `<div style="font-size:15px; color:#64748b; margin-top:14px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 선 정류장 ${d.stops}곳${d.why ? '<br>' + d.why : ''}</div>`;
+        return `<div style="font-size:15px; color:#64748b; margin-top:14px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 통과 정류장 ${d.stops}곳 · 20km 이상 ${d.over || 0}곳${d.why ? '<br>' + d.why : ''}</div>`;
     }
 
     function renderStopHabit(scope, v, loading) {
@@ -247,37 +247,31 @@
             el.innerHTML = `<div style="font-size:30px; line-height:1.4; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:22px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span>' : '기록 없음'}</div>`;
             return;
         }
-        const pct = c => v.n ? Math.round(c / v.n * 100) : 0;
-        // 계기판 두 개 나란히(시안 A): 왼쪽 급정거, 오른쪽 급출발. 반원이 가득 차면 100%, 숫자는 모두 그래프 안에
-        const gauge = (cx, color, label, c) => {
-            const R = 66, cy = 118, len = Math.PI * R, p = pct(c), dash = Math.max(c > 0 ? 4 : 0, len * Math.min(p, 100) / 100);
-            const d = `M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`;
-            const t = (x, y, size, w, fill, txt) => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="middle" font-family="inherit">${txt}</text>`;
-            return t(cx, 22, 20, 800, '#94a3b8', label) +
-                `<path d="${d}" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>` +
-                `<path d="${d}" fill="none" stroke="${color}" stroke-opacity="0.5" stroke-width="14" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
-                t(cx, 112, 40, 900, color, c + '회') +
-                t(cx - R, 158, 12, 700, '#64748b', '0') + t(cx + R, 158, 12, 700, '#64748b', '100%');
-        };
-        const gauges = `<svg viewBox="0 0 360 190" style="display:block; width:100%; height:auto;">` +
-            gauge(95, '#f87171', '급정거', v.hs) + gauge(265, '#fb923c', '급출발', v.hst) +
-            `<line x1="180" y1="20" x2="180" y2="150" stroke="#1e293b" stroke-width="2"/>` +
-            `<text x="180" y="182" font-size="16" font-weight="800" fill="#94a3b8" text-anchor="middle" font-family="inherit">측정 ${v.n}회</text></svg>`;
-        const top = (title, arr, color) => (arr && arr.length)
-            ? `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:${color}; margin-bottom:6px;">${title}</div>` +
-              arr.map((nm, i) => {
-                // 월별은 "정류장이름 N회" 형태: 이름만 ...으로 줄이고 횟수는 항상 보이게
-                const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
-                const name = m ? m[1] : nm, cnt = m ? m[2] : '';
-                return `<div style="display:flex; align-items:baseline; gap:8px; font-size:22px; color:#e2e8f0; font-weight:800; line-height:1.65;">` +
-                    `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
-                    (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
-            }).join('') + '</div>'
-            : '';
-        const note = '';
-        el.innerHTML =
-            gauges +
-            top('급정거 정류장', v.topStop, '#f87171') + top('급출발 정류장', v.topStart, '#fb923c') + note;
+        const lim = (window.DrivingHabit && window.DrivingHabit.LIMIT_KMH) || 20;
+        const ov = v.ov || 0, p = v.n ? Math.round(ov / v.n * 100) : 0;
+        // 반원 계기판 하나: 통과한 정류장 중 20km 이상으로 지나간 비율, 가운데 큰 숫자는 20km 이상 통과 횟수
+        const R = 120, cx = 180, cy = 150, len = Math.PI * R, dash = Math.max(ov > 0 ? 4 : 0, len * Math.min(p, 100) / 100);
+        const arc = `M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`;
+        const t = (x, y, size, w, fill, txt) => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="middle" font-family="inherit">${txt}</text>`;
+        const color = ov > 0 ? '#f87171' : '#4ade80';
+        const gauges = `<svg viewBox="0 0 360 200" style="display:block; width:100%; height:auto;">` +
+            `<path d="${arc}" fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round"/>` +
+            `<path d="${arc}" fill="none" stroke="${color}" stroke-opacity="0.55" stroke-width="18" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
+            t(cx, 82, 20, 800, '#94a3b8', `${lim}km 이상 통과`) +
+            t(cx, 140, 52, 900, color, ov + '회') +
+            t(cx - R, 182, 13, 700, '#64748b', '0') + t(cx + R, 182, 13, 700, '#64748b', '100%') +
+            t(cx, 192, 17, 800, '#cbd5e1', `통과한 정류장 ${v.n}회 · ${p}%`) + `</svg>`;
+        // Top3 는 항상 보임 (없으면 '없음')
+        const list = (v.topOver && v.topOver.length) ? v.topOver : [];
+        const rows = list.length ? list.map((nm, i) => {
+            const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
+            const name = m ? m[1] : nm, cnt = m ? m[2] : '';
+            return `<div style="display:flex; align-items:baseline; gap:8px; font-size:22px; color:#e2e8f0; font-weight:800; line-height:1.65;">` +
+                `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
+                (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
+        }).join('') : `<div style="font-size:20px; color:#4ade80; font-weight:800;">없음 (모두 ${lim}km 아래로 통과)</div>`;
+        el.innerHTML = gauges +
+            `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#f87171; margin-bottom:6px;">${lim}km 이상 많이 통과한 정류장</div>${rows}</div>`;
     }
 
     // 나의 정류장 운행 2페이지 전환 (이번 회차 / 월별 누적)
