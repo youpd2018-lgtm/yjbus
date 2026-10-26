@@ -160,7 +160,14 @@
           '<span style="font-size:15px; font-weight:900; line-height:1.3;">' + (isNew(it) ? BADGE + ' ' : '') + esc(it.title) + '</span>' +
           '<span style="font-size:12px; color:#94a3b8; font-weight:700;">' + esc(it.date) + (it.images.length > 1 ? ' · ' + it.images.length + '장' : '') + '</span></span></button>'
         ).join('');
-        box.querySelectorAll('.yb-notice-item').forEach(b => {
+        // 최신 5건 높이만큼만 보이고, 나머지(이전 공고)는 목록 안에서 스크롤해서 본다
+        const els = box.querySelectorAll('.yb-notice-item');
+        box.style.overflowY = 'auto';
+        box.style.webkitOverflowScrolling = 'touch';
+        const h5 = els.length > 5 ? Math.round(els[5].getBoundingClientRect().top - box.getBoundingClientRect().top - 4) : 0;
+        box.style.maxHeight = els.length > 5 ? (h5 > 0 ? h5 : 480) + 'px' : '';
+        box.scrollTop = 0;
+                box.querySelectorAll('.yb-notice-item').forEach(b => {
           b.onclick = function () { const it = items[+b.getAttribute('data-i')]; markSeen(nid(it)); paintBadges(items); b.querySelectorAll('span span').forEach(function (e) { if (e.textContent === 'NEW') e.remove(); }); openFull(it.images.map(x => BASE + x), it.title); };
         });
       })
