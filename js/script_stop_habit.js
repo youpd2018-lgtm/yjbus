@@ -128,6 +128,7 @@
         diag.stops++;
         if (mv >= LIMIT_KMH) diag.over++;
         lastResult = mv >= LIMIT_KMH ? 'over' : 'ok';
+        if (lastResult === 'over' && typeof window.sfxPlay === 'function') window.sfxPlay('shutter');   // 20km 이상 통과: 찰칵
         trip.ver++;
         saveState(); saveDiag();
         notify();
