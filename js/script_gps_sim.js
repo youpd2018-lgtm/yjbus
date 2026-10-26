@@ -1273,6 +1273,21 @@ function loadLatestColleagueMessage() {
         return 'smooth';
     }
 
+    // 돌발 카드 위치: 카드 모양은 그대로, 라이브 모달이 열려 있으면 카운트 시간(가운데 큰 시간) 위에 겹쳐 띄움 (2026-10-26 사용자 지시)
+    function placeIncidentToast(popup) {
+        try {
+            const box = popup && popup.parentElement;
+            const t = document.getElementById('yb3Time');
+            const modal = document.getElementById('liveModal');
+            if (!box || !t || !(modal && modal.classList.contains('active'))) return;
+            const r = t.getBoundingClientRect();
+            if (!r.height) return;
+            const top = Math.max(8, Math.round(r.top + r.height / 2 - popup.offsetHeight / 2));
+            box.style.top = top + 'px';
+            box.style.bottom = 'auto';
+        } catch (e) { }
+    }
+
     // 🚨 [돌발상황 다시보기 및 테스트 함수] (소통창 터치 시 발동)
     function triggerTrafficIncidentTest(customText) {
         try {
@@ -1284,7 +1299,7 @@ function loadLatestColleagueMessage() {
             // 알약을 누르면: 지금 앞쪽에 돌발·정체가 있으면 그 내용을 다시 알려 주고, 없으면 '앞쪽 이상 없음'만 (가짜 예시 문구는 2026-10-26 삭제)
             let hasRealAlert = !!window._aheadAlertText;
             if (!hasRealAlert && !(typeof customText === 'string' && customText)) {
-                if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff' });
+                if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff', didOpen: placeIncidentToast });
                 return;
             }
             let titleText = '⚠️ [돌발상황] 공항신도시JC 사고';
@@ -1316,7 +1331,8 @@ function loadLatestColleagueMessage() {
                     timer: 8000,
                     timerProgressBar: true,
                     background: '#1e293b',
-                    color: '#ffffff'
+                    color: '#ffffff',
+                    didOpen: placeIncidentToast
                 });
             }
 
