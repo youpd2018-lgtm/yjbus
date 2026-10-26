@@ -45,12 +45,11 @@
     wrap.style.cssText = 'position:fixed; inset:0; z-index:100001; background:#000; display:flex; flex-direction:column;';
     wrap.innerHTML =
       '<div id="ybNoticeStage" style="flex:1; position:relative; overflow:hidden; touch-action:none;">' +
-      '<img id="ybNoticeImg" src="' + esc(srcs[0]) + '" alt="' + esc(title) + '" draggable="false" style="position:absolute; left:0; top:0; transform-origin:0 0; max-width:none; user-select:none; -webkit-user-drag:none;"></div>' +
+      '<img id="ybNoticeImg" src="' + esc(srcs[0]) + '" alt="' + esc(title) + '" draggable="false" style="position:absolute; left:0; top:0; transform-origin:0 0; max-width:none; user-select:none; -webkit-user-drag:none;">' +
+      '<button type="button" id="ybNoticePrev" aria-label="이전" style="display:' + (srcs.length > 1 ? 'flex' : 'none') + '; position:absolute; left:4px; top:50%; transform:translateY(-50%); width:40px; height:64px; border:none; border-radius:10px; background:rgba(15,23,42,0.28); color:rgba(255,255,255,0.7); font-size:30px; font-weight:900; align-items:center; justify-content:center; padding:0;">‹</button>' +
+      '<button type="button" id="ybNoticeNext" aria-label="다음" style="display:' + (srcs.length > 1 ? 'flex' : 'none') + '; position:absolute; right:4px; top:50%; transform:translateY(-50%); width:40px; height:64px; border:none; border-radius:10px; background:rgba(15,23,42,0.28); color:rgba(255,255,255,0.7); font-size:30px; font-weight:900; align-items:center; justify-content:center; padding:0;">›</button>' +
+      '<div id="ybNoticePage" style="display:' + (srcs.length > 1 ? 'block' : 'none') + '; position:absolute; top:8px; left:50%; transform:translateX(-50%); padding:3px 10px; border-radius:999px; background:rgba(15,23,42,0.35); color:rgba(255,255,255,0.8); font-size:12px; font-weight:900; pointer-events:none;"></div></div>' +
       '<div style="padding:10px 14px calc(10px + env(safe-area-inset-bottom)); background:#0f172a; display:flex; flex-direction:column; gap:8px;">' +
-      '<div style="display:' + (srcs.length > 1 ? 'flex' : 'none') + '; gap:8px; align-items:center;">' +
-      '<button type="button" id="ybNoticePrev" style="flex:1; background:#334155; color:#fff; border:none; border-radius:12px; padding:12px; font-weight:900; font-size:16px;">‹ 이전</button>' +
-      '<span id="ybNoticePage" style="color:#f8fafc; font-weight:900; font-size:15px; min-width:56px; text-align:center;"></span>' +
-      '<button type="button" id="ybNoticeNext" style="flex:1; background:#334155; color:#fff; border:none; border-radius:12px; padding:12px; font-weight:900; font-size:16px;">다음 ›</button></div>' +
       '<div style="color:#94a3b8; font-size:12px; font-weight:700; text-align:center;">두 손가락으로 벌리면 확대됩니다</div>' +
       '<button type="button" id="ybNoticeFullClose" style="width:100%; background:#f97316; color:#fff; border:none; border-radius:12px; padding:14px; font-weight:900; font-size:18px;">닫기</button></div>';
     document.body.appendChild(wrap);
@@ -71,7 +70,7 @@
     }
     function reset() {
       fit = Math.min(stage.clientWidth / img.naturalWidth, stage.clientHeight / img.naturalHeight) || 1;
-      scale = fit; tx = 0; ty = 0; clamp(); apply();
+      scale = fit; tx = 0; ty = 0; clamp(); apply(); img.style.visibility = 'visible';
     }
     function zoomAt(cx, cy, ns) {
       ns = Math.max(fit, Math.min(fit * 6, ns));
@@ -89,14 +88,18 @@
     if (img.complete && img.naturalWidth) reset();
     function show(n) {
       page = (n + srcs.length) % srcs.length;
+      img.style.visibility = 'hidden';
       img.src = srcs[page];
       const pg = document.getElementById('ybNoticePage');
       if (pg) pg.textContent = (page + 1) + ' / ' + srcs.length;
     }
     if (srcs.length > 1) {
       show(0);
-      document.getElementById('ybNoticePrev').onclick = function () { show(page - 1); };
-      document.getElementById('ybNoticeNext').onclick = function () { show(page + 1); };
+      ['ybNoticePrev', 'ybNoticeNext'].forEach(function (id, k) {
+        const bt = document.getElementById(id);
+        bt.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+        bt.onclick = function () { show(page + (k ? 1 : -1)); };
+      });
     }
     stage.addEventListener('pointerdown', function (e) {
       stage.setPointerCapture(e.pointerId);
@@ -123,7 +126,15 @@
         tx += e.clientX - prev.x; ty += e.clientY - prev.y; clamp(); apply();
       }
     });
-    function up(e) { pts.delete(e.pointerId); startDist = 0; if (pts.size === 1) { startDist = 0; } }
+    let swipeX0 = null;
+    stage.addEventListener('pointerdown', function (e) { swipeX0 = (pts.size === 1 && scale <= fit * 1.05) ? e.clientX : null; });
+    function up(e) {
+      if (swipeX0 !== null && pts.size === 1 && srcs.length > 1) {
+        const dx = e.clientX - swipeX0;
+        if (Math.abs(dx) > 60) show(page + (dx < 0 ? 1 : -1));
+      }
+      swipeX0 = null; pts.delete(e.pointerId); startDist = 0;
+    }
     stage.addEventListener('pointerup', up);
     stage.addEventListener('pointercancel', up);
     window.addEventListener('resize', reset);
