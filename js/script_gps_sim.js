@@ -1299,7 +1299,7 @@ function loadLatestColleagueMessage() {
             // 알약을 누르면: 지금 앞쪽에 돌발·정체가 있으면 그 내용을 다시 알려 주고, 없으면 '앞쪽 이상 없음'만 (가짜 예시 문구는 2026-10-26 삭제)
             let hasRealAlert = !!window._aheadAlertText;
             if (!hasRealAlert && !(typeof customText === 'string' && customText)) {
-                if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff', didOpen: placeIncidentToast });
+                if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff', customClass: { popup: 'yb-inc-card' }, didOpen: placeIncidentToast });
                 return;
             }
             let titleText = '⚠️ [돌발상황] 공항신도시JC 사고';
@@ -1332,7 +1332,7 @@ function loadLatestColleagueMessage() {
                     timerProgressBar: true,
                     background: '#1e293b',
                     color: '#ffffff',
-                    didOpen: placeIncidentToast
+                    customClass: { popup: 'yb-inc-card' }, didOpen: placeIncidentToast
                 });
             }
 

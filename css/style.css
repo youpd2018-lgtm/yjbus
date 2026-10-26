@@ -3628,3 +3628,7 @@ html.senior #statsPage { padding-bottom: calc(130px + env(safe-area-inset-bottom
 html .yb2-trip-t.y, html.ui2.senior .yb2-trip-t.y { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #FDE047 !important; }
 html .yb2-trip-t.r, html.ui2.senior .yb2-trip-t.r { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #FF5A5A !important; }
 html .yb2-trip-t.b, html.ui2.senior .yb2-trip-t.b { background: transparent !important; border: 0 !important; padding: 0 6px !important; color: #60a5fa !important; }
+
+/* 🚨 앞쪽 돌발·정체 카드: 글씨 3포인트 크게 (기본 16px → 19px, 2026-10-26 사용자 지시) */
+.swal2-popup.yb-inc-card .swal2-title,
+.swal2-popup.yb-inc-card .swal2-html-container { font-size: 19px !important; line-height: 1.35; }
