@@ -74,6 +74,11 @@ if bad: print('\n'.join(bad)); sys.exit(1)
 DRV = os.path.join(ROOT, 'drivers.txt')
 drivers = [l.strip() for l in open(DRV, encoding='utf-8') if l.strip()]
 new = sorted({n for d in days.values() for n in d} - set(drivers))
+# 새 이름이 기존 이름과 한 글자만 다르면(예: 정윤하/정윤호) 사진을 잘못 읽었을 수 있으므로 멈춘다.
+# 진짜 새 사람이면 drivers.txt 에 직접 한 줄 추가한 뒤 다시 실행한다.
+sus = [f'{n} ← 기존 {o} 와 한 글자만 다름' for n in new for o in drivers if len(n) == len(o) and sum(a != b for a, b in zip(n, o)) == 1]
+if sus:
+    print('[확인 필요] 비슷한 이름이 이미 있습니다. 오타인지 확인하세요:\n' + '\n'.join(sus)); sys.exit(1)
 if new:
     drivers = sorted(set(drivers) | set(new))
     open(DRV, 'w', encoding='utf-8').write('\n'.join(drivers) + '\n')
