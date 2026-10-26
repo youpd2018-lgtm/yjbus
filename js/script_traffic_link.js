@@ -132,13 +132,13 @@
     }
   }
 
-  // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체.
-  // 서행은 알리지 않는다(완전 정체만, 사용자 지시 2026-10-26).
+  // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체, 0.55 아래면 서행.
+  // 정체가 하나라도 있으면 정체(빨강+카드+음성), 없고 서행만 있으면 노란 등만(카드·음성 없음, 사용자 지시 2026-10-26).
   // 시내 도로는 원래 신호·정류장 때문에 느리므로 300m 넘게 이어진 구간만 본다.
   function aheadJam(R, pos) {
     var m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
     if (!m) return null;
-    var to = Math.min(R.segs.length - 1, curSeg + AHEAD_SEGS);
+    var to = Math.min(R.segs.length - 1, curSeg + AHEAD_SEGS), slow = null;
     for (var i = curSeg; i <= to; i++) {
       var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, road = '';
       ids.forEach(function (id) {
@@ -147,12 +147,14 @@
       });
       if (sumLen < 300) continue;
       var ratio = sumSp / sumLim, avg = sumSp / sumLen;
-      if (!(ratio < 0.35 || avg < 15)) continue;
-      var st = 'jam';
+      var st = (ratio < 0.35 || avg < 15) ? 'jam' : (ratio < 0.55 ? 'slow' : null);
+      if (!st) continue;
       var p0 = R.lines[i] && R.lines[i][0], km = p0 ? dist(pos, p0) / 1000 : 0;
-      return { state: st, seg: i, road: road, avg: Math.round(avg), km: km };
+      var o = { state: st, seg: i, road: road, avg: Math.round(avg), km: km };
+      if (st === 'jam') return o;
+      if (!slow) slow = o;
     }
-    return null;
+    return slow;
   }
 
   // 돌발 종류 이름: 사고 / 공사 / 통제 / 기상 / 돌발
@@ -205,6 +207,7 @@
       }
       return { state: 'jam', label: ev.kind };
     }
+    if (jam && jam.state === 'slow') { window._aheadAlertText = ''; return { state: 'slow', label: '서행' }; }   // 서행: 노란 등만
     if (jam) {
       var k = String(jam.seg);
       if (!jamSaid[k] || Date.now() - jamSaid[k] > 1200000) {
