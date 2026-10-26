@@ -45,6 +45,12 @@
         } catch (e) { }
         return { trips: {}, serial: {}, cur: '' };
     }
+    // 앱을 껐다 켜도 이번 회차 기록을 폰 저장소에서 다시 읽는다. 로그인 전에 읽은 빈 기록이면 로그인 뒤 다시 읽음
+    var stateDrv = null;
+    function ensureState() {
+        if (!state || stateDrv !== driver()) { state = loadState(); stateDrv = driver(); }
+        return state;
+    }
     function saveState() {
         if (!state) return;
         var keys = Object.keys(state.trips).sort();
@@ -80,7 +86,7 @@
 
     // 지금 회차 기록을 찾거나 새로 만든다. 같은 근무·회차라도 정류장 번호가 크게 되돌아가면 새 회차로 본다.
     function currentTrip(duty) {
-        if (!state) state = loadState();
+        ensureState();
         var date = todayStr();
         var uk = duty ? String(duty.uniqueKey || duty.routeShort || '') : '';
         var turn = duty && duty.turnNum ? duty.turnNum : 1;
@@ -195,7 +201,7 @@
     }
 
     function getCurrent() {
-        if (!state) state = loadState();
+        ensureState();
         var t = state.trips[state.cur];
         if (!t || t.date !== todayStr()) return null;
         return summarize(t);
@@ -205,7 +211,7 @@
     function upload() {
         try {
             if (uploading || !driver()) return;
-            if (!state) state = loadState();
+            ensureState();
             var url = window.GAS_WEB_APP_URL;
             if (!url) return;
             var list = [];
@@ -253,7 +259,7 @@
         return order.slice(0, 3).map(function (nm) { return nm + ' ' + cnt[nm] + '회'; });
     }
     function fetchMonth(year, month) {
-        if (!state) state = loadState();
+        ensureState();
         var prefix = year + '-' + pad(month) + '-';
         var rows = {};   // key -> {n, ov, names[]}
         function finish() {
