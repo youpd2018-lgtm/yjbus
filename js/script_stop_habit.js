@@ -181,13 +181,21 @@
 
             if (zone) {
                 var d = haversineM(pos.lat, pos.lon, zone.lat, zone.lon);
-                if (d <= EXIT_M) { zone.minV = Math.min(zone.minV, speedKmh); return; }
-                markPass(trip, zone); zone = null;
+                if (d <= EXIT_M) {
+                    if (zone.done) return;   // 이미 안전 통과로 끝낸 정류장: 나갈 때까지 더 재지 않음
+                    zone.minV = Math.min(zone.minV, speedKmh);
+                    // 20km 이하로 떨어지는 순간 바로 안전 통과(초록)로 끝냄 (2026-10-26 사용자 지시)
+                    if (zone.minV <= LIMIT_KMH) { markPass(trip, zone); zone.done = true; }
+                    return;
+                }
+                if (!zone.done) markPass(trip, zone);
+                zone = null; notify();
             }
             var idx = nearestStop(pos.lat, pos.lon, master, ZONE_M);
             if (idx !== -1 && !(trip.lastIdx === idx && now - (trip.lastT || 0) < 120)) {   // 같은 정류장을 2분 안에 또 세지 않음 (GPS 흔들림)
                 zone = { idx: idx, nm: stopName(master[idx]), lat: stopLat(master[idx]), lon: stopLng(master[idx]), minV: speedKmh };
                 trip.lastIdx = idx; trip.lastT = now;
+                if (speedKmh <= LIMIT_KMH) { markPass(trip, zone); zone.done = true; }
                 notify();
             }
         } catch (e) { console.warn('정류장 습관 집계 오류:', e); }
@@ -292,7 +300,7 @@
     // 라이브 모달 표시용: 정류장 안인지, 마지막 결과, 이번 회차 20km 이상 통과 횟수
     function getLive() {
         var c = getCurrent();
-        return { inZone: !!zone, last: lastResult, over: c ? c.ov : 0 };
+        return { inZone: !!(zone && !zone.done), last: lastResult, over: c ? c.ov : 0 };
     }
 
     window.DrivingHabit = { LIMIT_KMH: LIMIT_KMH, getLive: getLive, onFix: onFix, upload: upload, getCurrent: getCurrent, fetchMonth: fetchMonth, getDiag: function () { return diag; }, MIN_STOPS: MIN_STOPS };

@@ -62,7 +62,7 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-pass[data-st="over"] iconify-icon { color: #FF4D4D; filter: drop-shadow(0 0 5px #FF4D4D); }
 .yb3-pass b { margin-right: -4px; }
 .yb3-pass .yb3-pass-u { font-size: 22px; font-weight: 900; align-self: flex-end; margin-bottom: 3px; }   /* '회'는 숫자보다 작게 (2026-10-26) */
-.yb3-pass.has-over .yb3-pass-u, .yb3-pass.has-over b { color: #FFE14D; text-shadow: 0 0 6px rgba(255,225,77,0.7); }   /* 빨강은 잘 안 보여 밝은 노랑 (2026-10-26) */
+.yb3-pass.has-over .yb3-pass-u, .yb3-pass.has-over b { color: #FFFFFF; text-shadow: 0 0 6px rgba(255,255,255,0.6); }   /* 횟수 글자는 흰색 (2026-10-26 사용자 지시) */
 @keyframes yb3PassBlink { to { visibility: hidden; } }
 
 /* 거점 3칸 + 시간·장소 아래로 깔린 선 */
