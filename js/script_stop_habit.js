@@ -20,6 +20,8 @@
 
     var buf = [];                // 최근 위치 [{t, v, lat, lon}]
     var zone = null;             // 지금 지나는 정류장 { idx, nm, lat, lon, minV }
+    var lastResult = null;       // 마지막으로 지나간 정류장 결과 'ok'(20km 아래) | 'over'(20km 이상) — 라이브 모달 알약 아래 표시용
+    function notify() { try { window.dispatchEvent(new Event('yb-stoppass')); } catch (e) { } }
     var bufDriver = null, lastIdx = null, uploading = false;
     var state = null;            // { trips: {key: trip}, serial: {}, cur: key }
     var rawPrev = null;          // 속도값이 안 올 때 위치 차이로 속도를 구하기 위한 직전 위치
@@ -125,8 +127,10 @@
         trip.pass.push([z.nm, mv]);
         diag.stops++;
         if (mv >= LIMIT_KMH) diag.over++;
+        lastResult = mv >= LIMIT_KMH ? 'over' : 'ok';
         trip.ver++;
         saveState(); saveDiag();
+        notify();
     }
 
     // GPS 한 번 들어올 때마다 호출 (라이브 모달이 켜져 있을 때만 불림)
@@ -164,7 +168,7 @@
             var trip = currentTrip(duty);
             var now = Date.now() / 1000;
             var prev = buf.length ? buf[buf.length - 1] : null;
-            if (prev && now - prev.t > MAX_GAP_S) { zone = null; buf = []; }   // GPS가 오래 끊기면 그 정류장은 판정 안 함
+            if (prev && now - prev.t > MAX_GAP_S) { if (zone) { zone = null; notify(); } buf = []; }   // GPS가 오래 끊기면 그 정류장은 판정 안 함
             buf.push({ t: now, v: speedKmh });
             while (buf.length > 30) buf.shift();
 
@@ -177,6 +181,7 @@
             if (idx !== -1 && !(trip.lastIdx === idx && now - (trip.lastT || 0) < 120)) {   // 같은 정류장을 2분 안에 또 세지 않음 (GPS 흔들림)
                 zone = { idx: idx, nm: stopName(master[idx]), lat: stopLat(master[idx]), lon: stopLng(master[idx]), minV: speedKmh };
                 trip.lastIdx = idx; trip.lastT = now;
+                notify();
             }
         } catch (e) { console.warn('정류장 습관 집계 오류:', e); }
     }
@@ -277,7 +282,13 @@
             .catch(function () { return finish(); });
     }
 
-    window.DrivingHabit = { LIMIT_KMH: LIMIT_KMH, onFix: onFix, upload: upload, getCurrent: getCurrent, fetchMonth: fetchMonth, getDiag: function () { return diag; }, MIN_STOPS: MIN_STOPS };
+    // 라이브 모달 표시용: 정류장 안인지, 마지막 결과, 이번 회차 20km 이상 통과 횟수
+    function getLive() {
+        var c = getCurrent();
+        return { inZone: !!zone, last: lastResult, over: c ? c.ov : 0 };
+    }
+
+    window.DrivingHabit = { LIMIT_KMH: LIMIT_KMH, getLive: getLive, onFix: onFix, upload: upload, getCurrent: getCurrent, fetchMonth: fetchMonth, getDiag: function () { return diag; }, MIN_STOPS: MIN_STOPS };
     setInterval(upload, 30000);
     window.addEventListener('load', function () { setTimeout(upload, 5000); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });

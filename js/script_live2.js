@@ -146,8 +146,21 @@
     var s = flow ? (flow.getAttribute('data-s') || 'ok') : 'ok';
     var p = $('yb3Pill');
     if (p) p.setAttribute('data-s', s);
-    setText($('yb3PillText'), txt('trafficFlowStatusText') || '소통원활');
+    syncPass();
   }
+
+  // 신호등 알약 아래: 정류장 20km 이상 통과 횟수(이번 회차). 평균속도 숫자는 2026-10-26 사용자 지시로 삭제
+  function syncPass() {
+    var box = $('yb3Pass'); if (!box) return;
+    var L = window.DrivingHabit && window.DrivingHabit.getLive ? window.DrivingHabit.getLive() : null;
+    var st = L ? (L.inZone ? 'zone' : (L.last || 'idle')) : 'idle';
+    var n = L ? L.over : 0;
+    if (box.getAttribute('data-st') !== st) box.setAttribute('data-st', st);
+    box.classList.toggle('has-over', n > 0);
+    setText($('yb3PassN'), n + '회');
+  }
+  window.addEventListener('yb-stoppass', syncPass);
+  setInterval(syncPass, 2000);
 
   function watch(el, fn, attrs) {
     if (!el) return;
