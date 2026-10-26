@@ -46,16 +46,16 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-delay { margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.28); font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 46px; font-size: 15.3cqw; font-weight: 700; line-height: 1; color: var(--yb3-ac); text-shadow: 0 2px 10px rgba(0,0,0,0.55), 0 0 14px var(--yb3-ac); min-width: 30%; text-align: center; }
 
 /* 신호등 알약: 게이지 아래 빈틈, 위 = 신호등 / 아래 = 글자 */
-.yb3-pill { --pc: #6EE7B7; position: relative; align-self: stretch; justify-content: center; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 26px; background: var(--yb3-solid, #043d2f); border: 2px solid var(--pc); box-shadow: 0 0 12px rgba(0,0,0,0.4); cursor: pointer; min-width: 0; box-sizing: border-box; }
+.yb3-pill { --pc: #6EE7B7; position: relative; align-self: start; justify-content: flex-start; margin-top: -6px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 4px; background: none; border: none; box-shadow: none; cursor: pointer;   /* 2026-10-26: 감싸는 박스 없앰, 위 구분선 쪽으로 올림 */ min-width: 0; box-sizing: border-box; }
 .yb3-pill[data-s="slow"] { --pc: #FCD34D; }
 .yb3-pill[data-s="jam"] { --pc: #FDA4AF; }
 .yb3-pill[data-s="off"] { --pc: rgba(255,255,255,0.6); }
 .yb3-lamps { display: flex; gap: 8px; }
-.yb3-lamps i { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.25); box-sizing: border-box; }
+.yb3-lamps i { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.25); box-sizing: border-box; }
 .yb3-pill[data-s="jam"] .yb3-lamps i:nth-child(1), .yb3-pill[data-s="slow"] .yb3-lamps i:nth-child(2), .yb3-pill[data-s="ok"] .yb3-lamps i:nth-child(3) { background: var(--pc); border-color: var(--pc); box-shadow: 0 0 8px var(--pc); }
 .yb3-pill-text { font-size: 22px; font-weight: 900; color: var(--pc); white-space: nowrap; line-height: 1.1; }
 /* 정류장 20km 이상 통과 횟수 (2026-10-26: 평균속도 숫자 대신). 측정 전 회색, 정류장 안에서 깜빡임, 안전 통과 초록, 20km 이상 통과 빨강 */
-.yb3-pass { display: inline-flex; align-items: center; gap: 4px; color: #e2e8f0; }
+.yb3-pass { display: inline-flex; align-items: center; gap: 6px; color: #e2e8f0; }
 .yb3-pass iconify-icon { font-size: 1.05em; color: rgba(255,255,255,0.55); }
 .yb3-pass[data-st="zone"] iconify-icon { color: #FDE047; animation: yb3PassBlink .6s steps(2, start) infinite; }
 .yb3-pass[data-st="ok"] iconify-icon { color: #4ADE80; filter: drop-shadow(0 0 4px #4ADE80); }
@@ -119,9 +119,9 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     html.lv2 .yb3-node:nth-child(2).on .yb3-tm { font-size: 29px; }
     html.lv2 .yb3-st { font-size: 28px; }
     html.lv2 .yb3-label { max-width: 100cqw; }
-    html.lv2 .yb3-pill { padding: 6px 10px; }
+    html.lv2 .yb3-pill { padding: 0 4px; }
     html.lv2 .yb3-pill-text { font-size: 19px; }
-    html.lv2 .yb3-lamps i { width: 17px; height: 17px; }
+    html.lv2 .yb3-lamps i { width: 19px; height: 19px; }
     html.lv2 .yb3-lamps { gap: 6px; }
     html.lv2 .yb3-gauge { margin: 0 auto; }
     html.lv2 #liveModal .ios-footer { grid-column: 3; grid-row: 2 / span 3 !important; flex-direction: column !important; justify-content: flex-start !important; padding: 0 !important; margin: 0 !important; gap: 10px !important; pointer-events: auto !important; }
