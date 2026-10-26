@@ -55,7 +55,7 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-pill[data-s="jam"] .yb3-lamps i:nth-child(1), .yb3-pill[data-s="slow"] .yb3-lamps i:nth-child(2), .yb3-pill[data-s="ok"] .yb3-lamps i:nth-child(3) { background: var(--pc); border-color: var(--pc); box-shadow: 0 0 8px var(--pc); }
 .yb3-pill-text { font-size: 22px; font-weight: 900; color: var(--pc); white-space: nowrap; line-height: 1.1; }
 /* 정류장 20km 이상 통과 횟수 (2026-10-26: 평균속도 숫자 대신). 측정 전 회색, 정류장 안에서 깜빡임, 안전 통과 초록, 20km 이상 통과 빨강 */
-.yb3-pass { display: inline-flex; align-items: center; gap: 6px; color: #e2e8f0; margin: auto 0; position: relative; top: -9px; }   /* 신호등은 위에, 통과 횟수는 양쪽 표준시간 높이(남은 공간 가운데) */
+.yb3-pass { display: inline-flex; align-items: center; gap: 6px; color: #e2e8f0; margin: auto 0; position: relative; top: -6px; font-size: 27px; }   /* 신호등은 위에, 통과 횟수는 양쪽 표준시간 높이(남은 공간 가운데) */
 .yb3-pass iconify-icon { font-size: 1.05em; color: rgba(255,255,255,0.55); }
 .yb3-pass[data-st="zone"] iconify-icon { color: #FDE047; animation: yb3PassBlink .6s steps(2, start) infinite; }
 .yb3-pass[data-st="ok"] iconify-icon { color: #39FF6A; filter: drop-shadow(0 0 6px #39FF6A); }
@@ -84,6 +84,10 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-stops { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 8px; align-items: center; border-top: 1px solid rgba(255,255,255,0.22); padding-top: 10px; }
 .yb3-stop { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .yb3-stop.r { text-align: right; align-items: flex-end; }
+/* 오른쪽 정류장 이름은 표준시간 글자 왼쪽 끝에서 시작하고 시간 폭을 넘으면 … (2026-10-26 사용자 지시) */
+.yb3-stop.r { display: grid; justify-content: end; grid-template-columns: max-content; }
+.yb3-stop.r .yb3-role { justify-self: end; }
+.yb3-stop.r .yb3-sn { width: 0; min-width: 100%; text-align: left; }
 .yb3-role { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.65); }
 .yb3-st { font-family: 'GMarketSans','GmarketNum',sans-serif; font-size: 34px; font-weight: 700; line-height: 1.05; color: #fff; }
 .yb3-st small { font-size: 15px; font-weight: 700; opacity: 0.75; margin-left: 2px; letter-spacing: 0; }
@@ -121,6 +125,7 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     html.lv2 .yb3-label { max-width: 100cqw; }
     html.lv2 .yb3-pill { padding: 0 4px; }
     html.lv2 .yb3-pill-text { font-size: 19px; }
+    html.lv2 .yb3-pass { font-size: 24px; }
     html.lv2 .yb3-lamps i { width: 19px; height: 19px; }
     html.lv2 .yb3-lamps { gap: 6px; }
     html.lv2 .yb3-gauge { margin: 0 auto; }
