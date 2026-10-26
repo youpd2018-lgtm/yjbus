@@ -134,6 +134,9 @@
 
   // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체, 0.55 아래면 서행.
   // 정체가 하나라도 있으면 정체(빨강+카드+음성), 없고 서행만 있으면 노란 등만(카드·음성 없음, 사용자 지시 2026-10-26).
+  // 일반도로는 보지 않고 고속도로·교량만 본다(사용자 지시 2026-10-26): 도로 이름에 '고속도로'·'대교'가 있거나,
+  // 표준노드링크 도로 종류(links 4번째 값)가 교량(003)·터널(004)이면서 제한속도 70km 이상인 링크.
+  function isHwy(inf) { var nm = String(inf[2] || ''); return /고속도로|대교/.test(nm) || ((inf[3] === '003' || inf[3] === '004') && inf[0] >= 70); }
   // 시내 도로는 원래 신호·정류장 때문에 느리므로 300m 넘게 이어진 구간만 본다.
   function aheadJam(R, pos) {
     var m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
@@ -143,6 +146,7 @@
       var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, road = '';
       ids.forEach(function (id) {
         var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, sp = m[id];
+        if (!isHwy(inf)) return;
         if (typeof sp === 'number' && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; if (!road && inf[2]) road = inf[2]; }
       });
       if (sumLen < 300) continue;
