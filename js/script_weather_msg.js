@@ -292,9 +292,8 @@ function fallbackDirectFetch(busLat, busLon) {
     .catch(function(err) { console.warn('GAS 프록시 돌발 조회 실패:', err); });
 }
 
-// 2분마다 자동 갱신
-setInterval(loadLiveTrafficData, 120000);
-setTimeout(loadLiveTrafficData, 1500);
+// 옛 서버(get_traffic_incident) 돌발 받기는 끔(2026-10-26): 전국 돌발이 섞이고 서버 호출만 많았음.
+// 이제 앞쪽 돌발·정체는 js/script_traffic_link.js 가 국토부 공유 값으로 알린다.
 
 function openWriteMessagePrompt() {
   const isFamily = (typeof isFamilyUser !== 'undefined' && isFamilyUser);

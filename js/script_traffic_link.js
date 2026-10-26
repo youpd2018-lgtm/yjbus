@@ -1,4 +1,6 @@
-// 🚦 소통 알약 + 돌발정보 (국토교통부 표준노드링크 LINK_ID 방식) — 전 노선(202~282), 관리자(또는 시험 켜기)만 사용
+// 🚦 앞쪽 돌발·정체 알림 (국토교통부 표준노드링크 LINK_ID 방식) — 전 노선(202~282)
+// - 2026-10-26 사용자 지시: 신호등 알약은 '내 앞쪽'(약 5km)의 사고·공사·통제·기상 돌발과 정체만 알린다. 아무것도 없으면 초록.
+//   (전에는 시내 도로 평균 속도를 색으로 보여 줬는데 운행에 도움이 안 돼서 바꿈)
 // - 노선 구간별 링크번호: data/route/282_links.json (link_edit.html 에서 사람이 고친 파일)
 // - 서버 공유 저장소(10분)를 읽고, 오래됐으면 달리는 폰 한 대가 영종·청라 지역만 국토교통부에서 받아 올린다(전국 X). 키는 시험 단계에서는 이 폰에 직접 넣은 값(yb_its_key)만 쓴다.
 // - 어떤 단계든 실패하면 아무것도 바꾸지 않아 옛 표시가 그대로 나온다.
@@ -9,7 +11,7 @@
   var ITS = 'https://openapi.its.go.kr:9443/';
     var data = {}, key = null, keyTried = 0;
   
-  var curSeg = -1, lamp = null, lamps = {};   // lamps[구간] = 마지막 정상 값(자료 없는 구간은 이전 값 유지)
+  var curSeg = -1, lamp = null;
   var incSeen = {};
 
   function enabled() {
@@ -66,22 +68,13 @@
     }
     return bd < 120 ? best : -1;
   }
-  function segFlow(R, i) {
-    var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0;
-    ids.forEach(function (id) {
-      var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, t = traffic[id], sp = t ? parseFloat(t.speed) : NaN;
-      if (!isNaN(sp) && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; }
-    });
-    if (!sumLen) return null;
-    var ratio = sumSp / sumLim;
-    return { state: ratio >= 0.8 ? 'ok' : (ratio >= 0.4 ? 'slow' : 'jam'), label: Math.round(sumSp / sumLen) + 'km' };
-  }
-
   // ── 공유 저장소(서버) ──────────────────────────────────────────
   // 서버에 10분짜리 소통·돌발정보가 있으면 그것을 읽는다. 10분이 지났으면 운행 중인 폰 한 대만 국토부에서 영종·청라 전체를 받아 서버에 올린다.
   var AREA = { minX: 126.36, maxX: 126.70, minY: 37.42, maxY: 37.57 };   // 영종·청라·인천 노선 전체
-  var FRESH = 420000, STALE = 2400000;                                   // 소통정보 7분 / 40분
-  var COLLECT_EVENTS = false;                                            // 돌발정보 받기는 쉬는 중(국토부 월 한도 때문, 사용자 지시 2026-10-11)
+  // 국토부 월 5,000건 한도: 돌발 12분(하루 최대 약 103번) + 소통 30분(약 41번) = 한 달 최대 약 4,300번
+  var FRESH_E = 720000, FRESH_T = 1800000, STALE = 2700000;             // 돌발 12분 / 소통 30분 / 45분 지나면 안 씀
+  var COLLECT_EVENTS = true;                                             // 2026-10-26 다시 켬(사용자 지시: 앞쪽 돌발·통제·공사 알림)
+  var AHEAD_SEGS = 8;                                                    // 앞쪽 구간 수(구간 하나 약 0.6km → 약 5km)
   function inServiceHours() {   // 운행시간 04:30~01:00 (한국 시각)에만 국토부에서 새로 받는다
     var d = new Date(Date.now() + 9 * 3600000), m = d.getUTCHours() * 60 + d.getUTCMinutes();
     return m >= 270 || m < 60;
@@ -118,7 +111,10 @@
         if (res && res.success) shared.t = { at: nowS(), data: m };
       } else {
         var ev = await itsGet('eventInfo', k);
-        var list = ev.map(function (it) { return { roadName: it.roadName || '', message: it.message || '', eventDetailType: it.eventDetailType || '', coordX: it.coordX, coordY: it.coordY }; });
+        var list = ev.map(function (it) {
+          return { roadName: it.roadName || '', message: it.message || '', eventType: it.eventType || '', eventDetailType: it.eventDetailType || '',
+            linkId: String(it.linkId || ''), lanesBlocked: it.lanesBlocked || '', startDate: it.startDate || '', endDate: it.endDate || '', coordX: it.coordX, coordY: it.coordY };
+        });
         var res2 = await gasPost({ action: 'put_traffic_shared', kind: 'e', data: list });
         if (res2 && res2.success) shared.e = { at: nowS(), data: list };
       }
@@ -131,45 +127,93 @@
     }
     var driving = (g.speedKmh || 0) >= 5;
     if (driving && inServiceHours()) {   // 달리는 폰만, 운행시간 안에만 새로 받는다
-      if (!shared.t || nowS() - shared.t.at >= FRESH) await collect('t');
-      if (COLLECT_EVENTS && (!shared.e || nowS() - shared.e.at >= FRESH)) await collect('e');
+      if (COLLECT_EVENTS && (!shared.e || nowS() - shared.e.at >= FRESH_E)) await collect('e');
+      if (!shared.t || nowS() - shared.t.at >= FRESH_T) await collect('t');
     }
   }
 
-  function segFlow(R, i) {
-    var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
+  // 앞쪽 정체: 앞쪽 구간마다 (속도 ÷ 제한속도)를 길이로 평균. 0.35 아래이거나 15km/h 아래면 정체, 0.55 아래면 서행.
+  // 시내 도로는 원래 신호·정류장 때문에 느리므로 300m 넘게 이어진 구간만 본다.
+  function aheadJam(R, pos) {
+    var m = (shared.t && nowS() - shared.t.at < STALE) ? shared.t.data : null;
     if (!m) return null;
-    ids.forEach(function (id) {
-      var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, sp = m[id];
-      if (typeof sp === 'number' && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; }
-    });
-    if (!sumLen) return null;
-    var ratio = sumSp / sumLim;
-    return { state: ratio >= 0.8 ? 'ok' : (ratio >= 0.4 ? 'slow' : 'jam'), label: Math.round(sumSp / sumLen) + 'km' };
+    var to = Math.min(R.segs.length - 1, curSeg + AHEAD_SEGS);
+    for (var i = curSeg; i <= to; i++) {
+      var ids = R.segs[i] || [], sumLen = 0, sumSp = 0, sumLim = 0, road = '';
+      ids.forEach(function (id) {
+        var inf = R.links[id] || [0, 0], lim = inf[0], len = inf[1] || 1, sp = m[id];
+        if (typeof sp === 'number' && lim > 0) { sumLen += len; sumSp += sp * len; sumLim += lim * len; if (!road && inf[2]) road = inf[2]; }
+      });
+      if (sumLen < 300) continue;
+      var ratio = sumSp / sumLim, avg = sumSp / sumLen;
+      var st = (ratio < 0.35 || avg < 15) ? 'jam' : (ratio < 0.55 ? 'slow' : null);
+      if (!st) continue;
+      var p0 = R.lines[i] && R.lines[i][0], km = p0 ? dist(pos, p0) / 1000 : 0;
+      return { state: st, seg: i, road: road, avg: Math.round(avg), km: km };
+    }
+    return null;
   }
 
-  // 돌발정보: 내 앞쪽 구간 선 가까이(150m)에 있는 것만 알린다. 같은 건은 한 번만.
-  function checkIncidents(R, pos) {
-    if (!shared.e || nowS() - shared.e.at > STALE) return;
-    var from = Math.max(0, curSeg), to = Math.min(R.lines.length - 1, curSeg + 3);
+  // 돌발 종류 이름: 사고 / 공사 / 통제 / 기상 / 돌발
+  function evKind(it) {
+    var t = String(it.eventType || '') + ' ' + String(it.eventDetailType || '') + ' ' + String(it.message || '');
+    if (/사고|추돌|전복|화재|고장/.test(t)) return '사고';
+    if (/공사|보수|작업|포장/.test(t)) return '공사';
+    if (/통제|차단|폐쇄|행사|집회|시위/.test(t)) return '통제';
+    if (/기상|강우|강설|안개|결빙|침수|재난|강풍/.test(t)) return '기상';
+    return '돌발';
+  }
+  function evId(it) { return (it.roadName || '') + '|' + (it.message || it.eventDetailType || '') + '|' + it.coordX + '|' + it.coordY; }
+
+  // 앞쪽 돌발: 앞쪽 구간의 링크번호가 같거나, 앞쪽 구간 선에서 120m 안에 있는 것. 가장 가까운 것 하나.
+  function aheadEvent(R, pos) {
+    if (!shared.e || nowS() - shared.e.at > STALE) return null;
+    var to = Math.min(R.lines.length - 1, curSeg + AHEAD_SEGS), mine = {};
+    for (var i = curSeg; i <= to; i++) (R.segs[i] || []).forEach(function (id) { mine[id] = 1; });
+    var best = null;
     shared.e.data.forEach(function (it) {
       var p = [parseFloat(it.coordY), parseFloat(it.coordX)];
       if (isNaN(p[0]) || isNaN(p[1])) return;
-      var near = false;
-      for (var i = from; i <= to && !near; i++) { var ln = R.lines[i]; for (var q = 0; q < ln.length; q++) if (dist(p, ln[q]) < 150) { near = true; break; } }
+      var near = !!(it.linkId && mine[it.linkId]);
+      for (var i = curSeg; i <= to && !near; i++) { var ln = R.lines[i]; for (var q = 0; q < ln.length; q++) if (dist(p, ln[q]) < 120) { near = true; break; } }
       if (!near) return;
-      var id = (it.roadName || '') + '|' + (it.message || it.eventDetailType || '') + '|' + it.coordX + '|' + it.coordY;
-      if (incSeen[id]) return; incSeen[id] = 1;
-      var km = (dist(pos, p) / 1000).toFixed(1);
-      var road = String(it.roadName || '주요도로').trim(), msg = String(it.message || it.eventDetailType || '돌발상황 발생').trim();
-      var text = '🚨 [돌발] ' + road + ' ' + msg + ' (' + km + 'km 전방)';
-      window.liveTrafficAlerts = window.liveTrafficAlerts || [];
-      window.liveTrafficAlerts.unshift(text);
-      window._trafficAlertMeta = window._trafficAlertMeta || [];
-      window._trafficAlertMeta.push({ text: text, receivedAt: Date.now() });
-      if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();
-      if (typeof triggerTrafficIncidentTest === 'function') triggerTrafficIncidentTest(text);
+      var km = dist(pos, p) / 1000;
+      if (!best || km < best.km) best = { it: it, km: km, kind: evKind(it) };
     });
+    return best;
+  }
+
+  // 알림(메시지창 + 음성)은 같은 건 한 번만. 정체는 같은 구간이면 20분에 한 번만.
+  var jamSaid = {};
+  function announce(text) {
+    window.liveTrafficAlerts = window.liveTrafficAlerts || [];
+    window.liveTrafficAlerts.unshift(text);
+    window._trafficAlertMeta = window._trafficAlertMeta || [];
+    window._trafficAlertMeta.push({ text: text, receivedAt: Date.now() });
+    window._aheadAlertText = text;
+    if (typeof renderLiveModalAlerts === 'function') renderLiveModalAlerts();
+  }
+  function checkAhead(R, pos) {
+    var ev = aheadEvent(R, pos), jam = ev ? null : aheadJam(R, pos);
+    if (ev) {
+      var id = evId(ev.it);
+      if (!incSeen[id]) {
+        incSeen[id] = 1;
+        var road = String(ev.it.roadName || '').trim(), msg = String(ev.it.message || ev.it.eventDetailType || '돌발상황').trim();
+        announce('🚨 [' + ev.kind + '] ' + (road ? road + ' ' : '') + msg + ' (' + ev.km.toFixed(1) + 'km 전방)');
+      }
+      return { state: 'jam', label: ev.kind };
+    }
+    if (jam) {
+      var k = jam.seg + '|' + jam.state;
+      if (!jamSaid[k] || Date.now() - jamSaid[k] > 1200000) {
+        jamSaid[k] = Date.now();
+        announce('🚦 [' + (jam.state === 'jam' ? '정체' : '서행') + '] ' + (jam.road ? jam.road + ' ' : '') + '평균 ' + jam.avg + 'km/h (' + jam.km.toFixed(1) + 'km 전방)');
+      }
+      return { state: jam.state, label: jam.state === 'jam' ? '정체' : '서행' };
+    }
+    window._aheadAlertText = '';
+    return { state: 'ok', label: '앞쪽 이상 없음' };
   }
 
   async function tick() {
@@ -186,14 +230,8 @@
       if (s < 0) { if (curSeg >= 0 && dist(pos, R.lines[curSeg][0]) > 3000) curSeg = -1; lamp = null; return; }
       curSeg = s;
       await syncShared(g);
-      var f = segFlow(R, s);
-      if (f) lamps[s] = { f: f, at: Date.now() }; else f = (lamps[s] && Date.now() - lamps[s].at < 1800000) ? lamps[s].f : null;   // 자료가 없으면 이전 값 유지(30분까지)
-      lamp = f;
-      if (lamp && typeof setTrafficLamp === 'function') {
-        var st = document.getElementById('trafficFlowStatusText');
-        if (!(st && st.innerText === '돌발 주의')) setTrafficLamp(lamp.state, lamp.label);
-      }
-      checkIncidents(R, pos);
+      lamp = checkAhead(R, pos);
+      if (lamp && typeof setTrafficLamp === 'function') setTrafficLamp(lamp.state, lamp.label);
     } catch (e) { }
   }
 

@@ -1119,7 +1119,7 @@ function renderSingleSeqBox(boxEl, locId, timeId, stop, isTarget, isPast) {
 //  - 버스에서 NEAR_KM 이내(또는 거리를 알 수 없는 것)만 알림. 여러 건이면 9초 간격으로 차례로
 // ================================================================
 (function () {
-    var NEAR_KM = 3;
+    var NEAR_KM = 6;   // 앞쪽 돌발·정체 알림(약 5km 앞까지)을 음성으로 알림
     var GAP_MS = 9000;
     var seen = {};
     var queue = [];

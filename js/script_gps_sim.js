@@ -1281,8 +1281,12 @@ function loadLatestColleagueMessage() {
             const statusText = document.getElementById('trafficFlowStatusText');
             const oldStatusText = statusText ? statusText.innerText : '소통원활';
 
-            // 최근 국토부 돌발상황이 있으면 그것을 표출, 없으면 데모 표출
-            let hasRealAlert = window.liveTrafficAlerts && window.liveTrafficAlerts.length > 0;
+            // 알약을 누르면: 지금 앞쪽에 돌발·정체가 있으면 그 내용을 다시 알려 주고, 없으면 '앞쪽 이상 없음'만 (가짜 예시 문구는 2026-10-26 삭제)
+            let hasRealAlert = !!window._aheadAlertText;
+            if (!hasRealAlert && !(typeof customText === 'string' && customText)) {
+                if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff' });
+                return;
+            }
             let titleText = '⚠️ [돌발상황] 공항신도시JC 사고';
             let descText = '전방 1.2km 지점 2차로 추돌사고 처리 중 (정체)';
             let voiceText = '전방 1킬로미터, 공항신도시 제이씨 부근에 사고 돌발상황이 발생했습니다. 안전운행 하세요.';
@@ -1291,14 +1295,14 @@ function loadLatestColleagueMessage() {
                 hasRealAlert = true;
             }
             if (hasRealAlert) {
-                let realRaw = (typeof customText === 'string' && customText) ? customText : String(window.liveTrafficAlerts[0] || '');
-                titleText = '🚨 실시간 도로 돌발 알림';
-                descText = realRaw.replace(/🚨\s*\[돌발\]\s*/, '');
+                let realRaw = (typeof customText === 'string' && customText) ? customText : String(window._aheadAlertText || '');
+                titleText = /^🚦/.test(realRaw) ? '🚦 앞쪽 정체 알림' : '🚨 앞쪽 돌발 알림';
+                descText = realRaw.replace(/^(🚨|🚦)\s*/, '');
                 voiceText = `주의하세요. ${descText}. 안전운행 하세요.`;
             }
 
-            // 1. 신호등을 빨간불(돌발 주의)로 전환
-            setTrafficLamp('jam', '돌발 주의');
+            // 1. 신호등을 빨간불로 전환 (정체 알림은 TrafficLink 가 색을 정함)
+            if (!/^🚦/.test(String(customText || window._aheadAlertText || ''))) setTrafficLamp('jam', '돌발 주의');
 
             // 2. SweetAlert2 알림 팝업
             if (typeof Swal !== 'undefined') {
