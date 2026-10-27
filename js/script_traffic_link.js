@@ -191,7 +191,6 @@
   }
 
   // 알림(메시지창 + 음성)은 같은 건 한 번만. 정체는 같은 구간이면 20분에 한 번만.
-  var jamSaid = {};
   function announce(text) {
     window.liveTrafficAlerts = window.liveTrafficAlerts || [];
     window.liveTrafficAlerts.unshift(text);
@@ -211,13 +210,11 @@
       }
       return { state: 'jam', label: ev.kind };
     }
+    window._aheadJamText = '';
     if (jam && jam.state === 'slow') { window._aheadAlertText = ''; return { state: 'slow', label: '서행' }; }   // 서행: 노란 등만
-    if (jam) {
-      var k = String(jam.seg);
-      if (!jamSaid[k] || Date.now() - jamSaid[k] > 1200000) {
-        jamSaid[k] = Date.now();
-        announce('🚦 [정체] ' + (jam.road ? jam.road + ' ' : '') + '평균 ' + jam.avg + 'km/h (' + jam.km.toFixed(1) + 'km 전방)');
-      }
+    if (jam) {   // 정체: 자동 카드·음성 없이 빨간 등만. 알약을 누르면 이 글로 카드+음성 (2026-10-27 사용자 지시)
+      window._aheadAlertText = '';
+      window._aheadJamText = '🚦 [정체] ' + (jam.road ? jam.road + ' ' : '') + '평균 ' + jam.avg + 'km/h (' + jam.km.toFixed(1) + 'km 전방)';
       return { state: 'jam', label: '정체' };
     }
     window._aheadAlertText = '';

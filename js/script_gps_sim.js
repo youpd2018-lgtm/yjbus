@@ -1297,7 +1297,7 @@ function loadLatestColleagueMessage() {
             const oldStatusText = statusText ? statusText.innerText : '소통원활';
 
             // 알약을 누르면: 지금 앞쪽에 돌발·정체가 있으면 그 내용을 다시 알려 주고, 없으면 '앞쪽 이상 없음'만 (가짜 예시 문구는 2026-10-26 삭제)
-            let hasRealAlert = !!window._aheadAlertText;
+            let hasRealAlert = !!(window._aheadAlertText || window._aheadJamText);
             if (!hasRealAlert && !(typeof customText === 'string' && customText)) {
                 if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top', icon: 'success', title: '앞쪽 5km 돌발·정체 없음', showConfirmButton: false, timer: 3000, background: '#1e293b', color: '#ffffff', customClass: { popup: 'yb-inc-card' }, didOpen: placeIncidentToast });
                 return;
@@ -1310,14 +1310,14 @@ function loadLatestColleagueMessage() {
                 hasRealAlert = true;
             }
             if (hasRealAlert) {
-                let realRaw = (typeof customText === 'string' && customText) ? customText : String(window._aheadAlertText || '');
+                let realRaw = (typeof customText === 'string' && customText) ? customText : String(window._aheadAlertText || window._aheadJamText || '');
                 titleText = /^🚦/.test(realRaw) ? '🚦 앞쪽 정체 알림' : '🚨 앞쪽 돌발 알림';
                 descText = realRaw.replace(/^(🚨|🚦)\s*/, '');
                 voiceText = `주의하세요. ${descText}. 안전운행 하세요.`;
             }
 
             // 1. 신호등을 빨간불로 전환 (정체 알림은 TrafficLink 가 색을 정함)
-            if (!/^🚦/.test(String(customText || window._aheadAlertText || ''))) setTrafficLamp('jam', '돌발 주의');
+            if (!/^🚦/.test(String(customText || window._aheadAlertText || window._aheadJamText || ''))) setTrafficLamp('jam', '돌발 주의');
 
             // 2. SweetAlert2 알림 팝업
             if (typeof Swal !== 'undefined') {
