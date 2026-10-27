@@ -80,7 +80,8 @@
             var sd = todaySched();
             var wt = sd && sd.workType ? String(sd.workType).trim() : '';
             if (wt !== '정상' && wt !== '대타') { offWhy = '오늘 근무가 정상·대타가 아님 (' + (wt || '근무 정보 없음') + ')'; return false; }
-            if (typeof isWithinOperatingHours === 'function' && !isWithinOperatingHours()) { offWhy = '지금이 운행 시간이 아님'; return false; }
+            // 2026-10-28: 운행 시간 판정(isWithinOperatingHours)은 화면의 날짜 칸·시간표 조회에 걸려 운행 중에도 '아님'으로 나와서 뺌.
+            //   오늘 정상·대타 근무일에 노선 정류장 50m 안에 들어올 때만 재므로 시간 검사 없이도 엉뚱한 기록이 쌓이지 않음
             offWhy = '';
             return true;
         } catch (e) { offWhy = '근무 정보 확인 오류'; return false; }
