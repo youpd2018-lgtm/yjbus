@@ -800,13 +800,13 @@
           </div>
 
           <!-- 정류장 운행 습관 보기/숨기기 단추 (누르면 아래에 나오고 다시 누르면 숨김) -->
-          <div id="habitToggleBtn" role="button" tabindex="0" onclick="toggleHabitCard()" aria-expanded="false"
-            style="width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px 10px 16px; border-radius: 12px; border: 1.5px solid #d97706; background: #0f172a; color: #fbbf24; font-size: 20px; font-weight: 900; cursor: pointer;">
+          <div id="habitToggleBtn" hidden role="button" tabindex="0" onclick="toggleHabitCard()" aria-expanded="false"
+            style="display: none !important; width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px 10px 16px; border-radius: 12px; border: 1.5px solid #d97706; background: #0f172a; color: #fbbf24; font-size: 20px; font-weight: 900; cursor: pointer;">
             <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><span>정류장 통과 속도</span><button type="button" id="habitSwitchBtn" onclick="event.stopPropagation(); switchHabitPage()" style="flex: 0 0 auto; padding: 8px 10px; border-radius: 10px; border: 1.5px solid #38bdf8; background: #0c4a6e; color: #7dd3fc; font-size: 16px; font-weight: 900; cursor: pointer; white-space: nowrap; letter-spacing: -0.5px;">월별누적</button></span><span id="habitToggleArrow" style="font-size: 18px;">▼</span>
           </div>
 
           <!-- 2단: 나의 정류장 운행 (2페이지: 이번 회차 / 월별 누적) -->
-          <div id="habitCard" style="display: none; margin-top: 10px; background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 12px 14px;">
+          <div id="habitCard" hidden style="display: none; margin-top: 10px; background: #0f172a; border: 1.5px solid #d97706; border-radius: 10px; padding: 12px 12px 14px;">
             <div id="habitList_cur"></div>
             <div id="habitList_month" style="display: none;"></div>
           </div>
@@ -1157,7 +1157,7 @@
               <div class="yb3-stop"><span class="yb3-role">현재</span><span class="yb3-st" id="yb3StCur">--:--:--</span><span class="yb3-sn" id="yb3SnCur"></span></div>
               <div class="yb3-pill" id="yb3Pill" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
                 <div class="yb3-lamps"><i></i><i></i><i></i></div>
-                <span class="yb3-pill-text yb3-pass" id="yb3Pass" data-st="idle"><iconify-icon id="yb3PassIc" icon="mdi:bus-stop"></iconify-icon><b id="yb3PassN">0</b><small class="yb3-pass-u">회</small></span>
+                <span class="yb3-pill-text yb3-pass" id="yb3Pass" hidden style="display:none" data-st="idle"><iconify-icon id="yb3PassIc" icon="mdi:bus-stop"></iconify-icon><b id="yb3PassN">0</b><small class="yb3-pass-u">회</small></span>
               </div>
               <div class="yb3-stop r"><span class="yb3-role">다음</span><span class="yb3-st" id="yb3StNext">--:--:--</span><span class="yb3-sn" id="yb3SnNext"></span></div>
             </div>

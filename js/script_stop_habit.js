@@ -9,6 +9,7 @@
 // - 화면: 이번 회차(폰 값) / 이달(서버 값 + 아직 못 올린 이 폰 값), 정류장 목록(이번 회차=최근 통과 순 5곳, 이달=많이 통과한 순 5곳)은 항상 보임
 // ================================================================
 (function () {
+    var ENABLED = false;         // 2026-10-28 사용자 지시: 법 해석 오류(승객 있을 때만 25km)로 기능 임시 정지. 다시 켜려면 true + index.html의 hidden 풀기
     var TOP_N = 5;   // 이번 회차: 최근 통과 순 5곳, 월별: 많이 통과한 순 5곳
     var KEY_PREFIX = 'yb_stoppass_';   // 옛 급정거·급출발 기록(yb_stophab_)과 섞이지 않게 새 저장소
     var KEY_TAG = '|p20';        // 서버 줄 키 끝 표시 (새 방식)
@@ -146,6 +147,7 @@
     // GPS 한 번 들어올 때마다 호출 (라이브 모달이 켜져 있을 때만 불림)
     function onFix(speedKmh, accuracy, heading, duty) {
         try {
+            if (!ENABLED) return;
             if (bufDriver !== driver()) { state = null; resetPhase(); lastIdx = null; bufDriver = driver(); }
             if (!driver()) return;
             if (window.simState && window.simState.active) return;
@@ -222,7 +224,7 @@
     // ---- 서버 올리기 ----
     function upload() {
         try {
-            if (uploading || !driver()) return;
+            if (!ENABLED || uploading || !driver()) return;
             ensureState();
             var url = window.GAS_WEB_APP_URL;
             if (!url) return;
