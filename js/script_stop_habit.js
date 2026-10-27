@@ -14,7 +14,8 @@
     var KEY_TAG = '|p20';        // 서버 줄 키 끝 표시 (새 방식)
     var MIN_STOPS = 1;           // 통계로 인정하는 최소 통과 정류장 수
     var ZONE_M = 50;             // 정류장 50m 전부터 지나는 중으로 잰다 (2026-10-26 사용자 지시: 앞 50m + 뒤 50m = 100m)
-    var EXIT_M = 50;             // 정류장을 지나 50m 밖으로 나가면 통과로 확정
+    var EXIT_M = 50;             // 정류장에 다가가는 동안은 50m 안이면 계속 잼
+    var POST_M = 30;             // 정류장을 지나친 뒤(멀어지는 중)에는 30m 밖으로 나가면 통과로 확정 (2026-10-27 사용자 지시: 앞 50m + 뒤 30m)
     var LIMIT_KMH = 25;          // 실제 측정 기준 25km/h(2026-10-27 사용자 지시: 공고는 20km지만 현실과 안 맞아 측정만 25). 근무통계 글자는 이 값을 따라 "25km"로 나옴
     var MAX_ACC_M = 40;
     var MAX_GAP_S = 6;           // GPS가 이 시간 넘게 끊기면 그 구간은 판정 안 함 (폰이 2~3초 간격으로 줄 때도 이어지게)
@@ -182,7 +183,8 @@
 
             if (zone) {
                 var d = haversineM(pos.lat, pos.lon, zone.lat, zone.lon);
-                if (d <= EXIT_M) {
+                zone.minD = Math.min(zone.minD == null ? d : zone.minD, d);
+                if (d <= (d > zone.minD + 8 ? POST_M : EXIT_M)) {   // 멀어지는 중이면 뒤 30m, 다가가는 중이면 앞 50m
                     if (zone.done) return;   // 이미 안전 통과로 끝낸 정류장: 나갈 때까지 더 재지 않음
                     zone.minV = Math.min(zone.minV, speedKmh);
                     // 20km 이하로 떨어지는 순간 바로 안전 통과(초록)로 끝냄 (2026-10-26 사용자 지시)
