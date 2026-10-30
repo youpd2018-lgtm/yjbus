@@ -260,7 +260,7 @@
 
   let map, route = null, segLines = [], dots = [], meOv = null, ringOv = null;
   let follow = true, headUp = true, traffic = false;   // 켜면 처음부터 [따라가기]·[방향] 선택됨
-  let parentAnchor = '', parentNext = '';
+  let parentAnchor = '', parentNext = '', parentRoute = '';
   let me = null, heading = 0, lastMe = null, nextIdx = 0;
 
   try { screen.orientation.lock('portrait').catch(() => { }); } catch (e) { }   // 세로 고정(설치형 앱에서 동작, 안 되면 가로일 때 안내 화면)
@@ -504,6 +504,10 @@
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'rm-live') return;
     const d = ev.data;
     if (d.time) $('cdTime').textContent = d.time;
+    if (d.route && d.route !== parentRoute) {   // 202A/203A 1회차 특수 운행: 앱(라이브 모달)이 알려 주는 노선으로 지도를 바꾼다 (A 노선 → 기점 이후 정규 노선)
+      parentRoute = d.route;
+      if (ROUTES.includes(d.route) && (!route || route.name !== d.route)) { $('route').value = d.route; showRoute(d.route); }
+    }
     if ((d.next || '') !== parentNext) { parentNext = d.next || ''; if (route && me) update(); }   // 라이브 모달 다음 정류장
     if (d.anchor && d.anchor !== parentAnchor) { parentAnchor = d.anchor; const lgP = legByAnchor(); if (lgP && !me && (!route.leg || lgP.join() !== route.leg.join())) { route.leg = lgP; renderSegs(); applyLegDots(); } }   // 라이브 모달의 거점 이름과 똑같이
     if (d.gap) { $('gapBv').textContent = d.gap.bv || '-'; $('gapBn').textContent = d.gap.bn || ''; $('gapFv').textContent = d.gap.fv || '-'; $('gapFn').textContent = d.gap.fn || ''; }

@@ -601,6 +601,24 @@ function loadBoardItems(cat) { loadFolderMemoTab(cat === 'ROUTE' ? 'route' : (ca
 // ================================================================
 var _rm = null;   // { frame, timer, micStyle }
 
+// 지금 달려야 할 노선: 202/203의 1회차 특수 운행(202A/203A)은 A 노선을 지도에 보여 주고,
+// 기점(time2) 시간이 지나면 정규 노선(202/203)으로 바꾼다. 라이브 모달과 같은 규칙(getTodayDutyInfo)
+function rmRouteNow() {
+  try {
+    if (typeof getTodayDutyInfo !== 'function') return '';
+    var d = getTodayDutyInfo();
+    var r = d && String(d.routeShort || '');
+    if (!/^\d{3}A$/.test(r)) return '';
+    var t2 = d.tripTimes && /^(\d{1,2}):(\d{2})/.exec(String(d.tripTimes.time2 || ''));
+    if (t2) {
+      var n = new Date(), sec = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds();
+      var s2 = +t2[1] * 3600 + +t2[2] * 60;
+      if (sec >= s2 && sec - s2 < 6 * 3600) return String(d.baseRoute || r.slice(0, 3));
+    }
+    return r;
+  } catch (e) { return ''; }
+}
+
 function openRouteMap() {
   if (_rm) return false;
   var url = 'route_map.html?embed=1';
@@ -616,7 +634,7 @@ function openRouteMap() {
       if (el && el.innerText) route = el.innerText;
     }
     var m = route.match(/(\d{3})\s*([Aa]?)/);
-    if (m) url += '&route=' + m[1] + m[2].toUpperCase();
+    if (m) url += '&route=' + (rmRouteNow() || (m[1] + m[2].toUpperCase()));
   } catch (e) { }
 
   // 라이브 모달을 밑에 켜 둔다(운행습관·오차 측정용). 실패해도 지도는 연다
@@ -658,6 +676,7 @@ function pushRouteMapLive() {
     }
   } catch (e) { }
   var msg = { type: 'rm-live', time: t ? t.textContent.trim() : '', delay: '', dc: '', db: '', dbd: '' };
+  try { var rn = rmRouteNow(); if (rn) msg.route = rn; } catch (e) { }
   if (b) {
     var cs = getComputedStyle(b);
     msg.delay = b.textContent.trim(); msg.dc = cs.color; msg.db = cs.backgroundColor; msg.dbd = cs.borderTopColor;
