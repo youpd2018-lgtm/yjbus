@@ -27,7 +27,14 @@
         return !!(m && m.classList.contains('active') && m.style.display !== 'none');
     }
 
-    function speakOnce(txt) {
+    var DING_MS = 1400;      // 띵동 소리 뒤에 음성
+    var speakTimer = null;
+    function speakOnce(txt) {   // 모든 하차벨 음성 앞에는 띵동(sfx 'depart')
+        try { if (window.sfxPlay) window.sfxPlay('depart'); } catch (e) { }
+        clearTimeout(speakTimer);
+        speakTimer = setTimeout(function () { speakNow(txt); }, DING_MS);
+    }
+    function speakNow(txt) {
         try {
             if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.resume();
