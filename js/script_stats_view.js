@@ -363,7 +363,7 @@
         const sw = document.getElementById('hideWorkSwitch');
         if (sw) sw.checked = on;
         const txt = document.getElementById('hideWorkStateText');
-        if (txt) txt.innerText = on ? '다른 사람에게 비공개예요' : '꺼짐 (모든 사용자에게 보여요)';
+        if (txt) txt.innerText = on ? '켜짐 · 지금은 내 근무 정보가 다른 사용자에게 보이지 않는 상태예요' : '꺼짐 · 지금은 내 근무 정보가 다른 사용자에게 보이는 상태예요';
     }
     function setHideWork(on) {
         const sw = document.getElementById('hideWorkSwitch');
