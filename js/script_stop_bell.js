@@ -27,7 +27,7 @@
         return !!(m && m.classList.contains('active') && m.style.display !== 'none');
     }
 
-    var DING_MS = 1400;      // 띵동 소리 뒤에 음성
+    var DING_MS = 150;       // 띵동 소리 뒤에 음성
     var speakTimer = null;
     function speakOnce(txt) {   // 모든 하차벨 음성 앞에는 띵동(sfx 'depart')
         try { if (window.sfxPlay) window.sfxPlay('depart'); } catch (e) { }

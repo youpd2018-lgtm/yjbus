@@ -5,7 +5,7 @@
 <script>
 var T='하차 손님이 있습니다. 정차하세요.';
 function ding(){try{var a=new Audio('sounds/depart_ding.mp3');a.play()}catch(e){}}
-function one(t){ding();setTimeout(function(){one2(t)},1400)}
+function one(t){ding();setTimeout(function(){one2(t)},150)}
 function one2(t){var s=window.speechSynthesis;s.resume();var u=new SpeechSynthesisUtterance(typeof t==='string'?t:T);u.lang='ko-KR';var v=s.getVoices().find(function(x){return x.lang&&x.lang.indexOf('ko')===0});if(v)u.voice=v;s.speak(u);}
 function all3(){document.getElementById('m').textContent='띵동 하차 등록 → 띵동 하차 등록 취소 → 띵동 하차 손님 안내';one('하차 등록');setTimeout(function(){one('하차 등록 취소')},4500);setTimeout(function(){one()},9000);}
 function say(){document.getElementById('m').textContent=T;one();setTimeout(function(){one()},4500);}
