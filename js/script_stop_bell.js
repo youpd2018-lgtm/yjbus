@@ -2,16 +2,16 @@
 // 🔔 [하차벨 등록] script_stop_bell.js  (2026-10-31 사용자 지시)
 // - 라이브 모달의 시간 카운트 원을 한 번 터치하면 '손님이 하차벨을 눌렀다'고 등록한다. 원 테두리가 전체 빨간색으로 바뀐다.
 //   (다시 터치하면 등록 취소 — 잘못 눌렀을 때 대비)
-// - 다음 정류장 50m 전에 들어오면 (차가 정류장 근처에서 정차하면 안내 없이 등록 해제) 음성으로 "하차 손님이 있습니다. 정차하세요."를 두 번 알려 주고,
+// - 다음 정류장 100m 전과 50m 전에 한 번씩 (모두 띵동 + 음성) "하차 손님이 있습니다. 정차하세요."를 알려 주고, 차가 정류장 근처에서 정차하면 안내 없이 등록을 풀고,
 //   그 정류장을 지나면(멀어지면) 자동으로 등록이 풀려 원래 색으로 돌아온다.
 // - 정류장 위치는 정류장 통과 속도 측정과 같은 노선 정류장 목록(standardMasterCache)과 '지난 정류장 번호'(lastPassedStopIndex)를 쓴다.
 // ================================================================
 (function () {
-    var RADIUS_M = 50;       // 정류장 50m 전부터 안내
-    var LEAVE_M = 90;        // 안내한 정류장에서 이만큼 멀어지면 등록 해제
-    var REPEAT_MS = 4500;    // 두 번째 안내까지 간격
+    var FAR_M = 100;         // 정류장 100m 전 첫 안내
+    var RADIUS_M = 50;       // 정류장 50m 전 두 번째 안내
+    var LEAVE_M = 130;       // 안내한 정류장에서 이만큼 멀어지면 등록 해제
     var TEXT = '하차 손님이 있습니다. 정차하세요.';
-    var bell = false, prevD = {}, said = null, timer = null;
+    var bell = false, prevD = {}, said = null, said50 = false;
 
     function $(id) { return document.getElementById(id); }
     function rad(x) { return x * Math.PI / 180; }
@@ -47,16 +47,14 @@
             window.speechSynthesis.speak(u);
         } catch (e) { }
     }
-    function announce() {   // 두 번 안내 (+ 진동)
+    function announce() {   // 띵동 + 음성 (+ 진동)
         speakOnce();
         try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
-        clearTimeout(timer);
-        timer = setTimeout(function () { speakOnce(); }, REPEAT_MS);
     }
 
     function setBell(on, silent) {
-        bell = !!on; prevD = {}; said = null; stopTicks = 0; lastSamp = null;
-        if (!bell) { clearTimeout(timer); timer = null; if (!silent) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { } } }
+        bell = !!on; prevD = {}; said = null; said50 = false; stopTicks = 0; lastSamp = null;
+        if (!bell) { clearTimeout(speakTimer); if (!silent) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { } } }
         var g = $('yb3Gauge');
         if (g) { g.classList.toggle('yb3-bell', bell); g.setAttribute('aria-pressed', String(bell)); }
         if (bell) { try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) { } }
@@ -101,17 +99,20 @@
             if (++stopTicks >= 2) { release(); return; }
         } else { stopTicks = 0; }
 
-        if (said !== null) {   // 안내한 정류장을 지나갔으면 등록 해제
+        if (said !== null) {   // 100m 앞에서 안내한 정류장: 50m 앞에서 한 번 더, 지나가면 해제
             var d0 = distM(g.lat, g.lon, stopLat(master[said]), stopLng(master[said]));
-            if (d0 > LEAVE_M) release();
+            var pr = prevD[said];
+            prevD[said] = d0;
+            if (d0 > LEAVE_M && (pr === undefined || d0 >= pr)) { release(); return; }
+            if (!said50 && d0 <= RADIUS_M && !(spd !== null && spd <= STOP_KMH)) { said50 = true; announce(); }
             return;
         }
         if (best < 0) return;
         var prev = prevD[best];
         prevD[best] = bd;
         // 정류장 쪽으로 다가가는 중일 때만 (한 번 이상 먼저 재어 본 뒤라 막 떠난 정류장은 제외) + 서 있으면 안내 안 함
-        if (bd <= RADIUS_M && prev !== undefined && bd <= prev + 2 && !(spd !== null && spd <= STOP_KMH)) {
-            said = best;
+        if (bd <= FAR_M && prev !== undefined && bd <= prev + 2 && !(spd !== null && spd <= STOP_KMH)) {
+            said = best; said50 = bd <= RADIUS_M;   // 처음부터 50m 안이면 한 번만
             announce();
         }
     }
