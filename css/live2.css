@@ -263,3 +263,9 @@ html.lv2 .yb3-gap-val { color: #94a3b8; }
     html.lv2 #yb3:has(#yb3Gap:not([hidden])) .yb3-seq { gap: 12px; }
     html.lv2 #yb3 .yb3-right #yb3Gap:not([hidden]) { grid-column: auto; grid-row: auto; align-self: auto; margin: 0; }
 }
+
+/* 하차벨 등록(2026-10-31): 시간 카운트 원을 터치하면 테두리 전체가 빨간색 */
+.yb3-gauge { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.yb3-gauge.yb3-bell .yb3-ring-fill { stroke: #ef4444 !important; stroke-dasharray: 856 1000 !important; opacity: 0.95; filter: blur(0.5px) drop-shadow(0 0 8px #ef4444); }
+.yb3-gauge.yb3-bell .yb3-ring-track { stroke: rgba(239,68,68,0.3); }
+.yb3-gauge.yb3-bell .yb3-emb { stroke: rgba(239,68,68,0.6); stroke-width: 2.5; }
