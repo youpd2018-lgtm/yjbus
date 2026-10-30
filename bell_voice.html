@@ -1,9 +1,10 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>하차벨 음성 듣기</title>
 <style>body{background:#111;color:#fff;font-family:sans-serif;text-align:center;padding:40px 16px}button{font-size:22px;padding:18px 28px;margin:12px;border-radius:14px;border:0;background:#ef4444;color:#fff}</style></head><body>
 <h2>하차벨 음성 듣기</h2><p>폰 볼륨(미디어)을 켜고 누르세요.</p>
-<button onclick="say()">▶ 시작 (두 번 재생)</button><p id="m"></p>
+<button onclick="all3()">▶ 시작 (세 개 연달아)</button><br><button onclick="say()">하차 안내만 두 번</button><p id="m"></p>
 <script>
 var T='하차 손님이 있습니다. 정차하세요.';
-function one(){var s=window.speechSynthesis;s.resume();var u=new SpeechSynthesisUtterance(T);u.lang='ko-KR';var v=s.getVoices().find(function(x){return x.lang&&x.lang.indexOf('ko')===0});if(v)u.voice=v;s.speak(u);}
-function say(){document.getElementById('m').textContent=T;one();setTimeout(one,4500);}
+function one(t){var s=window.speechSynthesis;s.resume();var u=new SpeechSynthesisUtterance(typeof t==='string'?t:T);u.lang='ko-KR';var v=s.getVoices().find(function(x){return x.lang&&x.lang.indexOf('ko')===0});if(v)u.voice=v;s.speak(u);}
+function all3(){var s=window.speechSynthesis;s.cancel();document.getElementById('m').textContent='하차 등록 → 하차 등록 취소 → 하차 손님 안내';['하차 등록','하차 등록 취소',T].forEach(function(t){var u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';var v=s.getVoices().find(function(x){return x.lang&&x.lang.indexOf('ko')===0});if(v)u.voice=v;s.speak(u);});}
+function say(){document.getElementById('m').textContent=T;one();setTimeout(function(){one()},4500);}
 </script></body></html>
