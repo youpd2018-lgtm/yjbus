@@ -246,7 +246,10 @@
       var sd = JSON.parse(localStorage.getItem('jpil_user_' + name + '_sched_' + today) || 'null');
       if (!sd || !sd.route || sd.route === '-' || sd.workType === '휴무' || sd.workType === '미등록') return '';
       var m = String(sd.route).match(/(\d{3})\s*([Aa]?)/);
-      return m ? m[1] + m[2].toUpperCase() : '';
+      if (!m) return '';
+      var eff = typeof rmRouteNow === 'function' ? rmRouteNow() : '';   // 202A/203A 1회차 특수 운행이면 A 노선 카메라를 쓴다
+      if (eff && eff.slice(0, 3) === m[1]) return eff;
+      return m[1] + m[2].toUpperCase();
     } catch (e) { return ''; }
   }
   function coverGap(el) {   // 배차간격 박스 위치·크기 그대로 그 위에 덮음 (배차간격 박스가 없으면 제자리)
