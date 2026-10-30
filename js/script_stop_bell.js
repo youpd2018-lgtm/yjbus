@@ -60,7 +60,7 @@
         if (bell) { try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) { } }
     }
 
-    var STOP_KMH = 3, STOP_NEAR_M = 60, stopTicks = 0, lastSamp = null;
+    var STOP_KMH = 3, STOP_NEAR_M = 50, stopTicks = 0, lastSamp = null;
     function curSpeed(g) {   // km/h (속도값이 안 오는 폰은 직전 위치로 계산)
         var v = (typeof g.speedKmh === 'number') ? g.speedKmh : null;
         var now = Date.now();
@@ -94,7 +94,7 @@
             if (d < bd) { bd = d; best = i; }
         }
 
-        // 정류장 근처(60m)에서 차가 정차하면 안내 없이 등록 해제
+        // 정류장 50m 안에서만 차가 정차하면 안내 없이 등록 해제
         if (spd !== null && spd <= STOP_KMH && bd <= STOP_NEAR_M) {
             if (++stopTicks >= 2) { release(); return; }
         } else { stopTicks = 0; }
@@ -110,8 +110,8 @@
         if (best < 0) return;
         var prev = prevD[best];
         prevD[best] = bd;
-        // 정류장 쪽으로 다가가는 중일 때만 (한 번 이상 먼저 재어 본 뒤라 막 떠난 정류장은 제외) + 서 있으면 안내 안 함
-        if (bd <= FAR_M && prev !== undefined && bd <= prev + 2 && !(spd !== null && spd <= STOP_KMH)) {
+        // 정류장 쪽으로 다가가는 중일 때만 (한 번 이상 먼저 재어 본 뒤라 막 떠난 정류장은 제외)
+        if (bd <= FAR_M && prev !== undefined && bd <= prev + 2) {   // 100m 앞은 서 있어도(신호 대기 등) 안내
             said = best; said50 = bd <= RADIUS_M;   // 처음부터 50m 안이면 한 번만
             announce();
         }
