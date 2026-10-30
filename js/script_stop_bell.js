@@ -27,12 +27,12 @@
         return !!(m && m.classList.contains('active') && m.style.display !== 'none');
     }
 
-    function speakOnce() {
+    function speakOnce(txt) {
         try {
             if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.resume();
             window.speechSynthesis.cancel();
-            var u = new SpeechSynthesisUtterance(TEXT);
+            var u = new SpeechSynthesisUtterance(typeof txt === 'string' ? txt : TEXT);
             u.lang = 'ko-KR'; u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
             var vs = window.speechSynthesis.getVoices();
             var v = vs && vs.find(function (x) { return x.lang && x.lang.indexOf('ko') === 0; });
@@ -44,7 +44,7 @@
         speakOnce();
         try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) { }
         clearTimeout(timer);
-        timer = setTimeout(speakOnce, REPEAT_MS);
+        timer = setTimeout(function () { speakOnce(); }, REPEAT_MS);
     }
 
     function setBell(on, silent) {
@@ -91,7 +91,7 @@
         if (!g) return;
         g.setAttribute('role', 'button'); g.setAttribute('aria-pressed', 'false');
         g.setAttribute('aria-label', '하차벨 등록');
-        g.addEventListener('click', function () { setBell(!bell); });
+        g.addEventListener('click', function () { var on = !bell; setBell(on); speakOnce(on ? '하차 등록' : '하차 등록 취소'); });
         setInterval(tick, 1000);
     }
     window.YbStopBell = { set: setBell, isOn: function () { return bell; } };
