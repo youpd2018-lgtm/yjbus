@@ -86,12 +86,16 @@
 
         // 후보 정류장: 지난 정류장(라이브 모달은 정류장 50~60m 안에서 '지난 것'으로 잡음) 부터 앞 2개
         var from = known ? Math.max(0, lp) : 0, to = known ? Math.min(master.length - 1, lp + 2) : master.length - 1;
-        var best = -1, bd = Infinity;
+        // 모든 후보 정류장까지의 거리를 매번 재 둔다 (정류장 간격이 좁으면 '가장 가까운 정류장'이 100m 안에서야 바뀌어 첫 안내를 놓치므로)
+        var best = -1, bd = Infinity, appr = -1, ad = Infinity;
         for (var i = from; i <= to; i++) {
             var la = stopLat(master[i]), lo = stopLng(master[i]);
             if (!la || !lo) continue;
             var d = distM(g.lat, g.lon, la, lo);
+            var pv = prevD[i];
+            prevD[i] = d;
             if (d < bd) { bd = d; best = i; }
+            if (pv !== undefined && d <= FAR_M && d <= pv + 2 && d < ad) { ad = d; appr = i; }   // 다가가는 중인 100m 안 정류장
         }
 
         // 정류장 50m 안에서만 차가 정차하면 안내 없이 등록 해제
@@ -101,18 +105,13 @@
 
         if (said !== null) {   // 100m 앞에서 안내한 정류장: 50m 앞에서 한 번 더, 지나가면 해제
             var d0 = distM(g.lat, g.lon, stopLat(master[said]), stopLng(master[said]));
-            var pr = prevD[said];
-            prevD[said] = d0;
-            if (d0 > LEAVE_M && (pr === undefined || d0 >= pr)) { release(); return; }
+            if (d0 > LEAVE_M) { release(); return; }
             if (!said50 && d0 <= RADIUS_M && !(spd !== null && spd <= STOP_KMH)) { said50 = true; announce(); }
             return;
         }
-        if (best < 0) return;
-        var prev = prevD[best];
-        prevD[best] = bd;
-        // 정류장 쪽으로 다가가는 중일 때만 (한 번 이상 먼저 재어 본 뒤라 막 떠난 정류장은 제외)
-        if (bd <= FAR_M && prev !== undefined && bd <= prev + 2) {   // 100m 앞은 서 있어도(신호 대기 등) 안내
-            said = best; said50 = bd <= RADIUS_M;   // 처음부터 50m 안이면 한 번만
+        // 100m 안으로 다가가는 정류장이 있으면 첫 안내 (서 있어도 안내: 신호 대기 등)
+        if (appr >= 0) {
+            said = appr; said50 = ad <= RADIUS_M;   // 처음부터 50m 안이면 한 번만
             announce();
         }
     }
