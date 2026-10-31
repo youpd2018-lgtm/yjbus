@@ -1,0 +1,15 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>버튼 신호 확인</title>
+<style>body{background:#111;color:#fff;font-family:sans-serif;padding:20px 16px}h2{margin:0 0 8px}#last{font-size:26px;background:#222;border-radius:12px;padding:16px;margin:12px 0;min-height:70px}li{margin:4px 0;font-size:16px}small{color:#aaa}</style></head><body>
+<h2>버튼 신호 확인</h2>
+<p>1. 폰 블루투스 설정에서 리모컨을 연결하세요.<br>2. 이 화면을 켜 둔 채 리모컨 버튼을 눌러 보세요.<br>3. 아래에 들어온 신호가 나옵니다. 캡처해서 보내 주세요.</p>
+<div id="last">버튼을 눌러 보세요</div>
+<ol id="log"></ol>
+<small>키가 안 보이면 화면 빈 곳을 한 번 터치한 뒤 다시 눌러 보세요.</small>
+<script>
+var n=0,log=document.getElementById('log'),last=document.getElementById('last');
+function show(t){n++;last.textContent=t;var li=document.createElement('li');li.textContent=n+'. '+t;log.insertBefore(li,log.firstChild);while(log.children.length>20)log.removeChild(log.lastChild);}
+document.addEventListener('keydown',function(e){show('키 누름: '+e.key+'  (code '+e.code+', keyCode '+e.keyCode+')'+(e.repeat?' 반복':''));e.preventDefault();});
+document.addEventListener('keyup',function(e){show('키 뗌: '+e.key);});
+document.addEventListener('pointerdown',function(e){show('화면 터치/클릭 ('+e.pointerType+')');});
+if('mediaSession' in navigator){['play','pause','nexttrack','previoustrack','stop'].forEach(function(a){try{navigator.mediaSession.setActionHandler(a,function(){show('미디어 버튼: '+a)})}catch(x){}});}
+</script></body></html>
