@@ -7,7 +7,7 @@
 // ================================================================
 (function () {
     var LS_ON = 'yb_sfx_on';
-    var SOUNDS = { depart: 'sounds/depart_ding.mp3', arrive: 'sounds/arrive_chime.mp3', tick: 'sounds/count_tick.mp3', base: 'sounds/base_chime.mp3', prestart: 'sounds/pre_start_voice.mp3', postend: 'sounds/post_end_voice.mp3', pre10: 'sounds/pre_10min_voice.mp3', shutter: 'sounds/camera_shutter.mp3' };   // shutter: 정류장 20km 이상 통과 '찰칵'
+    var SOUNDS = { depart: 'sounds/depart_ding.mp3', arrive: 'sounds/arrive_chime.mp3', tick: 'sounds/count_tick.mp3', base: 'sounds/base_chime.mp3', prestart: 'sounds/pre_start_voice.mp3', postend: 'sounds/post_end_voice.mp3', pre10: 'sounds/pre_10min_voice.mp3', shutter: 'sounds/camera_shutter.mp3', bellpop: 'sounds/bell_pop.mp3' };   // shutter: 정류장 20km 이상 통과 '찰칵'
     var COUNT_BASE_SEC = 3;     // 기점 통과는 딩동 앞뒤로 3초 카운트씩
     var COUNT_SEC = 5;          // 출발·도착 시각 이 시간(초) 전부터 1초마다 '똑' (5,4,3,2,1) 하다가 정각에 띵동/차임
     var GRACE_SEC = 3;          // 정각부터 이 시간(초) 안에서만 울림 (늦게 앱을 켜면 울리지 않음)
