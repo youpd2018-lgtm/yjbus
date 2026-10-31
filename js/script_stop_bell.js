@@ -29,7 +29,7 @@
 
     var DING_MS = 150;       // 띵동 소리 뒤에 음성
     var speakTimer = null;
-    function speakOnce(txt) {   // 모든 하차벨 음성 앞에는 짧은 '뿅뿅'(sfx 'bellpop', 과속 카메라 띵동과 구분)
+    function speakOnce(txt) {   // 모든 하차벨 음성 앞에는 '딩동' 종소리(sfx 'bellpop', 과속 카메라 띵동과 구분)
         try { if (window.sfxPlay) window.sfxPlay('bellpop'); } catch (e) { }
         clearTimeout(speakTimer);
         speakTimer = setTimeout(function () { speakNow(txt); }, DING_MS);
