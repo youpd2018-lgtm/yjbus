@@ -226,10 +226,12 @@
     }
 
     // ---- 나의 운행 상태 (운전대 색 4단계: 0~5 금색, 6~10 녹색, 11~15 주황, 16+ 빨강) ----
-    const DG_COLOR = ['#94a3b8', '#FFD24A', '#4ade80', '#FF9F1C', '#FF4D4D'];
+    const DG_COLOR = ['#94a3b8', '#F2C339', '#4ade80', '#FF7A1A', '#FF4D4D'];   // 금색 = 회사 로고 금색
     function dgWheel(g, size) {
         const c = DG_COLOR[g] || DG_COLOR[0];
-        return `<iconify-icon icon="ph:steering-wheel-fill" style="font-size:${size}px; color:${c}; filter:drop-shadow(0 0 ${Math.round(size / 8)}px ${c}); vertical-align:middle;"></iconify-icon>`;
+        // 금색은 로고처럼 은은한 빛, 나머지는 같은 색 빛
+        const glow = g === 1 ? `drop-shadow(0 1px ${Math.max(2, Math.round(size / 16))}px rgba(234,179,8,0.45))` : `drop-shadow(0 0 ${Math.round(size / 8)}px ${c})`;
+        return `<iconify-icon icon="ph:steering-wheel-fill" style="font-size:${size}px; color:${c}; filter:${glow}; vertical-align:middle;"></iconify-icon>`;
     }
     function dgItems(v) {
         const items = [['급가속', v.acc, 'mdi:arrow-up-bold'], ['급정거', v.brk, 'mdi:arrow-down-bold'], ['급회전', v.turn, 'mdi:rotate-right'], ['시간 준수', v.dly, 'mdi:clock-alert-outline']];
