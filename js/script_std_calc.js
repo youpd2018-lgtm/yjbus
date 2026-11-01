@@ -124,7 +124,7 @@
         for (let i = ia; i <= ib; i++) {
             if (skipFirst && i === ia) continue;
             const frac = den > 0 ? (stops[i][4] - stops[ia][4]) / den : (ib === ia ? 0 : (i - ia) / (ib - ia));
-            rows.push({ stop: stops[i], sec: t0 + (t1 - t0) * frac });
+            rows.push({ stop: stops[i], sec: t0 + (t1 - t0) * frac, anchor: i === ia || i === ib });   // anchor: 출발·기점·도착 정류장
         }
         return rows;
     }
@@ -141,6 +141,7 @@
                 lat: s[2],
                 lng: s[3],
                 limit: s[5],
+                anchor: !!r.anchor,
                 4: s[0], 5: s[1], 6: time, 8: s[2], 9: s[3]
             };
         });

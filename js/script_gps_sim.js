@@ -144,6 +144,9 @@ function loadLatestColleagueMessage() {
                 // 1. 상단 차량번호 바에 실시간 GPS & 속도 상태 표시
                 updateGpsVehicleHeader(duty, speedKmh, false);
 
+                // 나의 운행 상태: 급가속·급정거·급회전 측정 (js/script_drive_grade.js)
+                if (window.DriveGrade) window.DriveGrade.onFix(pos);
+
                 // 2. 정류장 자동 통과 감지 및 실시간 오차 계산 실행
                 onGpsLocationUpdate(lat, lon, speedKmh, duty);
             },
@@ -538,6 +541,8 @@ function loadLatestColleagueMessage() {
                         window.bisStopLockState.lockedTargetColor = badgeColor;
 
                         applyLockedDelayBadge(badgeText, badgeColor);
+                        // 나의 운행 상태: 오차 점수 (기점·종점 = 앵커 정류장 또는 마지막 정류장이면 3분 이내일 때 오차 점수 리셋)
+                        if (window.DriveGrade) window.DriveGrade.onStopPassed(diffMin, !!(curRow && curRow.anchor) || closestIdx >= masterCache.length - 1, getRowName(curRow));
                         console.log(`🎯 [GPS 정류장 통과 감지] ${getRowName(curRow)} (거리: ${minDistance}m) -> 오차: ${badgeText}분 확정 동결!`);
                     } else {
                         // 이상치(60분 초과): 이전 정류장 오차가 남지 않도록 초기화
