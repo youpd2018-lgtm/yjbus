@@ -214,7 +214,7 @@
 
         // 2단: 나의 운행 상태 (오늘 근무는 이 폰 값, 이달은 서버 합계 + 아직 못 올린 이 폰 값), 2026-11-01
         const dg = window.DriveGrade;
-        renderDriveGrade('cur', dg ? dg.getToday() : null);
+        renderDriveGradeDay();
         renderDriveGrade('month', null, true);
         if (dg && dg.fetchMonth) {
             dg.fetchMonth(year, month).then(res => {
@@ -245,14 +245,49 @@
     }
     // 색의 뜻·점수 규칙 설명은 화면에 쓰지 않음 (2026-11-01 사용자 지시)
 
-    function renderDriveGrade(scope, v, loading) {
+    // 첫 페이지 = 근무정보에서 고른 날짜(#searchDate)의 기록. 오늘이면 이 폰의 실시간 값, 지난 날이면 서버+폰 기록 (2026-11-01 사용자 지시)
+    let dgMonthCache = {};
+    function dgDayStr() {
+        const el = document.getElementById('searchDate');
+        const dg = window.DriveGrade;
+        return (el && el.value) || (dg ? dg.today() : '');
+    }
+    function renderDriveGradeDay() {
+        const dg = window.DriveGrade;
+        if (!dg) return;
+        const day = dgDayStr(), today = dg.today();
+        const label = day === today ? '오늘' : day.slice(5).replace('-', '/');
+        if (day === today) { renderDriveGrade('cur', dg.getToday(), false, label); return; }
+        renderDriveGrade('cur', null, true);
+        const ym = day.slice(0, 7);
+        if (!dgMonthCache[ym] || Date.now() - dgMonthCache[ym].at > 60000) dgMonthCache[ym] = { at: Date.now(), p: dg.fetchMonth(+day.slice(0, 4), +day.slice(5, 7)) };
+        dgMonthCache[ym].p.then(res => {
+            if (dgDayStr() !== day) return;   // 그 사이 날짜를 또 옮겼으면 무시
+            const v = res && res.list ? res.list.find(x => x.date === day) : null;
+            renderDriveGrade('cur', v, false, label);
+        });
+    }
+    window.refreshDriveGradeDay = renderDriveGradeDay;
+    // 근무정보 날짜를 옮기는 함수가 여러 곳에 있어서, 카드가 보이는 동안 1초마다 날짜가 바뀌었는지 보고 다시 그림 (오늘이면 30초마다 새 값)
+    let dgShownDay = '', dgShownAt = 0;
+    setInterval(() => {
+        const card = document.getElementById('habitCard');
+        if (!card || card.style.display === 'none' || !card.offsetParent || !window.DriveGrade) return;
+        const day = dgDayStr();
+        if (day !== dgShownDay || (day === window.DriveGrade.today() && Date.now() - dgShownAt > 30000)) {
+            dgShownDay = day; dgShownAt = Date.now();
+            renderDriveGradeDay();
+        }
+    }, 1000);
+
+    function renderDriveGrade(scope, v, loading, label) {
         const el = document.getElementById('habitList_' + scope);
         if (!el) return;
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:24px; ${gray}">불러오는 중...</div>`; return; }
         if (scope === 'cur') {
             if (!v || (!v.min && !v.score)) {
-                el.innerHTML = `<div style="display:flex; align-items:center; gap:14px;">${dgWheel(1, 64)}<div style="font-size:26px; line-height:1.4; ${gray}">오늘 측정 전<br><span style="font-size:19px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span></div></div>` ;
+                el.innerHTML = `<div style="display:flex; align-items:center; gap:14px;">${dgWheel(1, 64)}<div style="font-size:26px; line-height:1.4; ${gray}">${label || '오늘'} 기록 없음<br><span style="font-size:19px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span></div></div>`;
                 return;
             }
             // 회차별: 회차가 끝날 때(종점) 남긴 누적 점수 → 그 회차에 늘어난 점수
@@ -267,7 +302,7 @@
                     `<span style="flex:1 1 100%; padding-left:34px; font-size:16px; color:#94a3b8;">${add > 0 ? dgParts(d) : (add < 0 ? '기점·종점 정시 통과로 시간 준수 0점' : '깨끗')}</span></div>`;
             }).join('');
             el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.grade, 76)}` +
-                `<div style="font-size:22px; font-weight:800; color:#cbd5e1;">오늘 측정 ${v.min}분</div></div>` +
+                `<div style="font-size:22px; font-weight:800; color:#cbd5e1;">${label || '오늘'} 측정 ${v.min}분</div></div>` +
                 dgItems(v) +
                 `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별</div>` +
                 (trips || '<div style="font-size:18px; color:#94a3b8; font-weight:800;">아직 끝난 회차 없음 (종점을 지나면 기록)</div>') + '</div>';
@@ -292,7 +327,7 @@
         window._habitPage = which;
         // 버튼 글자는 "눌렀을 때 바뀔 쪽"
         const btn = document.getElementById('habitSwitchBtn');
-        if (btn) btn.textContent = which === 'cur' ? '월별누적' : '오늘근무';
+        if (btn) btn.textContent = which === 'cur' ? '월별누적' : '하루';
     }
     function switchHabitPage() { setHabitPage(window._habitPage === 'month' ? 'cur' : 'month'); }
     window.switchHabitPage = switchHabitPage;
@@ -938,6 +973,7 @@ function renderEditRouteOptions() {
         if (typeof searchSchedule === 'function') {
             searchSchedule();
         }
+        if (typeof window.refreshDriveGradeDay === 'function') window.refreshDriveGradeDay();   // 나의 운행 상태도 그 날짜로
     }
 
     let currentTripMasterCache = []; // 시트 마스터 데이터 캐시

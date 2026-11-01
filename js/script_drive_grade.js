@@ -198,7 +198,7 @@
                     if (!r || !d || d.indexOf(prefix) !== 0) continue;
                     var p = scoreOf(r);
                     if (!p && !r.ms) continue;   // 측정 안 한 날은 뺌
-                    days[d] = { date: d, score: p, grade: gradeOf(p), acc: r.acc || 0, brk: r.brk || 0, turn: r.turn || 0, dly: r.dly || 0, min: Math.round((r.ms || 0) / 60000) };
+                    days[d] = { date: d, score: p, grade: gradeOf(p), acc: r.acc || 0, brk: r.brk || 0, turn: r.turn || 0, dly: r.dly || 0, min: Math.round((r.ms || 0) / 60000), trips: r.trips || [] };
                 }
             } catch (e) { }
         }
@@ -290,7 +290,7 @@
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });
     window.addEventListener('pagehide', upload);
 
-    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade, upload: upload, getToday: getToday, fetchMonth: fetchMonth, gradeOf: gradeOf, COLOR: COLOR };
+    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade, upload: upload, getToday: getToday, fetchMonth: fetchMonth, today: todayStr, gradeOf: gradeOf, COLOR: COLOR };
     window.ybDriveInfo = function () {
         var s = state();
         return { 날짜: s.date, 점수: score(), 색: COLOR[grade()], 급가속: s.acc, 급정거: s.brk, 급회전: s.turn, 오차점수: s.dly, 측정분: Math.round((s.ms || 0) / 60000), 서버저장: (s.sent || 0) >= (s.ver || 0), 기록: s.log.slice() };
