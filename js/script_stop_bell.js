@@ -15,6 +15,8 @@
     var TEXT = '하차 손님이 있습니다. 정차하세요.';
     var RELEASE_MS = 10000;  // 마지막 안내 뒤 이만큼 지나면 자동 해제
     var bell = false, prevD = {}, said = null, said50 = false, minD = Infinity, lastAt = 0;
+    var AT_STOP_M = 60;      // 등록할 때 이 거리 안에 있는 정류장 = '지금 정류장'으로 보고 대상에서 뺌
+    var regFloor = null;     // 등록할 때 정한 '이 번호부터 대상'(지금 정류장은 절대 대상 아님, 다음 정류장부터)
     var doneIdx = -1, doneAt = 0;   // 마지막으로 통과해서 해제된 정류장 (다시 등록하면 그다음 정류장부터)
 
     function $(id) { return document.getElementById(id); }
@@ -57,7 +59,7 @@
     }
 
     function setBell(on, silent) {
-        bell = !!on; prevD = {}; said = null; said50 = false; minD = Infinity; lastAt = 0;
+        bell = !!on; prevD = {}; said = null; said50 = false; minD = Infinity; lastAt = 0; regFloor = null;
         if (!bell) { clearTimeout(speakTimer); if (!silent) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { } } }
         var g = $('yb3Gauge');
         if (g) { g.classList.toggle('yb3-bell', bell); g.setAttribute('aria-pressed', String(bell)); }
@@ -84,6 +86,16 @@
         // 방금 통과해서 해제된 정류장은 빼고 그다음부터 (10분 지나거나 회차가 바뀌어 번호가 크게 되돌아가면 잊음)
         if (doneIdx >= 0 && (Date.now() - doneAt > 600000 || (known && lp < doneIdx - 3))) doneIdx = -1;
         if (doneIdx >= 0) { from = Math.max(from, doneIdx + 1); to = Math.max(to, Math.min(master.length - 1, doneIdx + 2)); }
+        // 등록 순간(첫 GPS)에 '지금 정류장'을 정해 대상에서 뺀다: 지난 정류장 + 60m 안 정류장 → 그다음 정류장부터 (2026-11-01 사용자 지시)
+        if (regFloor === null) {
+            var fl = known ? lp + 1 : 0;
+            for (var j = from; j <= to; j++) {
+                var ja = stopLat(master[j]), jo = stopLng(master[j]);
+                if (ja && jo && distM(g.lat, g.lon, ja, jo) <= AT_STOP_M) fl = Math.max(fl, j + 1);
+            }
+            regFloor = Math.min(fl, master.length - 1);
+        }
+        from = Math.max(from, regFloor); to = Math.max(to, Math.min(master.length - 1, regFloor + 1));
         // 모든 후보 정류장까지의 거리를 매번 재 둔다 (정류장 간격이 좁으면 '가장 가까운 정류장'이 100m 안에서야 바뀌어 첫 안내를 놓치므로)
         var best = -1, bd = Infinity, appr = -1, ad = Infinity;
         for (var i = from; i <= to; i++) {
