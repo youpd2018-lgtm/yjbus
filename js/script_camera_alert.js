@@ -27,10 +27,14 @@
     try { var a = new Audio('sounds/depart_ding.mp3'), p = a.play(); if (p && p.catch) p.catch(function () { });
       setTimeout(function () { try { new Audio('sounds/depart_ding.mp3').play().catch(function () { }); } catch (e) { } }, 900); } catch (e) { }
   }
+  // 2026-11-01: 경고음이 끊이지 않고 계속 울리는 문제 → 폰 저장소에 못 쓰거나(가득 참 등) 못 읽어도 이 화면 메모리에 기록을 같이 둬서
+  //   같은 카메라는 단계마다 한 번만, 그리고 어떤 경우에도 경고음 사이에 최소 5초를 둔다
+  var memSp = {}, lastDing = 0, DING_GAP_MS = 5000;
   function chime(c, d) {
     var st = d <= NEAR_M ? 2 : 1, now = Date.now(), sp = {};
     // 노선지도와 라이브 모달(앱)이 각자 이 파일을 돌리므로 소리 기록은 저장소(localStorage)에서 매번 다시 읽어 서로 겹쳐 울리지 않게 한다
-    try { sp = JSON.parse(localStorage.getItem('yb_cam_spoken2') || '{}'); } catch (e) { }
+    try { sp = JSON.parse(localStorage.getItem('yb_cam_spoken2') || '{}') || {}; } catch (e) { sp = {}; }
+    for (var mk in memSp) if (!sp[mk]) sp[mk] = memSp[mk];
     // 가까이 붙은 카메라(상·하행 쌍, 신호+과속 등) 60m 안은 한 묶음으로 보고 같은 단계에서 한 번만 울린다
     for (var k in sp) {
       var o = sp[k]; if (!o || now - o.t > 180000) { delete sp[k]; continue; }
@@ -38,7 +42,12 @@
     }
     sp[c.lat + ',' + c.lng + ',' + st] = { lat: c.lat, lng: c.lng, st: st, t: now };
     if (st === 2) sp[c.lat + ',' + c.lng + ',1'] = { lat: c.lat, lng: c.lng, st: 1, t: now };
+    memSp = sp;
     try { localStorage.setItem('yb_cam_spoken2', JSON.stringify(sp)); } catch (e) { }
+    try { var lg = +(localStorage.getItem('yb_cam_ding_at') || 0); if (lg > lastDing && lg <= now) lastDing = lg; } catch (e) { }
+    if (now - lastDing < DING_GAP_MS) return;
+    lastDing = now;
+    try { localStorage.setItem('yb_cam_ding_at', String(now)); } catch (e) { }
     ding();
   }
   // 제한속도를 넘으면 화면 전체에 은은한 빨간 테두리가 소리 없이 깜빡임
