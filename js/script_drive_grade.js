@@ -145,79 +145,61 @@
     }
 
     // 지금 달리는 편도의 이름 = 회차(첫 정류장 시각) + 이 편도가 끝나는 앵커 정류장 번호
-    // 지금 회차를 가리키는 표(회차 첫 정류장 시간 + 정류장 수). 모달을 끈 사이 다른 회차로 넘어갔는지 확인용
-    function tripIdOf() {
+    // 지금 회차를 가리키는 표 = 회차 첫 정류장 시각(시:분). 표준시간을 다시 받아도 같은 회차면 같은 표 → 회차 점수가 둘로 나뉘지 않음
+    function tripKeyOf() {
         try {
             var m = window.standardMasterCache || [];
             if (!m.length) return '';
-            return String((m[0] && (m[0].stdTime || m[0][6])) || '') + '#' + m.length;
+            var t = String((m[0] && (m[0].stdTime || m[0][6])) || '').trim();
+            var mm = t.match(/(\d{1,2}):(\d{2})/);
+            return mm ? (pad(+mm[1]) + ':' + mm[2]) : (t || ('#' + m.length));
         } catch (e) { return ''; }
     }
 
     // ---- 시간 준수 (정류장 통과가 확정될 때마다 script_gps_sim.js가 부름) ----
-    // 2026-11-01 사용자 지시: 회차 단위로 셈. 회차 안에서 가장 나빴던 오차 단계(5분 이내 0, 6~10분 1, 11분 이상 2)에
-    //   왕복·편도 모두 ×2 → 0·2·4점. 재평가(리셋)는 회차 종점(마지막 정류장)에서만:
-    //   종점을 5분 이내로 지나면 그 회차 0점, 아니면 그 회차 점수 확정. 왕복 중간 기점에서는 리셋 안 함.
-    //   라이브 모달을 끈 채 종점을 지나 다음 회차로 넘어가면 끄기 전까지의 점수가 그대로 확정.
-    //   isEnd = 회차 처음 또는 마지막 정류장, isLast = 마지막 정류장, roundTrip = 왕복 회차
-    function onStopPassed(diffMin, isEnd, stopName, isLast, roundTrip) {
+    // 2026-11-01 사용자 지시: 회차 단위. 한 회차(왕복·편도 모두) 점수는 0·2·4점뿐이고 절대 4점을 넘지 않음.
+    //   회차 안에서 가장 나빴던 오차 단계(5분 이내 0, 6~10분 1, 11분 이상 2) × 2.
+    //   회차 종점(마지막 정류장)에 오면 다시 평가: 5분 이내면 그 회차 0점, 아니면 그대로 확정. 왕복 중간 기점에서는 리셋 안 함.
+    //   라이브 모달을 끈 채 종점을 지나면 끄기 전 점수가 그대로 남음(확정). 종점 전에 다시 켜면 같은 회차로 이어서 평가.
+    //   오차 20분 이상은 잘못 찍힌 것으로 보고 안 씀. 종점이 20분 이상이면 정상 기록 점수만 확정(없으면 0점).
+    //   s.tp = { '06:00': {lv:최악단계, n:정상기록수, done:종점평가끝} }, s.dlyBase = 이 방식 전에 쌓인 점수
+    //   isEnd = 회차 처음 또는 마지막 정류장, isLast = 마지막 정류장(종점)
+    function tripPts(e) { return Math.min(4, (e.lv || 0) * 2); }
+    function sumDly(s) {
+        var sum = s.dlyBase || 0;
+        for (var k in s.tp) if (Object.prototype.hasOwnProperty.call(s.tp, k)) sum += tripPts(s.tp[k]);
+        return sum;
+    }
+    function onStopPassed(diffMin, isEnd, stopName, isLast) {
         try {
             if (simOn() || !driver()) return;
             if (typeof diffMin !== 'number' || isNaN(diffMin)) return;
             var a = Math.abs(diffMin);
             var s = state();
+            if (!s.tp) { s.tp = {}; s.dlyBase = s.dlyDone !== undefined ? (s.dlyDone || 0) : (s.dly || 0); }   // 옛 기록 이어받기
+            var key = tripKeyOf() || '?';
+            var e = s.tp[key] || (s.tp[key] = { lv: 0, n: 0, done: false });
+            if (e.done) return;   // 이미 종점에서 평가가 끝난 회차
+            var before = tripPts(e), lv = a > DELAY_2 ? 2 : (a > DELAY_1 ? 1 : 0);
             if (a >= DELAY_IGNORE) {
                 note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 20분 이상이라 시간 준수에 안 씀');
-                // 종점이 20분 이상으로 찍히면: 그 회차에서 정상으로 기록된 점수만 그대로 확정, 정상 기록이 없으면 측정 안 된 회차(0점)
-                if (isLast && s.dlyDone !== undefined) {
-                    if ((s.legN || 0) > 0) {
-                        var kept = (s.dlyLeg || 0) * (s.legMul || 2);
-                        if (kept) note('종점 오차 20분 이상 → 정상 기록 점수 ' + kept + '점 확정');
-                        s.dlyDone += kept;
-                    }
-                    s.dlyLeg = 0; s.legN = 0; s.legId = null;
-                    s.dly = s.dlyDone;
-                    snapTrip(); save();
-                }
-                return;
-            }
-            var lv = a > DELAY_2 ? 2 : (a > DELAY_1 ? 1 : 0);
-            var mul = 2;   // 왕복·편도 모두 0·2·4점 (2026-11-01 사용자 지시)
-            var changed = false;
-            //   dlyLeg = 지금 회차에서 가장 나빴던 단계(0~2), legMul = 그 회차 배수, dlyDone = 끝난 회차 점수 합, dly = 화면·서버용 합
-            if (s.dlyDone === undefined) { s.dlyDone = s.dly || 0; s.dlyLeg = 0; s.legN = 0; }   // 옛 기록 이어받기
-            var cur = function () { return (s.dlyLeg || 0) * (s.legMul || 2); };
-            var lid = tripIdOf();
-            if (s.legId && lid && s.legId !== lid && (s.legN || 0) > 0) {
-                if (s.dlyLeg) note('라이브 모달을 끈 동안 회차 종점을 지남 → 그 회차 ' + cur() + '점 확정');
-                s.dlyDone += cur(); s.dlyLeg = 0; s.legN = 0; changed = true;
-            }
-            if (isLast) {
-                // 회차 종점: 5분 이내로 지나면 이 회차 0점, 아니면 이 회차 점수 확정
-                if (s.legN > 0) {
-                    s.legMul = mul;
-                    var lvEnd = a <= DELAY_1 ? 0 : Math.max(s.dlyLeg || 0, lv);
-                    if (a <= DELAY_1 && s.dlyLeg) note('종점 정시 통과(' + (stopName || '') + ') → 이 회차 시간 준수 0점');
-                    else if (lvEnd) note('회차 종점(' + (stopName || '') + ') 오차 ' + diffMin + '분 → 이 회차 ' + (lvEnd * mul) + '점 확정');
-                    s.dlyDone += lvEnd * mul;
-                    changed = true;
-                }
-                s.dlyLeg = 0; s.legN = 0; s.legId = null;   // 다음 회차 시작
+                if (!isLast) return;
+                e.done = true;   // 종점이 20분 이상: 정상 기록 점수만 확정(없으면 0점)
+                note(key + ' 회차 종점 오차 20분 이상 → 정상 기록 점수 ' + tripPts(e) + '점 확정');
+            } else if (isLast) {
+                if (a <= DELAY_1) { if (e.lv) note(key + ' 회차 종점 정시 통과(' + (stopName || '') + ') → 이 회차 시간 준수 0점'); e.lv = 0; }
+                else if (e.n > 0 || lv) { e.lv = Math.max(e.lv, lv); note(key + ' 회차 종점 오차 ' + diffMin + '분 → 이 회차 ' + tripPts(e) + '점 확정'); }
+                e.done = true;
             } else if (isEnd) {
-                // 회차 첫 정류장: 새 회차 시작 (지난 회차가 종점 없이 남아 있으면 위에서 이미 확정됨)
-                s.legId = lid; s.legMul = mul;
+                return;   // 회차 첫 정류장은 점수에 안 넣음
             } else {
-                s.legId = lid; s.legMul = mul;
-                s.legN = (s.legN || 0) + 1;
-                if (lv > (s.dlyLeg || 0)) {
-                    s.dlyLeg = lv; changed = true;
-                    note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 이 회차 ' + (lv * mul) + '점');
-                }
+                e.n++;
+                if (lv > e.lv) { e.lv = lv; note('오차 ' + diffMin + '분(' + (stopName || '') + ') → ' + key + ' 회차 ' + tripPts(e) + '점'); }
             }
-            s.dly = s.dlyDone + cur();
-            if (isLast) { snapTrip(); changed = true; }   // 회차 끝: 지금까지의 점수를 회차 기록으로 남김
-            if (changed) save();
-        } catch (e) { console.warn('[운행상태] 오차 처리 오류', e); }
+            s.dly = sumDly(s);
+            if (isLast) snapTrip();   // 회차 끝: 지금까지의 점수를 회차 기록으로 남김
+            if (isLast || tripPts(e) !== before || e.n === 1) save();
+        } catch (err) { console.warn('[운행상태] 오차 처리 오류', err); }
     }
 
     // 회차가 끝날 때(종점 통과) 그때까지의 누적 점수를 남김 → 근무통계에서 회차별로 몇 점 늘었는지 보여 줌
