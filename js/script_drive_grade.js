@@ -43,6 +43,12 @@
         if (!st || typeof st !== 'object') st = { acc: 0, brk: 0, turn: 0, dly: 0, ms: 0, log: [], ver: 0, sent: 0 };
         if (!st.date) st.date = todayStr();
         if (!st.driver) st.driver = driver();
+        // 시간 준수 회차별 방식(2026-11-01) 전에 쌓인 시간 준수 점수는 잘못 계산된 값이라 버림(사용자 확인: 첫 회차인데 +6)
+        if (st.tpv !== 2) {
+            st.tpv = 2; st.tp = {}; st.dlyBase = 0; st.dly = 0;
+            delete st.dlyDone; delete st.dlyLeg; delete st.legN; delete st.legId; delete st.legMul;
+            save(true);
+        }
         return st;
     }
     function save(quiet) {
@@ -176,7 +182,7 @@
             if (typeof diffMin !== 'number' || isNaN(diffMin)) return;
             var a = Math.abs(diffMin);
             var s = state();
-            if (!s.tp) { s.tp = {}; s.dlyBase = s.dlyDone !== undefined ? (s.dlyDone || 0) : (s.dly || 0); }   // 옛 기록 이어받기
+            if (!s.tp) s.tp = {};
             var key = tripKeyOf() || '?';
             var e = s.tp[key] || (s.tp[key] = { lv: 0, n: 0, done: false });
             if (e.done) return;   // 이미 종점에서 평가가 끝난 회차
