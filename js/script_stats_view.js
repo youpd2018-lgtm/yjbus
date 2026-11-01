@@ -227,7 +227,6 @@
 
     // ---- 나의 운행 상태 (운전대 색 4단계: 0~5 금색, 6~10 녹색, 11~15 주황, 16+ 빨강) ----
     const DG_COLOR = ['#94a3b8', '#FFD24A', '#4ade80', '#FF9F1C', '#FF4D4D'];
-    const DG_NAME = ['', '금색', '녹색', '주황', '빨강'];
     function dgWheel(g, size) {
         const c = DG_COLOR[g] || DG_COLOR[0];
         return `<iconify-icon icon="ph:steering-wheel-fill" style="font-size:${size}px; color:${c}; filter:drop-shadow(0 0 ${Math.round(size / 8)}px ${c}); vertical-align:middle;"></iconify-icon>`;
@@ -244,7 +243,10 @@
         if (d.acc > 0) a.push('급가속 ' + d.acc); if (d.brk > 0) a.push('급정거 ' + d.brk); if (d.turn > 0) a.push('급회전 ' + d.turn); if (d.dly > 0) a.push('오차 ' + d.dly);
         return a.length ? a.join(' · ') : '깨끗';
     }
-    const DG_LEGEND = '<div style="margin-top:14px; font-size:15px; color:#64748b; line-height:1.5;">0~5점 금색 · 6~10점 녹색 · 11~15점 주황 · 16점 이상 빨강<br>급가속·급정거·급회전 1번마다 1점, 오차 3분 넘으면 1점·6분 넘으면 2점(기점·종점 정시 통과 시 0점)</div>';
+    // 색 기준은 글자 대신 운전대 그림 + 점수 구간으로 (색 이름은 쓰지 않음, 2026-11-01 사용자 지시)
+    const DG_LEGEND = '<div style="display:flex; justify-content:space-around; margin-top:14px; font-size:15px; font-weight:800; color:#94a3b8;">' +
+        [[1, '0~5'], [2, '6~10'], [3, '11~15'], [4, '16~']].map(([g, r]) => `<span style="display:flex; align-items:center; gap:4px;">${dgWheel(g, 18)}${r}</span>`).join('') +
+        '</div><div style="margin-top:8px; font-size:15px; color:#64748b; line-height:1.5;">급가속·급정거·급회전 1번 1점 · 오차 3분 넘으면 1점, 6분 넘으면 2점 (기점·종점 정시면 0점)</div>';
 
     function renderDriveGrade(scope, v, loading) {
         const el = document.getElementById('habitList_' + scope);
@@ -270,7 +272,7 @@
             }).join('');
             el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.grade, 76)}` +
                 `<div><div style="font-size:40px; font-weight:900; color:${DG_COLOR[v.grade]}; line-height:1.1;">${v.score}점</div>` +
-                `<div style="font-size:19px; font-weight:800; color:#cbd5e1;">오늘 ${DG_NAME[v.grade]} · 측정 ${v.min}분</div></div></div>` +
+                `<div style="font-size:19px; font-weight:800; color:#cbd5e1;">측정 ${v.min}분</div></div></div>` +
                 dgItems(v) +
                 `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별 점수</div>` +
                 (trips || '<div style="font-size:18px; color:#94a3b8; font-weight:800;">아직 끝난 회차 없음 (종점을 지나면 기록)</div>') + '</div>' + DG_LEGEND;
