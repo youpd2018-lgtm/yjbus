@@ -7,6 +7,8 @@
 //     기점·종점(앵커 정류장)을 오차 3분 이내로 지나면 오차 점수는 0점으로 되돌림
 // - 색: 0~5점 금색, 6~10점 녹색, 11~15점 주황, 16점 이상 빨강 (2026-11-01 사용자 지시)
 // - 라이브 모달이 켜져 있는 동안만 GPS가 들어오므로 켠 시간만 측정됨
+// - 하루 근무 단위(새벽 3시 전은 전날 근무)로 쌓고, 서버 시트 '운행상태'에 하루 한 줄로 올림
+//   (점수가 바뀌면 5분 안에, 앱을 닫을 때, 다음에 앱을 열 때 못 올린 날 것도 올림. 같은 날 줄은 덮어써서 근무가 끝난 값이 남음)
 // - 시험: 개발자 도구에서 ybDriveInfo()
 // ================================================================
 (function () {
@@ -24,9 +26,12 @@
     var DELAY_1 = 3, DELAY_2 = 6;   // 오차 1점 / 2점 기준(분)
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
-    function todayStr() { var n = new Date(); return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()); }
+    var DAY_START_HOUR = 3;  // 새벽 3시 전 운행은 전날 근무로 봄 (막차가 자정을 넘기기 때문)
+    function dateStr(n) { return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()); }
+    function todayStr() { var n = new Date(); if (n.getHours() < DAY_START_HOUR) n = new Date(n.getTime() - 86400000); return dateStr(n); }
     function driver() { return window.currentDriver || ''; }
-    function key() { return 'yb_drvgrade_' + driver() + '_' + todayStr(); }
+    var PREFIX = 'yb_drvgrade_';
+    function key() { return PREFIX + driver() + '_' + todayStr(); }
 
     var st = null, stKey = '';
     function state() {
@@ -34,19 +39,20 @@
         if (st && stKey === k) return st;
         stKey = k; st = null;
         try { st = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { }
-        if (!st || typeof st !== 'object') st = { acc: 0, brk: 0, turn: 0, dly: 0, log: [] };
+        if (!st || typeof st !== 'object') st = { acc: 0, brk: 0, turn: 0, dly: 0, ms: 0, log: [], ver: 0, sent: 0 };
+        if (!st.date) st.date = todayStr();
+        if (!st.driver) st.driver = driver();
         return st;
     }
-    function save() {
+    function save(quiet) {
         try {
+            st.ver = (st.ver || 0) + 1;
             localStorage.setItem(stKey, JSON.stringify(st));
-            // 지난 날짜 기록은 정리 (오늘 것만 둠)
-            for (var i = localStorage.length - 1; i >= 0; i--) {
-                var k = localStorage.key(i);
-                if (k && k.indexOf('yb_drvgrade_') === 0 && k !== stKey) localStorage.removeItem(k);
-            }
         } catch (e) { }
-        try { window.dispatchEvent(new CustomEvent('yb-drivegrade')); } catch (e) { }
+        if (!quiet) {
+            try { window.dispatchEvent(new CustomEvent('yb-drivegrade')); } catch (e) { }
+            scheduleUpload();
+        }
     }
     function note(what) {
         var s = state();
@@ -55,12 +61,12 @@
         if (s.log.length > 30) s.log.shift();
     }
 
-    function score() { var s = state(); return s.acc + s.brk + s.turn + s.dly; }
+    function scoreOf(s) { return (s.acc || 0) + (s.brk || 0) + (s.turn || 0) + (s.dly || 0); }
+    function score() { return scoreOf(state()); }
     // 1 금색 · 2 녹색 · 3 주황 · 4 빨강
-    function grade() {
-        var p = score();
-        return p <= 5 ? 1 : (p <= 10 ? 2 : (p <= 15 ? 3 : 4));
-    }
+    function gradeOf(p) { return p <= 5 ? 1 : (p <= 10 ? 2 : (p <= 15 ? 3 : 4)); }
+    function grade() { return gradeOf(score()); }
+    var COLOR = ['', '금색', '녹색', '주황', '빨강'];
 
     function simOn() { return !!(window.simState && window.simState.active); }
 
@@ -101,6 +107,7 @@
             var prev = buf.length ? buf[buf.length - 1] : null;
             if (cur.h === null && prev && distM(prev, cur) >= 5) cur.h = bearing(prev, cur);   // 방향값이 없으면 위치로 계산
             if (prev && now - prev.t > 5000) buf = [];   // 끊겼다 다시 들어오면 새로 시작
+            else if (prev) { var s0 = state(); s0.ms = (s0.ms || 0) + (now - prev.t); if (Math.floor(s0.ms / 60000) !== Math.floor((s0.ms - (now - prev.t)) / 60000)) save(true); }   // 측정 시간(분)
             buf.push(cur);
             while (buf.length && now - buf[0].t > 6000) buf.shift();
 
@@ -155,9 +162,73 @@
         } catch (e) { console.warn('[운행상태] 오차 처리 오류', e); }
     }
 
-    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade };
+    // ---- 서버 시트 '운행상태'에 올리기 (하루 한 줄, 덮어쓰기) ----
+    var upTimer = null, uploading = false;
+    function scheduleUpload() {
+        if (upTimer) return;
+        upTimer = setTimeout(function () { upTimer = null; upload(); }, 5 * 60 * 1000);
+    }
+    function sched(date) {
+        try {
+            var k = typeof getDriverKey === 'function' ? getDriverKey('sched_' + date) : 'sched_' + date;
+            return JSON.parse(localStorage.getItem(k) || 'null');
+        } catch (e) { return null; }
+    }
+    function upload() {
+        try {
+            var url = window.GAS_WEB_APP_URL;
+            if (uploading || !url || !driver()) return;
+            state();   // 지금 기록도 목록에 들어가게
+            var me = PREFIX + driver() + '_';
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(me) === 0) keys.push(k); }
+            keys.sort();
+            var todo = null, rec = null;
+            for (var j = 0; j < keys.length; j++) {
+                var r = null;
+                try { r = JSON.parse(localStorage.getItem(keys[j]) || 'null'); } catch (e) { }
+                if (!r) continue;
+                if ((r.sent || 0) >= (r.ver || 0)) {
+                    if (keys[j] !== key()) localStorage.removeItem(keys[j]);   // 다 올린 지난 날은 폰에서 지움
+                    continue;
+                }
+                todo = keys[j]; rec = r; break;
+            }
+            if (!todo) return;
+            var date = rec.date || todo.slice(me.length);
+            var sd = sched(date) || {};
+            var p = scoreOf(rec), sentVer = rec.ver;
+            uploading = true;
+            fetch(url, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+                body: JSON.stringify({
+                    action: 'save_drive_grade', driver: driver(), date: date,
+                    route: sd.route || '', seq: sd.seq || '', time: sd.time || '',
+                    score: p, color: COLOR[gradeOf(p)],
+                    acc: rec.acc || 0, brk: rec.brk || 0, turn: rec.turn || 0, dly: rec.dly || 0,
+                    min: Math.round((rec.ms || 0) / 60000)
+                })
+            }).then(function (r) { return r.json(); })
+                .then(function (res) {
+                    uploading = false;
+                    if (res && res.success) {
+                        var cur = null;
+                        try { cur = JSON.parse(localStorage.getItem(todo) || 'null'); } catch (e) { }
+                        if (cur) { cur.sent = sentVer; localStorage.setItem(todo, JSON.stringify(cur)); }
+                        if (st && stKey === todo) st.sent = sentVer;
+                        setTimeout(upload, 2000);   // 못 올린 다른 날이 있으면 이어서
+                    }
+                })
+                .catch(function () { uploading = false; });
+        } catch (e) { uploading = false; }
+    }
+    window.addEventListener('load', function () { setTimeout(upload, 8000); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });
+    window.addEventListener('pagehide', upload);
+
+    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade, upload: upload };
     window.ybDriveInfo = function () {
         var s = state();
-        return { 점수: score(), 색: ['', '금색', '녹색', '주황', '빨강'][grade()], 급가속: s.acc, 급정거: s.brk, 급회전: s.turn, 오차점수: s.dly, 기록: s.log.slice() };
+        return { 날짜: s.date, 점수: score(), 색: COLOR[grade()], 급가속: s.acc, 급정거: s.brk, 급회전: s.turn, 오차점수: s.dly, 측정분: Math.round((s.ms || 0) / 60000), 서버저장: (s.sent || 0) >= (s.ver || 0), 기록: s.log.slice() };
     };
 })();

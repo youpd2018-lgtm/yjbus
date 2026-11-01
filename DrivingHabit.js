@@ -218,3 +218,63 @@ function getStopHabit(driver, year, month) {
     return { success: false, error: String(err) };
   }
 }
+
+
+// ================================================================
+// 🛞 [나의 운행 상태 저장] '운행상태' 시트 (2026-11-01 신설, 사용자 지시)
+// - 옛 '정류장습관' 시트의 이름을 '운행상태'로 바꾸고 옛 기록은 모두 지운 뒤 이 시트에 씁니다. (처음 저장할 때 한 번 자동)
+// - 하루 근무마다 기사 1명당 한 줄. 같은 날짜·기사 줄이 있으면 그 줄을 덮어씀 (근무가 끝날 때의 값이 남음)
+// - 열: A 날짜 | B 기사 | C 노선 | D 순번 | E 근무시간 | F 점수 | G 색 | H 급가속 | I 급정거 | J 급회전 | K 오차점수 | L 측정분 | M 저장시각
+// - 앱(js/script_drive_grade.js)에서 doPost(action = 'save_drive_grade')로 호출합니다.
+// ================================================================
+var DRIVE_GRADE_SHEET_NAME = '운행상태';
+var DRIVE_GRADE_HEADER = ['날짜', '기사', '노선', '순번', '근무시간', '점수', '색', '급가속', '급정거', '급회전', '오차점수', '측정분', '저장시각'];
+
+function driveGradeSheet_(ss) {
+  var sheet = ss.getSheetByName(DRIVE_GRADE_SHEET_NAME);
+  if (sheet) return sheet;
+  var old = ss.getSheetByName(STOP_HABIT_SHEET_NAME);
+  if (old) {
+    old.setName(DRIVE_GRADE_SHEET_NAME);   // 옛 정류장습관 시트를 이름만 바꿔 다시 씀
+    old.clear();                           // 옛 기록은 모두 지움 (사용자 지시)
+    sheet = old;
+  } else {
+    sheet = ss.insertSheet(DRIVE_GRADE_SHEET_NAME);
+  }
+  sheet.getRange(1, 1, 1, DRIVE_GRADE_HEADER.length).setValues([DRIVE_GRADE_HEADER]);
+  sheet.setFrozenRows(1);
+  sheet.getRange(2, 1, 2000, 5).setNumberFormat('@');
+  return sheet;
+}
+
+function saveDriveGrade(d) {
+  try {
+    if (!d || !d.date || !d.driver) return { success: false, error: '데이터 누락' };
+    var lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var sheet = driveGradeSheet_(ss);
+      var date = String(d.date), driver = String(d.driver);
+      var last = sheet.getLastRow(), target = -1;
+      if (last >= 2) {
+        var vals = sheet.getRange(2, 1, last - 1, 2).getDisplayValues();
+        for (var i = vals.length - 1; i >= 0; i--) {
+          if (vals[i][0] === date && vals[i][1] === driver) { target = i + 2; break; }
+        }
+      }
+      if (target === -1) target = last + 1;
+      var row = [date, driver, String(d.route || ''), String(d.seq || ''), String(d.time || ''),
+        Number(d.score) || 0, String(d.color || ''),
+        Number(d.acc) || 0, Number(d.brk) || 0, Number(d.turn) || 0, Number(d.dly) || 0, Number(d.min) || 0,
+        Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')];
+      sheet.getRange(target, 1, 1, 5).setNumberFormat('@');
+      sheet.getRange(target, 1, 1, row.length).setValues([row]);
+      return { success: true };
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
