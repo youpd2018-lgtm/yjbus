@@ -292,22 +292,10 @@
                 el.innerHTML = `<div style="display:flex; align-items:center; gap:14px;">${dgWheel(1, 64)}<div style="font-size:26px; line-height:1.4; ${gray}">${label || '오늘'} 기록 없음<br><span style="font-size:19px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span></div></div>`;
                 return;
             }
-            // 회차별: 회차가 끝날 때(종점) 남긴 누적 점수 → 그 회차에 늘어난 점수
-            let prev = { acc: 0, brk: 0, turn: 0, dly: 0 };
-            const trips = (v.trips || []).map(t => {
-                const d = { acc: t.acc - prev.acc, brk: t.brk - prev.brk, turn: t.turn - prev.turn, dly: t.dly - prev.dly };
-                const tot = t.acc + t.brk + t.turn + t.dly, add = d.acc + d.brk + d.turn + d.dly;
-                prev = t;
-                const g = window.DriveGrade ? window.DriveGrade.gradeOf(tot) : 1;
-                return `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; padding:8px 0; border-bottom:1px solid #1e293b; font-weight:800;">${dgWheel(g, 26)}` +
-                    `<span style="flex:0 0 auto; font-size:20px; color:#e2e8f0;">${t.t}</span><span style="flex:0 0 auto; font-size:15px; color:#64748b;">${t.at} 끝</span>` +
-                    `<span style="flex:1 1 100%; padding-left:34px; font-size:16px; color:#94a3b8;">${add > 0 ? dgParts(d) : (add < 0 ? '기점·종점 정시 통과로 시간 준수 0점' : '깨끗')}</span></div>`;
-            }).join('');
+            // 회차별 목록은 삭제 (2026-11-01 사용자 지시: 하루 누적만)
             el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.grade, 76)}` +
                 `<div style="font-size:22px; font-weight:800; color:#cbd5e1;">${label || '오늘'} 측정 ${v.min}분</div></div>` +
-                dgItems(v) +
-                `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별</div>` +
-                (trips || '<div style="font-size:18px; color:#94a3b8; font-weight:800;">아직 끝난 회차 없음 (종점을 지나면 기록)</div>') + '</div>';
+                dgItems(v);
             return;
         }
         // 월별
@@ -322,9 +310,10 @@
 
     // 나의 운행 상태 2페이지 전환 (오늘 근무 / 월별 누적)
     function setHabitPage(which) {
+        // 2026-11-01: 탭 없이 하루·월별을 위아래로 함께 보여 줌 (전환 단추 삭제)
         ['cur', 'month'].forEach(k => {
             const list = document.getElementById('habitList_' + k);
-            if (list) list.style.display = k === which ? 'block' : 'none';
+            if (list) list.style.display = 'block';
         });
         window._habitPage = which;
         // 버튼 글자는 "눌렀을 때 바뀔 쪽"
