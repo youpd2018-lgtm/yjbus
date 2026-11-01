@@ -58,9 +58,9 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 /* 나의 운행 상태(운전대 아이콘, 글자 없이 색만 4단계, 2026-11-01 사용자 지시): 1 금색 > 2 녹색 > 3 주황 > 4 빨강, 0 = 아직 평가 전(회색) */
 .yb3-grade { display: inline-flex; align-items: center; justify-content: center; margin: auto 0; position: relative; top: -3px; font-size: 40px; line-height: 1; }
 .yb3-grade iconify-icon { color: rgba(255,255,255,0.35); transition: color .4s, filter .4s; }
-/* 금색: 회사 로고 금색(#F2C339)으로, 강한 빛 대신 은은하게 숨 쉬듯 빛남 (2026-11-01 사용자 지시: 너무 밝아 주황과 헷갈림) */
-.yb3-grade[data-g="1"] iconify-icon { color: #F2C339; filter: drop-shadow(0 1px 3px rgba(234,179,8,0.45)); animation: yb3GoldGlow 3.2s ease-in-out infinite; }
-@keyframes yb3GoldGlow { 0%, 100% { filter: drop-shadow(0 1px 3px rgba(234,179,8,0.35)); } 50% { filter: drop-shadow(0 0 7px rgba(234,179,8,0.6)); } }
+/* 가장 좋음 = 은색: 은은하게 숨 쉬듯 빛남 (2026-11-01 사용자 지시: 금색 → 은색) */
+.yb3-grade[data-g="1"] iconify-icon { color: #DDE3EA; filter: drop-shadow(0 1px 3px rgba(226,232,240,0.45)); animation: yb3GoldGlow 3.2s ease-in-out infinite; }
+@keyframes yb3GoldGlow { 0%, 100% { filter: drop-shadow(0 1px 3px rgba(226,232,240,0.35)); } 50% { filter: drop-shadow(0 0 7px rgba(241,245,249,0.7)); } }
 @media (prefers-reduced-motion: reduce) { .yb3-grade[data-g="1"] iconify-icon { animation: none; } }
 .yb3-grade[data-g="2"] iconify-icon { color: #39FF6A; filter: drop-shadow(0 0 6px #39FF6A); }
 .yb3-grade[data-g="3"] iconify-icon { color: #FF7A1A; filter: drop-shadow(0 0 6px #FF7A1A); }   /* 금색과 덜 헷갈리게 더 진한 주황 */
