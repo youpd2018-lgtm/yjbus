@@ -23,6 +23,7 @@
     var MAX_ACC = 30;        // 1초에 30km/h 넘게 바뀐 것은 GPS 튐으로 보고 무시
     var MAX_ACCURACY_M = 20; // GPS 정확도가 20m보다 나쁘면 쓰지 않음
     var COOL_MS = 5000;      // 같은 동작은 5초 안에 한 번만 셈
+    var DELAY_IGNORE = 20;   // 오차가 이 분 이상이면 잘못 찍힌 정류장으로 보고 시간 준수에 쓰지 않음(2026-11-01 사용자 지시)
     var DELAY_1 = 5, DELAY_2 = 10;   // 오차 1점 / 2점 기준(분)
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -164,6 +165,7 @@
             if (simOn() || !driver()) return;
             if (typeof diffMin !== 'number' || isNaN(diffMin)) return;
             var a = Math.abs(diffMin);
+            if (a >= DELAY_IGNORE) { note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 20분 이상이라 시간 준수에 안 씀'); return; }
             var s = state();
             var lv = a > DELAY_2 ? 2 : (a > DELAY_1 ? 1 : 0);
             var mul = 2;   // 왕복·편도 모두 0·2·4점 (2026-11-01 사용자 지시)
