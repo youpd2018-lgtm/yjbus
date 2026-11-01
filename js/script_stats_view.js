@@ -267,14 +267,12 @@
                 const g = window.DriveGrade ? window.DriveGrade.gradeOf(tot) : 1;
                 return `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; padding:8px 0; border-bottom:1px solid #1e293b; font-weight:800;">${dgWheel(g, 26)}` +
                     `<span style="flex:0 0 auto; font-size:20px; color:#e2e8f0;">${t.t}</span><span style="flex:0 0 auto; font-size:15px; color:#64748b;">${t.at} 끝</span>` +
-                    `<span style="flex:1 1 0; min-width:0; text-align:right; font-size:19px; color:${add > 0 ? '#f87171' : '#4ade80'};">${add > 0 ? '+' + add : (add < 0 ? add : '+0')}점</span>` +
                     `<span style="flex:1 1 100%; padding-left:34px; font-size:16px; color:#94a3b8;">${add > 0 ? dgParts(d) : (add < 0 ? '기점·종점 정시 통과로 오차 0점' : '깨끗')}</span></div>`;
             }).join('');
             el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.grade, 76)}` +
-                `<div><div style="font-size:40px; font-weight:900; color:${DG_COLOR[v.grade]}; line-height:1.1;">${v.score}점</div>` +
-                `<div style="font-size:19px; font-weight:800; color:#cbd5e1;">측정 ${v.min}분</div></div></div>` +
+                `<div style="font-size:22px; font-weight:800; color:#cbd5e1;">오늘 측정 ${v.min}분</div></div>` +
                 dgItems(v) +
-                `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별 점수</div>` +
+                `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별</div>` +
                 (trips || '<div style="font-size:18px; color:#94a3b8; font-weight:800;">아직 끝난 회차 없음 (종점을 지나면 기록)</div>') + '</div>' + DG_LEGEND;
             return;
         }
@@ -284,11 +282,10 @@
         const colors = [1, 2, 3, 4].map(g => `<div style="display:flex; flex-direction:column; align-items:center; gap:2px; font-weight:900;">${dgWheel(g, 34)}<span style="font-size:20px; color:#e2e8f0;">${v.colors[g]}일</span></div>`).join('');
         const days = v.list.slice().reverse().map(d =>
             `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; padding:7px 0; border-bottom:1px solid #1e293b; font-weight:800;">${dgWheel(d.grade, 24)}` +
-            `<span style="flex:0 0 auto; font-size:19px; color:#e2e8f0;">${d.date.slice(5).replace('-', '/')}</span><span style="flex:0 0 auto; font-size:19px; color:${DG_COLOR[d.grade]};">${d.score}점</span>` +
+            `<span style="flex:0 0 auto; font-size:19px; color:#e2e8f0;">${d.date.slice(5).replace('-', '/')}</span>` +
             `<span style="flex:1 1 100%; padding-left:32px; font-size:16px; color:#94a3b8;">${dgParts(d)}</span></div>`).join('');
         el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.avgGrade, 76)}` +
-            `<div><div style="font-size:19px; font-weight:800; color:#94a3b8;">하루 평균</div><div style="font-size:40px; font-weight:900; color:${DG_COLOR[v.avgGrade]}; line-height:1.1;">${v.avg}점</div>` +
-            `<div style="font-size:18px; font-weight:800; color:#cbd5e1;">근무 ${v.days}일 · 측정 ${h ? h + '시간 ' : ''}${m}분</div></div></div>` +
+            `<div style="font-size:22px; font-weight:800; color:#cbd5e1; line-height:1.4;">이달 평균<br>근무 ${v.days}일 · 측정 ${h ? h + '시간 ' : ''}${m}분</div></div>` +
             `<div style="display:flex; justify-content:space-around; margin-top:14px; padding:10px 0; background:#1e293b; border-radius:10px;">${colors}</div>` +
             `<div style="font-size:18px; font-weight:900; color:#cbd5e1; margin-top:12px;">이달 합계</div>` + dgItems(v) +
             `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">날짜별</div>${days}</div>` + DG_LEGEND;
