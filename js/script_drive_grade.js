@@ -143,6 +143,19 @@
         } catch (e) { console.warn('[운행상태] GPS 처리 오류', e); }
     }
 
+    // 지금 달리는 편도의 이름 = 회차(첫 정류장 시각) + 이 편도가 끝나는 앵커 정류장 번호
+    function legIdOf(isAnchor) {
+        try {
+            var m = window.standardMasterCache || [], i = window.lastPassedStopIndex;
+            if (!m.length || typeof i !== 'number') return '';
+            var trip = String((m[0] && (m[0].stdTime || m[0][6])) || '') + '#' + m.length;
+            var end = m.length - 1;
+            for (var k = isAnchor ? i : i + 1; k < m.length; k++) { if (m[k] && m[k].anchor) { end = k; break; } }
+            if (isAnchor) end = i;
+            return trip + '|' + end;
+        } catch (e) { return ''; }
+    }
+
     // ---- 오차 (정류장 통과가 확정될 때마다 script_gps_sim.js가 부름) ----
     function onStopPassed(diffMin, isAnchor, stopName, isLast) {
         try {
@@ -155,6 +168,14 @@
             // 편도(구간)마다 따로 셈 (2026-11-01 사용자 지시): 한 편도에서 최대 2점 → 왕복 1회차 최대 4점, 편도 1회차 최대 2점
             //   dlyLeg = 지금 달리는 편도에서 가장 나빴던 단계, dlyDone = 끝난 편도들의 점수 합, dly = 둘의 합(화면·서버용)
             if (s.dlyDone === undefined) { s.dlyDone = s.dly || 0; s.dlyLeg = 0; s.legN = 0; }   // 옛 기록 이어받기
+            // 라이브 모달을 끈 사이에 그 편도의 기점·종점을 지나 버렸으면(=다른 편도로 넘어왔으면) 그때까지 점수를 그대로 확정
+            //   (사용자 지시: 기점·종점 전에 끄고 다시 안 켜면 지금 점수가 확정. 기점·종점 전에 다시 켜면 이어서 재평가)
+            var lid = legIdOf(isAnchor);
+            if (s.legId && lid && s.legId !== lid && (s.legN || 0) > 0) {
+                if (s.dlyLeg) note('라이브 모달을 끈 동안 기점·종점을 지남 → 이 편도 ' + s.dlyLeg + '점 확정');
+                s.dlyDone += (s.dlyLeg || 0); s.dlyLeg = 0; s.legN = 0; changed = true;
+            }
+            s.legId = isAnchor ? null : lid;
             if (isAnchor) {
                 // 기점·종점(앵커) = 편도 끝. 5분 이내로 지나면 이 편도 점수 0, 아니면 이 편도 점수를 확정
                 if (s.legN > 0) {
