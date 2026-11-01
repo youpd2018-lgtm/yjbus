@@ -542,7 +542,7 @@ function loadLatestColleagueMessage() {
 
                         applyLockedDelayBadge(badgeText, badgeColor);
                         // 나의 운행 상태: 오차 점수 (기점·종점 = 앵커 정류장 또는 마지막 정류장이면 3분 이내일 때 오차 점수 리셋)
-                        // 시간 준수는 회차 단위(2026-11-01 사용자 지시): 회차 종점(마지막 정류장)에서만 재평가, 왕복이면 0·2·4점 / 편도면 0·1·2점
+                        // 시간 준수는 회차 단위(2026-11-01 사용자 지시): 회차 종점(마지막 정류장)에서만 재평가, 왕복·편도 모두 0·2·4점
                         if (window.DriveGrade) {
                             const lastI = masterCache.length - 1;
                             const roundTrip = masterCache.some((r, k) => k > 0 && k < lastI && r && r.anchor);
