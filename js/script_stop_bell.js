@@ -3,7 +3,8 @@
 // - 라이브 모달의 시간 카운트 원을 한 번 터치하면 '손님이 하차벨을 눌렀다'고 등록한다. 원 테두리가 전체 빨간색으로 바뀐다.
 //   (다시 터치하면 등록 취소 — 잘못 눌렀을 때 대비)
 // - 다음 정류장 100m 전과 50m 전에 한 번씩 (모두 띵동 + 음성) "하차 손님이 있습니다. 정차하세요."를 알려 주고,
-//   그 정류장을 통과하면(가장 가까워졌다가 다시 멀어지면) 자동으로 등록이 풀려 원래 색으로 돌아온다.
+//   마지막 안내(50m 전) 10초 뒤에 자동으로 등록이 풀려 원래 색으로 돌아온다(2026-11-01 사용자 지시: GPS 통과 대신 시간 기준).
+//   (50m 안내를 못 하고 정류장에서 130m 넘게 멀어지면 그때 해제 — 안전장치)
 // - 2026-11-01 사용자 지시: '정류장 근처에서 3km/h 이하로 정차하면 해제' 조건은 삭제(문제를 일으킴). 통과할 때만 해제.
 //   해제된 뒤 다시 등록하면 방금 통과한 정류장은 빼고 그다음 정류장을 대상으로 한다.
 // - 정류장 위치는 정류장 통과 속도 측정과 같은 노선 정류장 목록(standardMasterCache)과 '지난 정류장 번호'(lastPassedStopIndex)를 쓴다.
@@ -13,9 +14,8 @@
     var RADIUS_M = 50;       // 정류장 50m 전 두 번째 안내
     var LEAVE_M = 130;       // 안내한 정류장에서 이만큼 멀어지면 등록 해제
     var TEXT = '하차 손님이 있습니다. 정차하세요.';
-    var PASS_NEAR_M = 40;    // 이만큼 가까이 왔다가
-    var PASS_AWAY_M = 20;    // 가장 가까웠던 거리보다 이만큼 멀어지면 '통과'
-    var bell = false, prevD = {}, said = null, said50 = false, minD = Infinity;
+    var RELEASE_MS = 10000;  // 마지막 안내 뒤 이만큼 지나면 자동 해제
+    var bell = false, prevD = {}, said = null, said50 = false, minD = Infinity, lastAt = 0;
     var doneIdx = -1, doneAt = 0;   // 마지막으로 통과해서 해제된 정류장 (다시 등록하면 그다음 정류장부터)
 
     function $(id) { return document.getElementById(id); }
@@ -58,7 +58,7 @@
     }
 
     function setBell(on, silent) {
-        bell = !!on; prevD = {}; said = null; said50 = false; minD = Infinity;
+        bell = !!on; prevD = {}; said = null; said50 = false; minD = Infinity; lastAt = 0;
         if (!bell) { clearTimeout(speakTimer); if (!silent) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { } } }
         var g = $('yb3Gauge');
         if (g) { g.classList.toggle('yb3-bell', bell); g.setAttribute('aria-pressed', String(bell)); }
@@ -73,6 +73,7 @@
     function tick() {
         if (!bell) return;
         if (!modalOpen()) { setBell(false, true); return; }
+        if (said !== null && said50 && lastAt && Date.now() - lastAt >= RELEASE_MS) { release(); return; }   // 마지막 안내 10초 뒤 해제
         var g = window.lastGpsPosition;
         if (!g || !g.time || Date.now() - new Date(g.time).getTime() > 15000) return;
         var master = window.standardMasterCache || window.currentTripMasterCache || [];
@@ -96,16 +97,17 @@
             if (pv !== undefined && d <= FAR_M && d <= pv + 2 && d < ad) { ad = d; appr = i; }   // 다가가는 중인 100m 안 정류장
         }
 
-        if (said !== null) {   // 100m 앞에서 안내한 정류장: 50m 앞에서 한 번 더, 통과하면 해제
+        if (said !== null) {   // 100m 앞에서 안내한 정류장: 50m 앞에서 한 번 더(마지막 안내), 그 10초 뒤 해제
+            if (said50) return;
             var d0 = distM(g.lat, g.lon, stopLat(master[said]), stopLng(master[said]));
             if (d0 < minD) minD = d0;
-            if (d0 > LEAVE_M || (minD <= PASS_NEAR_M && d0 >= minD + PASS_AWAY_M)) { release(); return; }
-            if (!said50 && d0 <= RADIUS_M) { said50 = true; announce(); }
+            if (d0 > LEAVE_M) { release(); return; }   // 50m 안내 없이 멀어짐(안전장치)
+            if (d0 <= RADIUS_M) { said50 = true; lastAt = Date.now(); announce(); }
             return;
         }
         // 100m 안으로 다가가는 정류장이 있으면 첫 안내 (서 있어도 안내: 신호 대기 등)
         if (appr >= 0) {
-            said = appr; said50 = ad <= RADIUS_M; minD = ad;   // 처음부터 50m 안이면 한 번만
+            said = appr; said50 = ad <= RADIUS_M; minD = ad; lastAt = Date.now();   // 처음부터 50m 안이면 한 번만(그 안내가 마지막)
             announce();
         }
     }
