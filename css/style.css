@@ -3632,3 +3632,23 @@ html .yb2-trip-t.b, html.ui2.senior .yb2-trip-t.b { background: transparent !imp
 /* 🚨 앞쪽 돌발·정체 카드: 글씨 3포인트 크게 (기본 16px → 19px, 2026-10-26 사용자 지시) */
 .swal2-popup.yb-inc-card .swal2-title,
 .swal2-popup.yb-inc-card .swal2-html-container { font-size: 19px !important; line-height: 1.35; }
+
+/* ================================================================
+   운행 습관 운전대 (2026-11-01 사용자 지시: B 메달 색 = 플래티넘·비취·구리·적동, 금속처럼 그라데이션)
+   쓰는 법: <span class="yb-wheel" data-g="1~4"><i></i></span>  (바깥 span = 빛, 안쪽 i = 운전대 모양으로 잘린 그라데이션)
+   ================================================================ */
+.yb-wheel { display: inline-block; width: 1em; height: 1em; line-height: 0; vertical-align: middle; transition: filter .4s; }
+.yb-wheel > i { display: block; width: 100%; height: 100%;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M128%2024a104%20104%200%201%200%20104%20104A104.11%20104.11%200%200%200%20128%2024M49.63%20168h40.82l17%2045.58A88.35%2088.35%200%200%201%2049.63%20168M128%20156a16%2016%200%201%201%2016-16a16%2016%200%200%201-16%2016m20.46%2057.59L165.55%20168h40.82a88.34%2088.34%200%200%201-57.91%2045.59M128%2096a136.38%20136.38%200%200%200-88%2032.33V128a88%2088%200%200%201%20176%200v.33A136.38%20136.38%200%200%200%20128%2096%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M128%2024a104%20104%200%201%200%20104%20104A104.11%20104.11%200%200%200%20128%2024M49.63%20168h40.82l17%2045.58A88.35%2088.35%200%200%201%2049.63%20168M128%20156a16%2016%200%201%201%2016-16a16%2016%200%200%201-16%2016m20.46%2057.59L165.55%20168h40.82a88.34%2088.34%200%200%201-57.91%2045.59M128%2096a136.38%20136.38%200%200%200-88%2032.33V128a88%2088%200%200%201%20176%200v.33A136.38%20136.38%200%200%200%20128%2096%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  background: #64748b; }
+.yb-wheel[data-g="1"] > i { background: linear-gradient(135deg, #FFFFFF 0%, #E3E8EE 33%, #9AA6B2 67%, #F4F7FA 100%); }   /* 플래티넘 */
+.yb-wheel[data-g="2"] > i { background: linear-gradient(135deg, #E2FFF1 0%, #7FE3B8 33%, #2F9E78 67%, #A9F0D2 100%); }   /* 비취 */
+.yb-wheel[data-g="3"] > i { background: linear-gradient(135deg, #FFD9B8 0%, #E8955A 33%, #A65424 67%, #F0B48A 100%); }   /* 구리 */
+.yb-wheel[data-g="4"] > i { background: linear-gradient(135deg, #FFB8B0 0%, #D9534F 33%, #8E1F1B 67%, #E7857F 100%); }   /* 적동 */
+.yb-wheel[data-g="1"] { filter: drop-shadow(0 0 .11em rgba(230,236,242,.6)); animation: ybWheelBreathe 3.2s ease-in-out infinite; }
+.yb-wheel[data-g="2"] { filter: drop-shadow(0 0 .11em rgba(127,227,184,.5)); }
+.yb-wheel[data-g="3"] { filter: drop-shadow(0 0 .11em rgba(232,149,90,.55)); }
+.yb-wheel[data-g="4"] { filter: drop-shadow(0 0 .11em rgba(217,83,79,.55)); }
+@keyframes ybWheelBreathe { 0%, 100% { filter: drop-shadow(0 0 .06em rgba(230,236,242,.4)); } 50% { filter: drop-shadow(0 0 .14em rgba(241,245,249,.75)); } }
+@media (prefers-reduced-motion: reduce) { .yb-wheel[data-g="1"] { animation: none; } }

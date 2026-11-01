@@ -226,12 +226,8 @@
     }
 
     // ---- 나의 운행 상태 (운전대 색 4단계: 0~5 금색, 6~10 녹색, 11~15 주황, 16+ 빨강) ----
-    const DG_COLOR = ['#64748b', '#DDE3EA', '#4ade80', '#FF7A1A', '#FF4D4D'];   // 1 = 은색(가장 좋음)
-    function dgWheel(g, size) {
-        const c = DG_COLOR[g] || DG_COLOR[0];
-        // 은색은 은은한 빛, 나머지는 같은 색 빛
-        const glow = g === 1 ? `drop-shadow(0 0 ${Math.max(2, Math.round(size / 12))}px rgba(241,245,249,0.55))` : `drop-shadow(0 0 ${Math.round(size / 8)}px ${c})`;
-        return `<iconify-icon icon="ph:steering-wheel-fill" style="font-size:${size}px; color:${c}; filter:${glow}; vertical-align:middle;"></iconify-icon>`;
+    function dgWheel(g, size) {   // 색·빛은 css/style.css .yb-wheel (B 메달 그라데이션)
+        return `<span class="yb-wheel" data-g="${g || 0}" style="font-size:${size}px;"><i></i></span>`;
     }
     function dgItems(v) {
         const items = [['급가속', v.acc, 'mdi:arrow-up-bold'], ['급정거', v.brk, 'mdi:arrow-down-bold'], ['급회전', v.turn, 'mdi:rotate-right'], ['시간 준수', v.dly, 'mdi:clock-alert-outline']];

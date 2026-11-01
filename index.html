@@ -802,7 +802,7 @@
           <!-- 나의 운행 상태 보기/숨기기 단추 (2026-11-01: 옛 정류장 통과 속도 자리. 누르면 아래에 나오고 다시 누르면 숨김) -->
           <div id="habitToggleBtn" role="button" tabindex="0" onclick="toggleHabitCard()" aria-expanded="false"
             style="width: 100%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px 10px 16px; border-radius: 12px; border: 1.5px solid #d97706; background: #0f172a; color: #fbbf24; font-size: 20px; font-weight: 900; cursor: pointer;">
-            <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><iconify-icon icon="ph:steering-wheel-fill" style="font-size: 24px; color: #DDE3EA;"></iconify-icon><span>운행 습관</span></span><span id="habitToggleArrow" style="font-size: 18px;">▼</span>
+            <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><span class="yb-wheel" data-g="1" style="font-size: 24px;"><i></i></span><span>운행 습관</span></span><span id="habitToggleArrow" style="font-size: 18px;">▼</span>
           </div>
 
           <!-- 2단: 운행 습관 (위: 고른 날짜 하루 / 아래: 월별, 탭 없이 한 화면 2026-11-01), 그리는 곳은 js/script_stats_view.js renderDriveGrade -->
@@ -1157,7 +1157,7 @@
               <div class="yb3-stop"><span class="yb3-role">현재</span><span class="yb3-st" id="yb3StCur">--:--:--</span><span class="yb3-sn" id="yb3SnCur"></span></div>
               <div class="yb3-pill" id="yb3Pill" data-s="ok" onclick="triggerTrafficIncidentTest()" title="터치하여 최근 돌발상황 다시보기 및 음성 안내">
                 <div class="yb3-lamps"><i></i><i></i><i></i></div>
-                <span class="yb3-grade" id="yb3Grade" data-g="1" aria-label="나의 운행 상태"><iconify-icon icon="ph:steering-wheel-fill"></iconify-icon></span>
+                <span class="yb3-grade yb-wheel" id="yb3Grade" data-g="1" aria-label="운행 습관"><i></i></span>
               </div>
               <div class="yb3-stop r"><span class="yb3-role">다음</span><span class="yb3-st" id="yb3StNext">--:--:--</span><span class="yb3-sn" id="yb3SnNext"></span></div>
             </div>
