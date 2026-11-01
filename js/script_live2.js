@@ -149,17 +149,23 @@
     syncPass();
   }
 
-  // 신호등 알약 아래: 정류장 20km 이상 통과 횟수(이번 회차). 평균속도 숫자는 2026-10-26 사용자 지시로 삭제
-  function syncPass() {
-    var box = $('yb3Pass'); if (!box) return;
-    var L = window.DrivingHabit && window.DrivingHabit.getLive ? window.DrivingHabit.getLive() : null;
-    var st = L ? (L.inZone ? 'zone' : (L.last || 'idle')) : 'idle';
-    var n = L ? L.over : 0;
-    if (box.getAttribute('data-st') !== st) box.setAttribute('data-st', st);
-    box.classList.toggle('has-over', n > 0);
-    setText($('yb3PassN'), String(n));
+  // 신호등 알약 아래: 나의 운행 상태(운전대 색 4단계, 2026-11-01 사용자 지시. 정류장 통과 횟수 자리를 대신함)
+  // 1 금색(가장 좋음) · 2 녹색 · 3 주황 · 4 빨강, 0 = 평가 전(회색). 글자는 없음.
+  // 지금은 임시로 오차(정시 운행)만 봄: 2분 이내 금색, 5분 이내 녹색, 10분 이내 주황, 그 넘으면 빨강.
+  // 평가 항목이 정해지면 ybDriveGrade 안만 바꾸면 됨.
+  function ybDriveGrade() {
+    var d = txt('bisDelayBadge');
+    var n = parseInt(String(d || '').replace('+', ''), 10);
+    if (isNaN(n)) return 0;
+    var a = Math.abs(n);
+    return a <= 2 ? 1 : (a <= 5 ? 2 : (a <= 10 ? 3 : 4));
   }
-  window.addEventListener('yb-stoppass', syncPass);
+  window.ybDriveGrade = ybDriveGrade;
+  function syncPass() {
+    var box = $('yb3Grade'); if (!box) return;
+    var g = String(ybDriveGrade());
+    if (box.getAttribute('data-g') !== g) box.setAttribute('data-g', g);
+  }
   setInterval(syncPass, 2000);
 
   function watch(el, fn, attrs) {

@@ -55,15 +55,13 @@ html.lv2 #yb3 { display: flex; flex-direction: column; gap: 12px; font-family: '
 .yb3-pill[data-s="jam"] .yb3-lamps i:nth-child(1), .yb3-pill[data-s="slow"] .yb3-lamps i:nth-child(2), .yb3-pill[data-s="ok"] .yb3-lamps i:nth-child(3) { background: var(--pc); border-color: var(--pc); box-shadow: 0 0 8px var(--pc); }
 .yb3-pill-text { font-size: 22px; font-weight: 900; color: var(--pc); white-space: nowrap; line-height: 1.1; }
 /* 정류장 20km 이상 통과 횟수 (2026-10-26: 평균속도 숫자 대신). 측정 전 회색, 정류장 안에서 깜빡임, 안전 통과 초록, 20km 이상 통과 빨강 */
-.yb3-pass { display: inline-flex; align-items: center; gap: 6px; color: #e2e8f0; margin: auto 0; position: relative; top: -3px; font-size: 32px; }   /* 신호등은 위에, 통과 횟수는 양쪽 표준시간 높이(남은 공간 가운데) */
-.yb3-pass iconify-icon { font-size: 1.05em; color: rgba(255,255,255,0.55); }
-.yb3-pass[data-st="zone"] iconify-icon { color: #FDE047; animation: yb3PassBlink .6s steps(2, start) infinite; }
-.yb3-pass[data-st="ok"] iconify-icon { color: #39FF6A; filter: drop-shadow(0 0 6px #39FF6A); }
-.yb3-pass[data-st="over"] iconify-icon { color: #FF4D4D; filter: drop-shadow(0 0 5px #FF4D4D); }
-.yb3-pass b { margin-right: -4px; }
-.yb3-pass .yb3-pass-u { font-size: 22px; font-weight: 900; align-self: flex-end; margin-bottom: 3px; }   /* '회'는 숫자보다 작게 (2026-10-26) */
-.yb3-pass.has-over .yb3-pass-u, .yb3-pass.has-over b { color: #FFFFFF; text-shadow: 0 0 6px rgba(255,255,255,0.6); }   /* 횟수 글자는 흰색 (2026-10-26 사용자 지시) */
-@keyframes yb3PassBlink { to { visibility: hidden; } }
+/* 나의 운행 상태(운전대 아이콘, 글자 없이 색만 4단계, 2026-11-01 사용자 지시): 1 금색 > 2 녹색 > 3 주황 > 4 빨강, 0 = 아직 평가 전(회색) */
+.yb3-grade { display: inline-flex; align-items: center; justify-content: center; margin: auto 0; position: relative; top: -3px; font-size: 40px; line-height: 1; }
+.yb3-grade iconify-icon { color: rgba(255,255,255,0.35); transition: color .4s, filter .4s; }
+.yb3-grade[data-g="1"] iconify-icon { color: #FFD24A; filter: drop-shadow(0 0 4px #FFC400) drop-shadow(0 0 10px rgba(255,196,0,0.7)); }
+.yb3-grade[data-g="2"] iconify-icon { color: #39FF6A; filter: drop-shadow(0 0 6px #39FF6A); }
+.yb3-grade[data-g="3"] iconify-icon { color: #FF9F1C; filter: drop-shadow(0 0 6px #FF9F1C); }
+.yb3-grade[data-g="4"] iconify-icon { color: #FF4D4D; filter: drop-shadow(0 0 6px #FF4D4D); }
 
 /* 거점 3칸 + 시간·장소 아래로 깔린 선 */
 .yb3-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative; }
@@ -127,8 +125,7 @@ html.lv2 #liveModal .ios-footer .ios-close-btn { background: rgba(255,255,255,0.
     html.lv2 .yb3-label { max-width: 100cqw; }
     html.lv2 .yb3-pill { padding: 0 4px; }
     html.lv2 .yb3-pill-text { font-size: 19px; }
-    html.lv2 .yb3-pass { font-size: 29px; }
-    html.lv2 .yb3-pass .yb3-pass-u { font-size: 19px; }
+    html.lv2 .yb3-grade { font-size: 36px; }
     html.lv2 .yb3-lamps i { width: 19px; height: 19px; }
     html.lv2 .yb3-lamps { gap: 6px; }
     html.lv2 .yb3-gauge { margin: 0 auto; }
