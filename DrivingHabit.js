@@ -278,3 +278,24 @@ function saveDriveGrade(d) {
     return { success: false, error: String(err) };
   }
 }
+
+// 한 기사의 해당 월 운행상태: { success, rows: [[날짜, 노선, 순번, 근무시간, 점수, 색, 급가속, 급정거, 급회전, 오차점수, 측정분], ...] }
+function getDriveGrade(driver, year, month) {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(DRIVE_GRADE_SHEET_NAME);
+    var rows = [];
+    if (sheet && sheet.getLastRow() >= 2) {
+      var prefix = String(year) + '-' + ('0' + month).slice(-2) + '-';
+      var vals = sheet.getRange(2, 1, sheet.getLastRow() - 1, DRIVE_GRADE_HEADER.length).getDisplayValues();
+      vals.forEach(function (r) {
+        if (r[1] === String(driver) && r[0].indexOf(prefix) === 0) {
+          rows.push([r[0], r[2], r[3], r[4], Number(r[5]) || 0, r[6], Number(r[7]) || 0, Number(r[8]) || 0, Number(r[9]) || 0, Number(r[10]) || 0, Number(r[11]) || 0]);
+        }
+      });
+    }
+    return { success: true, rows: rows };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}

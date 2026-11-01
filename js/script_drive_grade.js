@@ -144,22 +144,86 @@
     }
 
     // ---- 오차 (정류장 통과가 확정될 때마다 script_gps_sim.js가 부름) ----
-    function onStopPassed(diffMin, isAnchor, stopName) {
+    function onStopPassed(diffMin, isAnchor, stopName, isLast) {
         try {
             if (simOn() || !driver()) return;
             if (typeof diffMin !== 'number' || isNaN(diffMin)) return;
             var a = Math.abs(diffMin);
             var s = state();
             var lv = a > DELAY_2 ? 2 : (a > DELAY_1 ? 1 : 0);
+            var changed = false;
             if (isAnchor && a <= DELAY_1) {
-                if (s.dly) note('기점·종점 정시 통과(' + (stopName || '') + ') → 오차 점수 0');
+                if (s.dly) { note('기점·종점 정시 통과(' + (stopName || '') + ') → 오차 점수 0'); changed = true; }
                 s.dly = 0;
             } else if (lv > s.dly) {
-                s.dly = lv;
+                s.dly = lv; changed = true;
                 note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 오차 ' + lv + '점');
-            } else return;
-            save();
+            }
+            if (isLast) { snapTrip(); changed = true; }   // 회차 끝: 지금까지의 점수를 회차 기록으로 남김
+            if (changed) save();
         } catch (e) { console.warn('[운행상태] 오차 처리 오류', e); }
+    }
+
+    // 회차가 끝날 때(종점 통과) 그때까지의 누적 점수를 남김 → 근무통계에서 회차별로 몇 점 늘었는지 보여 줌
+    function snapTrip() {
+        var s = state();
+        s.trips = s.trips || [];
+        var label = String(window.currentTripRoundNumber || '').trim() || ((s.trips.length + 1) + '회차');
+        var n = new Date(), at = pad(n.getHours()) + ':' + pad(n.getMinutes());
+        var snap = { t: label, at: at, acc: s.acc || 0, brk: s.brk || 0, turn: s.turn || 0, dly: s.dly || 0 };
+        var prev = s.trips[s.trips.length - 1];
+        if (prev && prev.t === label) s.trips[s.trips.length - 1] = snap;   // 같은 회차 종점을 또 지나면 덮어씀
+        else s.trips.push(snap);
+        if (s.trips.length > 12) s.trips.shift();
+    }
+
+    // 근무통계 화면용: 오늘 근무 기록
+    function getToday() {
+        var s = state();
+        return { date: s.date, score: score(), grade: grade(), color: COLOR[grade()], acc: s.acc || 0, brk: s.brk || 0, turn: s.turn || 0, dly: s.dly || 0, min: Math.round((s.ms || 0) / 60000), trips: (s.trips || []).slice() };
+    }
+
+    // 근무통계 화면용: 이달 합계 (서버에 올라간 날 + 아직 못 올린 이 폰 기록, 같은 날은 이 폰 값 우선)
+    function fetchMonth(year, month) {
+        var prefix = year + '-' + pad(month) + '-';
+        var days = {};
+        function local() {
+            try {
+                var me = PREFIX + driver() + '_';
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (!k || k.indexOf(me) !== 0) continue;
+                    var r = JSON.parse(localStorage.getItem(k) || 'null');
+                    var d = r && (r.date || k.slice(me.length));
+                    if (!r || !d || d.indexOf(prefix) !== 0) continue;
+                    var p = scoreOf(r);
+                    if (!p && !r.ms) continue;   // 측정 안 한 날은 뺌
+                    days[d] = { date: d, score: p, grade: gradeOf(p), acc: r.acc || 0, brk: r.brk || 0, turn: r.turn || 0, dly: r.dly || 0, min: Math.round((r.ms || 0) / 60000) };
+                }
+            } catch (e) { }
+        }
+        function finish() {
+            local();
+            var list = Object.keys(days).sort().map(function (k) { return days[k]; });
+            var sum = { days: list.length, acc: 0, brk: 0, turn: 0, dly: 0, min: 0, score: 0, colors: [0, 0, 0, 0, 0] };
+            list.forEach(function (d) { sum.acc += d.acc; sum.brk += d.brk; sum.turn += d.turn; sum.dly += d.dly; sum.min += d.min; sum.score += d.score; sum.colors[d.grade] += 1; });
+            sum.avg = list.length ? Math.round(sum.score / list.length * 10) / 10 : 0;
+            sum.avgGrade = gradeOf(Math.round(sum.avg));
+            sum.list = list;
+            return sum;
+        }
+        var url = window.GAS_WEB_APP_URL;
+        if (!url || !driver()) return Promise.resolve(finish());
+        return fetch(url + '?action=get_drive_grade&driver=' + encodeURIComponent(driver()) + '&year=' + year + '&month=' + month)
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res && res.success) (res.rows || []).forEach(function (r) {
+                    var p = Number(r[4]) || 0;
+                    days[r[0]] = { date: r[0], score: p, grade: gradeOf(p), acc: Number(r[6]) || 0, brk: Number(r[7]) || 0, turn: Number(r[8]) || 0, dly: Number(r[9]) || 0, min: Number(r[10]) || 0 };
+                });
+                return finish();
+            })
+            .catch(function () { return finish(); });
     }
 
     // ---- 서버 시트 '운행상태'에 올리기 (하루 한 줄, 덮어쓰기) ----
@@ -226,7 +290,7 @@
     document.addEventListener('visibilitychange', function () { if (document.hidden) upload(); });
     window.addEventListener('pagehide', upload);
 
-    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade, upload: upload };
+    window.DriveGrade = { onFix: onFix, onStopPassed: onStopPassed, score: score, grade: grade, upload: upload, getToday: getToday, fetchMonth: fetchMonth, gradeOf: gradeOf, COLOR: COLOR };
     window.ybDriveInfo = function () {
         var s = state();
         return { 날짜: s.date, 점수: score(), 색: COLOR[grade()], 급가속: s.acc, 급정거: s.brk, 급회전: s.turn, 오차점수: s.dly, 측정분: Math.round((s.ms || 0) / 60000), 서버저장: (s.sent || 0) >= (s.ver || 0), 기록: s.log.slice() };

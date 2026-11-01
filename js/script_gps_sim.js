@@ -542,7 +542,7 @@ function loadLatestColleagueMessage() {
 
                         applyLockedDelayBadge(badgeText, badgeColor);
                         // 나의 운행 상태: 오차 점수 (기점·종점 = 앵커 정류장 또는 마지막 정류장이면 3분 이내일 때 오차 점수 리셋)
-                        if (window.DriveGrade) window.DriveGrade.onStopPassed(diffMin, !!(curRow && curRow.anchor) || closestIdx >= masterCache.length - 1, getRowName(curRow));
+                        if (window.DriveGrade) window.DriveGrade.onStopPassed(diffMin, !!(curRow && curRow.anchor) || closestIdx >= masterCache.length - 1, getRowName(curRow), closestIdx >= masterCache.length - 1);
                         console.log(`🎯 [GPS 정류장 통과 감지] ${getRowName(curRow)} (거리: ${minDistance}m) -> 오차: ${badgeText}분 확정 동결!`);
                     } else {
                         // 이상치(60분 초과): 이전 정류장 오차가 남지 않도록 초기화

@@ -89,6 +89,14 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // 💡 [나의 운행 상태 이달 조회: 근무통계 화면에서 사용, 2026-11-01]
+  if (e && e.parameter && e.parameter.action === 'get_drive_grade') {
+    const res = typeof getDriveGrade === 'function'
+      ? getDriveGrade(authDriverFor_(viewer, e.parameter.driver), e.parameter.year || "", e.parameter.month || "")
+      : { success: false, error: "getDriveGrade 함수 미정의" };
+    return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // 💡 [정류장 운전 습관 이달 조회: 근무통계 화면에서 사용]
   if (e && e.parameter && e.parameter.action === 'get_stop_habit') {
     const res = typeof getStopHabit === 'function'

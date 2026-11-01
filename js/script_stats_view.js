@@ -212,69 +212,87 @@
             totalInfoEl.innerHTML = `${h}시간 ${m}분<br>${totalDist.toFixed(1)}KM`;
         }
 
-        // 2단: 나의 정류장 습관 (이번 회차는 이 폰 값, 이달은 서버 합계 + 아직 못 올린 이 폰 값)
-        const dh = window.DrivingHabit;
-        renderStopHabit('cur', dh && dh.getCurrent ? dh.getCurrent() : null);
-        renderStopHabit('month', null, true);
-        if (dh && dh.fetchMonth) {
-            dh.fetchMonth(year, month).then(res => {
+        // 2단: 나의 운행 상태 (오늘 근무는 이 폰 값, 이달은 서버 합계 + 아직 못 올린 이 폰 값), 2026-11-01
+        const dg = window.DriveGrade;
+        renderDriveGrade('cur', dg ? dg.getToday() : null);
+        renderDriveGrade('month', null, true);
+        if (dg && dg.fetchMonth) {
+            dg.fetchMonth(year, month).then(res => {
                 const cd = window.statSummaryCurrentDate;
                 if (cd.getFullYear() !== year || cd.getMonth() + 1 !== month) return;   // 그 사이 다른 달로 넘겼으면 무시
-                renderStopHabit('month', res);
+                renderDriveGrade('month', res);
             });
         }
     }
 
-    // 정류장 통과 N회 / 20km 이상 통과 N회 + 20km 이상 많이 통과한 정류장 Top3(항상 보임) (이번 회차 / 월별 누적 공통)
-    function stopHabitDiag() {
-        const d = window.DrivingHabit && window.DrivingHabit.getDiag ? window.DrivingHabit.getDiag() : null;
-        if (!d || !d.fix) return '<div style="font-size:15px; color:#64748b; margin-top:14px;">점검: GPS 수신 기록 없음</div>';
-        return `<div style="font-size:15px; color:#64748b; margin-top:14px; line-height:1.4;">점검: GPS ${d.fix}회 · 속도없음 ${d.noSpeed} · 통과 정류장 ${d.stops}곳 · 20km 이상 ${d.over || 0}곳${d.why ? '<br>' + d.why : ''}</div>`;
+    // ---- 나의 운행 상태 (운전대 색 4단계: 0~5 금색, 6~10 녹색, 11~15 주황, 16+ 빨강) ----
+    const DG_COLOR = ['#94a3b8', '#FFD24A', '#4ade80', '#FF9F1C', '#FF4D4D'];
+    const DG_NAME = ['', '금색', '녹색', '주황', '빨강'];
+    function dgWheel(g, size) {
+        const c = DG_COLOR[g] || DG_COLOR[0];
+        return `<iconify-icon icon="ph:steering-wheel-fill" style="font-size:${size}px; color:${c}; filter:drop-shadow(0 0 ${Math.round(size / 8)}px ${c}); vertical-align:middle;"></iconify-icon>`;
     }
+    function dgItems(v) {
+        const items = [['급가속', v.acc, 'mdi:arrow-up-bold'], ['급정거', v.brk, 'mdi:arrow-down-bold'], ['급회전', v.turn, 'mdi:rotate-right'], ['오차', v.dly, 'mdi:clock-alert-outline']];
+        return '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">' + items.map(([n, p, ic]) =>
+            `<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:10px 12px; border-radius:10px; background:#1e293b; font-weight:900;">` +
+            `<span style="display:flex; align-items:center; gap:6px; font-size:19px; color:#cbd5e1;"><iconify-icon icon="${ic}" style="font-size:20px; color:#94a3b8;"></iconify-icon>${n}</span>` +
+            `<span style="font-size:24px; color:${p > 0 ? '#f87171' : '#4ade80'};">${p > 0 ? '+' + p : '0'}</span></div>`).join('') + '</div>';
+    }
+    function dgParts(d) {
+        const a = [];
+        if (d.acc > 0) a.push('급가속 ' + d.acc); if (d.brk > 0) a.push('급정거 ' + d.brk); if (d.turn > 0) a.push('급회전 ' + d.turn); if (d.dly > 0) a.push('오차 ' + d.dly);
+        return a.length ? a.join(' · ') : '깨끗';
+    }
+    const DG_LEGEND = '<div style="margin-top:14px; font-size:15px; color:#64748b; line-height:1.5;">0~5점 금색 · 6~10점 녹색 · 11~15점 주황 · 16점 이상 빨강<br>급가속·급정거·급회전 1번마다 1점, 오차 3분 넘으면 1점·6분 넘으면 2점(기점·종점 정시 통과 시 0점)</div>';
 
-    function renderStopHabit(scope, v, loading) {
+    function renderDriveGrade(scope, v, loading) {
         const el = document.getElementById('habitList_' + scope);
         if (!el) return;
-        renderStopHabitInner(el, scope, v, loading);
-        if (scope === 'cur') el.insertAdjacentHTML('beforeend', stopHabitDiag());
-    }
-
-    function renderStopHabitInner(el, scope, v, loading) {
-        const min = (window.DrivingHabit && window.DrivingHabit.MIN_STOPS) || 1;
         const gray = 'font-weight:bold; color:#94a3b8;';
         if (loading) { el.innerHTML = `<div style="font-size:24px; ${gray}">불러오는 중...</div>`; return; }
-        if (!v || !v.n) {
-            el.innerHTML = `<div style="font-size:30px; line-height:1.4; ${gray}">${scope === 'cur' ? '측정 전<br><span style="font-size:22px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span>' : '기록 없음'}</div>`;
+        if (scope === 'cur') {
+            if (!v || (!v.min && !v.score)) {
+                el.innerHTML = `<div style="display:flex; align-items:center; gap:14px;">${dgWheel(1, 64)}<div style="font-size:26px; line-height:1.4; ${gray}">오늘 측정 전<br><span style="font-size:19px; color:#cbd5e1;">LIVE 모드를 켜고 운행할 때만 측정됩니다</span></div></div>` + DG_LEGEND;
+                return;
+            }
+            // 회차별: 회차가 끝날 때(종점) 남긴 누적 점수 → 그 회차에 늘어난 점수
+            let prev = { acc: 0, brk: 0, turn: 0, dly: 0 };
+            const trips = (v.trips || []).map(t => {
+                const d = { acc: t.acc - prev.acc, brk: t.brk - prev.brk, turn: t.turn - prev.turn, dly: t.dly - prev.dly };
+                const tot = t.acc + t.brk + t.turn + t.dly, add = d.acc + d.brk + d.turn + d.dly;
+                prev = t;
+                const g = window.DriveGrade ? window.DriveGrade.gradeOf(tot) : 1;
+                return `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; padding:8px 0; border-bottom:1px solid #1e293b; font-weight:800;">${dgWheel(g, 26)}` +
+                    `<span style="flex:0 0 auto; font-size:20px; color:#e2e8f0;">${t.t}</span><span style="flex:0 0 auto; font-size:15px; color:#64748b;">${t.at} 끝</span>` +
+                    `<span style="flex:1 1 0; min-width:0; text-align:right; font-size:19px; color:${add > 0 ? '#f87171' : '#4ade80'};">${add > 0 ? '+' + add : (add < 0 ? add : '+0')}점</span>` +
+                    `<span style="flex:1 1 100%; padding-left:34px; font-size:16px; color:#94a3b8;">${add > 0 ? dgParts(d) : (add < 0 ? '기점·종점 정시 통과로 오차 0점' : '깨끗')}</span></div>`;
+            }).join('');
+            el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.grade, 76)}` +
+                `<div><div style="font-size:40px; font-weight:900; color:${DG_COLOR[v.grade]}; line-height:1.1;">${v.score}점</div>` +
+                `<div style="font-size:19px; font-weight:800; color:#cbd5e1;">오늘 ${DG_NAME[v.grade]} · 측정 ${v.min}분</div></div></div>` +
+                dgItems(v) +
+                `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">회차별 점수</div>` +
+                (trips || '<div style="font-size:18px; color:#94a3b8; font-weight:800;">아직 끝난 회차 없음 (종점을 지나면 기록)</div>') + '</div>' + DG_LEGEND;
             return;
         }
-        const lim = (window.DrivingHabit && window.DrivingHabit.LIMIT_KMH) || 20;
-        const ov = v.ov || 0, p = v.n ? Math.round(ov / v.n * 100) : 0;
-        // 반원 계기판 하나: 통과한 정류장 중 20km 이상으로 지나간 비율, 가운데 큰 숫자는 20km 이상 통과 횟수
-        const R = 120, cx = 180, cy = 150, len = Math.PI * R, dash = Math.max(ov > 0 ? 4 : 0, len * Math.min(p, 100) / 100);
-        const arc = `M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`;
-        const t = (x, y, size, w, fill, txt) => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="middle" font-family="inherit">${txt}</text>`;
-        const color = ov > 0 ? '#f87171' : '#4ade80';
-        const gauges = `<svg viewBox="0 0 360 200" style="display:block; width:100%; height:auto;">` +
-            `<path d="${arc}" fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round"/>` +
-            `<path d="${arc}" fill="none" stroke="${color}" stroke-opacity="0.55" stroke-width="18" stroke-linecap="round" stroke-dasharray="${dash} ${len}"/>` +
-            t(cx, 82, 20, 800, '#94a3b8', `${lim}km 이상 통과`) +
-            t(cx, 140, 52, 900, color, ov + '회') +
-            t(cx - R, 182, 13, 700, '#64748b', '0') + t(cx + R, 182, 13, 700, '#64748b', '100%') +
-            t(cx, 192, 17, 800, '#cbd5e1', `통과한 정류장 ${v.n}회 · ${p}%`) + `</svg>`;
-        // 정류장 목록은 항상 보임 (이번 회차=최근 통과 순 5곳, 월별=많이 통과한 순 5곳) (없으면 '없음')
-        const list = (v.topOver && v.topOver.length) ? v.topOver : [];
-        const rows = list.length ? list.map((nm, i) => {
-            const m = String(nm).match(/^(.*?)\s*(\d+회)$/);
-            const name = m ? m[1] : nm, cnt = m ? m[2] : '';
-            return `<div style="display:flex; align-items:baseline; gap:8px; font-size:22px; color:#e2e8f0; font-weight:800; line-height:1.65;">` +
-                `<span style="flex:0 0 auto;">${i + 1}.</span><span style="flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</span>` +
-                (cnt ? `<span style="flex:0 0 auto; color:#94a3b8;">${cnt}</span>` : '') + '</div>';
-        }).join('') : `<div style="font-size:20px; color:#4ade80; font-weight:800;">없음 (모두 ${lim}km 아래로 통과)</div>`;
-        el.innerHTML = gauges +
-            `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#f87171; margin-bottom:6px;">${lim}km 이상 ${scope === 'cur' ? '최근' : '많이'} 통과한 정류장</div>${rows}</div>`;
+        // 월별
+        if (!v || !v.days) { el.innerHTML = `<div style="font-size:30px; ${gray}">기록 없음</div>` + DG_LEGEND; return; }
+        const h = Math.floor(v.min / 60), m = v.min % 60;
+        const colors = [1, 2, 3, 4].map(g => `<div style="display:flex; flex-direction:column; align-items:center; gap:2px; font-weight:900;">${dgWheel(g, 34)}<span style="font-size:20px; color:#e2e8f0;">${v.colors[g]}일</span></div>`).join('');
+        const days = v.list.slice().reverse().map(d =>
+            `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; padding:7px 0; border-bottom:1px solid #1e293b; font-weight:800;">${dgWheel(d.grade, 24)}` +
+            `<span style="flex:0 0 auto; font-size:19px; color:#e2e8f0;">${d.date.slice(5).replace('-', '/')}</span><span style="flex:0 0 auto; font-size:19px; color:${DG_COLOR[d.grade]};">${d.score}점</span>` +
+            `<span style="flex:1 1 100%; padding-left:32px; font-size:16px; color:#94a3b8;">${dgParts(d)}</span></div>`).join('');
+        el.innerHTML = `<div style="display:flex; align-items:center; gap:16px;">${dgWheel(v.avgGrade, 76)}` +
+            `<div><div style="font-size:19px; font-weight:800; color:#94a3b8;">하루 평균</div><div style="font-size:40px; font-weight:900; color:${DG_COLOR[v.avgGrade]}; line-height:1.1;">${v.avg}점</div>` +
+            `<div style="font-size:18px; font-weight:800; color:#cbd5e1;">근무 ${v.days}일 · 측정 ${h ? h + '시간 ' : ''}${m}분</div></div></div>` +
+            `<div style="display:flex; justify-content:space-around; margin-top:14px; padding:10px 0; background:#1e293b; border-radius:10px;">${colors}</div>` +
+            `<div style="font-size:18px; font-weight:900; color:#cbd5e1; margin-top:12px;">이달 합계</div>` + dgItems(v) +
+            `<div style="margin-top:16px;"><div style="font-size:20px; font-weight:900; color:#fbbf24; margin-bottom:4px;">날짜별</div>${days}</div>` + DG_LEGEND;
     }
 
-    // 나의 정류장 운행 2페이지 전환 (이번 회차 / 월별 누적)
+    // 나의 운행 상태 2페이지 전환 (오늘 근무 / 월별 누적)
     function setHabitPage(which) {
         ['cur', 'month'].forEach(k => {
             const list = document.getElementById('habitList_' + k);
@@ -283,7 +301,7 @@
         window._habitPage = which;
         // 버튼 글자는 "눌렀을 때 바뀔 쪽"
         const btn = document.getElementById('habitSwitchBtn');
-        if (btn) btn.textContent = which === 'cur' ? '월별누적' : '이번회차';
+        if (btn) btn.textContent = which === 'cur' ? '월별누적' : '오늘근무';
     }
     function switchHabitPage() { setHabitPage(window._habitPage === 'month' ? 'cur' : 'month'); }
     window.switchHabitPage = switchHabitPage;
