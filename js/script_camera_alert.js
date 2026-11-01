@@ -1,5 +1,5 @@
 // 단속카메라 전방 알림: 진행 방향 앞 500m 안의 카메라를 글자로 알리고(500m 노랑, 200m 빨강 깜빡),
-// 500m와 200m에서 각각 한 번 띵동 경고음을 내고, 카메라 제한속도를 넘으면 화면 테두리가 빨갛게 깜빡인다. 노선지도·라이브 모달 공용. 데이터: data/camera/cameras.json
+// 200m 앞에서 한 번만 띵동 경고음을 내고, 카메라 제한속도를 넘으면 화면 테두리가 빨갛게 깜빡인다. 노선지도·라이브 모달 공용. 데이터: data/camera/cameras.json
 (function () {
   var ALERT_M = 500, NEAR_M = 200, NAME = { speed: '과속', signal: '신호 과속', both: '신호 과속', other: '단속카메라' }, CAUTION_M = 100;
   var cams = null, secs = null, loading = false, secState = {}, prev = null, heading = null, caution = null;
@@ -20,30 +20,27 @@
     fetch('data/camera/sections.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : { sections: [] }; })
       .then(function (j) { secs = j.sections || []; window.YbCamera.sections = secs; }).catch(function () { secs = []; });
   }
-  // 경고음: 띵동 두 번. 같은 카메라는 500m에서 한 번, 200m에서 한 번만 (노선지도 iframe과 앱이 sessionStorage를 같이 써서 겹쳐 울리지 않음)
+  // 경고음 (2026-11-01 사용자 지시): 카메라마다 200m 앞에서 띵동 '한 번'만. 500m에서는 글자만, 소리 없음.
+  //   노선지도 iframe과 앱이 각자 이 파일을 돌리므로 기록은 저장소(localStorage)와 이 화면 메모리 둘 다에 두고,
+  //   가까이 붙은 카메라(상·하행 쌍, 신호+과속 등) 60m 안은 한 묶음으로 한 번만, 경고음 사이는 최소 5초.
   function ding() {
     try { var w = window.sfxPlay ? window : (window.parent && window.parent.sfxPlay ? window.parent : null);
-      if (w) { w.sfxPlay('depart'); setTimeout(function () { w.sfxPlay('depart'); }, 900); return; } } catch (e) { }
-    try { var a = new Audio('sounds/depart_ding.mp3'), p = a.play(); if (p && p.catch) p.catch(function () { });
-      setTimeout(function () { try { new Audio('sounds/depart_ding.mp3').play().catch(function () { }); } catch (e) { } }, 900); } catch (e) { }
+      if (w) { w.sfxPlay('depart'); return; } } catch (e) { }
+    try { var a = new Audio('sounds/depart_ding.mp3'), p = a.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { }
   }
-  // 2026-11-01: 경고음이 끊이지 않고 계속 울리는 문제 → 폰 저장소에 못 쓰거나(가득 참 등) 못 읽어도 이 화면 메모리에 기록을 같이 둬서
-  //   같은 카메라는 단계마다 한 번만, 그리고 어떤 경우에도 경고음 사이에 최소 5초를 둔다
-  var memSp = {}, lastDing = 0, DING_GAP_MS = 5000;
+  var memSp = {}, lastDing = 0, DING_GAP_MS = 5000, KEEP_MS = 600000;
   function chime(c, d) {
-    var st = d <= NEAR_M ? 2 : 1, now = Date.now(), sp = {};
-    // 노선지도와 라이브 모달(앱)이 각자 이 파일을 돌리므로 소리 기록은 저장소(localStorage)에서 매번 다시 읽어 서로 겹쳐 울리지 않게 한다
-    try { sp = JSON.parse(localStorage.getItem('yb_cam_spoken2') || '{}') || {}; } catch (e) { sp = {}; }
+    if (d > NEAR_M) return;
+    var now = Date.now(), sp = {};
+    try { sp = JSON.parse(localStorage.getItem('yb_cam_spoken3') || '{}') || {}; } catch (e) { sp = {}; }
     for (var mk in memSp) if (!sp[mk]) sp[mk] = memSp[mk];
-    // 가까이 붙은 카메라(상·하행 쌍, 신호+과속 등) 60m 안은 한 묶음으로 보고 같은 단계에서 한 번만 울린다
     for (var k in sp) {
-      var o = sp[k]; if (!o || now - o.t > 180000) { delete sp[k]; continue; }
-      if (o.st >= st && dist(o.lat, o.lng, c.lat, c.lng) <= 60) return;
+      var o = sp[k]; if (!o || now - o.t > KEEP_MS) { delete sp[k]; continue; }
+      if (dist(o.lat, o.lng, c.lat, c.lng) <= 60) { memSp = sp; return; }
     }
-    sp[c.lat + ',' + c.lng + ',' + st] = { lat: c.lat, lng: c.lng, st: st, t: now };
-    if (st === 2) sp[c.lat + ',' + c.lng + ',1'] = { lat: c.lat, lng: c.lng, st: 1, t: now };
+    sp[c.lat + ',' + c.lng] = { lat: c.lat, lng: c.lng, t: now };
     memSp = sp;
-    try { localStorage.setItem('yb_cam_spoken2', JSON.stringify(sp)); } catch (e) { }
+    try { localStorage.setItem('yb_cam_spoken3', JSON.stringify(sp)); } catch (e) { }
     try { var lg = +(localStorage.getItem('yb_cam_ding_at') || 0); if (lg > lastDing && lg <= now) lastDing = lg; } catch (e) { }
     if (now - lastDing < DING_GAP_MS) return;
     lastDing = now;
