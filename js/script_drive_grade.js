@@ -165,8 +165,22 @@
             if (simOn() || !driver()) return;
             if (typeof diffMin !== 'number' || isNaN(diffMin)) return;
             var a = Math.abs(diffMin);
-            if (a >= DELAY_IGNORE) { note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 20분 이상이라 시간 준수에 안 씀'); return; }
             var s = state();
+            if (a >= DELAY_IGNORE) {
+                note('오차 ' + diffMin + '분(' + (stopName || '') + ') → 20분 이상이라 시간 준수에 안 씀');
+                // 종점이 20분 이상으로 찍히면: 그 회차에서 정상으로 기록된 점수만 그대로 확정, 정상 기록이 없으면 측정 안 된 회차(0점)
+                if (isLast && s.dlyDone !== undefined) {
+                    if ((s.legN || 0) > 0) {
+                        var kept = (s.dlyLeg || 0) * (s.legMul || 2);
+                        if (kept) note('종점 오차 20분 이상 → 정상 기록 점수 ' + kept + '점 확정');
+                        s.dlyDone += kept;
+                    }
+                    s.dlyLeg = 0; s.legN = 0; s.legId = null;
+                    s.dly = s.dlyDone;
+                    snapTrip(); save();
+                }
+                return;
+            }
             var lv = a > DELAY_2 ? 2 : (a > DELAY_1 ? 1 : 0);
             var mul = 2;   // 왕복·편도 모두 0·2·4점 (2026-11-01 사용자 지시)
             var changed = false;
