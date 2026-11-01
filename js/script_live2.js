@@ -150,7 +150,7 @@
   }
 
   // 신호등 알약 아래: 나의 운행 상태(운전대 색 4단계, 2026-11-01 사용자 지시. 정류장 통과 횟수 자리를 대신함)
-  // 1 금색(0점) · 2 녹색(1~2점) · 3 주황(3~5점) · 4 빨강(6점 이상). 글자는 없음. 점수 계산은 js/script_drive_grade.js
+  // 1 금색(0~5점) · 2 녹색(6~10점) · 3 주황(11~15점) · 4 빨강(16점 이상). 글자는 없음. 점수 계산은 js/script_drive_grade.js
   function syncPass() {
     var box = $('yb3Grade'); if (!box) return;
     var g = String(window.DriveGrade ? window.DriveGrade.grade() : 1);
