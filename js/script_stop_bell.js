@@ -4,7 +4,7 @@
 //   (다시 터치하면 등록 취소 — 잘못 눌렀을 때 대비)
 // - 다음 정류장 100m 전과 50m 전에 한 번씩 (모두 띵동 + 음성) "하차 손님이 있습니다. 정차하세요."를 알려 주고,
 //   마지막 안내(50m 전) 10초 뒤에 자동으로 등록이 풀려 원래 색으로 돌아온다(2026-11-01 사용자 지시: GPS 통과 대신 시간 기준).
-//   (50m 안내를 못 하고 정류장에서 130m 넘게 멀어지면 그때 해제 — 안전장치)
+//   해제 기준에 GPS(거리)는 쓰지 않는다(사용자 지시). 안내 시점만 GPS로 정한다.
 // - 2026-11-01 사용자 지시: '정류장 근처에서 3km/h 이하로 정차하면 해제' 조건은 삭제(문제를 일으킴). 통과할 때만 해제.
 //   해제된 뒤 다시 등록하면 방금 통과한 정류장은 빼고 그다음 정류장을 대상으로 한다.
 // - 정류장 위치는 정류장 통과 속도 측정과 같은 노선 정류장 목록(standardMasterCache)과 '지난 정류장 번호'(lastPassedStopIndex)를 쓴다.
@@ -12,7 +12,6 @@
 (function () {
     var FAR_M = 100;         // 정류장 100m 전 첫 안내
     var RADIUS_M = 50;       // 정류장 50m 전 두 번째 안내
-    var LEAVE_M = 130;       // 안내한 정류장에서 이만큼 멀어지면 등록 해제
     var TEXT = '하차 손님이 있습니다. 정차하세요.';
     var RELEASE_MS = 10000;  // 마지막 안내 뒤 이만큼 지나면 자동 해제
     var bell = false, prevD = {}, said = null, said50 = false, minD = Infinity, lastAt = 0;
@@ -100,8 +99,6 @@
         if (said !== null) {   // 100m 앞에서 안내한 정류장: 50m 앞에서 한 번 더(마지막 안내), 그 10초 뒤 해제
             if (said50) return;
             var d0 = distM(g.lat, g.lon, stopLat(master[said]), stopLng(master[said]));
-            if (d0 < minD) minD = d0;
-            if (d0 > LEAVE_M) { release(); return; }   // 50m 안내 없이 멀어짐(안전장치)
             if (d0 <= RADIUS_M) { said50 = true; lastAt = Date.now(); announce(); }
             return;
         }
