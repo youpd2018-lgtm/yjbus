@@ -169,11 +169,14 @@
         var L = document.getElementById('yb2CdL'), V = document.getElementById('yb2CdV');
         var ring = document.getElementById('yb2Ring'), dot = document.getElementById('yb2Dot');
         if (!L || !V || !ring || !dot) return;
-        var lHtml, vTxt, vColor = '#fff', rColor = '#38bdf8', off = 90, dColor = '#ef4444';
+        var lHtml, vTxt, vColor = '#fff', rColor = '#38bdf8', off = 90, dColor = '#ef4444', liveCount = false;
         if (isCount) {                       // 교대 전 / 첫 운행 전 대기
             lHtml = label; vTxt = timerTxt;
         } else if (label.indexOf('운행중') >= 0) {   // 운행중
             lHtml = '<b>LIVE</b> 박스를 터치하세요'; vTxt = '운행중'; vColor = '#4ade80'; rColor = '#4ade80'; off = 0;
+            // 운행 중에도 라이브 모달과 같은 카운트(다음 기점까지 남은 시간)를 보여 줌 (2026-11-04 사용자 지시)
+            var lt = txt('liveCardTimeLeft');
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(lt)) { vTxt = lt; liveCount = true; }
         } else if (label.indexOf('휴무') >= 0) {     // 휴무
             lHtml = ''; vTxt = '휴무'; vColor = '#cbd5e1'; rColor = '#475569'; off = 0; dColor = '#64748b';
         } else if (label.indexOf('미등록') >= 0) {   // 미등록
@@ -184,7 +187,7 @@
         var cd = document.getElementById('yb2Cd');
         if (cd) cd.classList.toggle('msg', !isCount && label.indexOf('운행중') < 0);   // 휴무·미등록·운행종료 등은 박스 가운데에
         if (L.innerHTML !== lHtml) L.innerHTML = lHtml;
-        if (isCount) setDigits(V, vTxt); else if (V.textContent !== vTxt || V.dataset.ybDigits) { V.textContent = vTxt; delete V.dataset.ybDigits; }
+        if (isCount || liveCount) setDigits(V, vTxt); else if (V.textContent !== vTxt || V.dataset.ybDigits) { V.textContent = vTxt; delete V.dataset.ybDigits; }
         V.style.color = vColor;
         ring.setAttribute('stroke', rColor);
         ring.setAttribute('stroke-dashoffset', String(off));
@@ -193,7 +196,7 @@
     function watchCountdown() {
         if (!window.MutationObserver) return;
         var o = new MutationObserver(renderCountdown);
-        ['resStopSignSubLabel', 'resMainCountdownTimer', 'resMainCountdownTimerWrap'].forEach(function (id) {
+        ['resStopSignSubLabel', 'resMainCountdownTimer', 'resMainCountdownTimerWrap', 'liveCardTimeLeft'].forEach(function (id) {
             var e = document.getElementById(id);
             if (e) o.observe(e, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style'] });
         });
